@@ -1,5 +1,63 @@
 # Changelog — Mimaric PropTech
 
+## [4.1.0] — 2026-04-18 — UX Coherence Pass
+
+**Branch:** `release/v4.1-wave-a` (4 commits).
+
+v4.0 shipped Design System v2. A five-lens council review (a11y, RTL, mobile, design-system adoption, information architecture) surfaced ~40 post-ship adoption gaps — routes bypassing primitives, palette leaks, tap targets below 44px, orphan routes, `alert()` fallbacks leaking exception strings. v4.1 means every surface uses the system.
+
+### Phase 1 — Strike PR
+
+- **Dead-link cleanup:** 10 sites across 8 files pointing at `/dashboard/reservations`, `/dashboard/sales/*`, `/dashboard/rentals/*` retargeted to live routes (`/dashboard/deals`, `/dashboard/contracts`, `/dashboard/payments`, `/dashboard/crm`). Includes `revalidatePath` calls in server actions and the manifest shortcut.
+- **Orphan routes surfaced:** `/dashboard/reports` and `/dashboard/documents` registered in nav — now reachable from sidebar, More menu, and Cmd-K.
+- **`alert()` purge:** 9 sites across 5 files replaced with `toast.error(friendlyMessage)` — raw exception strings demoted to `console.error` only.
+- **Exception-string leaks killed** in `/dashboard/documents` — `${e.message}` in UI copy replaced with static friendly sentences.
+- **DirectionalIcon primitive sweep:** `breadcrumb`, `pagination`, `dropdown-menu`, `context-menu`, `menubar`, `carousel` — bare directional icons in the primitive layer wrapped in `<DirectionalIcon />`. (App code was swept in v4.0; this closes the primitive-layer gap.)
+- **Button focus ring fix** — `ring-1 outline-none` replaced with `focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none` per § 6.6.3 / § 6.17.
+- **44×44 mobile tap targets** — `h-8 w-8` → `h-11 w-11 sm:h-8 sm:w-8` on icon-only affordances across CRM, Documents, Settings/Team.
+- **CRM PII unification** — deleted local `maskPhone` in `crm/page.tsx`, imported shared helpers from `@/lib/pii-masking`. Single format `******4567` everywhere; added `<Phone />` icon preceding phone values; ciphertext guard via `maskCustomerPii` wrapper.
+- **`StatusBadge` variant overload** — new `{ variant: "success" | "warning" | "danger" | "info" | "neutral", label }` API so callers without an entity key stop hand-rolling inline palette badges.
+- **Cmd-K audience filter** — `QuickAction.audience: "tenant" | "platform"` added; quick-action create shortcuts now filter by audience AND permission per § 8.5.
+
+### Phase 2 — Wave A: palette cleanup + PageHeader adoption
+
+- **Semantic-token sweep** across 26 dashboard pages — `bg-blue-*`, `text-emerald-*`, `border-red-*`, `bg-amber-*`, etc. replaced with `bg-info/10`, `text-success`, `border-destructive`, `bg-warning/10`. Mapping: blue/cyan/sky/teal→info, green/emerald→success, red/rose/pink→destructive, amber/yellow/orange→warning, purple/violet/indigo→primary, gray/slate/zinc/stone/neutral→muted. No more `dark:` utilities in the sweep surface area.
+- **`PageHeader` adoption** on 11 admin + billing + documents + maintenance/preventive pages (meta-style headers). `PageIntro` kept intact as the glass-hero primitive for the 9 routes where it serves as the page hero (CRM, Deals, Contracts, Payments, Units, Reports, Billing, Maintenance/Tickets, the tenant dashboard). Council plan had called for unification — verification showed they serve different page types and both belong.
+
+### Phase 2 — Wave B: `EmptyState` + `ResponsiveDialog`
+
+- **`EmptyState` 5-element formula** (§ 6.12.1 — icon + title + description + primary CTA + optional secondary + optional help link) retrofitted across 23 dashboard pages. ~20 first-time empties + ~22 filter-empties + ~14 widget-compact empties. Filter-empties ship a "Clear filters" CTA; first-time empties ship permission-gated create verbs.
+- **`ResponsiveDialog` migration** — three bespoke modals in `units/page.tsx` (Change Price, Unit Detail, Add Unit) rewritten as `<ResponsiveDialog>` so they render as desktop modal / mobile bottom sheet from a single source. 0 `fixed inset-0` modal wrappers remain. Net −17 lines.
+
+### Phase 2 — Wave C: route-segment hygiene + audience helpers + DataTable
+
+- **Route-segment hygiene** — 68 new files across 23 dashboard segments: 18 `loading.tsx` + 18 `error.tsx` + 32 `not-found.tsx`, all wired to 3 shared primitives (`RouteLoading`, `RouteError`, `RouteNotFound`) under `apps/web/app/dashboard/_components/`. `RouteError` shows `error.digest` only, never `error.message`; `console.error(error)` in `useEffect` for observability. `RouteLoading` uses skeletons matching real layout dimensions (§ 6.12 "skeleton > spinner"). All bilingual via `LanguageProvider`.
+- **`requireSystem()` / `requireTenant()` helpers** added to `apps/web/lib/auth-helpers.ts` and applied to `admin/layout.tsx` (11 → 6 lines). Tenant-side audience enforcement remains in middleware + `DashboardClientLayout` as before — cleaner than scattering inline server guards across every page.
+- **`help/page.tsx` DataTable migration** — 4 raw `<table>` blocks (My Tickets, Permission Request History, Pending Permission Requests, Pending Join Requests) replaced with `<DataTable>` + `mobileCard` transform (§ 6.10, § 6.14.3). Inline approve/decline forms preserved across desktop and mobile. Bilingual empty states via the primitive.
+
+### Metrics
+
+- 4 commits, 146 files touched (net), +2,892 / −1,289 LOC.
+- Typecheck green at every wave boundary (`npx turbo run check-types --filter=@repo/web` FULL TURBO).
+- Zero `alert()` calls in `apps/web/app/dashboard/**`. Zero `<table>` JSX in `help/page.tsx`. Zero `dark:` utilities in Wave-A sweep surface.
+
+### Deferred
+
+- Phase 0 public-repo security scrub (seed-password rotation + git history rewrite + force-push) — tracked separately; destructive to remote history, needs coordination.
+- Remaining `h-8 w-8` files outside icon-only affordances (text buttons already meet 40px desktop / 48px `lg` mobile — deferred as not-a-bug).
+- react-hook-form + zod form adoption (still deferred from v4.0).
+- DB-backed TanStack saved views (URL-sync only this release).
+
+**Upgrade notes**
+
+- Call sites that imported the local `maskPhone` from `apps/web/app/dashboard/crm/page.tsx` must now import from `@/lib/pii-masking`. Format changes from `509•••567` to `******4567` (consistent with Settings / Deals / Contracts).
+- Pages using `<ResponsiveDialog>` must import from `@repo/ui/components/mobile/ResponsiveDialog` (not `@repo/ui/components/ResponsiveDialog`).
+- Any new route segment should drop in `loading.tsx` / `error.tsx` / `not-found.tsx` wrappers using the shared `_components/Route*` primitives.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimaric/compare/v4.0.0...v4.1.0
+
+---
+
 ## [4.0.0] — 2026-04-17 — Design System v2 + Access Model Hardening
 
 **Branch:** `feat/audit-2026-04-mega` (mega-PR, 20 commits).
