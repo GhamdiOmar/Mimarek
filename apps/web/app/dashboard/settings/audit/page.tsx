@@ -30,6 +30,7 @@ import {
   AppBar,
   ActivityTimeline,
   EmptyState,
+  DirectionalIcon,
   type ActivityTimelineEvent,
   type ActivityTimelineTone,
 } from "@repo/ui";
@@ -303,7 +304,7 @@ export default function AuditLogPage() {
                 style={{ display: "inline-flex" }}
                 className="min-h-[44px]"
               >
-                <ChevronLeft className="h-3.5 w-3.5 rtl:scale-x-[-1]" />
+                <DirectionalIcon icon={ChevronLeft} className="h-3.5 w-3.5" />
                 {t.prev}
               </Button>
               <Button
@@ -315,7 +316,7 @@ export default function AuditLogPage() {
                 className="min-h-[44px]"
               >
                 {t.next}
-                <ChevronRight className="h-3.5 w-3.5 rtl:scale-x-[-1]" />
+                <DirectionalIcon icon={ChevronRight} className="h-3.5 w-3.5" />
               </Button>
             </div>
           </div>
@@ -324,7 +325,7 @@ export default function AuditLogPage() {
 
       {/* ─── Desktop (≥ md) ────────────────────────────────────────────── */}
       <div
-        className={cn("hidden md:block p-6 max-w-full", lang === "ar" ? "text-right" : "text-left")}
+        className={cn("hidden md:block p-6 max-w-full text-start")}
         dir={lang === "ar" ? "rtl" : "ltr"}
       >
         {/* Header */}
@@ -422,12 +423,12 @@ export default function AuditLogPage() {
             </span>
             <div className="flex gap-2">
               <Button size="sm" variant="secondary" disabled={page <= 1} onClick={() => setPage(page - 1)}>
-                <ChevronLeft className="h-3.5 w-3.5" />
+                <DirectionalIcon icon={ChevronLeft} className="h-3.5 w-3.5" />
                 {t.prev}
               </Button>
               <Button size="sm" variant="secondary" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>
                 {t.next}
-                <ChevronRight className="h-3.5 w-3.5" />
+                <DirectionalIcon icon={ChevronRight} className="h-3.5 w-3.5" />
               </Button>
             </div>
           </div>

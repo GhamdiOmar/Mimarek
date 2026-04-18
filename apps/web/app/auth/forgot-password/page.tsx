@@ -50,7 +50,7 @@ export default function ForgotPasswordPage() {
           </div>
           <p className="text-xs font-latin uppercase tracking-widest text-white opacity-50">© 2026 Mimaric PropTech</p>
         </div>
-        <div className="absolute -bottom-10 -right-20 opacity-10 transform rotate-3">
+        <div className="absolute -bottom-10 -end-20 opacity-10 transform rotate-3">
           <Building2 className="h-[400px] w-[400px] text-secondary" />
         </div>
       </div>

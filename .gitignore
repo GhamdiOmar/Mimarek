@@ -5,6 +5,9 @@
 **/test-results/
 **/playwright-report/
 
+# Verification artifacts (local screenshots + run logs)
+verification-screenshots/
+
 # Claude Code
 .claude/
 

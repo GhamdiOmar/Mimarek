@@ -1,10 +1,10 @@
 "use client";
 
 import * as React from "react";
-import { Button, Input } from "@repo/ui";
+import { Button, Input, DirectionalIcon } from "@repo/ui";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Globe, ArrowRight, ArrowLeft, User, Briefcase, Loader2, Eye, EyeOff } from "lucide-react";
+import { Globe, ArrowRight, User, Briefcase, Loader2, Eye, EyeOff } from "lucide-react";
 import { cn } from "@repo/ui/lib/utils";
 import { MimaricLogo } from "../../../components/brand/MimaricLogo";
 import { ThemeToggle } from "../../../components/ThemeToggle";
@@ -202,7 +202,7 @@ export default function RegisterPage() {
                 ) : (
                   <>
                     {lang === "ar" ? "إنشاء حساب" : "Create Account"}
-                    {lang === "ar" ? <ArrowLeft className="h-4 w-4 icon-directional" /> : <ArrowRight className="h-4 w-4 icon-directional" />}
+                    <DirectionalIcon icon={ArrowRight} className="h-4 w-4" />
                   </>
                 )}
               </Button>

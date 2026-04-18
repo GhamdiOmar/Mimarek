@@ -35,6 +35,7 @@ export default function MorePage() {
   const isPlatformUser = isSystemRole(userRole);
 
   const visibleItems = navItems.filter((item) => {
+    if (item.hiddenFromNav) return false;
     if (bottomNavHrefs.has(item.href)) return false;
     if (item.permission && !hasPermission(userRole, item.permission)) return false;
     if (item.audience === "tenant" && isPlatformUser) return false;

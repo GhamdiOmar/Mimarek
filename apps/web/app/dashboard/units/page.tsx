@@ -24,6 +24,8 @@ import {
   Warehouse as WarehouseIcon,
   Car,
   Briefcase,
+  BedDouble,
+  Bath,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -105,6 +107,7 @@ function AdvancedUnitMatrixPage() {
   const [showPriceModal, setShowPriceModal] = React.useState(false);
   const [bulkPrice, setBulkPrice] = React.useState("");
   const [viewMode, setViewMode] = React.useState<"cards" | "table">("cards");
+  const [density, setDensity] = React.useState<"compact" | "default" | "comfortable">("default");
   const [unitSearch, setUnitSearch] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState("");
   // Mobile-only filter state (does not affect desktop behavior)
@@ -140,7 +143,7 @@ function AdvancedUnitMatrixPage() {
     string,
     { ar: string; en: string; variant: string }
   > = {
-    OPEN: { ar: "مفتوح", en: "Open", variant: "draft" },
+    OPEN: { ar: "بانتظار المراجعة", en: "Waiting Review", variant: "draft" },
     ASSIGNED: { ar: "معيّن", en: "Assigned", variant: "reserved" },
     IN_PROGRESS: { ar: "قيد التنفيذ", en: "In Progress", variant: "reserved" },
     ON_HOLD: { ar: "معلّق", en: "On Hold", variant: "maintenance" },
@@ -664,7 +667,7 @@ function AdvancedUnitMatrixPage() {
       {error && (
         <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
           <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
-          <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600">
+          <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600" aria-label={lang === "ar" ? "إغلاق" : "Close"}>
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -712,7 +715,7 @@ function AdvancedUnitMatrixPage() {
           {/* Bulk Action Bar (Floating) */}
           {selectedUnits.length > 0 && (
             <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 bg-primary-deep text-white px-6 py-4 rounded-xl shadow-2xl border border-white/10 flex items-center gap-8 animate-in slide-in-from-bottom-10">
-              <div className="flex items-center gap-3 border-r border-white/20 pr-6 mr-2">
+              <div className="flex items-center gap-3 border-e border-white/20 pe-6 me-2">
                 <span className="h-6 w-6 bg-secondary text-white rounded-full flex items-center justify-center text-xs font-bold leading-none">
                   {selectedUnits.length}
                 </span>
@@ -764,7 +767,7 @@ function AdvancedUnitMatrixPage() {
 
               <button
                 onClick={() => setSelectedUnits([])}
-                className="text-xs text-white/50 hover:text-white underline underline-offset-4 ml-4"
+                className="text-xs text-white/50 hover:text-white underline underline-offset-4 ms-4"
               >
                 {lang === "ar" ? "إلغاء التحديد" : "Clear Selection"}
               </button>
@@ -779,10 +782,10 @@ function AdvancedUnitMatrixPage() {
                 <button
                   onClick={() => setStatusFilter("")}
                   className={cn(
-                    "px-3.5 py-2 rounded-full text-sm font-medium border transition-colors",
+                    "rounded-full px-3 py-1 text-xs font-medium transition-colors",
                     !statusFilter
-                      ? "border-primary/30 bg-primary/15 text-foreground"
-                      : "border-border bg-card text-muted-foreground hover:bg-muted/50"
+                      ? "bg-primary/10 text-primary ring-1 ring-primary/30"
+                      : "bg-muted text-muted-foreground hover:bg-muted/70"
                   )}
                   style={{ display: "inline-flex" }}
                 >
@@ -790,15 +793,23 @@ function AdvancedUnitMatrixPage() {
                 </button>
                 {Object.entries(unitStatusLabels).map(([key, label]) => {
                   const count = units.filter((u: any) => u.status === key).length;
+                  const active = statusFilter === key;
+                  const activeClasses: Record<string, string> = {
+                    AVAILABLE: "bg-success/15 text-success ring-1 ring-success/30",
+                    RESERVED: "bg-info/15 text-info ring-1 ring-info/30",
+                    SOLD: "bg-primary/15 text-primary ring-1 ring-primary/30",
+                    RENTED: "bg-secondary/15 text-secondary ring-1 ring-secondary/30",
+                    MAINTENANCE: "bg-warning/15 text-warning ring-1 ring-warning/30",
+                  };
                   return (
                     <button
                       key={key}
-                      onClick={() => setStatusFilter(statusFilter === key ? "" : key)}
+                      onClick={() => setStatusFilter(active ? "" : key)}
                       className={cn(
-                        "px-3.5 py-2 rounded-full text-sm font-medium border transition-colors",
-                        statusFilter === key
-                          ? "border-primary/30 bg-primary/15 text-foreground"
-                          : "border-border bg-card text-muted-foreground hover:bg-muted/50"
+                        "rounded-full px-3 py-1 text-xs font-medium transition-colors",
+                        active
+                          ? activeClasses[key] ?? "bg-primary/10 text-primary ring-1 ring-primary/30"
+                          : "bg-muted text-muted-foreground hover:bg-muted/70"
                       )}
                       style={{ display: "inline-flex" }}
                     >
@@ -807,7 +818,34 @@ function AdvancedUnitMatrixPage() {
                   );
                 })}
               </div>
-              <div className="flex gap-2">
+              <div className="flex items-center gap-2">
+                {/* Density toggle (desktop only) */}
+                <div className="hidden md:inline-flex rounded-lg border border-border p-0.5 bg-muted/40">
+                  {([
+                    { key: "compact", en: "Compact", ar: "مضغوط" },
+                    { key: "default", en: "Default", ar: "افتراضي" },
+                    { key: "comfortable", en: "Comfortable", ar: "موسّع" },
+                  ] as const).map((d) => {
+                    const active = density === d.key;
+                    return (
+                      <button
+                        key={d.key}
+                        onClick={() => setDensity(d.key)}
+                        className={cn(
+                          "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+                          active
+                            ? "bg-background text-foreground shadow-sm"
+                            : "text-muted-foreground hover:text-foreground"
+                        )}
+                        style={{ display: "inline-flex" }}
+                        aria-pressed={active}
+                        aria-label={lang === "ar" ? `الكثافة: ${d.ar}` : `Density: ${d.en}`}
+                      >
+                        {lang === "ar" ? d.ar : d.en}
+                      </button>
+                    );
+                  })}
+                </div>
                 <button
                   onClick={() => setViewMode("cards")}
                   className={cn(
@@ -859,52 +897,126 @@ function AdvancedUnitMatrixPage() {
           {/* Card View */}
           {viewMode === "cards" ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {filteredUnits.map((unit: any) => (
-                <Card
-                  key={unit.id}
-                  className="p-5 cursor-pointer hover:border-primary/20 transition-colors group"
-                  onClick={() => openUnitDetail(unit)}
-                >
-                  {/* Unit code hero */}
-                  <h3 className="text-2xl font-extrabold text-primary/80 tabular-nums">{unit.number}</h3>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {unit.buildingName || unit.city || "—"}
-                  </p>
+              {filteredUnits.map((unit: any) => {
+                const statusChipClasses: Record<string, string> = {
+                  AVAILABLE: "bg-success/10 text-success border border-success/20",
+                  RESERVED: "bg-info/10 text-info border border-info/20",
+                  SOLD: "bg-primary/10 text-primary border border-primary/20",
+                  RENTED: "bg-secondary/10 text-secondary border border-secondary/20",
+                  MAINTENANCE: "bg-warning/10 text-warning border border-warning/20",
+                };
+                const chipClass =
+                  statusChipClasses[unit.status] ??
+                  "bg-muted text-muted-foreground border border-border";
+                const statusLabel = unitStatusLabels[unit.status]?.[lang] ?? unit.status;
+                const isRented = unit.status === "RENTED";
+                const heroPriceRaw = isRented
+                  ? unit.rentalPrice
+                  : (unit.markupPrice ?? unit.price);
+                const heroPriceNum =
+                  heroPriceRaw != null ? Number(heroPriceRaw) : null;
+                const areaLabel = lang === "ar" ? "م²" : "m²";
+                const floorLabel = lang === "ar" ? "الطابق" : "Floor";
+                const padding =
+                  density === "compact"
+                    ? "p-3"
+                    : density === "comfortable"
+                      ? "p-5"
+                      : "p-4";
+                const rowGap =
+                  density === "compact"
+                    ? "gap-2"
+                    : density === "comfortable"
+                      ? "gap-4"
+                      : "gap-3";
+                const buildingName = unit.buildingName ?? "—";
+                return (
+                  <div
+                    key={unit.id}
+                    onClick={() => openUnitDetail(unit)}
+                    className={cn(
+                      "rounded-xl border border-border bg-card hover:border-primary/40 transition-colors cursor-pointer",
+                      padding,
+                      density === "comfortable" ? "space-y-4" : "space-y-3"
+                    )}
+                  >
+                    {/* Header row: unit number + status chip */}
+                    <div className={cn("flex items-center", rowGap)}>
+                      <code className="font-mono text-base font-semibold text-foreground">
+                        {unit.number}
+                      </code>
+                      <span
+                        className={cn(
+                          "ms-auto inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold",
+                          chipClass
+                        )}
+                      >
+                        {statusLabel}
+                      </span>
+                    </div>
 
-                  {/* Info grid */}
-                  <div className="grid grid-cols-2 gap-2.5 mt-4">
-                    <div className="rounded-xl bg-muted/30 border border-border/50 p-2.5">
-                      <div className="text-[11px] text-muted-foreground">{lang === "ar" ? "النوع" : "Type"}</div>
-                      <div className="text-sm font-semibold text-foreground">{unitTypeLabels[unit.type]?.[lang] ?? unit.type}</div>
+                    {/* Hero row: price + area */}
+                    <div className={cn("flex items-end justify-between", rowGap)}>
+                      <div className="min-w-0">
+                        {heroPriceNum != null ? (
+                          <SARAmount
+                            value={heroPriceNum}
+                            size={density === "comfortable" ? 20 : 18}
+                            compact
+                          />
+                        ) : (
+                          <span className="text-lg font-semibold text-muted-foreground">
+                            —
+                          </span>
+                        )}
+                      </div>
+                      {unit.area != null && (
+                        <span className="text-sm text-muted-foreground tabular-nums">
+                          {unit.area} {areaLabel}
+                        </span>
+                      )}
                     </div>
-                    <div className="rounded-xl bg-muted/30 border border-border/50 p-2.5">
-                      <div className="text-[11px] text-muted-foreground">{lang === "ar" ? "المساحة" : "Area"}</div>
-                      <div className="text-sm font-semibold text-foreground tabular-nums">{unit.area} {lang === "ar" ? "م²" : "m²"}</div>
-                    </div>
-                    <div className="rounded-xl bg-muted/30 border border-border/50 p-2.5">
-                      <div className="text-[11px] text-muted-foreground">{lang === "ar" ? "السعر" : "Price"}</div>
-                      <div className="text-sm font-semibold text-foreground">{unit.price ? <SARAmount value={Number(unit.price)} size={11} compact /> : "—"}</div>
-                    </div>
-                    <div className="rounded-xl bg-muted/30 border border-border/50 p-2.5">
-                      <div className="text-[11px] text-muted-foreground">{lang === "ar" ? "الطابق" : "Floor"}</div>
-                      <div className="text-sm font-semibold text-foreground">{unit.floor || "—"}</div>
+
+                    {/* Meta row: bed/bath (hidden in compact) */}
+                    {density !== "compact" &&
+                      (unit.bedrooms != null || unit.bathrooms != null) && (
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                          {unit.bedrooms != null && (
+                            <span className="inline-flex items-center gap-1">
+                              <BedDouble className="h-3.5 w-3.5" aria-hidden="true" />
+                              <span className="tabular-nums">{unit.bedrooms}</span>
+                            </span>
+                          )}
+                          {unit.bathrooms != null && (
+                            <span className="inline-flex items-center gap-1">
+                              <Bath className="h-3.5 w-3.5" aria-hidden="true" />
+                              <span className="tabular-nums">{unit.bathrooms}</span>
+                            </span>
+                          )}
+                        </div>
+                      )}
+
+                    {/* Footer row: floor + building */}
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span className="shrink-0">
+                        {floorLabel} {unit.floor ?? "—"}
+                      </span>
+                      <span aria-hidden="true">·</span>
+                      <span
+                        className={cn(
+                          "min-w-0",
+                          density === "comfortable"
+                            ? "whitespace-normal"
+                            : "truncate"
+                        )}
+                        title={buildingName}
+                      >
+                        {buildingName}
+                      </span>
                     </div>
                   </div>
-
-                  {/* Footer: status + actions */}
-                  <div className="flex items-center justify-between mt-4 pt-3 border-t border-border">
-                    <StatusBadge entityType="unit" status={unit.status} label={unitStatusLabels[unit.status]?.[lang] ?? unit.status} />
-                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button className="h-7 w-7 rounded-lg border border-border bg-card flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors" onClick={(e) => { e.stopPropagation(); }}>
-                        <Pencil className="h-3.5 w-3.5" />
-                      </button>
-                      <button className="h-7 w-7 rounded-lg border border-border bg-card flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors" onClick={(e) => { e.stopPropagation(); openUnitDetail(unit); }}>
-                        <Eye className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                </Card>
-              ))}
+                );
+              })}
 
               {/* Add Unit Placeholder */}
               <div
@@ -1026,6 +1138,7 @@ function AdvancedUnitMatrixPage() {
               <button
                 onClick={() => setDetailUnit(null)}
                 className="text-muted-foreground hover:text-primary"
+                aria-label={lang === "ar" ? "إغلاق" : "Close"}
               >
                 <X className="h-5 w-5" />
               </button>
@@ -1361,6 +1474,7 @@ function AdvancedUnitMatrixPage() {
                                 variant="ghost"
                                 size="sm"
                                 style={{ display: "inline-flex" }}
+                                aria-label={lang === "ar" ? "عرض" : "View"}
                               >
                                 <Eye className="h-3 w-3" />
                               </Button>

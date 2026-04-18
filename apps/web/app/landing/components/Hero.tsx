@@ -48,7 +48,7 @@ export default function Hero({ lang }: { lang: "ar" | "en" }) {
       </div>
 
       {/* Single subtle gradient blob */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-primary/8 blur-[140px]" />
+      <div className="absolute top-1/4 start-1/4 w-96 h-96 rounded-full bg-primary/8 blur-[140px]" />
 
       <div className="relative z-10 mx-auto max-w-7xl px-4 pt-28 pb-16 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl text-center">

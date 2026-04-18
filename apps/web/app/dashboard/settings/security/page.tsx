@@ -9,6 +9,7 @@ import {
   AppBar,
   DataCard,
   ResponsiveDialog,
+  DirectionalIcon,
 } from "@repo/ui";
 import { Lock, CheckCircle2, ArrowLeft, KeyRound, ShieldCheck } from "lucide-react";
 import Link from "next/link";
@@ -245,7 +246,7 @@ export default function SecuritySettingsPage() {
           <div>
             <div className="flex items-center gap-3 mb-2">
               <Link href="/dashboard/settings" className="text-muted-foreground hover:text-foreground transition-colors">
-                <ArrowLeft className="h-5 w-5" />
+                <DirectionalIcon icon={ArrowLeft} className="h-5 w-5" />
               </Link>
               <h1 className="text-2xl font-bold text-foreground">
                 {lang === "ar" ? "الأمان" : "Security"}

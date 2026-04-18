@@ -14,7 +14,7 @@ import {
   XCircle,
   Loader2,
 } from "lucide-react";
-import { Button, AppBar, BottomSheet, Textarea } from "@repo/ui";
+import { Button, AppBar, BottomSheet, Textarea, DirectionalIcon } from "@repo/ui";
 import { cn } from "@repo/ui/lib/utils";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -417,17 +417,8 @@ export default function TicketDetailPage() {
           href="/dashboard/help"
           className="flex items-center gap-1 text-sm text-gray-500 hover:text-primary transition-colors"
         >
-          {lang === "ar" ? (
-            <>
-              مركز المساعدة
-              <ArrowRight className="h-3.5 w-3.5" />
-            </>
-          ) : (
-            <>
-              <ChevronLeft className="h-3.5 w-3.5" />
-              Help Center
-            </>
-          )}
+          <DirectionalIcon icon={ChevronLeft} className="h-3.5 w-3.5" />
+          {lang === "ar" ? "مركز المساعدة" : "Help Center"}
         </Link>
       </div>
 

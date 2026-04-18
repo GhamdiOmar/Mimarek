@@ -2,7 +2,13 @@
 
 import { auth } from "../auth";
 import { db } from "@repo/db";
-import { hasPermission, type Permission } from "./permissions";
+import {
+  hasPermission,
+  isSystemRole,
+  SYSTEM_ONLY_PERMISSIONS,
+  TENANT_SCOPED_PERMISSIONS,
+  type Permission,
+} from "./permissions";
 
 export type AuthSession = {
   userId: string;
@@ -55,12 +61,31 @@ export async function getSessionOrThrow(): Promise<AuthSession> {
 
 /**
  * Get session and require a specific permission, or throw Forbidden.
+ *
+ * Also enforces audience separation (CLAUDE.md § 8.3 — Layer 3):
+ * - Tenant-scoped permissions reject system roles (SYSTEM_ADMIN / SYSTEM_SUPPORT),
+ *   even though those roles are seeded with the permission for support tooling.
+ * - System-only permissions reject tenant roles. Tenant roles already lack the
+ *   permission, so this is defense-in-depth against permission-matrix drift.
  */
 export async function requirePermission(permission: Permission): Promise<AuthSession> {
   const session = await getSessionOrThrow();
   if (!hasPermission(session.role, permission)) {
     throw new Error(`Forbidden: missing permission '${permission}'`);
   }
+
+  const isSystem = isSystemRole(session.role);
+  if (TENANT_SCOPED_PERMISSIONS.includes(permission) && isSystem) {
+    throw new Error(
+      `Forbidden: '${permission}' is tenant-scoped — platform users may not invoke this action`,
+    );
+  }
+  if (SYSTEM_ONLY_PERMISSIONS.includes(permission) && !isSystem) {
+    throw new Error(
+      `Forbidden: '${permission}' is platform-only — tenant users may not invoke this action`,
+    );
+  }
+
   return session;
 }
 

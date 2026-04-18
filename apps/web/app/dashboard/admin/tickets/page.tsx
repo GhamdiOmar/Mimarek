@@ -1,11 +1,15 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import {
   Ticket, Search, Filter, ChevronDown, MessageSquare,
-  AlertCircle, Clock, CheckCircle, XCircle, Loader2, ShieldAlert,
+  AlertCircle, Clock, CheckCircle, XCircle, ShieldAlert,
 } from "lucide-react";
-import { AppBar, DataCard, EmptyState, MobileKPICard, MobileTabs, Skeleton, Badge } from "@repo/ui";
+import {
+  AppBar, DataCard, DataTable, EmptyState, MobileKPICard, MobileTabs, Skeleton, Badge,
+  type ColumnDef,
+} from "@repo/ui";
 import { useLanguage } from "../../../../components/LanguageProvider";
 import { useSession } from "../../../../components/SimpleSessionProvider";
 import { isSystemRole } from "../../../../lib/permissions";
@@ -92,6 +96,7 @@ function categoryLabel(category: string, lang: "ar" | "en") {
 
 export default function AdminTicketsPage() {
   const { lang } = useLanguage();
+  const router = useRouter();
   const { data: session } = useSession();
   const userRole = session?.user?.role ?? "";
   const authorized = isSystemRole(userRole);
@@ -181,6 +186,111 @@ export default function AdminTicketsPage() {
     RESOLVED: "Resolved",
     CLOSED: "Closed",
   };
+
+  const columns = React.useMemo<ColumnDef<TicketRow>[]>(
+    () => [
+      {
+        id: "ticketNumber",
+        accessorKey: "ticketNumber",
+        header: lang === "ar" ? "رقم التذكرة" : "Ticket #",
+        cell: ({ row }) => (
+          <span className="font-mono text-xs font-semibold text-primary whitespace-nowrap">
+            {row.original.ticketNumber}
+          </span>
+        ),
+      },
+      {
+        id: "organization",
+        header: lang === "ar" ? "المنظمة" : "Organization",
+        accessorFn: (row) =>
+          lang === "ar" && row.organization.nameArabic
+            ? row.organization.nameArabic
+            : row.organization.name,
+        cell: ({ row }) => (
+          <span className="font-medium text-foreground whitespace-nowrap">
+            {lang === "ar" && row.original.organization.nameArabic
+              ? row.original.organization.nameArabic
+              : row.original.organization.name}
+          </span>
+        ),
+      },
+      {
+        id: "user",
+        header: lang === "ar" ? "مقدم الطلب" : "Submitter",
+        accessorFn: (row) => row.user.name ?? row.user.email,
+        cell: ({ row }) => (
+          <div className="flex flex-col gap-0.5">
+            <span className="text-xs font-medium text-foreground">
+              {row.original.user.name ?? "—"}
+            </span>
+            <span className="text-[11px] text-muted-foreground">
+              {row.original.user.email}
+            </span>
+          </div>
+        ),
+      },
+      {
+        id: "subject",
+        accessorKey: "subject",
+        header: lang === "ar" ? "الموضوع" : "Subject",
+        cell: ({ row }) => (
+          <span
+            className="block max-w-[220px] truncate text-foreground"
+            title={row.original.subject}
+          >
+            {row.original.subject}
+          </span>
+        ),
+      },
+      {
+        id: "category",
+        accessorKey: "category",
+        header: lang === "ar" ? "الفئة" : "Category",
+        cell: ({ row }) => (
+          <span className="text-xs text-muted-foreground whitespace-nowrap">
+            {categoryLabel(row.original.category, lang)}
+          </span>
+        ),
+      },
+      {
+        id: "priority",
+        accessorKey: "priority",
+        header: lang === "ar" ? "الأولوية" : "Priority",
+        cell: ({ row }) => priorityBadge(row.original.priority, lang),
+      },
+      {
+        id: "status",
+        accessorKey: "status",
+        header: lang === "ar" ? "الحالة" : "Status",
+        cell: ({ row }) => statusBadge(row.original.status, lang),
+      },
+      {
+        id: "messages",
+        header: lang === "ar" ? "الرسائل" : "Messages",
+        accessorFn: (row) => row._count.messages,
+        cell: ({ row }) => (
+          <span className="inline-flex items-center gap-1 text-xs text-muted-foreground tabular-nums">
+            <MessageSquare className="h-3 w-3" aria-hidden="true" />
+            {row.original._count.messages}
+          </span>
+        ),
+      },
+      {
+        id: "createdAt",
+        accessorKey: "createdAt",
+        header: lang === "ar" ? "التاريخ" : "Date",
+        cell: ({ row }) => (
+          <span className="whitespace-nowrap text-xs text-muted-foreground tabular-nums">
+            {new Date(row.original.createdAt).toLocaleDateString(
+              lang === "ar" ? "ar-SA" : "en-US",
+              { day: "numeric", month: "short", year: "numeric" },
+            )}
+          </span>
+        ),
+      },
+    ],
+    [lang],
+  );
 
   return (
     <>
@@ -404,81 +514,22 @@ export default function AdminTicketsPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-card border border-border rounded-lg overflow-hidden shadow-sm">
-        {loading ? (
-          <div className="flex items-center justify-center py-16">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          </div>
-        ) : tickets.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-muted-foreground gap-3">
-            <Ticket className="h-10 w-10 opacity-30" />
-            <p className="text-sm">{lang === "ar" ? "لا توجد تذاكر" : "No tickets found"}</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border bg-muted/30 text-xs uppercase tracking-wider text-muted-foreground">
-                  <th className="px-4 py-3 text-start font-semibold">{lang === "ar" ? "رقم التذكرة" : "Ticket #"}</th>
-                  <th className="px-4 py-3 text-start font-semibold">{lang === "ar" ? "المنظمة" : "Organization"}</th>
-                  <th className="px-4 py-3 text-start font-semibold">{lang === "ar" ? "مقدم الطلب" : "Submitter"}</th>
-                  <th className="px-4 py-3 text-start font-semibold">{lang === "ar" ? "الموضوع" : "Subject"}</th>
-                  <th className="px-4 py-3 text-start font-semibold">{lang === "ar" ? "الفئة" : "Category"}</th>
-                  <th className="px-4 py-3 text-start font-semibold">{lang === "ar" ? "الأولوية" : "Priority"}</th>
-                  <th className="px-4 py-3 text-start font-semibold">{lang === "ar" ? "الحالة" : "Status"}</th>
-                  <th className="px-4 py-3 text-start font-semibold">{lang === "ar" ? "الرسائل" : "Messages"}</th>
-                  <th className="px-4 py-3 text-start font-semibold">{lang === "ar" ? "التاريخ" : "Date"}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {tickets.map((ticket) => (
-                  <tr key={ticket.id} className="hover:bg-muted/20 transition-colors">
-                    <td className="px-4 py-3 font-mono text-xs text-primary font-semibold whitespace-nowrap">
-                      {ticket.ticketNumber}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <span className="font-medium text-foreground">
-                        {lang === "ar" && ticket.organization.nameArabic
-                          ? ticket.organization.nameArabic
-                          : ticket.organization.name}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex flex-col gap-0.5">
-                        <span className="font-medium text-foreground text-xs">{ticket.user.name ?? "—"}</span>
-                        <span className="text-muted-foreground text-[11px]">{ticket.user.email}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 max-w-[200px]">
-                      <span className="truncate block text-foreground" title={ticket.subject}>{ticket.subject}</span>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-muted-foreground text-xs">
-                      {categoryLabel(ticket.category, lang)}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      {priorityBadge(ticket.priority, lang)}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      {statusBadge(ticket.status, lang)}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <span className="inline-flex items-center gap-1 text-muted-foreground text-xs">
-                        <MessageSquare className="h-3 w-3" />
-                        {ticket._count.messages}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-xs text-muted-foreground">
-                      {new Date(ticket.createdAt).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-US", {
-                        day: "numeric", month: "short", year: "numeric",
-                      })}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      <DataTable<TicketRow, unknown>
+        columns={columns}
+        data={tickets}
+        loading={loading}
+        locale={lang}
+        pagination={false}
+        getRowId={(row) => row.id}
+        onRowClick={(row) => router.push(`/dashboard/help/tickets/${row.id}`)}
+        caption={lang === "ar" ? "جدول تذاكر الدعم" : "Support tickets table"}
+        emptyTitle={lang === "ar" ? "لا توجد تذاكر" : "No tickets found"}
+        emptyDescription={
+          lang === "ar"
+            ? "لا توجد تذاكر مطابقة للتصفية الحالية."
+            : "No tickets match the current filters."
+        }
+      />
 
       {/* Pagination */}
       {totalPages > 1 && (

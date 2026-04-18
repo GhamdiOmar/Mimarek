@@ -25,9 +25,25 @@ export const authConfig = {
           return Response.redirect(new URL("/dashboard/onboarding", nextUrl));
         }
 
+        // Layer 2 audience gate (CLAUDE.md § 8.3) — system users may only visit
+        // admin subtree + a short shared-route allowlist. Every tenant route calls
+        // tenant-scoped server actions that Layer 3 rejects for system roles; if
+        // we let the page render it would throw a 500. Redirect before that.
+        const role = (auth?.user as any)?.role;
+        const isSystemRole = role === "SYSTEM_ADMIN" || role === "SYSTEM_SUPPORT";
+        if (isSystemRole) {
+          const p = nextUrl.pathname;
+          const systemAllowed =
+            p.startsWith("/dashboard/admin") ||
+            p === "/dashboard/more" ||
+            p.startsWith("/dashboard/notifications");
+          if (!systemAllowed) {
+            return Response.redirect(new URL("/dashboard/admin", nextUrl));
+          }
+        }
+
         // Subscription enforcement — redirect expired/unpaid to billing page
         const subscriptionStatus = (auth?.user as any)?.subscriptionStatus;
-        const isSystemRole = ["SYSTEM_ADMIN", "SYSTEM_SUPPORT"].includes((auth?.user as any)?.role);
 
         // System roles bypass subscription checks (Mimaric platform staff)
         if (!isSystemRole && subscriptionStatus) {

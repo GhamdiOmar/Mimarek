@@ -1,14 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { Button, Input } from "@repo/ui";
+import { Button, Input, DirectionalIcon } from "@repo/ui";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import {
   Globe,
   Building2,
   ArrowRight,
-  ArrowLeft,
   Loader2,
   ShieldCheck,
   AlertTriangle,
@@ -154,7 +153,7 @@ export default function InviteAcceptPage() {
             © 2026 Mimaric PropTech
           </p>
         </div>
-        <div className="absolute -bottom-10 -right-20 opacity-10 transform rotate-3">
+        <div className="absolute -bottom-10 -end-20 opacity-10 transform rotate-3">
           <Building2 className="h-[400px] w-[400px] text-secondary" />
         </div>
       </div>
@@ -339,11 +338,7 @@ export default function InviteAcceptPage() {
                   ) : (
                     <>
                       {lang === "ar" ? "قبول والانضمام" : "Accept & Join"}
-                      {lang === "ar" ? (
-                        <ArrowLeft className="mr-2" />
-                      ) : (
-                        <ArrowRight className="ml-2" />
-                      )}
+                      <DirectionalIcon icon={ArrowRight} className="ms-2" />
                     </>
                   )}
                 </Button>

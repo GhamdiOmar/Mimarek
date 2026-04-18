@@ -22,7 +22,7 @@ export async function updateUnit(unitId: string, data: any) {
     data,
   });
 
-  revalidatePath("/dashboard/properties");
+  revalidatePath("/dashboard/units");
   return JSON.parse(JSON.stringify(updated));
 }
 
@@ -53,7 +53,7 @@ export async function massUpdateUnits(
     )
   );
 
-  revalidatePath("/dashboard/properties");
+  revalidatePath("/dashboard/units");
   return JSON.parse(JSON.stringify(results));
 }
 
@@ -97,7 +97,7 @@ export async function createUnit(data: {
     },
   });
 
-  revalidatePath("/dashboard/properties");
+  revalidatePath("/dashboard/units");
   return JSON.parse(JSON.stringify(unit));
 }
 
@@ -112,7 +112,7 @@ export async function deleteUnit(unitId: string) {
   }
 
   await db.unit.delete({ where: { id: unitId } });
-  revalidatePath("/dashboard/properties");
+  revalidatePath("/dashboard/units");
 }
 
 export async function getUnitFinancialSummary(unitId: string) {

@@ -25,14 +25,10 @@ const nextConfig = {
 
   async redirects() {
     return [
-      { source: "/dashboard/properties", destination: "/dashboard/units", permanent: true },
-      { source: "/dashboard/properties/:path*", destination: "/dashboard/units/:path*", permanent: true },
       { source: "/dashboard/sales", destination: "/dashboard/deals", permanent: true },
       { source: "/dashboard/sales/:path*", destination: "/dashboard/deals", permanent: true },
       { source: "/dashboard/rentals", destination: "/dashboard/contracts", permanent: true },
       { source: "/dashboard/rentals/:path*", destination: "/dashboard/contracts", permanent: true },
-      { source: "/dashboard/finance", destination: "/dashboard/payments", permanent: true },
-      { source: "/dashboard/finance/:path*", destination: "/dashboard/payments", permanent: true },
     ];
   },
 };

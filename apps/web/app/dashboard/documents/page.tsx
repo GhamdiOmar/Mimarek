@@ -342,7 +342,7 @@ export default function DocumentVaultPage() {
         {/* Categories Sidebar */}
         <div className="lg:col-span-1 space-y-4">
            <div className="bg-card rounded-md border border-border p-6 shadow-sm">
-              <h3 className="text-xs font-bold uppercase tracking-widest text-primary mb-4 font-latin">{lang === "ar" ? "التصنيفات" : "Categories"}</h3>
+              <h2 className="text-xs font-bold uppercase tracking-widest text-primary mb-4 font-latin">{lang === "ar" ? "التصنيفات" : "Categories"}</h2>
               <div className="space-y-1">
                  {[
                    { id: "all", label: { ar: "جميع الوثائق", en: "All Documents" } },
@@ -370,8 +370,8 @@ export default function DocumentVaultPage() {
            </div>
            
            <div className="bg-primary-deep p-6 rounded-md text-white shadow-lg overflow-hidden relative">
-              <FilePdf className="h-12 w-12 absolute -bottom-4 -right-4 opacity-10 rotate-12" />
-              <p className="text-[10px] font-bold uppercase tracking-widest text-secondary font-latin">Storage Usage</p>
+              <FilePdf className="h-12 w-12 absolute -bottom-4 -end-4 opacity-10 rotate-12" />
+              <p className="text-[10px] font-bold uppercase tracking-widest text-white font-latin">Storage Usage</p>
               <div className="mt-4 space-y-2">
                  <div className="h-1.5 w-full bg-card/10 rounded-full overflow-hidden">
                     <div className="h-full bg-secondary w-3/4 rounded-full" />
@@ -386,15 +386,15 @@ export default function DocumentVaultPage() {
            {/* Filters */}
            <div className="bg-card rounded-md border border-border p-4 flex flex-col md:flex-row gap-4 items-center justify-between shadow-sm">
              <div className="relative w-full md:w-80 group">
-                <Search className="h-[18px] w-[18px] absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-secondary transition-colors" />
-                <input 
-                  type="text" 
+                <Search className="h-[18px] w-[18px] absolute end-3 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-secondary transition-colors" />
+                <input
+                  type="text"
                   placeholder={lang === "ar" ? "بحث في الوثائق..." : "Search documents..."}
-                  className="w-full bg-muted/30 border-transparent rounded py-2 pr-10 pl-4 text-sm outline-none focus:bg-card focus:border-border transition-all"
+                  className="w-full bg-muted/30 border-transparent rounded py-2 pe-10 ps-4 text-sm outline-none focus:bg-card focus:border-border transition-all"
                 />
              </div>
              <div className="flex items-center gap-2">
-                <Button variant="secondary" size="sm" className="h-8 w-8 p-0">
+                <Button variant="secondary" size="sm" className="h-8 w-8 p-0" aria-label={lang === "ar" ? "تحديد" : "Select"}>
                    <SquareDashedMousePointer className="h-[18px] w-[18px]" />
                 </Button>
                 <div className="h-4 w-px bg-border mx-1" />
@@ -422,14 +422,32 @@ export default function DocumentVaultPage() {
                  </div>
                ))}
              </div>
+           ) : docs.filter((doc) => activeCategory === "all" || doc.category === activeCategory).length === 0 ? (
+             <EmptyState
+               icon={<CloudUpload className="h-12 w-12" aria-hidden="true" />}
+               title={lang === "ar" ? "لا توجد وثائق بعد" : "No documents yet"}
+               description={
+                 lang === "ar"
+                   ? "ارفع المخططات والعقود والمستندات في مكان واحد آمن."
+                   : "Upload blueprints, contracts, and records in one safe place."
+               }
+               action={
+                 canWrite ? (
+                   <Button
+                     onClick={triggerMobileUpload}
+                     style={{ display: "inline-flex" }}
+                     className="gap-2"
+                   >
+                     <CloudUpload className="h-[18px] w-[18px]" />
+                     {lang === "ar" ? "رفع وثيقة" : "Upload document"}
+                   </Button>
+                 ) : undefined
+               }
+               helpHref="/dashboard/help#documents"
+               helpLabel={lang === "ar" ? "تعرّف على خزنة الوثائق" : "Learn about the vault"}
+             />
            ) : (
            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {docs.filter((doc) => activeCategory === "all" || doc.category === activeCategory).length === 0 && (
-                <div className="col-span-full py-20 text-center text-muted-foreground">
-                  <CloudUpload className="h-12 w-12 mx-auto opacity-20 mb-4" />
-                  <p>{lang === "ar" ? "لا توجد وثائق حالياً. ابدأ برفع أول وثيقة." : "No documents yet. Start by uploading one."}</p>
-                </div>
-              )}
               {docs.filter((doc) => activeCategory === "all" || doc.category === activeCategory).map((doc) => (
                 <div key={doc.id} className="bg-card rounded-md border border-border p-5 hover:shadow-md transition-all group relative border-b-4 border-b-transparent hover:border-b-secondary">
                    <div className="flex items-start justify-between mb-4">
@@ -439,13 +457,13 @@ export default function DocumentVaultPage() {
                       )}>
                          {['pdf'].includes(doc.type?.toLowerCase()) ? <FilePdf className="h-7 w-7" /> : ['jpg', 'png', 'jpeg'].includes(doc.type?.toLowerCase()) ? <FileImage className="h-7 w-7" /> : <FileText className="h-7 w-7" />}
                       </div>
-                      <button className="text-muted-foreground hover:text-primary transition-colors">
+                      <button className="text-muted-foreground hover:text-primary transition-colors" aria-label={lang === "ar" ? "المزيد" : "More"}>
                          <MoreVertical className="h-5 w-5" />
                       </button>
                    </div>
                    
                    <div className="space-y-1">
-                      <h4 className="text-sm font-bold text-primary truncate">{doc.name}</h4>
+                      <h3 className="text-sm font-bold text-primary truncate">{doc.name}</h3>
                       <p className="text-[10px] text-muted-foreground font-latin">{new Date(doc.createdAt).toLocaleDateString()}</p>
                    </div>
 

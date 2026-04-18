@@ -4,6 +4,7 @@ import { IBM_Plex_Sans_Arabic, DM_Sans } from 'next/font/google';
 import { ThemeProvider } from "../components/ThemeProvider";
 import { Toaster } from "@repo/ui";
 import { AnalyticsProvider } from "../components/AnalyticsProvider";
+import { AxeDevAudit } from "../components/AxeDevAudit";
 import { db } from "@repo/db";
 import { cache } from "react";
 
@@ -96,6 +97,7 @@ export default async function RootLayout({
     <html lang="ar" dir="rtl" className={`${ibmPlexArabic.variable} ${dmSans.variable}`} suppressHydrationWarning>
       <body className="font-ibm-plex-arabic antialiased text-body">
         <ThemeProvider>
+          <AxeDevAudit />
           {children}
           <Toaster />
         </ThemeProvider>

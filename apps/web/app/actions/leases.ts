@@ -114,7 +114,7 @@ export async function createLease(data: {
   logAuditEvent({ userId: session.userId, userEmail: session.email, userRole: session.role, action: "CREATE", resource: "Lease", resourceId: lease.id, organizationId: session.organizationId });
 
   revalidatePath("/dashboard/contracts");
-  revalidatePath("/dashboard/properties");
+  revalidatePath("/dashboard/units");
   return JSON.parse(JSON.stringify(lease));
 }
 
@@ -176,5 +176,5 @@ export async function terminateLease(leaseId: string) {
   logAuditEvent({ userId: session.userId, userEmail: session.email, userRole: session.role, action: "UPDATE", resource: "Lease", resourceId: leaseId, metadata: { newStatus: "TERMINATED" }, organizationId: session.organizationId });
 
   revalidatePath("/dashboard/contracts");
-  revalidatePath("/dashboard/properties");
+  revalidatePath("/dashboard/units");
 }

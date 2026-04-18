@@ -296,7 +296,7 @@ export default function TeamManagementPage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-bold text-foreground">{lang === "ar" ? "دعوة عضو جديد" : "Invite New Member"}</h3>
-                <button onClick={() => setShowInvite(false)}><X className="h-[18px] w-[18px] text-muted-foreground" /></button>
+                <button onClick={() => setShowInvite(false)} aria-label={lang === "ar" ? "إغلاق" : "Close"}><X className="h-[18px] w-[18px] text-muted-foreground" /></button>
               </div>
               {inviteError && (
                 <div className="p-3 bg-destructive/10 border border-destructive/30 text-destructive text-sm rounded-lg">
@@ -379,7 +379,7 @@ export default function TeamManagementPage() {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button variant="secondary" size="icon" className="h-8 w-8 rounded shadow-sm hover:text-destructive" onClick={() => handleRemove(member.id, member.name)}>
+                      <Button variant="secondary" size="icon" className="h-8 w-8 rounded shadow-sm hover:text-destructive" onClick={() => handleRemove(member.id, member.name)} aria-label={lang === "ar" ? "إزالة" : "Remove"}>
                         <Trash2 className="h-[18px] w-[18px]" />
                       </Button>
                     </div>

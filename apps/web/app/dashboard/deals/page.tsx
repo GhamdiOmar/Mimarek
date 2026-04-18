@@ -39,6 +39,7 @@ import {
   BottomSheet,
   Alert,
   AlertDescription,
+  DirectionalIcon,
   cn,
 } from "@repo/ui";
 import { useLanguage } from "../../../components/LanguageProvider";
@@ -68,7 +69,7 @@ type Reservation = {
   unit: {
     id: string;
     number: string;
-    building: { name: string; project: { name: string } };
+    buildingName: string | null;
   };
 };
 
@@ -617,6 +618,7 @@ export default function DealsPage() {
             <button
               onClick={() => setSearch("")}
               className="absolute top-1/2 -translate-y-1/2 end-3 text-gray-400 hover:text-gray-600"
+              aria-label={lang === "ar" ? "مسح البحث" : "Clear search"}
             >
               <X className="w-4 h-4" />
             </button>
@@ -631,9 +633,27 @@ export default function DealsPage() {
             <Loader2 className="w-6 h-6 animate-spin text-purple-600" />
           </div>
         ) : filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-gray-500 gap-2">
-            <p className="text-sm">{lang === "ar" ? "لا توجد صفقات" : "No deals found"}</p>
-          </div>
+          <EmptyState
+            icon={<Handshake className="h-12 w-12" aria-hidden="true" />}
+            title={lang === "ar" ? "لا توجد صفقات بعد" : "No deals yet"}
+            description={
+              lang === "ar"
+                ? "أطلق عربون الحجز وتابع الصفقة حتى التحويل إلى عقد."
+                : "Reserve a unit and follow the deal through to contract."
+            }
+            action={
+              <Button
+                onClick={openCreate}
+                style={{ display: "inline-flex" }}
+                className="gap-2"
+              >
+                <Plus className="h-[18px] w-[18px]" />
+                {lang === "ar" ? "إنشاء صفقة" : "Create deal"}
+              </Button>
+            }
+            helpHref="/dashboard/help#deals"
+            helpLabel={lang === "ar" ? "تعرّف على الصفقات" : "Learn about deals"}
+          />
         ) : (
           <Table>
             <TableHeader>
@@ -654,7 +674,7 @@ export default function DealsPage() {
                   <TableCell>
                     <div className="text-sm">
                       <p className="font-medium">{lang === "ar" ? "وحدة" : "Unit"} {deal.unit.number}</p>
-                      <p className="text-gray-500 text-xs">{deal.unit.building?.project?.name ?? "—"}</p>
+                      <p className="text-gray-500 text-xs">{deal.unit.buildingName ?? "—"}</p>
                     </div>
                   </TableCell>
                   <TableCell>{SAR(deal.amount)}</TableCell>
@@ -675,6 +695,7 @@ export default function DealsPage() {
                         onClick={() => setDetailDeal(deal)}
                         className="text-gray-400 hover:text-gray-700 transition-colors"
                         title={lang === "ar" ? "عرض التفاصيل" : "View Details"}
+                        aria-label={lang === "ar" ? "عرض التفاصيل" : "View Details"}
                       >
                         <Eye className="w-4 h-4" />
                       </button>
@@ -683,6 +704,7 @@ export default function DealsPage() {
                           onClick={() => handleConfirmDeal(deal.id)}
                           className="text-gray-400 hover:text-green-600 transition-colors"
                           title={lang === "ar" ? "تأكيد الصفقة" : "Confirm Deal"}
+                          aria-label={lang === "ar" ? "تأكيد الصفقة" : "Confirm Deal"}
                         >
                           <CheckCircle className="w-4 h-4" />
                         </button>
@@ -693,7 +715,7 @@ export default function DealsPage() {
                           className="inline-flex items-center gap-1 text-xs text-purple-600 hover:text-purple-800 font-medium"
                         >
                           {lang === "ar" ? "تحويل لعقد" : "Convert to Contract"}
-                          <ArrowRight className="w-3 h-3" />
+                          <DirectionalIcon icon={ArrowRight} className="w-3 h-3" />
                         </Link>
                       )}
                       {can("deals:write") &&
@@ -702,6 +724,7 @@ export default function DealsPage() {
                             onClick={() => setCancelDeal(deal)}
                             className="text-gray-400 hover:text-red-600 transition-colors"
                             title={lang === "ar" ? "إلغاء الصفقة" : "Cancel Deal"}
+                            aria-label={lang === "ar" ? "إلغاء الصفقة" : "Cancel Deal"}
                           >
                             <Ban className="w-4 h-4" />
                           </button>
@@ -911,8 +934,8 @@ export default function DealsPage() {
                   </p>
                 </div>
                 <div>
-                  <p className="text-gray-500 text-xs">{lang === "ar" ? "المشروع" : "Project"}</p>
-                  <p className="font-medium">{detailDeal.unit.building?.project?.name ?? "—"}</p>
+                  <p className="text-gray-500 text-xs">{lang === "ar" ? "المبنى" : "Building"}</p>
+                  <p className="font-medium">{detailDeal.unit.buildingName ?? "—"}</p>
                 </div>
                 <div>
                   <p className="text-gray-500 text-xs">{lang === "ar" ? "تاريخ الإنشاء" : "Created"}</p>

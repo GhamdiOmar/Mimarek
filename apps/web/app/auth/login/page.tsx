@@ -1,10 +1,10 @@
 "use client";
 
 import * as React from "react";
-import { Button, Input } from "@repo/ui";
+import { Button, Input, DirectionalIcon } from "@repo/ui";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Globe, ArrowRight, ArrowLeft, Loader2, Eye, EyeOff } from "lucide-react";
+import { Globe, ArrowRight, Loader2, Eye, EyeOff } from "lucide-react";
 import { MimaricLogo } from "../../../components/brand/MimaricLogo";
 import { ThemeToggle } from "../../../components/ThemeToggle";
 import { loginAction } from "../../actions/auth";
@@ -86,7 +86,7 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen w-full flex-col lg:flex-row" dir={lang === "ar" ? "rtl" : "ltr"}>
       {/* Brand Panel */}
-      <div className="relative hidden w-full mesh-bg lg:flex lg:w-1/2 xl:w-5/12 overflow-hidden">
+      <aside className="relative hidden w-full mesh-bg lg:flex lg:w-1/2 xl:w-5/12 overflow-hidden" aria-label={lang === "ar" ? "لوحة العلامة التجارية" : "Brand panel"}>
         {/* Subtle pattern */}
         <div className="absolute inset-0 opacity-[0.03]">
           <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
@@ -121,10 +121,10 @@ export default function LoginPage() {
             © 2026 Mimaric PropTech
           </p>
         </div>
-      </div>
+      </aside>
 
       {/* Form Area */}
-      <div className="flex w-full flex-1 flex-col bg-background lg:w-1/2 xl:w-7/12">
+      <main className="flex w-full flex-1 flex-col bg-background lg:w-1/2 xl:w-7/12">
         {/* Top bar */}
         <div className="flex items-center justify-between p-5 lg:px-10">
           <div className="lg:hidden dark:brightness-0 dark:invert">
@@ -164,11 +164,14 @@ export default function LoginPage() {
               )}
 
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-foreground">
+                <label htmlFor="login-email" className="text-sm font-medium text-foreground">
                   {lang === "ar" ? "البريد الإلكتروني" : "Email"}
                 </label>
                 <Input
+                  id="login-email"
+                  name="email"
                   type="email"
+                  autoComplete="email"
                   placeholder="name@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -179,7 +182,7 @@ export default function LoginPage() {
 
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium text-foreground">
+                  <label htmlFor="login-password" className="text-sm font-medium text-foreground">
                     {lang === "ar" ? "كلمة المرور" : "Password"}
                   </label>
                   <Link href="/auth/forgot-password" className="text-xs font-medium text-primary hover:underline">
@@ -188,7 +191,10 @@ export default function LoginPage() {
                 </div>
                 <div className="relative">
                   <Input
+                    id="login-password"
+                    name="password"
                     type={showPassword ? "text" : "password"}
+                    autoComplete="current-password"
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -200,6 +206,12 @@ export default function LoginPage() {
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute end-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                     tabIndex={-1}
+                    aria-label={
+                      showPassword
+                        ? (lang === "ar" ? "إخفاء كلمة المرور" : "Hide password")
+                        : (lang === "ar" ? "إظهار كلمة المرور" : "Show password")
+                    }
+                    aria-pressed={showPassword}
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -216,7 +228,7 @@ export default function LoginPage() {
                 ) : (
                   <>
                     {lang === "ar" ? "تسجيل الدخول" : "Sign in"}
-                    {lang === "ar" ? <ArrowLeft className="h-4 w-4 icon-directional" /> : <ArrowRight className="h-4 w-4 icon-directional" />}
+                    <DirectionalIcon icon={ArrowRight} className="h-4 w-4" />
                   </>
                 )}
               </Button>
@@ -230,7 +242,7 @@ export default function LoginPage() {
             </p>
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

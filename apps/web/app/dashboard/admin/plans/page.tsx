@@ -4,7 +4,6 @@ import { useLanguage } from "../../../../components/LanguageProvider";
 import * as React from "react";
 import {
   ArrowLeft,
-  ArrowRight,
   Plus,
   Pencil,
   Eye,
@@ -15,7 +14,7 @@ import {
   AlertTriangle,
   CheckCircle2,
 } from "lucide-react";
-import { Button, Card, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, ResponsiveDialog } from "@repo/ui";
+import { Button, Card, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, ResponsiveDialog, DirectionalIcon } from "@repo/ui";
 import Link from "next/link";
 import { adminGetAllPlans, adminUpsertPlan } from "../../../actions/billing";
 
@@ -304,11 +303,7 @@ export default function AdminPlansPage() {
           href="/dashboard/admin"
           className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1 mb-4 transition-colors"
         >
-          {lang === "ar" ? (
-            <ArrowRight className="w-4 h-4" />
-          ) : (
-            <ArrowLeft className="w-4 h-4" />
-          )}
+          <DirectionalIcon icon={ArrowLeft} className="w-4 h-4" />
           {t.backToAdmin}
         </Link>
       </div>

@@ -5,7 +5,7 @@ import {
   LayoutGrid, FolderKanban, Building2, Users, TrendingUp, KeyRound,
   MapPin, Compass, Receipt, Wrench, FileText, CreditCard, ShieldCheck,
   Settings, PanelLeftClose, PanelLeftOpen, HelpCircle, X, FolderOpen,
-  SearchCheck, TicketCheck,
+  SearchCheck, TicketCheck, ClipboardList, Wallet, Gauge,
 } from "lucide-react";
 import { cn } from "@repo/ui/lib/utils";
 import Link from "next/link";
@@ -19,6 +19,7 @@ const iconMap: Record<string, React.ElementType> = {
   LayoutGrid, FolderKanban, Building2, Users, TrendingUp, KeyRound,
   MapPin, Compass, Receipt, Wrench, FileText, CreditCard, ShieldCheck,
   Settings, FolderOpen, SearchCheck, TicketCheck,
+  ClipboardList, Wallet, Gauge,
 };
 
 interface AppSidebarProps {
@@ -36,6 +37,7 @@ export function AppSidebar({ isCollapsed, setIsCollapsed, mobileOpen, setMobileO
   const isPlatformUser = isSystemRole(userRole);
 
   const filteredItems = navItems.filter((item) => {
+    if (item.hiddenFromNav) return false;
     if (item.permission && !hasPermission(userRole, item.permission)) return false;
     if (item.audience === "tenant" && isPlatformUser) return false;
     if (item.audience === "platform" && !isPlatformUser) return false;

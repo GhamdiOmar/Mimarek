@@ -3,7 +3,7 @@
 import * as React from "react";
 import { ArrowLeft, Search as SearchIcon, Users, Building2, FileText, X } from "lucide-react";
 import Link from "next/link";
-import { BottomSheet } from "@repo/ui";
+import { BottomSheet, DirectionalIcon } from "@repo/ui";
 import { cn } from "@repo/ui/lib/utils";
 import { useLanguage } from "../LanguageProvider";
 import { globalSearch } from "../../app/actions/search";
@@ -76,7 +76,7 @@ export function MobileSearchSheet({ open, onOpenChange }: MobileSearchSheetProps
             className="flex h-11 w-11 items-center justify-center rounded-md text-muted-foreground hover:bg-muted/40 hover:text-foreground rtl:scale-x-[-1]"
             aria-label={lang === "ar" ? "إغلاق" : "Close"}
           >
-            <ArrowLeft className="h-5 w-5" />
+            <DirectionalIcon icon={ArrowLeft} className="h-5 w-5" />
           </button>
           <div className="relative flex-1">
             <SearchIcon className="h-4 w-4 absolute start-3 top-1/2 -translate-y-1/2 text-muted-foreground" />

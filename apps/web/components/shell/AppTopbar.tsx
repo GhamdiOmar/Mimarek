@@ -3,7 +3,7 @@
 import * as React from "react";
 import { Menu, Search, Bell, Globe, User, Settings, ShieldCheck, HelpCircle, LogOut } from "lucide-react";
 import { cn } from "@repo/ui/lib/utils";
-import { Popover, PopoverTrigger, PopoverContent } from "@repo/ui";
+import { Popover, PopoverTrigger, PopoverContent, DirectionalIcon } from "@repo/ui";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut as nextAuthSignOut } from "next-auth/react";
@@ -287,7 +287,7 @@ export function AppTopbar({ onMenuClick }: { onMenuClick: () => void }) {
                 onClick={() => nextAuthSignOut({ callbackUrl: "/auth/login" })}
                 className="flex items-center gap-2.5 px-4 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors w-full"
               >
-                <LogOut className="h-4 w-4" />
+                <DirectionalIcon icon={LogOut} className="h-4 w-4" />
                 <span>{lang === "ar" ? "تسجيل الخروج" : "Sign Out"}</span>
               </button>
             </div>

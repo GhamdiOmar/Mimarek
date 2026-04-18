@@ -10,12 +10,11 @@ import {
   Sparkle,
   Building2,
   ArrowLeft,
-  ArrowRight,
   Tag,
   X,
   Loader2,
 } from "lucide-react";
-import { Button, AppBar, SARAmount, Skeleton } from "@repo/ui";
+import { Button, AppBar, SARAmount, Skeleton, DirectionalIcon } from "@repo/ui";
 import Link from "next/link";
 import { getPlans, subscribeToPlan, getCurrentSubscription } from "../../../actions/billing";
 import { validateCoupon } from "../../../actions/coupons";
@@ -366,7 +365,7 @@ export default function PlansPage() {
       {/* Back + Header */}
       <div>
         <Link href="/dashboard/billing" className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 mb-4">
-          {lang === "ar" ? <ArrowRight className="w-4 h-4" /> : <ArrowLeft className="w-4 h-4" />}
+          <DirectionalIcon icon={ArrowLeft} className="w-4 h-4" />
           {t.backToBilling}
         </Link>
         <h1 className="text-2xl font-bold text-foreground">{t.title}</h1>
@@ -421,6 +420,7 @@ export default function PlansPage() {
               onClick={handleRemoveCoupon}
               className="p-1 rounded-md hover:bg-green-100 dark:hover:bg-green-800/40 text-green-600 dark:text-green-400"
               title={t.removeCoupon}
+              aria-label={t.removeCoupon}
             >
               <X className="w-4 h-4" />
             </button>

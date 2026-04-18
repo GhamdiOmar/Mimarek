@@ -581,7 +581,7 @@ export default function SeoSettingsPage() {
               disabled={saving === "metadata"}
               style={{ display: "inline-flex" }}
             >
-              <Save className="h-4 w-4 mr-2 rtl:ml-2 rtl:mr-0" />
+              <Save className="h-4 w-4 me-2" />
               {saving === "metadata" ? (lang === "ar" ? "جارٍ الحفظ..." : "Saving...") : (lang === "ar" ? "حفظ الميتاداتا" : "Save Metadata")}
             </Button>
           </Card>
@@ -709,7 +709,7 @@ export default function SeoSettingsPage() {
               disabled={saving === "analytics"}
               style={{ display: "inline-flex" }}
             >
-              <Save className="h-4 w-4 mr-2 rtl:ml-2 rtl:mr-0" />
+              <Save className="h-4 w-4 me-2" />
               {saving === "analytics" ? (lang === "ar" ? "جارٍ الحفظ..." : "Saving...") : (lang === "ar" ? "حفظ إعدادات التحليلات" : "Save Analytics Settings")}
             </Button>
           </Card>
@@ -764,7 +764,7 @@ export default function SeoSettingsPage() {
               disabled={saving === "verification"}
               style={{ display: "inline-flex" }}
             >
-              <Save className="h-4 w-4 mr-2 rtl:ml-2 rtl:mr-0" />
+              <Save className="h-4 w-4 me-2" />
               {saving === "verification" ? (lang === "ar" ? "جارٍ الحفظ..." : "Saving...") : (lang === "ar" ? "حفظ أكواد التحقق" : "Save Verification Codes")}
             </Button>
           </Card>
@@ -816,7 +816,7 @@ export default function SeoSettingsPage() {
                     {rule.allow.map((p, pi) => (
                       <div key={pi} className="flex gap-2">
                         <Input value={p} onChange={(e) => updatePath(ri, "allow", pi, e.target.value)} dir="ltr" className="flex-1" />
-                        <button onClick={() => removePath(ri, "allow", pi)} className="text-destructive hover:text-destructive/80">
+                        <button onClick={() => removePath(ri, "allow", pi)} className="text-destructive hover:text-destructive/80" aria-label={lang === "ar" ? "حذف" : "Delete"}>
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
@@ -833,7 +833,7 @@ export default function SeoSettingsPage() {
                     {rule.disallow.map((p, pi) => (
                       <div key={pi} className="flex gap-2">
                         <Input value={p} onChange={(e) => updatePath(ri, "disallow", pi, e.target.value)} dir="ltr" className="flex-1" />
-                        <button onClick={() => removePath(ri, "disallow", pi)} className="text-destructive hover:text-destructive/80">
+                        <button onClick={() => removePath(ri, "disallow", pi)} className="text-destructive hover:text-destructive/80" aria-label={lang === "ar" ? "حذف" : "Delete"}>
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
@@ -847,7 +847,7 @@ export default function SeoSettingsPage() {
                 disabled={saving === "robots"}
                 style={{ display: "inline-flex" }}
               >
-                <Save className="h-4 w-4 mr-2 rtl:ml-2 rtl:mr-0" />
+                <Save className="h-4 w-4 me-2" />
                 {saving === "robots" ? (lang === "ar" ? "جارٍ الحفظ..." : "Saving...") : (lang === "ar" ? "حفظ robots.txt" : "Save robots.txt")}
               </Button>
             </Card>
@@ -907,7 +907,7 @@ export default function SeoSettingsPage() {
               disabled={saving === "schema"}
               style={{ display: "inline-flex" }}
             >
-              <Save className="h-4 w-4 mr-2 rtl:ml-2 rtl:mr-0" />
+              <Save className="h-4 w-4 me-2" />
               {saving === "schema" ? (lang === "ar" ? "جارٍ الحفظ..." : "Saving...") : (lang === "ar" ? "حفظ بيانات Schema" : "Save Schema Data")}
             </Button>
           </Card>

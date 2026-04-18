@@ -261,7 +261,7 @@ export async function generateWorkOrdersFromPlans() {
     created++;
   }
 
-  revalidatePath("/dashboard/maintenance");
+  revalidatePath("/dashboard/maintenance/tickets");
   revalidatePath("/dashboard/maintenance/preventive");
   return { created, total: duePlans.length };
 }

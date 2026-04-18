@@ -330,7 +330,7 @@ export async function updateContractStatus(
   logAuditEvent({ userId: session.userId, userEmail: session.email, userRole: session.role, action: "UPDATE", resource: "Contract", resourceId: contractId, metadata: { previousStatus: contract.status, newStatus: status }, organizationId: session.organizationId });
 
   revalidatePath("/dashboard/contracts");
-  revalidatePath("/dashboard/properties");
+  revalidatePath("/dashboard/units");
   revalidatePath("/dashboard/contracts");
   return JSON.parse(JSON.stringify(updated));
 }
@@ -366,7 +366,7 @@ export async function deleteContract(contractId: string) {
   logAuditEvent({ userId: session.userId, userEmail: session.email, userRole: session.role, action: "DELETE", resource: "Contract", resourceId: contractId, organizationId: session.organizationId });
 
   revalidatePath("/dashboard/contracts");
-  revalidatePath("/dashboard/properties");
+  revalidatePath("/dashboard/units");
 }
 
 // ─── RED: Contract Amount & Signature Enhancements ──────────────────────────

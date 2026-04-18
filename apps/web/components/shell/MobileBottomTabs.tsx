@@ -36,7 +36,6 @@ export function MobileBottomTabs({ userRole }: MobileBottomTabsProps) {
       icon: Building2,
       permission: "properties:read",
       tenantOnly: true,
-      matchPrefixes: ["/dashboard/properties"],
     },
     {
       key: "tasks",

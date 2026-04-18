@@ -23,6 +23,7 @@ import {
   Badge,
   Skeleton,
   EmptyState,
+  DirectionalIcon,
 } from "@repo/ui";
 import Link from "next/link";
 import { useLanguage } from "../../../components/LanguageProvider";
@@ -291,7 +292,7 @@ export default function BillingDashboardPage() {
                   className="text-xs text-primary hover:underline flex items-center gap-1"
                 >
                   {t.viewAll}
-                  <ChevronRight className="w-3 h-3 rtl:scale-x-[-1]" />
+                  <DirectionalIcon icon={ChevronRight} className="w-3 h-3" />
                 </Link>
               )}
             </div>
@@ -393,7 +394,7 @@ export default function BillingDashboardPage() {
           {error && (
             <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
               <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
-              <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600">
+              <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600" aria-label={lang === "ar" ? "إغلاق" : "Dismiss"}>
                 <X className="h-4 w-4" />
               </button>
             </div>
@@ -518,7 +519,7 @@ export default function BillingDashboardPage() {
                   <CardTitle className="text-lg">{t.recentInvoices}</CardTitle>
                 </div>
                 <Link href="/dashboard/billing/invoices" className="text-sm text-primary hover:underline flex items-center gap-1">
-                  {t.viewAll} <ChevronRight className="w-3 h-3" />
+                  {t.viewAll} <DirectionalIcon icon={ChevronRight} className="w-3 h-3" />
                 </Link>
               </CardHeader>
               <CardContent className="pt-6">

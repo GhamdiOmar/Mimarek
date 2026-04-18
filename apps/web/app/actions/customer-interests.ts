@@ -45,7 +45,7 @@ export async function addCustomerInterest(
   });
 
   revalidatePath("/dashboard/crm");
-  revalidatePath("/dashboard/properties");
+  revalidatePath("/dashboard/units");
   return JSON.parse(JSON.stringify(interest));
 }
 
@@ -78,7 +78,7 @@ export async function dropCustomerInterest(interestId: string) {
   });
 
   revalidatePath("/dashboard/crm");
-  revalidatePath("/dashboard/properties");
+  revalidatePath("/dashboard/units");
   return JSON.parse(JSON.stringify(updated));
 }
 
@@ -131,7 +131,7 @@ export async function convertInterestToDeal(
 
   revalidatePath("/dashboard/crm");
   revalidatePath("/dashboard/deals");
-  revalidatePath("/dashboard/properties");
+  revalidatePath("/dashboard/units");
   return JSON.parse(JSON.stringify(reservation));
 }
 

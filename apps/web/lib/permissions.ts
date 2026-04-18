@@ -126,9 +126,46 @@ const ALL_PERMISSIONS: Permission[] = [
 
 // ─── System Permissions (Mimaric platform staff only) ────────────────────────
 
-const SYSTEM_ONLY_PERMISSIONS: Permission[] = [
+export const SYSTEM_ONLY_PERMISSIONS: Permission[] = [
   "billing:admin",
   "help:manage_tickets",
+];
+
+/**
+ * Tenant-scoped permissions — actions gated by these MUST reject platform users
+ * (SYSTEM_ADMIN / SYSTEM_SUPPORT) even though their role grants the permission.
+ *
+ * This is Layer 3 of the audience-separation rule (CLAUDE.md § 8.3). Permission
+ * alone NEVER gates audience, because system roles are deliberately seeded with
+ * ALL_PERMISSIONS for support-tool access. Anything touching tenant customer
+ * data must check audience here.
+ *
+ * Not listed (shared across audiences): dashboard:read, notifications:read,
+ * help:read, help:create_ticket — platform staff legitimately use these for
+ * their own account surfaces.
+ */
+export const TENANT_SCOPED_PERMISSIONS: Permission[] = [
+  "crm:read", "crm:write", "crm:delete", "crm:export",
+  "customers:read", "customers:read_pii", "customers:write", "customers:delete", "customers:export",
+  "properties:read", "properties:write", "properties:delete",
+  "deals:read", "deals:write", "deals:delete",
+  "contracts:read", "contracts:write", "contracts:delete",
+  "leases:read", "leases:write", "leases:delete",
+  "payments:read", "payments:write",
+  "maintenance:read", "maintenance:write", "maintenance:delete",
+  "preventive_maintenance:read", "preventive_maintenance:write", "preventive_maintenance:delete",
+  "documents:read", "documents:write", "documents:delete",
+  "organization:read", "organization:write",
+  "team:read", "team:write", "team:delete",
+  "reports:read", "reports:export",
+  "audit:read",
+  "billing:read", "billing:write",
+  "help:manage_permissions",
+  // Legacy v2 aliases
+  "units:read", "units:write", "units:delete",
+  "reservations:read", "reservations:write",
+  "finance:read", "finance:write",
+  "pricing:read", "launch:read",
 ];
 
 export const ROLE_PERMISSIONS: Record<string, Permission[]> = {

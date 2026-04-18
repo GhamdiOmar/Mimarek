@@ -1,5 +1,47 @@
 # Changelog — Mimaric PropTech
 
+## [4.0.0] — 2026-04-17 — Design System v2 + Access Model Hardening
+
+**Branch:** `feat/audit-2026-04-mega` (mega-PR, 20 commits).
+
+### Design System v2 (CLAUDE.md § 6 — single source of truth)
+
+- **Foundations:** `DirectionalIcon` wrapper for RTL-aware chevrons/arrows; `ThemeProvider` now respects system preference (`enableSystem=true`); Prisma `UserRole` enum extended with `LEASING` and `FINANCE`; TanStack Table v8 + `@axe-core/react` installed.
+- **Primitives:** Saudi input family (`NationalIdInput`, `CRInput`, `SaudiPhoneInput`, `SARAmountInput`, `HijriDatePicker`, `AddressPicker`), harmonized 8-field `KPICard`, `DateRangePicker`, `LastUpdatedAgo`, `EmptyState`.
+- **Route-segment hygiene:** every `/dashboard/**` route now has `loading.tsx`, `error.tsx`, and `not-found.tsx`; `global-error.tsx` added.
+- **RTL correctness:** logical-CSS sweep across 15 files; `DirectionalIcon` retrofit across 25 call-sites.
+- **Role-based dashboards:** `/dashboard/leasing`, `/dashboard/finance`, `/dashboard/maintenance` built; `/dashboard` and `/dashboard/admin` upgraded with `DateRangePicker` + `LastUpdatedAgo`; real trend server actions replace hardcoded sparklines.
+- **Tables:** TanStack Table v8 rewrite of `packages/ui/DataTable` (multi-sort, column filter, visibility, density toggle, URL-synced state, bulk actions, mobile cards, a11y caption). Migrated: admin tickets, **CRM List view**.
+- **Saudi primitives wired** into CRM/org/contract/payment/admin forms.
+- **Cmd-K palette:** global `⌘K`/`Ctrl+K` opens command palette with routes + top-5 create actions (platform users see routes only — no tenant create actions).
+- **Accessibility:** `@axe-core/react` in dev mode, skip-to-content link, ARIA labels on icon-only buttons, `:focus-visible` rings on `--ring`.
+- **CI guards:** cspell, axe-playwright × 5 dashboards × 2 themes, lhci warn-only baseline.
+
+### Access Model — Tenant vs System (CLAUDE.md § 8)
+
+Layer 1 (nav filter), Layer 2 (route guard), and Layer 3 (server-action audience gate) now all enforce the rule that **platform users (`SYSTEM_ADMIN` / `SYSTEM_SUPPORT`) MUST NOT reach tenant surfaces or data**, and vice versa.
+
+- **Layer 1 fix:** Cmd-K quick actions (new customer / deal / contract / payment / ticket) now hidden for platform users — previously leaked through permission-only filter.
+- **Layer 2 fix:** `DashboardClientLayout` redirects platform users from any tenant route (`/dashboard/crm`, `/dashboard/units`, `/dashboard/deals`, …) to `/dashboard/admin`. Symmetric to the existing admin-side guard.
+- **Layer 3 fix:** `requirePermission` now rejects the wrong audience based on permission taxonomy — `TENANT_SCOPED_PERMISSIONS` and `SYSTEM_ONLY_PERMISSIONS` lists in `lib/permissions.ts` drive the gate. All 31 tenant action files inherit the fix with zero call-site changes.
+- **Docs:** CLAUDE.md §§ 8 (access model) and 9 (test credentials) added as authoritative references.
+
+### Housekeeping
+
+- Dead `/dashboard/properties` route deleted (permanent 308 redirect since v3.0 IA shift) + 10 stale references cleaned up.
+- `/dashboard/help` raw tables reviewed — 4 tables deferred with inline rationale (short-lived audit lists + inline review forms don't benefit from TanStack).
+- 18 unused files + 3 unused deps removed.
+
+### Deferred (follow-up PRs)
+
+- react-hook-form + zod form adoption.
+- DB-backed TanStack saved views (URL-synced state ships this PR).
+- Full Balady district cascade (regions+cities now, districts follow-up).
+- Prisma `User.organizationId` nullable — system users currently seeded with `organizationId` = mimaric test org because schema forbids null; CLAUDE.md § 8.1 requires null. Schema migration + seed fix tracked separately.
+- WAFI escrow / ZATCA invoice KPIs (underlying data not ready).
+
+---
+
 ## [3.2.0] — 2026-04-16
 
 ### Unified Property Linking in Add Customer Modal

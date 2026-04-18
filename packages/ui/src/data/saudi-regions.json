@@ -1,0 +1,146 @@
+{
+  "regions": [
+    {
+      "code": "RIYADH",
+      "nameEn": "Riyadh",
+      "nameAr": "الرياض",
+      "cities": [
+        { "code": "RUH", "nameEn": "Riyadh", "nameAr": "الرياض" },
+        { "code": "DWD", "nameEn": "Diriyah", "nameAr": "الدرعية" },
+        { "code": "KHRJ", "nameEn": "Al Kharj", "nameAr": "الخرج" },
+        { "code": "MAJM", "nameEn": "Al Majma'ah", "nameAr": "المجمعة" },
+        { "code": "DWDM", "nameEn": "Ad Dawadmi", "nameAr": "الدوادمي" },
+        { "code": "ZLFI", "nameEn": "Az Zulfi", "nameAr": "الزلفي" }
+      ]
+    },
+    {
+      "code": "MAKKAH",
+      "nameEn": "Makkah",
+      "nameAr": "مكة المكرمة",
+      "cities": [
+        { "code": "JED", "nameEn": "Jeddah", "nameAr": "جدة" },
+        { "code": "MEC", "nameEn": "Makkah", "nameAr": "مكة المكرمة" },
+        { "code": "TIF", "nameEn": "Ta'if", "nameAr": "الطائف" },
+        { "code": "RABG", "nameEn": "Rabigh", "nameAr": "رابغ" },
+        { "code": "QNFD", "nameEn": "Al Qunfudhah", "nameAr": "القنفذة" }
+      ]
+    },
+    {
+      "code": "MADINAH",
+      "nameEn": "Madinah",
+      "nameAr": "المدينة المنورة",
+      "cities": [
+        { "code": "MED", "nameEn": "Madinah", "nameAr": "المدينة المنورة" },
+        { "code": "YNB", "nameEn": "Yanbu", "nameAr": "ينبع" },
+        { "code": "BADR", "nameEn": "Badr", "nameAr": "بدر" },
+        { "code": "KHYB", "nameEn": "Khaybar", "nameAr": "خيبر" },
+        { "code": "ULA", "nameEn": "AlUla", "nameAr": "العُلا" }
+      ]
+    },
+    {
+      "code": "EASTERN",
+      "nameEn": "Eastern Province",
+      "nameAr": "المنطقة الشرقية",
+      "cities": [
+        { "code": "DMM", "nameEn": "Dammam", "nameAr": "الدمام" },
+        { "code": "KHO", "nameEn": "Al Khobar", "nameAr": "الخبر" },
+        { "code": "DHA", "nameEn": "Dhahran", "nameAr": "الظهران" },
+        { "code": "JUB", "nameEn": "Jubail", "nameAr": "الجبيل" },
+        { "code": "HSA", "nameEn": "Al Ahsa", "nameAr": "الأحساء" },
+        { "code": "QTF", "nameEn": "Qatif", "nameAr": "القطيف" },
+        { "code": "HFR", "nameEn": "Hafar Al Batin", "nameAr": "حفر الباطن" }
+      ]
+    },
+    {
+      "code": "ASIR",
+      "nameEn": "Asir",
+      "nameAr": "عسير",
+      "cities": [
+        { "code": "AHB", "nameEn": "Abha", "nameAr": "أبها" },
+        { "code": "KMS", "nameEn": "Khamis Mushait", "nameAr": "خميس مشيط" },
+        { "code": "BSH", "nameEn": "Bisha", "nameAr": "بيشة" },
+        { "code": "MUHAYIL", "nameEn": "Muhayil", "nameAr": "محايل عسير" }
+      ]
+    },
+    {
+      "code": "TABUK",
+      "nameEn": "Tabuk",
+      "nameAr": "تبوك",
+      "cities": [
+        { "code": "TUU", "nameEn": "Tabuk", "nameAr": "تبوك" },
+        { "code": "NEOM", "nameEn": "NEOM", "nameAr": "نيوم" },
+        { "code": "DBA", "nameEn": "Duba", "nameAr": "ضباء" },
+        { "code": "HAQL", "nameEn": "Haql", "nameAr": "حقل" },
+        { "code": "UMMLJ", "nameEn": "Umluj", "nameAr": "أملج" }
+      ]
+    },
+    {
+      "code": "QASSIM",
+      "nameEn": "Qassim",
+      "nameAr": "القصيم",
+      "cities": [
+        { "code": "BUR", "nameEn": "Buraydah", "nameAr": "بريدة" },
+        { "code": "UNZ", "nameEn": "Unaizah", "nameAr": "عنيزة" },
+        { "code": "RASS", "nameEn": "Ar Rass", "nameAr": "الرس" },
+        { "code": "BDAYI", "nameEn": "Al Bada'i", "nameAr": "البدائع" }
+      ]
+    },
+    {
+      "code": "HAIL",
+      "nameEn": "Hail",
+      "nameAr": "حائل",
+      "cities": [
+        { "code": "HAS", "nameEn": "Hail", "nameAr": "حائل" },
+        { "code": "BQA", "nameEn": "Baqaa", "nameAr": "بقعاء" }
+      ]
+    },
+    {
+      "code": "NORTHERN",
+      "nameEn": "Northern Borders",
+      "nameAr": "الحدود الشمالية",
+      "cities": [
+        { "code": "ARR", "nameEn": "Arar", "nameAr": "عرعر" },
+        { "code": "RFHA", "nameEn": "Rafha", "nameAr": "رفحاء" },
+        { "code": "TRYF", "nameEn": "Turaif", "nameAr": "طريف" }
+      ]
+    },
+    {
+      "code": "JAZAN",
+      "nameEn": "Jazan",
+      "nameAr": "جازان",
+      "cities": [
+        { "code": "GIZ", "nameEn": "Jazan", "nameAr": "جازان" },
+        { "code": "SABY", "nameEn": "Sabya", "nameAr": "صبيا" },
+        { "code": "ABUAR", "nameEn": "Abu Arish", "nameAr": "أبو عريش" }
+      ]
+    },
+    {
+      "code": "NAJRAN",
+      "nameEn": "Najran",
+      "nameAr": "نجران",
+      "cities": [
+        { "code": "EAM", "nameEn": "Najran", "nameAr": "نجران" },
+        { "code": "SHARRA", "nameEn": "Sharurah", "nameAr": "شرورة" }
+      ]
+    },
+    {
+      "code": "BAHAH",
+      "nameEn": "Al Bahah",
+      "nameAr": "الباحة",
+      "cities": [
+        { "code": "ABT", "nameEn": "Al Bahah", "nameAr": "الباحة" },
+        { "code": "BALJ", "nameEn": "Baljurashi", "nameAr": "بلجرشي" }
+      ]
+    },
+    {
+      "code": "JAWF",
+      "nameEn": "Al Jawf",
+      "nameAr": "الجوف",
+      "cities": [
+        { "code": "AJF", "nameEn": "Sakaka", "nameAr": "سكاكا" },
+        { "code": "QRYT", "nameEn": "Qurayyat", "nameAr": "القريات" },
+        { "code": "DMT", "nameEn": "Dumat Al Jandal", "nameAr": "دومة الجندل" }
+      ]
+    }
+  ]
+}

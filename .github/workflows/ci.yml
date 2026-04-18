@@ -45,9 +45,23 @@ jobs:
       - name: Build Project
         run: npm run build
 
+      - name: Spell Check (cspell)
+        run: npx --yes cspell --no-progress --no-summary "**/*.{ts,tsx,md,mdx,json}"
+
       - name: Install Playwright Browsers
         run: cd apps/web && npx playwright install --with-deps
 
       - name: Run Playwright Tests
         continue-on-error: true  # E2E tests require a seeded database and running dev server
         run: cd apps/web && npx playwright test
+
+      - name: Upload Playwright Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-artifacts
+          path: |
+            apps/web/playwright-report
+            apps/web/test-results
+          retention-days: 14
+          if-no-files-found: ignore

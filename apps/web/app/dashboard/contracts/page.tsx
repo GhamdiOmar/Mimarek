@@ -34,6 +34,8 @@ import {
   FAB,
   EmptyState,
   SARAmount,
+  SARAmountInput,
+  HijriDatePicker,
   StatusBadge,
   Skeleton,
   BottomSheet,
@@ -62,7 +64,7 @@ type Contract = {
   signedAt: string | null;
   createdAt: string;
   customer: { id: string; name: string };
-  unit: { id: string; number: string; building: { name: string } };
+  unit: { id: string; number: string; buildingName: string | null };
   lease?: { id: string; startDate: string; endDate: string; status: string } | null;
 };
 
@@ -605,6 +607,7 @@ export default function ContractsPage() {
               <button
                 onClick={() => setSearch("")}
                 className="absolute top-1/2 -translate-y-1/2 end-3 text-gray-400 hover:text-gray-600"
+                aria-label={lang === "ar" ? "مسح البحث" : "Clear search"}
               >
                 <X className="w-4 h-4" />
               </button>
@@ -633,12 +636,29 @@ export default function ContractsPage() {
             <Loader2 className="w-6 h-6 animate-spin text-purple-600" />
           </div>
         ) : filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-gray-500 gap-2">
-            <FileText className="w-8 h-8 text-gray-300" />
-            <p className="text-sm">
-              {lang === "ar" ? "لا توجد عقود" : "No contracts found"}
-            </p>
-          </div>
+          <EmptyState
+            icon={<Handshake className="h-12 w-12" aria-hidden="true" />}
+            title={lang === "ar" ? "لا توجد عقود بعد" : "No contracts yet"}
+            description={
+              lang === "ar"
+                ? "تتبّع كل عقد إيجار أو بيع من المسودة حتى التوقيع."
+                : "Track every lease and sale from draft to signed."
+            }
+            action={
+              <Button
+                onClick={tab === "SALE" ? openSaleModal : openLeaseModal}
+                style={{ display: "inline-flex" }}
+                className="gap-2"
+              >
+                <Plus className="h-[18px] w-[18px]" />
+                {tab === "SALE"
+                  ? lang === "ar" ? "إنشاء عقد بيع" : "Create sale contract"
+                  : lang === "ar" ? "إنشاء عقد إيجار" : "Create lease contract"}
+              </Button>
+            }
+            helpHref="/dashboard/help#contracts"
+            helpLabel={lang === "ar" ? "تعرّف على العقود" : "Learn about contracts"}
+          />
         ) : tab === "SALE" ? (
           <Table>
             <TableHeader>
@@ -845,11 +865,9 @@ export default function ContractsPage() {
             <label className="text-sm font-medium text-gray-700">
               {lang === "ar" ? "مبلغ العقد (ريال)" : "Contract Amount (SAR)"} *
             </label>
-            <Input
-              type="number"
-              min={0}
-              value={saleForm.amount}
-              onChange={(e) => setSaleForm((f) => ({ ...f, amount: e.target.value }))}
+            <SARAmountInput
+              value={saleForm.amount === "" ? null : Number(saleForm.amount)}
+              onChange={(n) => setSaleForm((f) => ({ ...f, amount: n == null ? "" : String(n) }))}
               placeholder="0.00"
             />
           </div>
@@ -962,21 +980,18 @@ export default function ContractsPage() {
               <label className="text-sm font-medium text-gray-700">
                 {lang === "ar" ? "تاريخ البداية" : "Start Date"} *
               </label>
-              <Input
-                type="date"
-                value={leaseForm.startDate}
-                onChange={(e) => setLeaseForm((f) => ({ ...f, startDate: e.target.value }))}
+              <HijriDatePicker
+                value={leaseForm.startDate ? new Date(leaseForm.startDate) : null}
+                onChange={(d) => setLeaseForm((f) => ({ ...f, startDate: d ? d.toISOString().slice(0, 10) : "" }))}
               />
             </div>
             <div className="space-y-1">
               <label className="text-sm font-medium text-gray-700">
                 {lang === "ar" ? "تاريخ النهاية" : "End Date"} *
               </label>
-              <Input
-                type="date"
-                value={leaseForm.endDate}
-                min={leaseForm.startDate}
-                onChange={(e) => setLeaseForm((f) => ({ ...f, endDate: e.target.value }))}
+              <HijriDatePicker
+                value={leaseForm.endDate ? new Date(leaseForm.endDate) : null}
+                onChange={(d) => setLeaseForm((f) => ({ ...f, endDate: d ? d.toISOString().slice(0, 10) : "" }))}
               />
             </div>
           </div>
@@ -986,11 +1001,9 @@ export default function ContractsPage() {
             <label className="text-sm font-medium text-gray-700">
               {lang === "ar" ? "إجمالي الإيجار (ريال)" : "Total Amount (SAR)"} *
             </label>
-            <Input
-              type="number"
-              min={0}
-              value={leaseForm.amount}
-              onChange={(e) => setLeaseForm((f) => ({ ...f, amount: e.target.value }))}
+            <SARAmountInput
+              value={leaseForm.amount === "" ? null : Number(leaseForm.amount)}
+              onChange={(n) => setLeaseForm((f) => ({ ...f, amount: n == null ? "" : String(n) }))}
               placeholder="0.00"
             />
           </div>

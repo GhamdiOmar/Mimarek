@@ -32,6 +32,8 @@ import {
   AccordionItem,
   AccordionTrigger,
   AccordionContent,
+  CRInput,
+  SaudiPhoneInput,
 } from "@repo/ui";
 import Link from "next/link";
 import { getOrganization, updateOrganization, clearAppCache } from "../../actions/organization";
@@ -283,7 +285,7 @@ export default function OrgSettingsPage() {
                       <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                         {lang === "ar" ? "رقم السجل التجاري" : "Commercial Registration"}
                       </label>
-                      <Input className="h-11 font-latin" placeholder="1010XXXXXX" value={form.crNumber} onChange={(e) => set("crNumber", e.target.value)} dir="ltr" />
+                      <CRInput className="h-11" placeholder="1010XXXXXX" value={form.crNumber} onChange={(raw) => set("crNumber", raw)} />
                     </div>
                     <div className="space-y-2">
                       <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
@@ -405,13 +407,13 @@ export default function OrgSettingsPage() {
                       <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                         {lang === "ar" ? "رقم الجوال" : "Mobile"}
                       </label>
-                      <Input className="h-11" type="tel" placeholder="05XXXXXXXX" value={form.contactMobile} onChange={(e) => set("contactMobile", e.target.value)} dir="ltr" />
+                      <SaudiPhoneInput className="h-11" placeholder="05XXXXXXXX" value={form.contactMobile} onChange={(e164) => set("contactMobile", e164)} />
                     </div>
                     <div className="space-y-2">
                       <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                         {lang === "ar" ? "الهاتف الثابت" : "Phone"}
                       </label>
-                      <Input className="h-11" type="tel" placeholder="011XXXXXXX" value={form.contactPhone} onChange={(e) => set("contactPhone", e.target.value)} dir="ltr" />
+                      <SaudiPhoneInput className="h-11" placeholder="011XXXXXXX" value={form.contactPhone} onChange={(e164) => set("contactPhone", e164)} />
                     </div>
                     <div className="space-y-2">
                       <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
@@ -739,18 +741,12 @@ export default function OrgSettingsPage() {
                     <label className="text-xs font-medium text-muted-foreground">
                       {lang === "ar" ? "رقم السجل التجاري (CR)" : "Commercial Registration"}
                     </label>
-                    <div className="relative">
-                      <CreditCard
-                        className="h-4 w-4 absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                      />
-                      <Input
-                        placeholder="1010XXXXXX"
-                        className="pr-10 font-latin text-sm"
-                        value={form.crNumber}
-                        onChange={(e) => set("crNumber", e.target.value)}
-                        dir="ltr"
-                      />
-                    </div>
+                    <CRInput
+                      placeholder="1010XXXXXX"
+                      className="text-sm"
+                      value={form.crNumber}
+                      onChange={(raw) => set("crNumber", raw)}
+                    />
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground">
@@ -985,22 +981,20 @@ export default function OrgSettingsPage() {
                     <label className="text-xs font-medium text-muted-foreground">
                       {lang === "ar" ? "رقم الجوال" : "Mobile"}
                     </label>
-                    <Input
+                    <SaudiPhoneInput
                       value={form.contactMobile}
-                      onChange={(e) => set("contactMobile", e.target.value)}
+                      onChange={(e164) => set("contactMobile", e164)}
                       placeholder="05XXXXXXXX"
-                      dir="ltr"
                     />
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground">
                       {lang === "ar" ? "الهاتف الثابت" : "Phone"}
                     </label>
-                    <Input
+                    <SaudiPhoneInput
                       value={form.contactPhone}
-                      onChange={(e) => set("contactPhone", e.target.value)}
+                      onChange={(e164) => set("contactPhone", e164)}
                       placeholder="011XXXXXXX"
-                      dir="ltr"
                     />
                   </div>
                 </div>

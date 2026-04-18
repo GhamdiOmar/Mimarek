@@ -34,6 +34,7 @@ import {
   BottomSheet,
   EmptyState,
   Skeleton,
+  DirectionalIcon,
 } from "@repo/ui";
 import {
   getMaintenanceRequest,
@@ -56,7 +57,7 @@ const categoryLabels: Record<string, { ar: string; en: string }> = {
 };
 
 const statusLabels: Record<string, { ar: string; en: string; variant: string }> = {
-  OPEN: { ar: "مفتوح", en: "Open", variant: "draft" },
+  OPEN: { ar: "بانتظار المراجعة", en: "Waiting Review", variant: "draft" },
   ASSIGNED: { ar: "معيّن", en: "Assigned", variant: "reserved" },
   IN_PROGRESS: { ar: "قيد التنفيذ", en: "In Progress", variant: "reserved" },
   ON_HOLD: { ar: "معلّق", en: "On Hold", variant: "maintenance" },
@@ -330,7 +331,7 @@ export default function MaintenanceDetailPage() {
         }
         lang={lang}
         centered
-        onBack={() => router.push("/dashboard/maintenance")}
+        onBack={() => router.push("/dashboard/maintenance/tickets")}
         trailing={
           <button
             type="button"
@@ -629,8 +630,8 @@ export default function MaintenanceDetailPage() {
     <div className="space-y-6 animate-in fade-in duration-500">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="sm" onClick={() => router.push("/dashboard/maintenance")} style={{ display: "inline-flex" }}>
-          <ArrowLeft className="h-[18px] w-[18px]" />
+        <Button variant="ghost" size="sm" onClick={() => router.push("/dashboard/maintenance/tickets")} style={{ display: "inline-flex" }}>
+          <DirectionalIcon icon={ArrowLeft} className="h-[18px] w-[18px]" />
         </Button>
         <div className="flex-1">
           <div className="flex items-center gap-3 flex-wrap">
@@ -735,7 +736,7 @@ export default function MaintenanceDetailPage() {
                 <CircleUser className="h-3.5 w-3.5" />
                 {lang === "ar" ? "المُعيَّن" : "Assigned To"}
               </h4>
-              <Button variant="ghost" size="sm" onClick={() => setShowAssign(!showAssign)} style={{ display: "inline-flex" }}>
+              <Button variant="ghost" size="sm" onClick={() => setShowAssign(!showAssign)} style={{ display: "inline-flex" }} aria-label={lang === "ar" ? "تعديل" : "Edit"}>
                 <Pencil className="h-3.5 w-3.5" />
               </Button>
             </div>
@@ -775,7 +776,7 @@ export default function MaintenanceDetailPage() {
                 <CircleDollarSign className="h-3.5 w-3.5" />
                 {lang === "ar" ? "التكاليف" : "Costs"}
               </h4>
-              <Button variant="ghost" size="sm" onClick={() => setEditingCost(!editingCost)} style={{ display: "inline-flex" }}>
+              <Button variant="ghost" size="sm" onClick={() => setEditingCost(!editingCost)} style={{ display: "inline-flex" }} aria-label={lang === "ar" ? "تعديل" : "Edit"}>
                 <Pencil className="h-3.5 w-3.5" />
               </Button>
             </div>

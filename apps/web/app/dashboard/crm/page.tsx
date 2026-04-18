@@ -31,6 +31,7 @@ import {
   Handshake,
   Building2,
   User,
+  ExternalLink,
 } from "lucide-react";
 import {
   Button,
@@ -49,6 +50,11 @@ import {
   ActivityTimeline,
   BottomSheet,
   FAB,
+  DirectionalIcon,
+  NationalIdInput,
+  SaudiPhoneInput,
+  DataTable,
+  type ColumnDef,
 } from "@repo/ui";
 import { cn } from "@repo/ui/lib/utils";
 import {
@@ -104,6 +110,20 @@ const PIPELINE_STAGES = [
     dotColor: "bg-green-500",
   },
 ];
+
+// Per-stage hue for Kanban column tinting. Kept as raw HSL so we can mix into
+// the card surface via color-mix() without fighting Tailwind's class-generation.
+const STAGE_HUES: Record<string, string> = {
+  NEW: "hsl(220 15% 60%)", // neutral
+  CONTACTED: "hsl(210 65% 55%)", // blue
+  INTERESTED: "hsl(270 50% 60%)", // purple
+  QUALIFIED: "hsl(270 50% 50%)", // purple-deep
+  VIEWING: "hsl(40 55% 55%)", // gold
+  NEGOTIATION: "hsl(40 60% 50%)", // darker gold
+  RESERVED: "hsl(158 50% 45%)", // green
+  CONVERTED: "hsl(158 55% 35%)", // deep green
+  LOST: "hsl(0 65% 55%)", // red
+};
 
 // Legacy statuses not shown in kanban but valid for filter/display
 const ALL_STATUS_CONFIGS = [
@@ -480,8 +500,7 @@ function CustomerDrawer({
       {/* Drawer */}
       <div
         className={cn(
-          "fixed top-0 bottom-0 z-[100] w-full max-w-md bg-card border-border shadow-2xl flex flex-col animate-in slide-in-from-right duration-300",
-          lang === "ar" ? "left-0 border-e" : "right-0 border-s"
+          "fixed top-0 bottom-0 z-[100] w-full max-w-md bg-card border-border shadow-2xl flex flex-col animate-in slide-in-from-right duration-300 end-0 border-s"
         )}
         dir={lang === "ar" ? "rtl" : "ltr"}
       >
@@ -529,6 +548,7 @@ function CustomerDrawer({
             <button
               onClick={onClose}
               className="h-8 w-8 rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors"
+              aria-label={lang === "ar" ? "إغلاق" : "Close"}
             >
               <X className="h-4 w-4" />
             </button>
@@ -621,7 +641,7 @@ function CustomerDrawer({
                 className="gap-1.5 text-primary border-primary/30 hover:bg-primary/5"
                 onClick={handleConvertToDeal}
               >
-                <ArrowRight className="h-3.5 w-3.5" />
+                <DirectionalIcon icon={ArrowRight} className="h-3.5 w-3.5" />
                 {lang === "ar" ? "تحويل لصفقة" : "Convert to Deal"}
               </Button>
             </div>
@@ -861,7 +881,7 @@ function CustomerDrawer({
                             className="flex items-center gap-1 text-[10px] font-semibold text-white bg-primary rounded px-2 py-1 hover:bg-primary/90 transition-colors"
                             style={{ display: "inline-flex" }}
                           >
-                            <ArrowRight className="h-3 w-3" />
+                            <DirectionalIcon icon={ArrowRight} className="h-3 w-3" />
                             {lang === "ar" ? "تحويل لصفقة" : "Convert to Deal"}
                           </button>
                           <button
@@ -943,7 +963,7 @@ function CustomerDrawer({
                         className="flex items-center gap-1 text-[10px] font-semibold text-primary hover:underline underline-offset-2 shrink-0"
                       >
                         {lang === "ar" ? "عرض" : "View"}
-                        <ChevronRight className="h-3 w-3" />
+                        <DirectionalIcon icon={ChevronRight} className="h-3 w-3" />
                       </a>
                     </div>
                   );
@@ -1033,11 +1053,10 @@ function CustomerDrawer({
               <label className="text-xs font-bold text-muted-foreground">
                 {lang === "ar" ? "رقم الجوال" : "Phone"}
               </label>
-              <Input
+              <SaudiPhoneInput
                 value={editForm.phone}
-                onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                onChange={(e164) => setEditForm({ ...editForm, phone: e164 })}
                 placeholder="+966 5x xxx xxxx"
-                dir="ltr"
               />
             </div>
             <div className="col-span-2 space-y-1">
@@ -1403,11 +1422,18 @@ function KanbanCard({
   onDelete: (customer: any) => void;
   canDelete: boolean;
 }) {
+  // Quick-action contact targets. Only render actions whose data exists.
+  const rawPhone = typeof customer.phone === "string" ? customer.phone : "";
+  const phoneDigits = rawPhone.replace(/\D/g, "");
+  const hasPhone = phoneDigits.length > 0 && rawPhone !== "•••••••••••";
+  const email = typeof customer.email === "string" ? customer.email : "";
+  const hasEmail = email.length > 0 && email !== "•••••••••••";
+
   return (
     <div
       draggable
       onDragStart={(e) => onDragStart(e, customer.id)}
-      className="group bg-card border border-border rounded-xl p-4 cursor-grab active:cursor-grabbing hover:border-primary/20 hover:shadow-sm transition-all"
+      className="group relative bg-card border border-border rounded-xl p-4 cursor-grab active:cursor-grabbing hover:border-primary/20 hover:shadow-sm transition-all"
     >
       {/* Name + actions */}
       <div className="flex items-start justify-between gap-2 mb-3">
@@ -1473,7 +1499,56 @@ function KanbanCard({
           className="ms-auto flex items-center gap-1 text-[10px] font-semibold text-primary hover:underline underline-offset-2 transition-colors"
         >
           {lang === "ar" ? "عرض الملف" : "View Profile"}
-          <ChevronRight className="h-3 w-3" />
+          <DirectionalIcon icon={ChevronRight} className="h-3 w-3" />
+        </button>
+      </div>
+
+      {/* Hover quick-actions — revealed on card hover only */}
+      <div
+        className="mt-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {hasPhone && (
+          <a
+            href={`tel:${rawPhone}`}
+            aria-label={lang === "ar" ? "اتصال هاتفي" : "Call phone"}
+            title={lang === "ar" ? "اتصال" : "Call"}
+            className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          >
+            <Phone className="h-3.5 w-3.5" />
+          </a>
+        )}
+        {hasPhone && (
+          <a
+            href={`https://wa.me/${phoneDigits}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={lang === "ar" ? "فتح واتساب" : "Open WhatsApp"}
+            title={lang === "ar" ? "واتساب" : "WhatsApp"}
+            className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          >
+            <MessageCircle className="h-3.5 w-3.5" />
+          </a>
+        )}
+        {hasEmail && (
+          <a
+            href={`mailto:${email}`}
+            aria-label={lang === "ar" ? "إرسال بريد إلكتروني" : "Send email"}
+            title={lang === "ar" ? "بريد إلكتروني" : "Email"}
+            className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          >
+            <Mail className="h-3.5 w-3.5" />
+          </a>
+        )}
+        <button
+          type="button"
+          onClick={() => onViewProfile(customer)}
+          aria-label={lang === "ar" ? "فتح الملف الشخصي" : "Open profile"}
+          title={lang === "ar" ? "فتح الملف" : "Open profile"}
+          className="ms-auto h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          style={{ display: "inline-flex" }}
+        >
+          <ExternalLink className="h-3.5 w-3.5" />
         </button>
       </div>
     </div>
@@ -1681,6 +1756,134 @@ export default function CRMPage() {
         ["CONVERTED", "RESERVED", "ACTIVE_TENANT", "PAST_TENANT"].includes(c.status),
       ),
     [filteredCustomers],
+  );
+
+  // ─── List-view columns (TanStack DataTable) ────────────────────────────────
+
+  const listColumns = React.useMemo<ColumnDef<any, unknown>[]>(
+    () => [
+      {
+        id: "name",
+        accessorKey: "name",
+        header: lang === "ar" ? "الاسم" : "Name",
+        cell: ({ row }) => {
+          const c = row.original;
+          return (
+            <div>
+              <p className="font-semibold text-foreground">{c.name}</p>
+              {c.nameArabic && c.nameArabic !== c.name && (
+                <p className="text-xs text-muted-foreground">{c.nameArabic}</p>
+              )}
+            </div>
+          );
+        },
+      },
+      {
+        id: "phone",
+        accessorKey: "phone",
+        header: lang === "ar" ? "الهاتف" : "Phone",
+        cell: ({ row }) => (
+          <span className="font-mono text-sm text-muted-foreground">
+            {showPii ? row.original.phone : maskPhone(row.original.phone)}
+          </span>
+        ),
+      },
+      {
+        id: "budget",
+        accessorKey: "budget",
+        header: lang === "ar" ? "الميزانية" : "Budget",
+        sortingFn: (a, b) => Number(a.original.budget ?? 0) - Number(b.original.budget ?? 0),
+        cell: ({ row }) => {
+          const b = row.original.budget;
+          return (
+            <span className="text-sm text-muted-foreground">
+              {b
+                ? `${Number(b).toLocaleString(lang === "ar" ? "ar-SA" : "en-SA")} ${lang === "ar" ? "ر.س" : "SAR"}`
+                : "—"}
+            </span>
+          );
+        },
+        meta: { numeric: true },
+      },
+      {
+        id: "status",
+        accessorKey: "status",
+        header: lang === "ar" ? "الحالة" : "Status",
+        cell: ({ row }) => {
+          const statusCfg = getStatusConfig(row.original.status);
+          return (
+            <span
+              className={cn(
+                "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border",
+                statusCfg.color,
+              )}
+            >
+              <span className={cn("h-1.5 w-1.5 rounded-full", statusCfg.dotColor)} />
+              {statusCfg.label[lang]}
+            </span>
+          );
+        },
+      },
+      {
+        id: "source",
+        accessorKey: "source",
+        header: lang === "ar" ? "المصدر" : "Source",
+        cell: ({ row }) => {
+          const s = row.original.source;
+          return (
+            <span className="text-sm text-muted-foreground">
+              {s && SOURCE_LABELS[s]
+                ? (SOURCE_LABELS[s] as { ar: string; en: string })[lang]
+                : "—"}
+            </span>
+          );
+        },
+      },
+      {
+        id: "actions",
+        header: "",
+        enableSorting: false,
+        enableHiding: false,
+        enableColumnFilter: false,
+        cell: ({ row }) => {
+          const c = row.original;
+          return (
+            <div className="flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setDrawerCustomer(c);
+                }}
+                aria-label={lang === "ar" ? "عرض الملف" : "View profile"}
+                className="h-7 w-7 rounded-md border border-border bg-background flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/30 transition-colors"
+                style={{ display: "inline-flex" }}
+              >
+                <Eye className="h-3.5 w-3.5" />
+              </button>
+              {canDelete && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openDelete(c);
+                  }}
+                  aria-label={lang === "ar" ? "حذف" : "Delete"}
+                  className="h-7 w-7 rounded-md border border-border bg-background flex items-center justify-center text-muted-foreground hover:text-destructive hover:border-destructive/30 transition-colors"
+                  style={{ display: "inline-flex" }}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+          );
+        },
+        meta: { align: "end" },
+      },
+    ],
+    // openDelete is a stable function declared in this component; setDrawerCustomer is a stable setState.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [lang, showPii, canDelete],
   );
 
   // ─── Kanban drag ────────────────────────────────────────────────────────────
@@ -2306,7 +2509,7 @@ export default function CRMPage() {
       {error && (
         <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
           <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
-          <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600">
+          <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600" aria-label={lang === "ar" ? "إغلاق" : "Dismiss"}>
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -2459,18 +2662,22 @@ export default function CRMPage() {
               (c) => c.status === status.key
             );
             const isDragOver = dragOverStatus === status.key;
+            const stageHue = STAGE_HUES[status.key];
 
             return (
               <div
                 key={status.key}
                 className={cn(
                   "flex flex-col gap-3 min-h-[400px] rounded-xl p-3 transition-colors",
-                  isDragOver
-                    ? "bg-primary/5 ring-2 ring-primary/20"
-                    : status.key === "LOST"
-                      ? "bg-red-50/50 dark:bg-red-900/10"
-                      : "bg-muted/20"
+                  isDragOver && "bg-primary/5 ring-2 ring-primary/20"
                 )}
+                style={
+                  !isDragOver && stageHue
+                    ? {
+                        backgroundColor: `color-mix(in srgb, ${stageHue} 4%, hsl(var(--card)))`,
+                      }
+                    : undefined
+                }
                 onDragOver={(e) => { e.preventDefault(); setDragOverStatus(status.key); }}
                 onDragLeave={() => setDragOverStatus(null)}
                 onDrop={() => handleDrop(status.key)}
@@ -2478,7 +2685,10 @@ export default function CRMPage() {
                 {/* Column header */}
                 <div className="flex items-center justify-between mb-1 px-1">
                   <div className="flex items-center gap-2">
-                    <span className={cn("h-2 w-2 rounded-full", status.dotColor)} />
+                    <span
+                      className="h-2 w-2 rounded-full"
+                      style={stageHue ? { backgroundColor: stageHue } : undefined}
+                    />
                     <span className="text-xs font-bold text-foreground">
                       {status.label[lang]}
                     </span>
@@ -2524,105 +2734,88 @@ export default function CRMPage() {
 
       {/* ── List View ── */}
       {viewMode === "list" && (
-        <Card className="overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border bg-muted/20">
-                  <th className="text-start px-4 py-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    {lang === "ar" ? "الاسم" : "Name"}
-                  </th>
-                  <th className="text-start px-4 py-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    {lang === "ar" ? "الهاتف" : "Phone"}
-                  </th>
-                  <th className="text-start px-4 py-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    {lang === "ar" ? "الميزانية" : "Budget"}
-                  </th>
-                  <th className="text-start px-4 py-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    {lang === "ar" ? "الحالة" : "Status"}
-                  </th>
-                  <th className="text-start px-4 py-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    {lang === "ar" ? "المصدر" : "Source"}
-                  </th>
-                  <th className="px-4 py-3" />
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {filteredCustomers.map((c) => {
-                  const statusCfg = getStatusConfig(c.status);
-                  return (
-                    <tr key={c.id} className="hover:bg-muted/20 transition-colors group">
-                      <td className="px-4 py-3">
-                        <div>
-                          <p className="font-semibold text-foreground">{c.name}</p>
-                          {c.nameArabic && c.nameArabic !== c.name && (
-                            <p className="text-xs text-muted-foreground">{c.nameArabic}</p>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 font-mono text-sm text-muted-foreground">
-                        {showPii ? c.phone : maskPhone(c.phone)}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-muted-foreground">
-                        {c.budget
-                          ? `${Number(c.budget).toLocaleString(lang === "ar" ? "ar-SA" : "en-SA")} ${lang === "ar" ? "ر.س" : "SAR"}`
-                          : "—"}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={cn(
-                            "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border",
-                            statusCfg.color
-                          )}
-                        >
-                          <span className={cn("h-1.5 w-1.5 rounded-full", statusCfg.dotColor)} />
-                          {statusCfg.label[lang]}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-muted-foreground">
-                        {c.source && SOURCE_LABELS[c.source]
-                          ? (SOURCE_LABELS[c.source] as { ar: string; en: string })[lang]
-                          : "—"}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button
-                            onClick={() => setDrawerCustomer(c)}
-                            className="h-7 w-7 rounded-md border border-border bg-background flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/30 transition-colors"
-                          >
-                            <Eye className="h-3.5 w-3.5" />
-                          </button>
-                          {canDelete && (
-                            <button
-                              onClick={() => openDelete(c)}
-                              className="h-7 w-7 rounded-md border border-border bg-background flex items-center justify-center text-muted-foreground hover:text-destructive hover:border-destructive/30 transition-colors"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-
-            {filteredCustomers.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-16 text-center">
-                <Users className="h-12 w-12 text-muted-foreground/30 mb-4" />
-                <h3 className="text-lg font-bold text-foreground mb-1">
-                  {lang === "ar" ? "لا توجد نتائج" : "No contacts found"}
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  {lang === "ar"
-                    ? "حاول تعديل خيارات البحث أو الفلتر، أو أضف عميلاً جديداً."
-                    : "Try adjusting your search or filter, or add a new contact."}
-                </p>
+        <DataTable
+          columns={listColumns}
+          data={filteredCustomers}
+          locale={lang}
+          getRowId={(c) => c.id}
+          pageSize={25}
+          emptyTitle={lang === "ar" ? "لا توجد نتائج" : "No contacts found"}
+          emptyDescription={
+            lang === "ar"
+              ? "حاول تعديل خيارات البحث أو الفلتر، أو أضف عميلاً جديداً."
+              : "Try adjusting your search or filter, or add a new contact."
+          }
+          mobileCard={(c) => {
+            const statusCfg = getStatusConfig(c.status);
+            return (
+              <div className="space-y-2">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold text-foreground truncate">{c.name}</p>
+                    {c.nameArabic && c.nameArabic !== c.name && (
+                      <p className="text-xs text-muted-foreground truncate">{c.nameArabic}</p>
+                    )}
+                  </div>
+                  <span
+                    className={cn(
+                      "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border shrink-0",
+                      statusCfg.color,
+                    )}
+                  >
+                    <span className={cn("h-1.5 w-1.5 rounded-full", statusCfg.dotColor)} />
+                    {statusCfg.label[lang]}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span className="font-mono">
+                    {showPii ? c.phone : maskPhone(c.phone)}
+                  </span>
+                  <span>
+                    {c.budget
+                      ? `${Number(c.budget).toLocaleString(lang === "ar" ? "ar-SA" : "en-SA")} ${lang === "ar" ? "ر.س" : "SAR"}`
+                      : "—"}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-2 pt-1">
+                  <span className="text-xs text-muted-foreground">
+                    {c.source && SOURCE_LABELS[c.source]
+                      ? (SOURCE_LABELS[c.source] as { ar: string; en: string })[lang]
+                      : "—"}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDrawerCustomer(c);
+                      }}
+                      aria-label={lang === "ar" ? "عرض الملف" : "View profile"}
+                      className="h-8 w-8 rounded-md border border-border bg-background flex items-center justify-center text-muted-foreground"
+                      style={{ display: "inline-flex" }}
+                    >
+                      <Eye className="h-3.5 w-3.5" />
+                    </button>
+                    {canDelete && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openDelete(c);
+                        }}
+                        aria-label={lang === "ar" ? "حذف" : "Delete"}
+                        className="h-8 w-8 rounded-md border border-border bg-background flex items-center justify-center text-muted-foreground"
+                        style={{ display: "inline-flex" }}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
-            )}
-          </div>
-        </Card>
+            );
+          }}
+        />
       )}
 
       {/* ── Add Modal ── */}
@@ -2636,7 +2829,7 @@ export default function CRMPage() {
               <h2 className="text-lg font-bold text-foreground">
                 {lang === "ar" ? "إضافة عميل جديد" : "Add New Customer"}
               </h2>
-              <button onClick={() => setShowAddModal(false)} className="text-muted-foreground hover:text-foreground">
+              <button onClick={() => setShowAddModal(false)} className="text-muted-foreground hover:text-foreground" aria-label={lang === "ar" ? "إغلاق" : "Close"}>
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -2669,11 +2862,10 @@ export default function CRMPage() {
                   <label className="text-xs font-bold text-muted-foreground">
                     {lang === "ar" ? "رقم الجوال *" : "Phone *"}
                   </label>
-                  <Input
+                  <SaudiPhoneInput
                     value={newCustomer.phone}
-                    onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })}
+                    onChange={(e164) => setNewCustomer({ ...newCustomer, phone: e164 })}
                     placeholder="+966 5x xxx xxxx"
-                    dir="ltr"
                   />
                 </div>
                 <div className="space-y-1">
@@ -2769,6 +2961,7 @@ export default function CRMPage() {
                         type="button"
                         onClick={() => { setNewCustSelectedUnit(null); setNewCustIntent(null); setNewCustUnitSearch(""); }}
                         className="text-muted-foreground hover:text-foreground shrink-0"
+                        aria-label={lang === "ar" ? "إزالة" : "Remove"}
                       >
                         <X className="h-3.5 w-3.5" />
                       </button>
@@ -2900,6 +3093,7 @@ export default function CRMPage() {
               {/* Optional Absher fields */}
               <details className="group">
                 <summary className="cursor-pointer text-xs font-bold text-muted-foreground hover:text-foreground transition-colors list-none flex items-center gap-2 py-1">
+                  {/* Disclosure caret (rotates to open), not a nav arrow — do not wrap in DirectionalIcon */}
                   <ChevronRight className="h-3.5 w-3.5 transition-transform group-open:rotate-90" />
                   {lang === "ar" ? "بيانات إضافية (أبشر)" : "Additional Details (Absher)"}
                 </summary>
@@ -2908,11 +3102,10 @@ export default function CRMPage() {
                     <label className="text-xs font-bold text-muted-foreground">
                       {lang === "ar" ? "رقم الهوية" : "National ID"}
                     </label>
-                    <Input
+                    <NationalIdInput
                       value={newCustomer.nationalId}
-                      onChange={(e) => setNewCustomer({ ...newCustomer, nationalId: e.target.value })}
+                      onChange={(raw) => setNewCustomer({ ...newCustomer, nationalId: raw })}
                       placeholder="10x xxx xxxx"
-                      dir="ltr"
                     />
                   </div>
                   <div className="space-y-1">

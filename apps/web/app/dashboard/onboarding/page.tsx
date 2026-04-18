@@ -9,7 +9,7 @@ import {
   Check,
   Loader2,
 } from "lucide-react";
-import { Button, Input, AppBar } from "@repo/ui";
+import { Button, Input, AppBar, DirectionalIcon } from "@repo/ui";
 import { cn } from "@repo/ui/lib/utils";
 import { useRouter } from "next/navigation";
 import { updateOrganization } from "../../actions/organization";
@@ -369,11 +369,7 @@ export default function OnboardingPage() {
               onClick={goPrev}
               disabled={loading}
             >
-              {lang === "ar" ? (
-                <ArrowRight className="h-4 w-4" aria-hidden="true" />
-              ) : (
-                <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-              )}
+              <DirectionalIcon icon={ArrowLeft} className="h-4 w-4" aria-hidden="true" />
               {lang === "ar" ? "السابق" : "Back"}
             </Button>
           )}
@@ -385,11 +381,7 @@ export default function OnboardingPage() {
           >
             {loading && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
             {primaryLabel}
-            {!isLast && !loading && (lang === "ar" ? (
-              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-            ) : (
-              <ArrowRight className="h-4 w-4" aria-hidden="true" />
-            ))}
+            {!isLast && !loading && <DirectionalIcon icon={ArrowRight} className="h-4 w-4" aria-hidden="true" />}
           </Button>
         </div>
       </div>
@@ -524,7 +516,7 @@ export default function OnboardingPage() {
                   >
                     {loading && <Loader2 className="h-4 w-4 animate-spin" />}
                     {lang === "ar" ? "حفظ ومتابعة" : "Save & Continue"}
-                    {lang === "ar" ? <ArrowLeft className="h-4 w-4" /> : <ArrowRight className="h-4 w-4" />}
+                    <DirectionalIcon icon={ArrowRight} className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
@@ -620,7 +612,7 @@ export default function OnboardingPage() {
                     className="gap-2"
                     style={{ display: "inline-flex" }}
                   >
-                    {lang === "ar" ? <ArrowRight className="h-4 w-4" /> : <ArrowLeft className="h-4 w-4" />}
+                    <DirectionalIcon icon={ArrowLeft} className="h-4 w-4" />
                     {lang === "ar" ? "السابق" : "Previous"}
                   </Button>
                   <div className="flex items-center gap-3">
@@ -640,7 +632,7 @@ export default function OnboardingPage() {
                     >
                       {loading && <Loader2 className="h-4 w-4 animate-spin" />}
                       {lang === "ar" ? "إضافة ومتابعة" : "Add & Continue"}
-                      {lang === "ar" ? <ArrowLeft className="h-4 w-4" /> : <ArrowRight className="h-4 w-4" />}
+                      <DirectionalIcon icon={ArrowRight} className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
@@ -670,7 +662,7 @@ export default function OnboardingPage() {
                     style={{ display: "inline-flex" }}
                   >
                     {lang === "ar" ? "الذهاب إلى CRM" : "Go to CRM"}
-                    {lang === "ar" ? <ArrowLeft className="h-4 w-4" /> : <ArrowRight className="h-4 w-4" />}
+                    <DirectionalIcon icon={ArrowRight} className="h-4 w-4" />
                   </Button>
                 </div>
               </div>

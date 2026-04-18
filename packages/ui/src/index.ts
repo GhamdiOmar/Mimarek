@@ -22,6 +22,12 @@ export * from "./components/DataTable";
 export * from "./components/FormSection";
 export * from "./components/FormField"; /* exports FieldWrapper */
 export * from "./components/PageIntro";
+export * from "./components/DirectionalIcon";
+export * from "./components/DateRangePicker";
+export * from "./components/LastUpdatedAgo";
+
+/* ─── Saudi Input Primitives ──────────────────────────────── */
+export * from "./components/saudi";
 
 /* ─── Shadcn Primitives (no overlap with above) ───────────── */
 export * from "./primitives/accordion";

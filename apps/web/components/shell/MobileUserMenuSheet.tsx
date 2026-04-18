@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { signOut as nextAuthSignOut } from "next-auth/react";
 import { useTheme } from "next-themes";
-import { BottomSheet } from "@repo/ui";
+import { BottomSheet, DirectionalIcon } from "@repo/ui";
 import { cn } from "@repo/ui/lib/utils";
 import { useSession } from "../SimpleSessionProvider";
 import { useLanguage } from "../LanguageProvider";
@@ -113,7 +113,7 @@ export function MobileUserMenuSheet({ open, onOpenChange, orgName }: MobileUserM
               <span className="flex-1 text-sm font-medium text-foreground">
                 {link.label[lang]}
               </span>
-              <ChevronRight className="h-4 w-4 text-muted-foreground rtl:scale-x-[-1]" />
+              <DirectionalIcon icon={ChevronRight} className="h-4 w-4 text-muted-foreground" />
             </Link>
           ))}
         </div>
@@ -170,7 +170,7 @@ export function MobileUserMenuSheet({ open, onOpenChange, orgName }: MobileUserM
             )}
           >
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-destructive/10">
-              <LogOut className="h-4 w-4 text-destructive" />
+              <DirectionalIcon icon={LogOut} className="h-4 w-4 text-destructive" />
             </div>
             <span className="flex-1 text-start text-sm font-semibold">
               {lang === "ar" ? "تسجيل الخروج" : "Sign out"}

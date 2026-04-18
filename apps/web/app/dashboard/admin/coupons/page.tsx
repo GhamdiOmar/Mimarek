@@ -552,6 +552,7 @@ export default function CouponManagementPage() {
           <button
             onClick={() => setToast(null)}
             className="ms-2 hover:opacity-70"
+            aria-label={lang === "ar" ? "إغلاق" : "Dismiss"}
           >
             <X className="h-3.5 w-3.5" />
           </button>
@@ -598,28 +599,26 @@ export default function CouponManagementPage() {
 
       {/* Coupons Table */}
       {coupons.length === 0 ? (
-        <div className="rounded-xl border border-border bg-card shadow-sm p-12 text-center">
-          <Ticket
-            className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4"
-          />
-          <p className="text-lg font-semibold text-foreground">
-            {labels.noCoupons}
-          </p>
-          <p className="text-sm text-muted-foreground mt-1">
-            {labels.noCouponsDesc}
-          </p>
-          <Button
-            onClick={() => {
-              resetForm();
-              setShowModal(true);
-            }}
-            className="mt-6"
-           
-          >
-            <Plus className="h-[18px] w-[18px] me-2" />
-            {labels.createCoupon}
-          </Button>
-        </div>
+        <EmptyState
+          icon={<Ticket className="h-12 w-12" aria-hidden="true" />}
+          title={labels.noCoupons}
+          description={labels.noCouponsDesc}
+          action={
+            <Button
+              onClick={() => {
+                resetForm();
+                setShowModal(true);
+              }}
+              style={{ display: "inline-flex" }}
+              className="gap-2"
+            >
+              <Plus className="h-[18px] w-[18px]" />
+              {labels.createCoupon}
+            </Button>
+          }
+          helpHref="/dashboard/help#coupons"
+          helpLabel={lang === "ar" ? "تعرّف على كوبونات الخصم" : "Learn about coupons"}
+        />
       ) : (
         <Card className="overflow-hidden">
           <Table>
@@ -807,6 +806,7 @@ export default function CouponManagementPage() {
               <button
                 onClick={() => setShowModal(false)}
                 className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-md hover:bg-muted"
+                aria-label={lang === "ar" ? "إغلاق" : "Close"}
               >
                 <X className="h-5 w-5" />
               </button>

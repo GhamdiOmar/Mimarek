@@ -36,6 +36,7 @@ import {
   Skeleton,
   SARAmount,
   Badge,
+  DirectionalIcon,
 } from "@repo/ui";
 import Link from "next/link";
 import { adminGetAllSubscriptions } from "../../../actions/billing";
@@ -429,7 +430,7 @@ export default function AdminSubscriptionsPage() {
           href="/dashboard/admin"
           className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <DirectionalIcon icon={ArrowLeft} className="h-4 w-4" />
           {t.back}
         </Link>
       </div>
@@ -584,7 +585,7 @@ export default function AdminSubscriptionsPage() {
               onClick={() => setPage(page - 1)}
              
             >
-              <ChevronLeft className="h-3.5 w-3.5 me-1" />
+              <DirectionalIcon icon={ChevronLeft} className="h-3.5 w-3.5 me-1" />
               {t.prev}
             </Button>
             <Button
@@ -595,7 +596,7 @@ export default function AdminSubscriptionsPage() {
              
             >
               {t.next}
-              <ChevronRight className="h-3.5 w-3.5 ms-1" />
+              <DirectionalIcon icon={ChevronRight} className="h-3.5 w-3.5 ms-1" />
             </Button>
           </div>
         </div>

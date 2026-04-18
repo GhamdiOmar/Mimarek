@@ -659,13 +659,13 @@ export default function HelpPage() {
         <div className="space-y-6">
           {/* Search */}
           <div className="relative">
-            <Search className="h-[18px] w-[18px] absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Search className="h-[18px] w-[18px] absolute end-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
               value={faqSearch}
               onChange={(e) => setFaqSearch(e.target.value)}
               placeholder={lang === "ar" ? "ابحث في الأسئلة الشائعة..." : "Search FAQs..."}
-              className="w-full bg-card border border-border rounded-md py-2.5 pr-10 pl-4 text-sm focus:border-primary/30 focus:ring-0 outline-none"
+              className="w-full bg-card border border-border rounded-md py-2.5 pe-10 ps-4 text-sm focus:border-primary/30 focus:ring-0 outline-none"
             />
           </div>
 
@@ -819,7 +819,16 @@ export default function HelpPage() {
             </div>
           )}
 
-          {/* Tickets Table */}
+          {/*
+            Tickets Table — kept as raw <table> rather than DataTable primitive.
+            Per-user ticket history is a short-lived list (typically < 20 rows);
+            sort/filter/pagination add cost without UX benefit. Revisit if a user
+            accumulates hundreds of tickets. Same rationale applies to the three
+            review-queue tables below (permissions history, pending permission
+            requests, pending join requests) — the latter two also embed an
+            inline review form in the Action column, which would require
+            lifting state into DataTable cell renderers for no visible gain.
+          */}
           <div className="bg-card rounded-md border border-border overflow-hidden">
             <table className="w-full text-sm">
               <thead className="bg-muted/30 text-muted-foreground text-[10px] uppercase">

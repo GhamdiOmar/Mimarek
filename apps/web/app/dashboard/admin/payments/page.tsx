@@ -6,7 +6,6 @@ import { isSystemRole } from "../../../../lib/permissions";
 import * as React from "react";
 import {
   ArrowLeft,
-  ArrowRight,
   Receipt,
   CircleDollarSign,
   CheckCircle2,
@@ -34,6 +33,7 @@ import {
   Skeleton,
   SARAmount,
   Badge,
+  DirectionalIcon,
 } from "@repo/ui";
 import Link from "next/link";
 import { adminGetAllInvoices } from "../../../actions/billing";
@@ -177,8 +177,6 @@ export default function AdminPaymentsPage() {
       bg: "bg-red-100 dark:bg-red-900/30",
     },
   ];
-
-  const BackArrow = lang === "ar" ? ArrowRight : ArrowLeft;
 
   // ── Mobile helpers ────────────────────────────────────────────────────
   const mobileTabItems = [
@@ -359,7 +357,7 @@ export default function AdminPaymentsPage() {
         href="/dashboard/admin"
         className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
       >
-        <BackArrow className="h-4 w-4" />
+        <DirectionalIcon icon={ArrowLeft} className="h-4 w-4" />
         {lang === "ar" ? "إدارة المنصة" : "Platform Administration"}
       </Link>
 
@@ -519,7 +517,7 @@ export default function AdminPaymentsPage() {
                 disabled={page <= 1}
 
               >
-                <ChevronLeft className="h-4 w-4 rtl:rotate-180" />
+                <DirectionalIcon icon={ChevronLeft} className="h-4 w-4" />
                 {lang === "ar" ? "السابق" : "Previous"}
               </Button>
               <Button
@@ -530,7 +528,7 @@ export default function AdminPaymentsPage() {
 
               >
                 {lang === "ar" ? "التالي" : "Next"}
-                <ChevronRight className="h-4 w-4 rtl:rotate-180" />
+                <DirectionalIcon icon={ChevronRight} className="h-4 w-4" />
               </Button>
             </div>
           </div>

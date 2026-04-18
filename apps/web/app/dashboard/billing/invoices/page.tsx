@@ -7,7 +7,6 @@ import {
   Receipt,
   Download,
   ArrowLeft,
-  ArrowRight,
   ChevronLeft,
   ChevronRight,
   Eye,
@@ -30,6 +29,7 @@ import {
   Skeleton,
   EmptyState,
   BottomSheet,
+  DirectionalIcon,
 } from "@repo/ui";
 import Link from "next/link";
 import { getInvoices, getInvoiceById } from "../../../actions/billing";
@@ -245,8 +245,9 @@ export default function InvoicesPage() {
               disabled={page <= 1}
               onClick={() => setPage(page - 1)}
               className="h-10"
+              aria-label={lang === "ar" ? "السابق" : "Previous"}
             >
-              <ChevronLeft className="w-4 h-4 rtl:scale-x-[-1]" />
+              <DirectionalIcon icon={ChevronLeft} className="w-4 h-4" />
             </Button>
             <span className="text-xs text-muted-foreground tabular-nums">
               {page} / {data.totalPages}
@@ -258,8 +259,9 @@ export default function InvoicesPage() {
               disabled={page >= data.totalPages}
               onClick={() => setPage(page + 1)}
               className="h-10"
+              aria-label={lang === "ar" ? "التالي" : "Next"}
             >
-              <ChevronRight className="w-4 h-4 rtl:scale-x-[-1]" />
+              <DirectionalIcon icon={ChevronRight} className="w-4 h-4" />
             </Button>
           </div>
         )}
@@ -443,7 +445,7 @@ export default function InvoicesPage() {
       {/* Header */}
       <div>
         <Link href="/dashboard/billing" className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 mb-4">
-          {lang === "ar" ? <ArrowRight className="w-4 h-4" /> : <ArrowLeft className="w-4 h-4" />}
+          <DirectionalIcon icon={ArrowLeft} className="w-4 h-4" />
           {t.backToBilling}
         </Link>
         <div className="flex items-center gap-2">
@@ -504,6 +506,7 @@ export default function InvoicesPage() {
                             title={t.view}
                             onClick={() => handleViewInvoice(inv.id)}
                             disabled={loadingInvoice}
+                            aria-label={t.view}
                           >
                             <Eye className="w-4 h-4" />
                           </button>
@@ -512,6 +515,7 @@ export default function InvoicesPage() {
                             title={t.download}
                             onClick={() => handleDownloadInvoice(inv.id)}
                             disabled={downloadingId === inv.id}
+                            aria-label={t.download}
                           >
                             {downloadingId === inv.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                           </button>
@@ -535,9 +539,9 @@ export default function InvoicesPage() {
                     size="sm"
                     disabled={page <= 1}
                     onClick={() => setPage(page - 1)}
-
+                    aria-label={lang === "ar" ? "السابق" : "Previous"}
                   >
-                    {lang === "ar" ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+                    <DirectionalIcon icon={ChevronLeft} className="w-4 h-4" />
                   </Button>
                   <span className="text-sm">{page} / {data.totalPages}</span>
                   <Button
@@ -545,9 +549,9 @@ export default function InvoicesPage() {
                     size="sm"
                     disabled={page >= data.totalPages}
                     onClick={() => setPage(page + 1)}
-
+                    aria-label={lang === "ar" ? "التالي" : "Next"}
                   >
-                    {lang === "ar" ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                    <DirectionalIcon icon={ChevronRight} className="w-4 h-4" />
                   </Button>
                 </div>
               </div>
@@ -564,7 +568,7 @@ export default function InvoicesPage() {
               <h2 className="text-lg font-bold text-foreground">
                 {lang === "ar" ? "تفاصيل الفاتورة" : "Invoice Details"} — {viewInvoice.invoiceNumber}
               </h2>
-              <button onClick={() => setViewInvoice(null)} className="text-muted-foreground hover:text-foreground transition-colors">
+              <button onClick={() => setViewInvoice(null)} className="text-muted-foreground hover:text-foreground transition-colors" aria-label={lang === "ar" ? "إغلاق" : "Close"}>
                 <X className="w-5 h-5" />
               </button>
             </div>

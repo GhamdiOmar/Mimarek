@@ -66,7 +66,7 @@ export async function createMaintenanceRequest(data: {
     },
   });
 
-  revalidatePath("/dashboard/maintenance");
+  revalidatePath("/dashboard/maintenance/tickets");
   return JSON.parse(JSON.stringify(request));
 }
 
@@ -191,7 +191,7 @@ export async function updateMaintenanceRequest(
     data: updateData,
   });
 
-  revalidatePath("/dashboard/maintenance");
+  revalidatePath("/dashboard/maintenance/tickets");
   revalidatePath(`/dashboard/maintenance/${requestId}`);
   return JSON.parse(JSON.stringify(updated));
 }
@@ -218,7 +218,7 @@ export async function deleteMaintenanceRequest(requestId: string) {
   });
 
   await db.maintenanceRequest.delete({ where: { id: requestId } });
-  revalidatePath("/dashboard/maintenance");
+  revalidatePath("/dashboard/maintenance/tickets");
 }
 
 // ─── Get Assignable Users ─────────────────────────────────────────────────────
