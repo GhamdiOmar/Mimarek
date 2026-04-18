@@ -34,6 +34,7 @@ import {
 import { cn } from "@repo/ui/lib/utils";
 import { getTeamMembers, inviteTeamMember, removeTeamMember } from "../../../actions/team";
 import { hasPermission, CUSTOMER_ASSIGNABLE_ROLES } from "../../../../lib/permissions";
+import { toast } from "sonner";
 
 type TeamMember = {
   id: string;
@@ -116,7 +117,12 @@ export default function TeamManagementPage() {
       await removeTeamMember(userId);
       fetchTeam();
     } catch (err: any) {
-      alert(err.message);
+      toast.error(
+        lang === "ar"
+          ? "تعذّر إزالة العضو. يُرجى المحاولة مرة أخرى."
+          : "We couldn't remove the team member. Please try again.",
+      );
+      console.error(err);
     }
   };
 
@@ -379,7 +385,7 @@ export default function TeamManagementPage() {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button variant="secondary" size="icon" className="h-8 w-8 rounded shadow-sm hover:text-destructive" onClick={() => handleRemove(member.id, member.name)} aria-label={lang === "ar" ? "إزالة" : "Remove"}>
+                      <Button variant="secondary" size="icon" className="h-11 w-11 sm:h-8 sm:w-8 rounded shadow-sm hover:text-destructive" onClick={() => handleRemove(member.id, member.name)} aria-label={lang === "ar" ? "إزالة" : "Remove"}>
                         <Trash2 className="h-[18px] w-[18px]" />
                       </Button>
                     </div>

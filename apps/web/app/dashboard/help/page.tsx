@@ -46,6 +46,7 @@ import { createPermissionRequest, getMyPermissionRequests } from "../../actions/
 import { getPendingPermissionRequests, reviewPermissionRequest } from "../../actions/permission-requests";
 import { createSupportTicket, getMySupportTickets } from "../../actions/support-tickets";
 import { getPendingJoinRequests, reviewJoinRequest } from "../../actions/join-requests";
+import { toast } from "sonner";
 
 const ROLE_OPTIONS = [
   { value: "ADMIN", label: { ar: "مدير", en: "Admin" } },
@@ -147,7 +148,12 @@ export default function HelpPage() {
       const tickets = await getMySupportTickets();
       setMyTickets(tickets);
     } catch (e: any) {
-      alert(e.message);
+      toast.error(
+        lang === "ar"
+          ? "تعذّر إرسال التذكرة. يُرجى المحاولة مرة أخرى."
+          : "We couldn't submit your ticket. Please try again.",
+      );
+      console.error(e);
     }
     setTicketLoading(false);
   }
@@ -161,7 +167,12 @@ export default function HelpPage() {
       const reqs = await getMyPermissionRequests();
       setMyRequests(reqs);
     } catch (e: any) {
-      alert(e.message);
+      toast.error(
+        lang === "ar"
+          ? "تعذّر إرسال طلب الصلاحيات. يُرجى المحاولة مرة أخرى."
+          : "We couldn't submit your permission request. Please try again.",
+      );
+      console.error(e);
     }
     setPermLoading(false);
   }
@@ -175,7 +186,12 @@ export default function HelpPage() {
       const reqs = await getPendingJoinRequests();
       setPendingJoinRequests(reqs);
     } catch (e: any) {
-      alert(e.message);
+      toast.error(
+        lang === "ar"
+          ? "تعذّر حفظ المراجعة. يُرجى المحاولة مرة أخرى."
+          : "We couldn't save your review. Please try again.",
+      );
+      console.error(e);
     } finally {
       setJoinReviewActionLoading(false);
     }
@@ -190,7 +206,12 @@ export default function HelpPage() {
       const reqs = await getPendingPermissionRequests();
       setPendingRequests(reqs);
     } catch (e: any) {
-      alert(e.message);
+      toast.error(
+        lang === "ar"
+          ? "تعذّر حفظ المراجعة. يُرجى المحاولة مرة أخرى."
+          : "We couldn't save your review. Please try again.",
+      );
+      console.error(e);
     } finally {
       setReviewActionLoading(false);
     }

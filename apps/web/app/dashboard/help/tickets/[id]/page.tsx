@@ -25,6 +25,7 @@ import {
   addTicketMessage,
   updateTicketStatus,
 } from "../../../../actions/support-tickets";
+import { toast } from "sonner";
 
 const STATUS_OPTIONS = [
   { value: "OPEN", label: { ar: "مفتوحة", en: "Open" } },
@@ -97,7 +98,12 @@ export default function TicketDetailPage() {
       setReplyText("");
       await loadTicket();
     } catch (e: any) {
-      alert(e.message);
+      toast.error(
+        lang === "ar"
+          ? "تعذّر إرسال الرد. يُرجى المحاولة مرة أخرى."
+          : "We couldn't send your reply. Please try again.",
+      );
+      console.error(e);
     }
     setSending(false);
   }
@@ -108,7 +114,12 @@ export default function TicketDetailPage() {
       await updateTicketStatus(ticketId, status);
       await loadTicket();
     } catch (e: any) {
-      alert(e.message);
+      toast.error(
+        lang === "ar"
+          ? "تعذّر تحديث حالة التذكرة. يُرجى المحاولة مرة أخرى."
+          : "We couldn't update the ticket status. Please try again.",
+      );
+      console.error(e);
     }
     setUpdatingStatus(false);
   }

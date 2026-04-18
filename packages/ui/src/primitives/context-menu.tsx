@@ -4,6 +4,7 @@ import * as React from "react"
 import * as ContextMenuPrimitive from "@radix-ui/react-context-menu"
 import { Check, ChevronRight, Circle } from "lucide-react"
 
+import { DirectionalIcon } from "../components/DirectionalIcon"
 import { cn } from "../lib/utils"
 
 const ContextMenu = ContextMenuPrimitive.Root
@@ -34,7 +35,7 @@ const ContextMenuSubTrigger = React.forwardRef<
     {...props}
   >
     {children}
-    <ChevronRight className="ml-auto h-4 w-4" />
+    <DirectionalIcon icon={ChevronRight} className="ms-auto h-4 w-4" />
   </ContextMenuPrimitive.SubTrigger>
 ))
 ContextMenuSubTrigger.displayName = ContextMenuPrimitive.SubTrigger.displayName

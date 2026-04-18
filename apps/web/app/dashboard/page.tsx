@@ -282,7 +282,7 @@ export default function DashboardPage() {
               icon={Handshake}
               tone="blue"
               sparkline={trends.pipeline.slice(-12)}
-              href="/dashboard/reservations"
+              href="/dashboard/deals"
             />
             <MobileKPICard
               label={lang === "ar" ? "العقود الموقعة" : "Signed Contracts"}
@@ -336,7 +336,7 @@ export default function DashboardPage() {
                         {formatNumber(pendingDeals)}
                       </span>
                     }
-                    href="/dashboard/reservations"
+                    href="/dashboard/deals"
                   />
                 )}
 

@@ -271,13 +271,14 @@ export default function DocumentVaultPage() {
             <UploadButton
               endpoint="blueprintUploader"
               onClientUploadComplete={handleUploadComplete}
-              onUploadError={(error: Error) =>
+              onUploadError={(error: Error) => {
+                console.error(error);
                 setUploadError(
                   lang === "ar"
-                    ? `خطأ في الرفع: ${error.message}`
-                    : `Upload error: ${error.message}`
-                )
-              }
+                    ? "تعذّر رفع الملف. يُرجى المحاولة مرة أخرى."
+                    : "We couldn't upload this file. Please try again."
+                );
+              }}
             />
           </div>
           <FAB
@@ -310,7 +311,10 @@ export default function DocumentVaultPage() {
           <UploadButton
             endpoint="blueprintUploader"
             onClientUploadComplete={handleUploadComplete}
-            onUploadError={(error: Error) => setUploadError(lang === "ar" ? `خطأ في الرفع: ${error.message}` : `Upload error: ${error.message}`)}
+            onUploadError={(error: Error) => {
+              console.error(error);
+              setUploadError(lang === "ar" ? "تعذّر رفع الملف. يُرجى المحاولة مرة أخرى." : "We couldn't upload this file. Please try again.");
+            }}
             appearance={{
               button: "bg-secondary hover:bg-green-bright text-white text-sm font-bold gap-2 flex h-9 px-4 rounded-md",
               allowedContent: "hidden"
@@ -394,7 +398,7 @@ export default function DocumentVaultPage() {
                 />
              </div>
              <div className="flex items-center gap-2">
-                <Button variant="secondary" size="sm" className="h-8 w-8 p-0" aria-label={lang === "ar" ? "تحديد" : "Select"}>
+                <Button variant="secondary" size="sm" className="h-11 w-11 sm:h-8 sm:w-8 p-0" aria-label={lang === "ar" ? "تحديد" : "Select"}>
                    <SquareDashedMousePointer className="h-[18px] w-[18px]" />
                 </Button>
                 <div className="h-4 w-px bg-border mx-1" />
@@ -457,7 +461,7 @@ export default function DocumentVaultPage() {
                       )}>
                          {['pdf'].includes(doc.type?.toLowerCase()) ? <FilePdf className="h-7 w-7" /> : ['jpg', 'png', 'jpeg'].includes(doc.type?.toLowerCase()) ? <FileImage className="h-7 w-7" /> : <FileText className="h-7 w-7" />}
                       </div>
-                      <button className="text-muted-foreground hover:text-primary transition-colors" aria-label={lang === "ar" ? "المزيد" : "More"}>
+                      <button className="h-11 w-11 sm:h-8 sm:w-8 flex items-center justify-center text-muted-foreground hover:text-primary transition-colors" aria-label={lang === "ar" ? "المزيد" : "More"}>
                          <MoreVertical className="h-5 w-5" />
                       </button>
                    </div>
@@ -469,7 +473,7 @@ export default function DocumentVaultPage() {
 
                    <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
                       <Badge variant="available" className="text-[9px] bg-muted text-muted-foreground border-none">{doc.category}</Badge>
-                      <a href={doc.url} target="_blank" rel="noopener noreferrer" className="h-8 w-8 rounded-full hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-secondary transition-all">
+                      <a href={doc.url} target="_blank" rel="noopener noreferrer" className="h-11 w-11 sm:h-8 sm:w-8 rounded-full hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-secondary transition-all">
                          <Download className="h-[18px] w-[18px]" />
                       </a>
                    </div>

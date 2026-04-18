@@ -9,7 +9,7 @@ import { logAuditEvent } from "../../lib/audit";
 
 const ALLOWED_LANDING_PAGES = [
   "/dashboard", "/dashboard/projects", "/dashboard/units",
-  "/dashboard/sales/customers", "/dashboard/sales/contracts",
+  "/dashboard/crm", "/dashboard/contracts",
   "/dashboard/leases", "/dashboard/finance", "/dashboard/maintenance",
   "/dashboard/reports", "/dashboard/settings",
 ];

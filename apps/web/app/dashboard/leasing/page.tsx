@@ -173,7 +173,7 @@ export default function LeasingDashboardPage() {
               stats && stats.pendingApplications > 0 ? "warning" : "primary"
             }
             comparisonPeriod={lang === "ar" ? "تحتاج مراجعة" : "awaiting review"}
-            href="/dashboard/reservations"
+            href="/dashboard/deals"
             lastUpdated={lastLoaded}
             locale={lang}
             loading={loading}

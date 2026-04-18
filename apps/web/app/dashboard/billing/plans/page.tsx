@@ -18,6 +18,7 @@ import { Button, AppBar, SARAmount, Skeleton, DirectionalIcon } from "@repo/ui";
 import Link from "next/link";
 import { getPlans, subscribeToPlan, getCurrentSubscription } from "../../../actions/billing";
 import { validateCoupon } from "../../../actions/coupons";
+import { toast } from "sonner";
 
 export default function PlansPage() {
   const { lang } = useLanguage();
@@ -97,7 +98,12 @@ export default function PlansPage() {
       const sub = await getCurrentSubscription();
       setCurrentSub(sub);
     } catch (error: any) {
-      alert(error.message);
+      toast.error(
+        lang === "ar"
+          ? "تعذّر الاشتراك في الخطة. يُرجى المحاولة مرة أخرى."
+          : "We couldn't start your subscription. Please try again.",
+      );
+      console.error(error);
     } finally {
       setSubscribing(null);
     }

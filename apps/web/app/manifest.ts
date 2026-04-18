@@ -40,7 +40,7 @@ export default function manifest(): MetadataRoute.Manifest {
         name: "CRM",
         short_name: "CRM",
         description: "Customer relationship management",
-        url: "/dashboard/sales/customers",
+        url: "/dashboard/crm",
         icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }],
       },
       {

@@ -36,6 +36,7 @@ import {
   SaudiPhoneInput,
 } from "@repo/ui";
 import Link from "next/link";
+import { toast } from "sonner";
 import { getOrganization, updateOrganization, clearAppCache } from "../../actions/organization";
 import { usePermissions } from "../../../hooks/usePermissions";
 import { getUserPreferences, updateLandingPage } from "../../actions/preferences";
@@ -195,8 +196,12 @@ export default function OrgSettingsPage() {
       });
       setOrg(updated as Record<string, unknown>);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : (lang === "ar" ? "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى." : "An unexpected error occurred. Please try again.");
-      alert(message);
+      console.error("Failed to save organization settings:", err);
+      toast.error(
+        lang === "ar"
+          ? "تعذّر حفظ التغييرات. يرجى المحاولة مرة أخرى أو التواصل مع الدعم."
+          : "We couldn't save your changes. Try again or contact support.",
+      );
     } finally {
       setSaving(false);
     }
@@ -532,8 +537,8 @@ export default function OrgSettingsPage() {
                         <option value="/dashboard">{lang === "ar" ? "نظرة عامة" : "Overview"}</option>
                         <option value="/dashboard/projects">{lang === "ar" ? "المشاريع" : "Projects"}</option>
                         <option value="/dashboard/units">{lang === "ar" ? "الوحدات" : "Units"}</option>
-                        <option value="/dashboard/sales/customers">{lang === "ar" ? "العملاء" : "Customers"}</option>
-                        <option value="/dashboard/sales/contracts">{lang === "ar" ? "المبيعات" : "Sales"}</option>
+                        <option value="/dashboard/crm">{lang === "ar" ? "العملاء" : "Customers"}</option>
+                        <option value="/dashboard/contracts">{lang === "ar" ? "المبيعات" : "Sales"}</option>
                         <option value="/dashboard/leases">{lang === "ar" ? "الإيجارات" : "Leases"}</option>
                         <option value="/dashboard/finance">{lang === "ar" ? "المالية" : "Finance"}</option>
                         <option value="/dashboard/maintenance">{lang === "ar" ? "الصيانة" : "Maintenance"}</option>
@@ -1285,10 +1290,10 @@ export default function OrgSettingsPage() {
               <option value="/dashboard/units">
                 {lang === "ar" ? "الوحدات" : "Units"}
               </option>
-              <option value="/dashboard/sales/customers">
+              <option value="/dashboard/crm">
                 {lang === "ar" ? "العملاء" : "Customers"}
               </option>
-              <option value="/dashboard/sales/contracts">
+              <option value="/dashboard/contracts">
                 {lang === "ar" ? "المبيعات" : "Sales"}
               </option>
               <option value="/dashboard/leases">

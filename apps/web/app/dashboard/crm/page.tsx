@@ -75,6 +75,7 @@ import {
   convertInterestToDeal,
   getAvailableUnitsForInterest,
 } from "../../actions/customer-interests";
+import { maskPhone, maskEmail } from "@/lib/pii-masking";
 
 // ─── Pipeline Stage Config ────────────────────────────────────────────────────
 
@@ -200,11 +201,6 @@ function getStatusConfig(key: string) {
   return ALL_STATUS_CONFIGS.find((s) => s.key === key) ?? DEFAULT_STATUS_CONFIG;
 }
 
-function maskPhone(phone: string) {
-  if (!phone || phone === "•••••••••••") return "•••••••••••";
-  return phone.slice(0, 3) + "•••" + phone.slice(-3);
-}
-
 function formatSAR(amount: number | string | null | undefined, locale: string) {
   if (!amount) return "—";
   const num = typeof amount === "string" ? parseFloat(amount) : amount;
@@ -226,6 +222,8 @@ function CustomerDrawer({
   lang,
   teamMembers,
   assignments,
+  showPii,
+  hasPiiAccess,
 }: {
   customer: any;
   onClose: () => void;
@@ -234,6 +232,8 @@ function CustomerDrawer({
   lang: "ar" | "en";
   teamMembers: any[];
   assignments: any[];
+  showPii: boolean;
+  hasPiiAccess: boolean;
 }) {
   const statusCfg = getStatusConfig(customer.status);
 
@@ -701,17 +701,17 @@ function CustomerDrawer({
             <div className="space-y-2">
               {customer.phone && (
                 <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/20 border border-border/50">
-                  <Phone className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <Phone className="h-4 w-4 text-muted-foreground shrink-0" aria-hidden />
                   <span className="text-sm font-medium text-foreground">
-                    {customer.phone}
+                    {showPii ? customer.phone : maskPhone(customer.phone)}
                   </span>
                 </div>
               )}
               {customer.email && (
                 <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/20 border border-border/50">
-                  <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <Mail className="h-4 w-4 text-muted-foreground shrink-0" aria-hidden />
                   <span className="text-sm font-medium text-foreground truncate">
-                    {customer.email}
+                    {showPii ? customer.email : maskEmail(customer.email)}
                   </span>
                 </div>
               )}
@@ -1425,9 +1425,9 @@ function KanbanCard({
   // Quick-action contact targets. Only render actions whose data exists.
   const rawPhone = typeof customer.phone === "string" ? customer.phone : "";
   const phoneDigits = rawPhone.replace(/\D/g, "");
-  const hasPhone = phoneDigits.length > 0 && rawPhone !== "•••••••••••";
+  const hasPhone = phoneDigits.length >= 7 && !rawPhone.includes("*");
   const email = typeof customer.email === "string" ? customer.email : "";
-  const hasEmail = email.length > 0 && email !== "•••••••••••";
+  const hasEmail = email.length > 0 && email.includes("@") && !email.startsWith("*");
 
   return (
     <div
@@ -1782,11 +1782,15 @@ export default function CRMPage() {
         id: "phone",
         accessorKey: "phone",
         header: lang === "ar" ? "الهاتف" : "Phone",
-        cell: ({ row }) => (
-          <span className="font-mono text-sm text-muted-foreground">
-            {showPii ? row.original.phone : maskPhone(row.original.phone)}
-          </span>
-        ),
+        cell: ({ row }) =>
+          row.original.phone ? (
+            <span className="inline-flex items-center gap-1.5 font-mono text-sm text-muted-foreground">
+              <Phone className="h-3.5 w-3.5 text-muted-foreground shrink-0" aria-hidden />
+              {showPii ? row.original.phone : maskPhone(row.original.phone)}
+            </span>
+          ) : (
+            <span className="text-sm text-muted-foreground">—</span>
+          ),
       },
       {
         id: "budget",
@@ -2768,9 +2772,14 @@ export default function CRMPage() {
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span className="font-mono">
-                    {showPii ? c.phone : maskPhone(c.phone)}
-                  </span>
+                  {c.phone ? (
+                    <span className="inline-flex items-center gap-1.5 font-mono">
+                      <Phone className="h-3.5 w-3.5 text-muted-foreground shrink-0" aria-hidden />
+                      {showPii ? c.phone : maskPhone(c.phone)}
+                    </span>
+                  ) : (
+                    <span>—</span>
+                  )}
                   <span>
                     {c.budget
                       ? `${Number(c.budget).toLocaleString(lang === "ar" ? "ar-SA" : "en-SA")} ${lang === "ar" ? "ر.س" : "SAR"}`
@@ -2791,7 +2800,7 @@ export default function CRMPage() {
                         setDrawerCustomer(c);
                       }}
                       aria-label={lang === "ar" ? "عرض الملف" : "View profile"}
-                      className="h-8 w-8 rounded-md border border-border bg-background flex items-center justify-center text-muted-foreground"
+                      className="h-11 w-11 sm:h-8 sm:w-8 rounded-md border border-border bg-background flex items-center justify-center text-muted-foreground"
                       style={{ display: "inline-flex" }}
                     >
                       <Eye className="h-3.5 w-3.5" />
@@ -2804,7 +2813,7 @@ export default function CRMPage() {
                           openDelete(c);
                         }}
                         aria-label={lang === "ar" ? "حذف" : "Delete"}
-                        className="h-8 w-8 rounded-md border border-border bg-background flex items-center justify-center text-muted-foreground"
+                        className="h-11 w-11 sm:h-8 sm:w-8 rounded-md border border-border bg-background flex items-center justify-center text-muted-foreground"
                         style={{ display: "inline-flex" }}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
@@ -3317,6 +3326,8 @@ export default function CRMPage() {
         lang={lang}
         teamMembers={teamMembers}
         assignments={drawerAssignments}
+        showPii={showPii}
+        hasPiiAccess={hasPiiAccess}
       />
     )}
     </>
