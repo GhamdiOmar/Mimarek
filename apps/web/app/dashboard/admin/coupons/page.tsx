@@ -37,6 +37,7 @@ import {
   Skeleton,
   Badge,
 } from "@repo/ui";
+import { PageHeader } from "@repo/ui/components/PageHeader";
 import Link from "next/link";
 import {
   adminGetCoupons,
@@ -456,23 +457,48 @@ export default function CouponManagementPage() {
                 ))}
               </div>
             ) : filteredMobileCoupons.length === 0 ? (
-              <EmptyState
-                icon={<Ticket className="h-10 w-10 text-primary" aria-hidden="true" />}
-                title={labels.noCoupons}
-                description={labels.noCouponsDesc}
-                action={
-                  <Button
-                    onClick={() => {
-                      resetForm();
-                      setShowModal(true);
-                    }}
-                    style={{ display: "inline-flex" }}
-                  >
-                    <Plus className="h-4 w-4 me-2" />
-                    {labels.createCoupon}
-                  </Button>
-                }
-              />
+              coupons.length === 0 ? (
+                <EmptyState
+                  variant="first-time"
+                  icon={<Ticket className="h-12 w-12" aria-hidden="true" />}
+                  title={labels.noCoupons}
+                  description={labels.noCouponsDesc}
+                  action={
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        resetForm();
+                        setShowModal(true);
+                      }}
+                      style={{ display: "inline-flex" }}
+                    >
+                      <Plus className="h-4 w-4 me-1.5" />
+                      {labels.createCoupon}
+                    </Button>
+                  }
+                  helpHref="/dashboard/help#coupons"
+                  helpLabel={lang === "ar" ? "تعرّف على الكوبونات" : "Learn about coupons"}
+                />
+              ) : (
+                <EmptyState
+                  variant="filtered"
+                  icon={<Search className="h-10 w-10" aria-hidden="true" />}
+                  title={lang === "ar" ? "لا توجد نتائج مطابقة" : "No matching coupons"}
+                  description={
+                    lang === "ar" ? "جرّب بحثاً آخر." : "Try a different search."
+                  }
+                  action={
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setMobileSearch("")}
+                      style={{ display: "inline-flex" }}
+                    >
+                      {lang === "ar" ? "مسح الفلاتر" : "Clear filters"}
+                    </Button>
+                  }
+                />
+              )
             ) : (
               <div className="rounded-2xl border border-border bg-card px-4">
                 {filteredMobileCoupons.map((coupon, idx) => {
@@ -539,8 +565,8 @@ export default function CouponManagementPage() {
         <div
           className={`fixed top-6 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-2 px-5 py-3 rounded-lg shadow-lg text-sm font-medium transition-all duration-300 ${
             toast.type === "success"
-              ? "bg-green-600 text-white"
-              : "bg-red-600 text-white"
+              ? "bg-success text-white"
+              : "bg-destructive text-white"
           }`}
         >
           {toast.type === "success" ? (
@@ -571,30 +597,26 @@ export default function CouponManagementPage() {
       </div>
 
       {/* Header */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="flex items-center gap-4">
-          <div className="h-12 w-12 rounded-md bg-primary/10 flex items-center justify-center text-primary">
-            <Tag className="h-7 w-7" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">
-              {labels.title}
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              {labels.subtitle}
-            </p>
-          </div>
+      <div className="flex items-start gap-4">
+        <div className="h-12 w-12 rounded-md bg-primary/10 flex items-center justify-center text-primary shrink-0">
+          <Tag className="h-7 w-7" />
         </div>
-        <Button
-          onClick={() => {
-            resetForm();
-            setShowModal(true);
-          }}
-         
-        >
-          <Plus className="h-[18px] w-[18px] me-2" />
-          {labels.createCoupon}
-        </Button>
+        <PageHeader
+          className="flex-1"
+          title={labels.title}
+          description={labels.subtitle}
+          actions={
+            <Button
+              onClick={() => {
+                resetForm();
+                setShowModal(true);
+              }}
+            >
+              <Plus className="h-[18px] w-[18px] me-2" />
+              {labels.createCoupon}
+            </Button>
+          }
+        />
       </div>
 
       {/* Coupons Table */}
@@ -692,8 +714,8 @@ export default function CouponManagementPage() {
                         className="group relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                         style={{
                           backgroundColor: coupon.isActive
-                            ? "rgb(34 197 94)"
-                            : "rgb(156 163 175)",
+                            ? "hsl(var(--success))"
+                            : "hsl(var(--muted-foreground) / 0.4)",
                         }}
                         role="switch"
                         aria-checked={coupon.isActive}
@@ -717,14 +739,14 @@ export default function CouponManagementPage() {
                       <span
                         className={`ms-2 text-xs font-medium ${
                           coupon.isActive
-                            ? "text-green-600 dark:text-green-400"
-                            : "text-gray-500 dark:text-gray-400"
+                            ? "text-success"
+                            : "text-muted-foreground"
                         }`}
                       >
                         {coupon.isActive ? labels.active : labels.inactive}
                       </span>
                       {(isExpired || isMaxedOut) && (
-                        <span className="ms-1 text-xs text-orange-500 dark:text-orange-400">
+                        <span className="ms-1 text-xs text-warning">
                           {isExpired
                             ? lang === "ar"
                               ? "(منتهي)"
@@ -819,7 +841,7 @@ export default function CouponManagementPage() {
                 {/* Code */}
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-1.5">
-                    {labels.couponCode} <span className="text-red-500">*</span>
+                    {labels.couponCode} <span className="text-destructive">*</span>
                   </label>
                   <input
                     type="text"
@@ -829,11 +851,11 @@ export default function CouponManagementPage() {
                     }
                     placeholder={labels.couponCodePlaceholder}
                     className={`w-full h-10 px-3 rounded-md border bg-background text-foreground text-sm font-mono tracking-wider placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 ${
-                      formErrors.code ? "border-red-500" : "border-border"
+                      formErrors.code ? "border-destructive" : "border-border"
                     }`}
                   />
                   {formErrors.code && (
-                    <p className="text-xs text-red-500 mt-1">
+                    <p className="text-xs text-destructive mt-1">
                       {formErrors.code}
                     </p>
                   )}
@@ -868,7 +890,7 @@ export default function CouponManagementPage() {
                     <span className="text-muted-foreground text-xs">
                       ({formType === "PERCENTAGE" ? "%" : labels.sar})
                     </span>{" "}
-                    <span className="text-red-500">*</span>
+                    <span className="text-destructive">*</span>
                   </label>
                   <input
                     type="number"
@@ -879,11 +901,11 @@ export default function CouponManagementPage() {
                     step={formType === "PERCENTAGE" ? 1 : 0.01}
                     placeholder="0"
                     className={`w-full h-10 px-3 rounded-md border bg-background text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 ${
-                      formErrors.value ? "border-red-500" : "border-border"
+                      formErrors.value ? "border-destructive" : "border-border"
                     }`}
                   />
                   {formErrors.value && (
-                    <p className="text-xs text-red-500 mt-1">
+                    <p className="text-xs text-destructive mt-1">
                       {formErrors.value}
                     </p>
                   )}

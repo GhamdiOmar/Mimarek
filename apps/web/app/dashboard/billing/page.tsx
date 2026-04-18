@@ -297,9 +297,16 @@ export default function BillingDashboardPage() {
               )}
             </div>
             {invoices.length === 0 ? (
-              <div className="rounded-xl border border-border bg-card p-6 text-center">
-                <p className="text-sm text-muted-foreground">{t.noInvoices}</p>
-              </div>
+              <EmptyState
+                compact
+                icon={<Receipt className="h-8 w-8" />}
+                title={t.noInvoices}
+                description={
+                  lang === "ar"
+                    ? "ستظهر فواتيرك هنا بمجرد إصدار أول اشتراك."
+                    : "Your invoices appear here once your first subscription is billed."
+                }
+              />
             ) : (
               <div className="rounded-xl border border-border bg-card px-4">
                 {invoices.slice(0, 3).map((inv: any, idx: number) => (
@@ -392,9 +399,9 @@ export default function BillingDashboardPage() {
 
           {/* Error Display */}
           {error && (
-            <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
-              <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
-              <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600" aria-label={lang === "ar" ? "إغلاق" : "Dismiss"}>
+            <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-destructive/10 border border-destructive/30">
+              <p className="text-sm text-destructive">{error}</p>
+              <button onClick={() => setError(null)} className="text-destructive/70 hover:text-destructive" aria-label={lang === "ar" ? "إغلاق" : "Dismiss"}>
                 <X className="h-4 w-4" />
               </button>
             </div>
@@ -402,11 +409,11 @@ export default function BillingDashboardPage() {
 
           {/* Grace Period Banner */}
           {subscription?.status === "PAST_DUE" && (
-            <div className="flex items-center gap-3 p-4 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800">
-              <AlertTriangle className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0" />
+            <div className="flex items-center gap-3 p-4 rounded-lg bg-warning/10 border border-warning/30">
+              <AlertTriangle className="w-5 h-5 text-warning flex-shrink-0" />
               <div className="flex-1">
-                <p className="text-sm font-medium text-yellow-800 dark:text-yellow-300">{t.pastDueBanner}</p>
-                <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-1">{t.pastDueDescription}</p>
+                <p className="text-sm font-medium text-warning">{t.pastDueBanner}</p>
+                <p className="text-xs text-warning mt-1">{t.pastDueDescription}</p>
               </div>
               <Button variant="secondary" size="sm" style={{ display: "inline-flex" }} className="gap-1.5" disabled={updatingPayment}>
                 {updatingPayment && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
@@ -453,7 +460,7 @@ export default function BillingDashboardPage() {
                       </span>
                     </p>
                     {subscription.trialEndsAt && subscription.status === "TRIALING" && (
-                      <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">
+                      <p className="text-sm text-info mt-1">
                         {t.trialEnds}: {new Date(subscription.trialEndsAt).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-US")}
                       </p>
                     )}
@@ -537,7 +544,7 @@ export default function BillingDashboardPage() {
                           <p className="text-sm font-semibold text-foreground">
                             {Number(inv.total).toLocaleString(lang === "ar" ? "ar-SA" : "en-US")} {t.sar}
                           </p>
-                          <span className={`text-xs px-2 py-0.5 rounded-full ${invoiceStatusColors[inv.status] ?? "bg-gray-100 text-gray-800 dark:bg-gray-700/30 dark:text-gray-300"}`}>
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${invoiceStatusColors[inv.status] ?? "bg-muted text-muted-foreground"}`}>
                             {inv.status}
                           </span>
                         </div>
@@ -545,7 +552,16 @@ export default function BillingDashboardPage() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground text-center py-4">{t.noInvoices}</p>
+                  <EmptyState
+                    compact
+                    icon={<Receipt className="h-8 w-8" />}
+                    title={t.noInvoices}
+                    description={
+                      lang === "ar"
+                        ? "ستظهر فواتيرك هنا بمجرد إصدار أول اشتراك."
+                        : "Your invoices appear here once your first subscription is billed."
+                    }
+                  />
                 )}
               </CardContent>
             </Card>

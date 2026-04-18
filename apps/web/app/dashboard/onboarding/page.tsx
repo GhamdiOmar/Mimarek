@@ -391,7 +391,7 @@ export default function OnboardingPage() {
     <div className="hidden md:block">
     <div
       dir={lang === "ar" ? "rtl" : "ltr"}
-      className="min-h-screen bg-gray-50/50"
+      className="min-h-screen bg-muted/30"
     >
       <div className="max-w-3xl mx-auto px-4 py-10 space-y-8 animate-in fade-in duration-500">
         {/* Header */}
@@ -407,7 +407,7 @@ export default function OnboardingPage() {
         </div>
 
         {/* Stepper */}
-        <div className="relative h-1 bg-gray-200 rounded-full mx-8">
+        <div className="relative h-1 bg-muted rounded-full mx-8">
           <div
             className="absolute h-full bg-secondary rounded-full transition-all duration-500"
             style={{
@@ -422,10 +422,10 @@ export default function OnboardingPage() {
                   className={cn(
                     "h-9 w-9 rounded-full border-2 flex items-center justify-center text-sm font-bold transition-all duration-300",
                     i < currentStep
-                      ? "bg-green-500 border-green-500 text-white"
+                      ? "bg-success border-success text-white"
                       : i === currentStep
                         ? "bg-secondary border-secondary text-white"
-                        : "bg-card border-gray-300 text-gray-400"
+                        : "bg-card border-border text-muted-foreground"
                   )}
                 >
                   {i < currentStep ? (
@@ -440,8 +440,8 @@ export default function OnboardingPage() {
                     i === currentStep
                       ? "text-primary"
                       : i < currentStep
-                        ? "text-green-600"
-                        : "text-gray-400"
+                        ? "text-success"
+                        : "text-muted-foreground"
                   )}
                 >
                   {step.label[lang]}
@@ -453,10 +453,10 @@ export default function OnboardingPage() {
 
         {/* Step Content */}
         <div className="pt-10">
-          <div className="bg-card rounded-xl border border-gray-100 shadow-sm p-8 min-h-[400px]">
+          <div className="bg-card rounded-xl border border-border shadow-sm p-8 min-h-[400px]">
             {/* Error Banner */}
             {error && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+              <div className="mb-6 p-4 bg-destructive/10 border border-destructive/30 rounded-lg text-sm text-destructive">
                 {error}
               </div>
             )}
@@ -479,7 +479,7 @@ export default function OnboardingPage() {
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                       {lang === "ar" ? "اسم المنشأة" : "Company Name"}
-                      <span className="text-red-500 ms-1">*</span>
+                      <span className="text-destructive ms-1">*</span>
                     </label>
                     <Input
                       value={companyName}
@@ -507,7 +507,7 @@ export default function OnboardingPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-end pt-6 border-t border-gray-100">
+                <div className="flex items-center justify-end pt-6 border-t border-border">
                   <Button
                     onClick={handleSaveCompany}
                     disabled={loading}
@@ -540,7 +540,7 @@ export default function OnboardingPage() {
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                       {lang === "ar" ? "رقم الوحدة" : "Unit Number"}
-                      <span className="text-red-500 ms-1">*</span>
+                      <span className="text-destructive ms-1">*</span>
                     </label>
                     <Input
                       value={unitForm.number}
@@ -552,7 +552,7 @@ export default function OnboardingPage() {
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                       {lang === "ar" ? "نوع الوحدة" : "Unit Type"}
-                      <span className="text-red-500 ms-1">*</span>
+                      <span className="text-destructive ms-1">*</span>
                     </label>
                     <select
                       value={unitForm.type}
@@ -604,7 +604,7 @@ export default function OnboardingPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-6 border-t border-gray-100">
+                <div className="flex items-center justify-between pt-6 border-t border-border">
                   <Button
                     variant="ghost"
                     onClick={goPrev}
@@ -642,8 +642,8 @@ export default function OnboardingPage() {
             {/* ─── Step 3: Done ─── */}
             {currentStepId === "done" && (
               <div className="flex flex-col items-center justify-center py-12 space-y-6 animate-in slide-in-from-right-4 duration-500">
-                <div className="h-20 w-20 rounded-full bg-green-100 flex items-center justify-center">
-                  <Check className="h-10 w-10 text-green-600" />
+                <div className="h-20 w-20 rounded-full bg-success/15 flex items-center justify-center">
+                  <Check className="h-10 w-10 text-success" />
                 </div>
                 <div className="text-center space-y-2">
                   <h2 className="text-2xl font-bold text-primary">

@@ -35,6 +35,7 @@ import {
   type ActivityTimelineTone,
 } from "@repo/ui";
 import { cn } from "@repo/ui/lib/utils";
+import { PageHeader } from "@repo/ui/components/PageHeader";
 import { getAuditLogs } from "../../../actions/audit";
 
 type AuditLog = {
@@ -51,16 +52,16 @@ type AuditLog = {
 };
 
 const actionColors: Record<string, string> = {
-  CREATE: "bg-green-500/10 text-green-500",
-  READ: "bg-blue-500/10 text-blue-500",
-  UPDATE: "bg-amber-500/10 text-amber-500",
-  DELETE: "bg-red-500/10 text-red-500",
-  READ_PII: "bg-purple-500/10 text-purple-500",
-  EXPORT: "bg-indigo-500/10 text-indigo-500",
-  LOGIN: "bg-cyan-500/10 text-cyan-500",
-  LOGOUT: "bg-gray-500/10 text-gray-500",
-  PASSWORD_CHANGE: "bg-orange-500/10 text-orange-500",
-  PASSWORD_RESET: "bg-rose-500/10 text-rose-500",
+  CREATE: "bg-success/10 text-success",
+  READ: "bg-info/10 text-info",
+  UPDATE: "bg-warning/10 text-warning",
+  DELETE: "bg-destructive/10 text-destructive",
+  READ_PII: "bg-primary/10 text-primary",
+  EXPORT: "bg-primary/10 text-primary",
+  LOGIN: "bg-info/10 text-info",
+  LOGOUT: "bg-muted text-muted-foreground",
+  PASSWORD_CHANGE: "bg-warning/10 text-warning",
+  PASSWORD_RESET: "bg-destructive/10 text-destructive",
 };
 
 const actionIcons: Record<string, LucideIcon> = {
@@ -279,11 +280,38 @@ export default function AuditLogPage() {
               {lang === "ar" ? "جاري التحميل..." : "Loading..."}
             </div>
           ) : logs.length === 0 ? (
-            <EmptyState
-              icon={<History className="h-12 w-12" />}
-              title={t.noLogs}
-              description={t.noLogsDesc}
-            />
+            actionFilter || resourceFilter ? (
+              <EmptyState
+                variant="filtered"
+                icon={<Filter className="h-12 w-12" />}
+                title={lang === "ar" ? "لا توجد نتائج مطابقة" : "No matching events"}
+                description={
+                  lang === "ar"
+                    ? "جرّب تعديل عوامل التصفية."
+                    : "Try adjusting the filters."
+                }
+                action={
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setActionFilter("");
+                      setResourceFilter("");
+                    }}
+                    style={{ display: "inline-flex" }}
+                  >
+                    {lang === "ar" ? "مسح الفلاتر" : "Clear filters"}
+                  </Button>
+                }
+              />
+            ) : (
+              <EmptyState
+                variant="first-time"
+                icon={<History className="h-12 w-12" />}
+                title={t.noLogs}
+                description={t.noLogsDesc}
+              />
+            )
           ) : (
             <ActivityTimeline events={timelineEvents} />
           )}
@@ -329,17 +357,16 @@ export default function AuditLogPage() {
         dir={lang === "ar" ? "rtl" : "ltr"}
       >
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-purple-500/10">
-              <History className="h-6 w-6 text-purple-500" />
+        <PageHeader
+          className="mb-6"
+          title={t.title}
+          description={t.subtitle}
+          badge={
+            <div className="p-2 rounded-lg bg-primary/10">
+              <History className="h-6 w-6 text-primary" aria-hidden="true" />
             </div>
-            <div>
-              <h1 className="text-xl font-bold text-foreground">{t.title}</h1>
-              <p className="text-xs text-muted-foreground">{t.subtitle}</p>
-            </div>
-          </div>
-        </div>
+          }
+        />
 
         {/* Filters */}
         <div className="flex flex-wrap gap-3 mb-4">
@@ -401,7 +428,7 @@ export default function AuditLogPage() {
                       <div className="text-[10px] text-muted-foreground">{log.userRole}</div>
                     </TableCell>
                     <TableCell>
-                      <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-semibold", actionColors[log.action] || "bg-gray-500/10 text-gray-500")}>
+                      <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-semibold", actionColors[log.action] || "bg-muted text-muted-foreground")}>
                         {log.action}
                       </span>
                     </TableCell>

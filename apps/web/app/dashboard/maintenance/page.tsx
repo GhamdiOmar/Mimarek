@@ -18,6 +18,7 @@ import {
   DateRangePicker,
   LastUpdatedAgo,
   ChartContainer,
+  EmptyState,
   type ChartConfig,
 } from "@repo/ui";
 import {
@@ -251,9 +252,16 @@ export default function MaintenanceOverviewPage() {
             {loading ? (
               <div className="h-64 animate-pulse rounded bg-muted" />
             ) : categoryData.length === 0 ? (
-              <p className="py-16 text-center text-sm text-muted-foreground">
-                {lang === "ar" ? "لا توجد طلبات مفتوحة" : "No open tickets"}
-              </p>
+              <EmptyState
+                compact
+                icon={<Wrench className="h-10 w-10" />}
+                title={lang === "ar" ? "لا توجد طلبات مفتوحة" : "No open tickets"}
+                description={
+                  lang === "ar"
+                    ? "ستظهر طلبات الصيانة هنا عند استلامها."
+                    : "Maintenance tickets will appear here once raised."
+                }
+              />
             ) : (
               <ChartContainer config={chartConfig} className="h-64 w-full">
                 <ResponsiveContainer width="100%" height="100%">

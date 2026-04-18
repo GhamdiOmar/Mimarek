@@ -35,6 +35,7 @@ import {
   AppBar,
   EmptyState,
 } from "@repo/ui";
+import { PageHeader } from "@repo/ui/components/PageHeader";
 import { toast } from "sonner";
 
 type RobotsRule = { userAgent: string; allow: string[]; disallow: string[] };
@@ -450,20 +451,19 @@ export default function SeoSettingsPage() {
     <div className="hidden md:block">
     <div className="space-y-6 animate-in fade-in duration-500" dir={dir}>
       {/* Header */}
-      <div className="flex items-center gap-4 px-2">
-        <div className="h-12 w-12 rounded-md bg-primary/10 flex items-center justify-center text-primary">
+      <div className="flex items-start gap-4 px-2">
+        <div className="h-12 w-12 rounded-md bg-primary/10 flex items-center justify-center text-primary shrink-0">
           <SearchCheck className="h-7 w-7" />
         </div>
-        <div>
-          <h1 className="text-2xl font-bold text-primary">
-            {lang === "ar" ? "إعدادات SEO والاكتشاف" : "SEO & Discoverability Settings"}
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            {lang === "ar"
+        <PageHeader
+          className="flex-1"
+          title={lang === "ar" ? "إعدادات SEO والاكتشاف" : "SEO & Discoverability Settings"}
+          description={
+            lang === "ar"
               ? "إدارة ميتاداتا الموقع، العلامة التجارية، التحليلات، وإعدادات محركات البحث"
-              : "Manage site metadata, brand assets, analytics, and search engine settings"}
-          </p>
-        </div>
+              : "Manage site metadata, brand assets, analytics, and search engine settings"
+          }
+        />
       </div>
 
       <Tabs defaultValue="metadata" dir={dir}>
@@ -649,8 +649,8 @@ export default function SeoSettingsPage() {
               <h3 className="font-semibold text-primary">
                 {lang === "ar" ? "إدارة العلامات والتحليلات" : "Tag Management & Analytics"}
               </h3>
-              <div className="mt-2 rounded-md bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 px-4 py-3">
-                <p className="text-sm text-blue-800 dark:text-blue-200">
+              <div className="mt-2 rounded-md bg-info/10 border border-info/30 px-4 py-3">
+                <p className="text-sm text-info">
                   {lang === "ar"
                     ? "💡 GTM موصى به — يتيح لك إضافة GA4، Meta Pixel، TikTok، Snapchat، LinkedIn، وX من واجهة GTM دون أي تغييرات في الكود."
                     : "💡 GTM is recommended — it lets you add GA4, Meta Pixel, TikTok, Snapchat, LinkedIn, and X from the GTM interface without touching code."}
@@ -780,9 +780,9 @@ export default function SeoSettingsPage() {
                   <h3 className="font-semibold text-primary">
                     {lang === "ar" ? "محرر robots.txt" : "robots.txt Editor"}
                   </h3>
-                  <div className="flex items-center gap-1 rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 px-2 py-0.5">
-                    <AlertTriangle className="h-3.5 w-3.5 text-amber-600" />
-                    <span className="text-xs text-amber-700 dark:text-amber-300 font-medium">
+                  <div className="flex items-center gap-1 rounded-md bg-warning/10 border border-warning/30 px-2 py-0.5">
+                    <AlertTriangle className="h-3.5 w-3.5 text-warning" />
+                    <span className="text-xs text-warning font-medium">
                       {lang === "ar" ? "تحذير" : "Warning"}
                     </span>
                   </div>
@@ -808,7 +808,7 @@ export default function SeoSettingsPage() {
 
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
-                      <label className="text-xs font-medium text-green-700 dark:text-green-400 uppercase tracking-wide">Allow</label>
+                      <label className="text-xs font-medium text-success uppercase tracking-wide">Allow</label>
                       <button onClick={() => addPath(ri, "allow")} className="text-xs text-primary hover:underline flex items-center gap-1">
                         <Plus className="h-3 w-3" /> {lang === "ar" ? "إضافة" : "Add"}
                       </button>
@@ -825,7 +825,7 @@ export default function SeoSettingsPage() {
 
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
-                      <label className="text-xs font-medium text-red-700 dark:text-red-400 uppercase tracking-wide">Disallow</label>
+                      <label className="text-xs font-medium text-destructive uppercase tracking-wide">Disallow</label>
                       <button onClick={() => addPath(ri, "disallow")} className="text-xs text-primary hover:underline flex items-center gap-1">
                         <Plus className="h-3 w-3" /> {lang === "ar" ? "إضافة" : "Add"}
                       </button>

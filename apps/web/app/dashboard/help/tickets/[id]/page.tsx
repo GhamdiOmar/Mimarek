@@ -13,8 +13,9 @@ import {
   CheckCircle2,
   XCircle,
   Loader2,
+  MessageSquare,
 } from "lucide-react";
-import { Button, AppBar, BottomSheet, Textarea, DirectionalIcon } from "@repo/ui";
+import { Button, AppBar, BottomSheet, Textarea, DirectionalIcon, EmptyState } from "@repo/ui";
 import { cn } from "@repo/ui/lib/utils";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -25,6 +26,7 @@ import {
   addTicketMessage,
   updateTicketStatus,
 } from "../../../../actions/support-tickets";
+import { toast } from "sonner";
 
 const STATUS_OPTIONS = [
   { value: "OPEN", label: { ar: "مفتوحة", en: "Open" } },
@@ -97,7 +99,12 @@ export default function TicketDetailPage() {
       setReplyText("");
       await loadTicket();
     } catch (e: any) {
-      alert(e.message);
+      toast.error(
+        lang === "ar"
+          ? "تعذّر إرسال الرد. يُرجى المحاولة مرة أخرى."
+          : "We couldn't send your reply. Please try again.",
+      );
+      console.error(e);
     }
     setSending(false);
   }
@@ -108,17 +115,22 @@ export default function TicketDetailPage() {
       await updateTicketStatus(ticketId, status);
       await loadTicket();
     } catch (e: any) {
-      alert(e.message);
+      toast.error(
+        lang === "ar"
+          ? "تعذّر تحديث حالة التذكرة. يُرجى المحاولة مرة أخرى."
+          : "We couldn't update the ticket status. Please try again.",
+      );
+      console.error(e);
     }
     setUpdatingStatus(false);
   }
 
   function statusBadge(status: string) {
     const map: Record<string, string> = {
-      OPEN: "bg-gray-100 text-gray-700",
-      IN_PROGRESS: "bg-blue-50 text-blue-700",
-      WAITING_ON_USER: "bg-amber-50 text-amber-700",
-      RESOLVED: "bg-green-50 text-green-700",
+      OPEN: "bg-muted text-muted-foreground",
+      IN_PROGRESS: "bg-info/10 text-info",
+      WAITING_ON_USER: "bg-warning/10 text-warning",
+      RESOLVED: "bg-success/10 text-success",
       CLOSED: "bg-primary/10 text-primary",
     };
     const labels: Record<string, { ar: string; en: string }> = {
@@ -130,7 +142,7 @@ export default function TicketDetailPage() {
     };
     const label = labels[status] ?? { ar: status, en: status };
     return (
-      <span className={cn("px-2 py-0.5 rounded-full text-xs font-medium", map[status] ?? "bg-gray-100 text-gray-700")}>
+      <span className={cn("px-2 py-0.5 rounded-full text-xs font-medium", map[status] ?? "bg-muted text-muted-foreground")}>
         {lang === "ar" ? label.ar : label.en}
       </span>
     );
@@ -138,14 +150,14 @@ export default function TicketDetailPage() {
 
   function priorityBadge(priority: string) {
     const map: Record<string, string> = {
-      LOW: "bg-gray-100 text-gray-600",
-      MEDIUM: "bg-blue-50 text-blue-700",
-      HIGH: "bg-orange-50 text-orange-700",
-      URGENT: "bg-red-50 text-red-700",
+      LOW: "bg-muted text-muted-foreground",
+      MEDIUM: "bg-info/10 text-info",
+      HIGH: "bg-warning/10 text-warning",
+      URGENT: "bg-destructive/10 text-destructive",
     };
     const label = PRIORITY_LABELS[priority] ?? { ar: priority, en: priority };
     return (
-      <span className={cn("px-2 py-0.5 rounded-full text-xs font-medium", map[priority] ?? "bg-gray-100 text-gray-600")}>
+      <span className={cn("px-2 py-0.5 rounded-full text-xs font-medium", map[priority] ?? "bg-muted text-muted-foreground")}>
         {lang === "ar" ? label.ar : label.en}
       </span>
     );
@@ -269,11 +281,16 @@ export default function TicketDetailPage() {
           </h2>
 
           {(!ticket.messages || ticket.messages.length === 0) && (
-            <div className="rounded-2xl border border-border bg-card p-6 text-center text-sm text-muted-foreground">
-              {lang === "ar"
-                ? "لا توجد رسائل بعد. كن أول من يرد."
-                : "No messages yet. Be the first to reply."}
-            </div>
+            <EmptyState
+              compact
+              icon={<MessageSquare className="h-10 w-10" />}
+              title={lang === "ar" ? "لا توجد رسائل بعد" : "No messages yet"}
+              description={
+                lang === "ar"
+                  ? "كن أول من يرد على هذه التذكرة."
+                  : "Be the first to reply to this ticket."
+              }
+            />
           )}
 
           {ticket.messages?.map((msg: any) => {
@@ -415,7 +432,7 @@ export default function TicketDetailPage() {
       <div className="flex items-center justify-between">
         <Link
           href="/dashboard/help"
-          className="flex items-center gap-1 text-sm text-gray-500 hover:text-primary transition-colors"
+          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-primary transition-colors"
         >
           <DirectionalIcon icon={ChevronLeft} className="h-3.5 w-3.5" />
           {lang === "ar" ? "مركز المساعدة" : "Help Center"}
@@ -423,20 +440,20 @@ export default function TicketDetailPage() {
       </div>
 
       {/* Ticket Header */}
-      <div className="bg-card rounded-xl border border-gray-100 p-5">
+      <div className="bg-card rounded-xl border border-border p-5">
         <div className="flex flex-col gap-3">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-xs font-mono text-gray-400">{ticket.ticketNumber}</span>
+                <span className="text-xs font-mono text-muted-foreground">{ticket.ticketNumber}</span>
                 {statusBadge(ticket.status)}
                 {priorityBadge(ticket.priority)}
               </div>
-              <h1 className="text-lg font-bold text-gray-900 leading-snug">{ticket.subject}</h1>
+              <h1 className="text-lg font-bold text-foreground leading-snug">{ticket.subject}</h1>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500">
+          <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
             <span className="flex items-center gap-1">
               <User className="h-3 w-3" />
               {ticket.user?.name ?? ticket.user?.email}
@@ -447,7 +464,7 @@ export default function TicketDetailPage() {
             </span>
             <span className={cn(
               "px-2 py-0.5 rounded-full text-xs",
-              "bg-gray-50 text-gray-600"
+              "bg-muted text-muted-foreground"
             )}>
               {lang === "ar"
                 ? (CATEGORY_LABELS[ticket.category]?.ar ?? ticket.category)
@@ -462,7 +479,7 @@ export default function TicketDetailPage() {
           </div>
 
           {/* Description */}
-          <div className="mt-2 p-3 bg-gray-50 rounded-lg text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
+          <div className="mt-2 p-3 bg-muted rounded-lg text-sm text-foreground whitespace-pre-wrap leading-relaxed">
             {ticket.description}
           </div>
         </div>
@@ -470,13 +487,13 @@ export default function TicketDetailPage() {
 
       {/* Admin Controls */}
       {isAdmin && (
-        <div className="bg-card rounded-xl border border-gray-100 p-4">
+        <div className="bg-card rounded-xl border border-border p-4">
           <div className="flex flex-wrap items-center gap-3">
-            <span className="text-xs font-medium text-gray-500">
+            <span className="text-xs font-medium text-muted-foreground">
               {lang === "ar" ? "إجراءات المسؤول:" : "Admin Actions:"}
             </span>
             <select
-              className="text-xs border border-gray-200 rounded-lg px-3 py-1.5 bg-card focus:ring-1 focus:ring-primary/20 focus:border-primary"
+              className="text-xs border border-border rounded-lg px-3 py-1.5 bg-card focus:ring-1 focus:ring-primary/20 focus:border-primary"
               value={ticket.status}
               onChange={(e) => handleStatusChange(e.target.value)}
               disabled={updatingStatus}
@@ -488,7 +505,7 @@ export default function TicketDetailPage() {
               ))}
             </select>
             {updatingStatus && (
-              <span className="text-xs text-gray-400">
+              <span className="text-xs text-muted-foreground">
                 {lang === "ar" ? "جارٍ التحديث..." : "Updating..."}
               </span>
             )}
@@ -497,12 +514,12 @@ export default function TicketDetailPage() {
       )}
 
       {/* Messages Thread */}
-      <div className="bg-card rounded-xl border border-gray-100 overflow-hidden">
-        <div className="px-5 py-3 border-b border-gray-100">
-          <h2 className="text-sm font-semibold text-gray-700">
+      <div className="bg-card rounded-xl border border-border overflow-hidden">
+        <div className="px-5 py-3 border-b border-border">
+          <h2 className="text-sm font-semibold text-foreground">
             {lang === "ar" ? "المحادثة" : "Conversation"}
             {ticket.messages?.length > 0 && (
-              <span className="text-xs font-normal text-gray-400 ms-2">
+              <span className="text-xs font-normal text-muted-foreground ms-2">
                 ({ticket.messages.length})
               </span>
             )}
@@ -511,11 +528,16 @@ export default function TicketDetailPage() {
 
         <div className="p-4 space-y-3 max-h-[500px] overflow-y-auto">
           {(!ticket.messages || ticket.messages.length === 0) && (
-            <div className="text-center text-gray-400 text-sm py-8">
-              {lang === "ar"
-                ? "لا توجد رسائل بعد. كن أول من يرد."
-                : "No messages yet. Be the first to reply."}
-            </div>
+            <EmptyState
+              compact
+              icon={<MessageSquare className="h-10 w-10" />}
+              title={lang === "ar" ? "لا توجد رسائل بعد" : "No messages yet"}
+              description={
+                lang === "ar"
+                  ? "كن أول من يرد على هذه التذكرة."
+                  : "Be the first to reply to this ticket."
+              }
+            />
           )}
 
           {ticket.messages?.map((msg: any) => {
@@ -534,24 +556,24 @@ export default function TicketDetailPage() {
                   className={cn(
                     "rounded-xl px-4 py-3 text-sm leading-relaxed",
                     isStaff
-                      ? "bg-blue-50 border border-blue-100 text-gray-800"
+                      ? "bg-info/10 border border-info/20 text-foreground"
                       : isOwn
-                        ? "bg-primary/5 border border-primary/10 text-gray-800"
-                        : "bg-gray-50 border border-gray-100 text-gray-800"
+                        ? "bg-primary/5 border border-primary/10 text-foreground"
+                        : "bg-muted border border-border text-foreground"
                   )}
                 >
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs font-semibold text-gray-600">
+                    <span className="text-xs font-semibold text-muted-foreground">
                       {msg.user?.name ?? msg.user?.email}
                     </span>
                     {isStaff && (
-                      <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full font-medium">
+                      <span className="text-[10px] bg-info/15 text-info px-1.5 py-0.5 rounded-full font-medium">
                         {lang === "ar" ? "فريق الدعم" : "Staff"}
                       </span>
                     )}
                   </div>
                   <div className="whitespace-pre-wrap">{msg.message}</div>
-                  <div className="text-[10px] text-gray-400 mt-1.5">
+                  <div className="text-[10px] text-muted-foreground mt-1.5">
                     {formatDate(msg.createdAt)}
                   </div>
                 </div>
@@ -563,10 +585,10 @@ export default function TicketDetailPage() {
 
         {/* Reply Input */}
         {!isClosed ? (
-          <div className="p-4 border-t border-gray-100">
+          <div className="p-4 border-t border-border">
             <div className="flex gap-2">
               <textarea
-                className="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-1 focus:ring-primary/20 focus:border-primary resize-none"
+                className="flex-1 border border-border rounded-xl px-4 py-2.5 text-sm focus:ring-1 focus:ring-primary/20 focus:border-primary resize-none"
                 rows={2}
                 placeholder={lang === "ar" ? "اكتب ردك هنا..." : "Type your reply..."}
                 value={replyText}
@@ -591,13 +613,13 @@ export default function TicketDetailPage() {
                 </span>
               </Button>
             </div>
-            <p className="text-[10px] text-gray-400 mt-1.5">
+            <p className="text-[10px] text-muted-foreground mt-1.5">
               {lang === "ar" ? "Ctrl+Enter للإرسال السريع" : "Ctrl+Enter to send"}
             </p>
           </div>
         ) : (
-          <div className="p-4 border-t border-gray-100 text-center">
-            <p className="text-sm text-gray-400">
+          <div className="p-4 border-t border-border text-center">
+            <p className="text-sm text-muted-foreground">
               {lang === "ar"
                 ? "هذه التذكرة مغلقة. لا يمكن إضافة ردود جديدة."
                 : "This ticket is closed. No new replies can be added."}

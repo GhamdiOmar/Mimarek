@@ -38,6 +38,7 @@ import {
   Badge,
   DirectionalIcon,
 } from "@repo/ui";
+import { PageHeader } from "@repo/ui/components/PageHeader";
 import Link from "next/link";
 import { adminGetAllSubscriptions } from "../../../actions/billing";
 
@@ -75,12 +76,12 @@ type SubscriptionsResult = {
 // ─── Status Colors ──────────────────────────────────────────────────────────
 
 const statusColors: Record<string, string> = {
-  TRIALING: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
-  ACTIVE: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
-  PAST_DUE: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
-  CANCELED: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
-  UNPAID: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
-  PAUSED: "bg-gray-100 text-gray-800 dark:bg-gray-700/30 dark:text-gray-300",
+  TRIALING: "bg-info/15 text-info",
+  ACTIVE: "bg-success/15 text-success",
+  PAST_DUE: "bg-warning/15 text-warning",
+  CANCELED: "bg-destructive/15 text-destructive",
+  UNPAID: "bg-destructive/15 text-destructive",
+  PAUSED: "bg-muted text-muted-foreground",
 };
 
 const statusIcons: Record<string, React.ReactNode> = {
@@ -359,11 +360,35 @@ export default function AdminSubscriptionsPage() {
                 ))}
               </div>
             ) : filteredMobile.length === 0 ? (
-              <EmptyState
-                icon={<Receipt className="h-10 w-10 text-primary" aria-hidden="true" />}
-                title={t.noSubscriptions}
-                description={t.noSubscriptionsDesc}
-              />
+              subscriptions.length === 0 ? (
+                <EmptyState
+                  variant="first-time"
+                  icon={<Receipt className="h-12 w-12" aria-hidden="true" />}
+                  title={t.noSubscriptions}
+                  description={t.noSubscriptionsDesc}
+                />
+              ) : (
+                <EmptyState
+                  variant="filtered"
+                  icon={<Search className="h-10 w-10" aria-hidden="true" />}
+                  title={lang === "ar" ? "لا توجد نتائج مطابقة" : "No matching subscriptions"}
+                  description={
+                    lang === "ar"
+                      ? "جرّب بحثاً آخر."
+                      : "Try a different search."
+                  }
+                  action={
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setMobileSearch("")}
+                      style={{ display: "inline-flex" }}
+                    >
+                      {lang === "ar" ? "مسح الفلاتر" : "Clear filters"}
+                    </Button>
+                  }
+                />
+              )
             ) : (
               <div className="rounded-2xl border border-border bg-card px-4">
                 {filteredMobile.map((sub, idx) => {
@@ -436,16 +461,11 @@ export default function AdminSubscriptionsPage() {
       </div>
 
       {/* Header */}
-      <div>
-        <div className="flex items-center gap-3 mb-1">
-          <div className="p-2 rounded-lg bg-primary/10">
-            <CreditCard className="h-6 w-6 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">{t.title}</h1>
-            <p className="text-sm text-muted-foreground">{t.subtitle}</p>
-          </div>
+      <div className="flex items-start gap-3">
+        <div className="p-2 rounded-lg bg-primary/10 shrink-0">
+          <CreditCard className="h-6 w-6 text-primary" />
         </div>
+        <PageHeader className="flex-1" title={t.title} description={t.subtitle} />
       </div>
 
       {/* Summary Stats Bar */}
@@ -459,31 +479,31 @@ export default function AdminSubscriptionsPage() {
         </Card>
         <Card className="p-4">
           <div className="flex items-center gap-2 mb-1">
-            <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+            <CheckCircle2 className="h-4 w-4 text-success" />
             <span className="text-xs text-muted-foreground">{t.active}</span>
           </div>
-          <p className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.active}</p>
+          <p className="text-2xl font-bold text-success">{stats.active}</p>
         </Card>
         <Card className="p-4">
           <div className="flex items-center gap-2 mb-1">
-            <Clock className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            <Clock className="h-4 w-4 text-info" />
             <span className="text-xs text-muted-foreground">{t.trialing}</span>
           </div>
-          <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.trialing}</p>
+          <p className="text-2xl font-bold text-info">{stats.trialing}</p>
         </Card>
         <Card className="p-4">
           <div className="flex items-center gap-2 mb-1">
-            <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            <AlertTriangle className="h-4 w-4 text-warning" />
             <span className="text-xs text-muted-foreground">{t.pastDue}</span>
           </div>
-          <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">{stats.pastDue}</p>
+          <p className="text-2xl font-bold text-warning">{stats.pastDue}</p>
         </Card>
         <Card className="p-4">
           <div className="flex items-center gap-2 mb-1">
-            <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+            <XCircle className="h-4 w-4 text-destructive" />
             <span className="text-xs text-muted-foreground">{t.canceled}</span>
           </div>
-          <p className="text-2xl font-bold text-red-600 dark:text-red-400">{stats.canceled}</p>
+          <p className="text-2xl font-bold text-destructive">{stats.canceled}</p>
         </Card>
       </div>
 
@@ -512,10 +532,13 @@ export default function AdminSubscriptionsPage() {
               </TableRow>
             ) : subscriptions.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="py-16 text-center">
-                  <Receipt className="h-10 w-10 mx-auto mb-3 text-muted-foreground/30" />
-                  <p className="text-muted-foreground font-medium">{t.noSubscriptions}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{t.noSubscriptionsDesc}</p>
+                <TableCell colSpan={6} className="p-0">
+                  <EmptyState
+                    variant="first-time"
+                    icon={<Receipt className="h-12 w-12" />}
+                    title={t.noSubscriptions}
+                    description={t.noSubscriptionsDesc}
+                  />
                 </TableCell>
               </TableRow>
             ) : (
@@ -543,7 +566,7 @@ export default function AdminSubscriptionsPage() {
                   {/* Status */}
                   <TableCell>
                     <span
-                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${statusColors[sub.status] ?? "bg-gray-100 text-gray-800 dark:bg-gray-700/30 dark:text-gray-300"}`}
+                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${statusColors[sub.status] ?? "bg-muted text-muted-foreground"}`}
                     >
                       {statusIcons[sub.status]}
                       {t.statuses[sub.status] ?? sub.status}

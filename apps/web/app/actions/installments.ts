@@ -68,7 +68,7 @@ export async function recordPayment(
 
   logAuditEvent({ userId: session.userId, userEmail: session.email, userRole: session.role, action: "UPDATE", resource: "RentInstallment", resourceId: installmentId, metadata: { action: "recordPayment", paymentMethod: data.paymentMethod }, organizationId: session.organizationId });
 
-  revalidatePath("/dashboard/rentals/payments");
+  revalidatePath("/dashboard/payments");
   revalidatePath("/dashboard/finance");
   return JSON.parse(JSON.stringify(updated));
 }
@@ -85,6 +85,6 @@ export async function markOverdueInstallments() {
     data: { status: "OVERDUE" },
   });
 
-  revalidatePath("/dashboard/rentals/payments");
+  revalidatePath("/dashboard/payments");
   return result.count;
 }

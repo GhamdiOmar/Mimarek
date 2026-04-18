@@ -50,6 +50,7 @@ import {
   BottomSheet,
   FAB,
   formatSAR,
+  EmptyState,
 } from "@repo/ui";
 import { cn } from "@repo/ui/lib/utils";
 import {
@@ -418,19 +419,54 @@ function AdvancedUnitMatrixPage() {
         {/* List */}
         <div className="flex-1 px-4 py-3">
           {mobileFilteredUnits.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted text-muted-foreground mb-3">
-                <Building2 className="h-6 w-6" />
-              </div>
-              <p className="text-sm font-semibold text-foreground">
-                {lang === "ar" ? "لا توجد وحدات" : "No units found"}
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {lang === "ar"
-                  ? "جرّب تعديل البحث أو الفلاتر"
-                  : "Try adjusting your search or filters"}
-              </p>
-            </div>
+            units.length === 0 ? (
+              <EmptyState
+                icon={<Building2 className="h-12 w-12" />}
+                title={lang === "ar" ? "لا توجد وحدات بعد" : "No units yet"}
+                description={
+                  lang === "ar"
+                    ? "أضف أول وحدة لتبدأ إدارة محفظتك العقارية."
+                    : "Add your first unit to start managing your real-estate portfolio."
+                }
+                action={
+                  <Button
+                    variant="primary"
+                    style={{ display: "inline-flex" }}
+                    onClick={() => setShowAddModal(true)}
+                  >
+                    <Plus className="h-4 w-4" />
+                    {lang === "ar" ? "إضافة وحدة" : "Add unit"}
+                  </Button>
+                }
+                helpHref="/dashboard/help#units"
+                helpLabel={lang === "ar" ? "تعرّف على الوحدات" : "Learn about units"}
+              />
+            ) : (
+              <EmptyState
+                icon={<Search className="h-12 w-12" />}
+                title={lang === "ar" ? "لا توجد نتائج" : "No results"}
+                description={
+                  lang === "ar"
+                    ? "جرّب تعديل البحث أو الفلاتر."
+                    : "Try adjusting your search or filters."
+                }
+                action={
+                  <Button
+                    variant="secondary"
+                    style={{ display: "inline-flex" }}
+                    onClick={() => {
+                      setUnitSearch("");
+                      setStatusFilter("");
+                      setMobileTypeFilter("");
+                      setMobileMinPrice("");
+                      setMobileMaxPrice("");
+                    }}
+                  >
+                    {lang === "ar" ? "مسح الفلاتر" : "Clear filters"}
+                  </Button>
+                }
+              />
+            )
           ) : (
             <div className="space-y-2">
               {mobileFilteredUnits.map((u: any) => {
@@ -665,9 +701,9 @@ function AdvancedUnitMatrixPage() {
 
       {/* Inline Error Display */}
       {error && (
-        <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
-          <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
-          <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600" aria-label={lang === "ar" ? "إغلاق" : "Close"}>
+        <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-destructive/10 border border-destructive/30">
+          <p className="text-sm text-destructive">{error}</p>
+          <button onClick={() => setError(null)} className="text-destructive/70 hover:text-destructive" aria-label={lang === "ar" ? "إغلاق" : "Close"}>
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -756,7 +792,7 @@ function AdvancedUnitMatrixPage() {
                   size="sm"
                   variant="danger"
                   style={{ display: "inline-flex" }}
-                  className="gap-2 bg-red-500/80 hover:bg-red-500 whitespace-nowrap"
+                  className="gap-2 bg-destructive/80 hover:bg-destructive whitespace-nowrap"
                   onClick={handleBulkDelete}
                   disabled={updating || deleting}
                 >
@@ -1064,88 +1100,79 @@ function AdvancedUnitMatrixPage() {
       {/* OFF-PLAN INVENTORY TAB REMOVED in v3.0 */}
 
       {/* Change Price Modal */}
-      {showPriceModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-300">
-          <div
-            className="bg-card w-full max-w-sm rounded-xl shadow-2xl p-8 border border-border animate-in zoom-in-95 duration-300"
-            dir={lang === "ar" ? "rtl" : "ltr"}
-          >
-            <h2 className="text-xl font-bold text-primary mb-2">
-              {lang === "ar" ? "تغيير السعر" : "Change Price"}
-            </h2>
-            <p className="text-sm text-muted-foreground mb-6">
-              {lang === "ar"
-                ? `تحديث سعر ${selectedUnits.length} وحدة مختارة`
-                : `Update price for ${selectedUnits.length} selected unit(s)`}
-            </p>
-            <div className="space-y-1 mb-6">
-              <label className="text-xs font-bold text-muted-foreground flex items-center gap-1">
-                {lang === "ar" ? "السعر الجديد" : "New Price"}
-              </label>
-              <Input
-                type="number"
-                value={bulkPrice}
-                onChange={(e) => setBulkPrice(e.target.value)}
-                placeholder="0.00"
-                autoFocus
-              />
-            </div>
-            <div className="flex items-center justify-end gap-3">
-              <Button
-                variant="secondary"
-                style={{ display: "inline-flex" }}
-                onClick={() => {
-                  setShowPriceModal(false);
-                  setBulkPrice("");
-                }}
-                disabled={updating}
-              >
-                {lang === "ar" ? "إلغاء" : "Cancel"}
-              </Button>
-              <Button
-                onClick={handleBulkPriceUpdate}
-                disabled={updating || !bulkPrice}
-                style={{ display: "inline-flex" }}
-                className="gap-2"
-              >
-                {updating && (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                )}
-                {lang === "ar" ? "تحديث السعر" : "Update Price"}
-              </Button>
-            </div>
+      <ResponsiveDialog
+        open={showPriceModal}
+        onOpenChange={(open) => {
+          setShowPriceModal(open);
+          if (!open) setBulkPrice("");
+        }}
+        title={lang === "ar" ? "تغيير السعر" : "Change Price"}
+        description={
+          lang === "ar"
+            ? `تحديث سعر ${selectedUnits.length} وحدة مختارة`
+            : `Update price for ${selectedUnits.length} selected unit(s)`
+        }
+        contentClassName="sm:max-w-sm"
+        footer={
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button
+              variant="secondary"
+              style={{ display: "inline-flex" }}
+              onClick={() => {
+                setShowPriceModal(false);
+                setBulkPrice("");
+              }}
+              disabled={updating}
+            >
+              {lang === "ar" ? "إلغاء" : "Cancel"}
+            </Button>
+            <Button
+              onClick={handleBulkPriceUpdate}
+              disabled={updating || !bulkPrice}
+              style={{ display: "inline-flex" }}
+              className="gap-2"
+            >
+              {updating && <Loader2 className="h-4 w-4 animate-spin" />}
+              {lang === "ar" ? "تحديث السعر" : "Update Price"}
+            </Button>
           </div>
+        }
+      >
+        <div className="space-y-1">
+          <label className="text-xs font-bold text-muted-foreground flex items-center gap-1">
+            {lang === "ar" ? "السعر الجديد" : "New Price"}
+          </label>
+          <Input
+            type="number"
+            value={bulkPrice}
+            onChange={(e) => setBulkPrice(e.target.value)}
+            placeholder="0.00"
+            autoFocus
+          />
         </div>
-      )}
+      </ResponsiveDialog>
 
       {/* Unit Detail Modal */}
-      {detailUnit && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-300">
-          <div
-            className="bg-card w-full max-w-xl rounded-xl shadow-2xl border border-border animate-in zoom-in-95 duration-300 max-h-[85vh] overflow-y-auto"
-            dir={lang === "ar" ? "rtl" : "ltr"}
-          >
-            <div className="flex items-center justify-between p-6 border-b border-border">
-              <div>
-                <h2 className="text-lg font-bold text-primary">
-                  {lang === "ar" ? "تفاصيل الوحدة" : "Unit Details"} &mdash;{" "}
-                  {detailUnit.number}
-                </h2>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {detailUnit.buildingName || detailUnit.city || ""}
-                </p>
-              </div>
-              <button
-                onClick={() => setDetailUnit(null)}
-                className="text-muted-foreground hover:text-primary"
-                aria-label={lang === "ar" ? "إغلاق" : "Close"}
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="p-6 space-y-5">
-              {/* Unit Info */}
+      <ResponsiveDialog
+        open={!!detailUnit}
+        onOpenChange={(open) => {
+          if (!open) setDetailUnit(null);
+        }}
+        title={
+          detailUnit
+            ? `${lang === "ar" ? "تفاصيل الوحدة" : "Unit Details"} — ${detailUnit.number}`
+            : undefined
+        }
+        description={
+          detailUnit
+            ? (detailUnit.buildingName || detailUnit.city || undefined)
+            : undefined
+        }
+        contentClassName="sm:max-w-xl"
+      >
+        {detailUnit && (
+          <div className="space-y-5">
+            {/* Unit Info */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <span className="text-[10px] font-bold uppercase text-muted-foreground">
@@ -1251,7 +1278,7 @@ function AdvancedUnitMatrixPage() {
                       <span className="text-[9px] font-bold text-muted-foreground uppercase">
                         {lang === "ar" ? "تكاليف صيانة" : "Maintenance"}
                       </span>
-                      <p className="text-sm font-bold text-red-600 mt-0.5">
+                      <p className="text-sm font-bold text-destructive mt-0.5">
                         <SARAmount
                           value={detailFinancials.totalMaintenanceCost}
                           size={10}
@@ -1264,7 +1291,7 @@ function AdvancedUnitMatrixPage() {
                         {lang === "ar" ? "صافي الدخل" : "Net Income"}
                       </span>
                       <p
-                        className={`text-sm font-bold mt-0.5 ${detailFinancials.netIncome >= 0 ? "text-secondary" : "text-red-600"}`}
+                        className={`text-sm font-bold mt-0.5 ${detailFinancials.netIncome >= 0 ? "text-secondary" : "text-destructive"}`}
                       >
                         <SARAmount
                           value={detailFinancials.netIncome}
@@ -1343,7 +1370,7 @@ function AdvancedUnitMatrixPage() {
                       </div>
                     )}
                     <Link
-                      href={`/dashboard/sales/contracts/${detailContract.id}`}
+                      href={`/dashboard/contracts/${detailContract.id}`}
                     >
                       <Button
                         variant="secondary"
@@ -1363,7 +1390,7 @@ function AdvancedUnitMatrixPage() {
               {detailUnit.status === "AVAILABLE" && (
                 <div className="border-t border-border pt-4 flex items-center gap-3">
                   <Link
-                    href={`/dashboard/sales/reservations?unitId=${detailUnit.id}`}
+                    href={`/dashboard/deals?unitId=${detailUnit.id}`}
                     className="flex-1"
                   >
                     <Button
@@ -1377,7 +1404,7 @@ function AdvancedUnitMatrixPage() {
                     </Button>
                   </Link>
                   <Link
-                    href={`/dashboard/rentals/new?unitId=${detailUnit.id}`}
+                    href={`/dashboard/deals?unitId=${detailUnit.id}`}
                     className="flex-1"
                   >
                     <Button
@@ -1487,136 +1514,128 @@ function AdvancedUnitMatrixPage() {
                 )}
               </div>
             </div>
-          </div>
-        </div>
-      )}
+        )}
+      </ResponsiveDialog>
 
       {/* Add Unit Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-300">
-          <div
-            className="bg-card w-full max-w-md rounded-xl shadow-2xl p-8 border border-border animate-in zoom-in-95 duration-300"
-            dir={lang === "ar" ? "rtl" : "ltr"}
-          >
-            <h2 className="text-xl font-bold text-primary mb-6">
-              {lang === "ar" ? "إضافة وحدة جديدة" : "Add New Unit"}
-            </h2>
+      <ResponsiveDialog
+        open={showAddModal}
+        onOpenChange={setShowAddModal}
+        title={lang === "ar" ? "إضافة وحدة جديدة" : "Add New Unit"}
+        contentClassName="sm:max-w-md"
+        footer={
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button
+              variant="secondary"
+              style={{ display: "inline-flex" }}
+              onClick={() => setShowAddModal(false)}
+              disabled={updating}
+            >
+              {lang === "ar" ? "إلغاء" : "Cancel"}
+            </Button>
+            <Button
+              onClick={handleAddUnit}
+              disabled={updating}
+              style={{ display: "inline-flex" }}
+              className="gap-2"
+            >
+              {updating && <Loader2 className="h-4 w-4 animate-spin" />}
+              {lang === "ar" ? "حفظ الوحدة" : "Save Unit"}
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-4">
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-muted-foreground">
+              {lang === "ar" ? "رقم الوحدة" : "Unit Number"}
+            </label>
+            <Input
+              value={newUnit.number}
+              onChange={(e) =>
+                setNewUnit({ ...newUnit, number: e.target.value })
+              }
+              placeholder="e.g. A-101"
+            />
+          </div>
 
-            <div className="space-y-4">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-muted-foreground">
-                  {lang === "ar" ? "رقم الوحدة" : "Unit Number"}
-                </label>
-                <Input
-                  value={newUnit.number}
-                  onChange={(e) =>
-                    setNewUnit({ ...newUnit, number: e.target.value })
-                  }
-                  placeholder="e.g. A-101"
-                />
-              </div>
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-muted-foreground">
+              {lang === "ar" ? "نوع الوحدة" : "Unit Type"}
+            </label>
+            <select
+              value={newUnit.type}
+              onChange={(e) =>
+                setNewUnit({ ...newUnit, type: e.target.value })
+              }
+              className="w-full flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {Object.entries(unitTypeLabels).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label[lang]}
+                </option>
+              ))}
+            </select>
+          </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-muted-foreground">
-                  {lang === "ar" ? "نوع الوحدة" : "Unit Type"}
-                </label>
-                <select
-                  value={newUnit.type}
-                  onChange={(e) =>
-                    setNewUnit({ ...newUnit, type: e.target.value })
-                  }
-                  className="w-full flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {Object.entries(unitTypeLabels).map(([value, label]) => (
-                    <option key={value} value={value}>
-                      {label[lang]}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-muted-foreground">
-                    {lang === "ar" ? "المساحة (م²)" : "Area (sqm)"}
-                  </label>
-                  <Input
-                    type="number"
-                    value={newUnit.area}
-                    onChange={(e) =>
-                      setNewUnit({ ...newUnit, area: e.target.value })
-                    }
-                    placeholder="0.00"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-muted-foreground">
-                    {lang === "ar" ? "سعر التكلفة" : "Cost Price"}
-                  </label>
-                  <Input
-                    type="number"
-                    value={newUnit.price}
-                    onChange={(e) =>
-                      setNewUnit({ ...newUnit, price: e.target.value })
-                    }
-                    placeholder="0.00"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-muted-foreground">
-                    {lang === "ar" ? "سعر البيع" : "Selling Price"}
-                  </label>
-                  <Input
-                    type="number"
-                    value={newUnit.markupPrice}
-                    onChange={(e) =>
-                      setNewUnit({ ...newUnit, markupPrice: e.target.value })
-                    }
-                    placeholder="0.00"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-muted-foreground">
-                    {lang === "ar" ? "سعر الإيجار" : "Rental Price"}
-                  </label>
-                  <Input
-                    type="number"
-                    value={newUnit.rentalPrice}
-                    onChange={(e) =>
-                      setNewUnit({ ...newUnit, rentalPrice: e.target.value })
-                    }
-                    placeholder="0.00"
-                  />
-                </div>
-              </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-muted-foreground">
+                {lang === "ar" ? "المساحة (م²)" : "Area (sqm)"}
+              </label>
+              <Input
+                type="number"
+                value={newUnit.area}
+                onChange={(e) =>
+                  setNewUnit({ ...newUnit, area: e.target.value })
+                }
+                placeholder="0.00"
+              />
             </div>
-
-            <div className="flex items-center justify-end gap-3 mt-8">
-              <Button
-                variant="secondary"
-                style={{ display: "inline-flex" }}
-                onClick={() => setShowAddModal(false)}
-                disabled={updating}
-              >
-                {lang === "ar" ? "إلغاء" : "Cancel"}
-              </Button>
-              <Button
-                onClick={handleAddUnit}
-                disabled={updating}
-                style={{ display: "inline-flex" }}
-                className="gap-2"
-              >
-                {updating && (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                )}
-                {lang === "ar" ? "حفظ الوحدة" : "Save Unit"}
-              </Button>
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-muted-foreground">
+                {lang === "ar" ? "سعر التكلفة" : "Cost Price"}
+              </label>
+              <Input
+                type="number"
+                value={newUnit.price}
+                onChange={(e) =>
+                  setNewUnit({ ...newUnit, price: e.target.value })
+                }
+                placeholder="0.00"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-muted-foreground">
+                {lang === "ar" ? "سعر البيع" : "Selling Price"}
+              </label>
+              <Input
+                type="number"
+                value={newUnit.markupPrice}
+                onChange={(e) =>
+                  setNewUnit({ ...newUnit, markupPrice: e.target.value })
+                }
+                placeholder="0.00"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-muted-foreground">
+                {lang === "ar" ? "سعر الإيجار" : "Rental Price"}
+              </label>
+              <Input
+                type="number"
+                value={newUnit.rentalPrice}
+                onChange={(e) =>
+                  setNewUnit({ ...newUnit, rentalPrice: e.target.value })
+                }
+                placeholder="0.00"
+              />
             </div>
           </div>
         </div>
-      )}
+      </ResponsiveDialog>
 
       {/* Delete Confirmation Dialog */}
       <ResponsiveDialog
@@ -1652,7 +1671,7 @@ function AdvancedUnitMatrixPage() {
         }
       >
         {error && (
-          <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+          <p className="text-sm text-destructive">{error}</p>
         )}
       </ResponsiveDialog>
       </div>

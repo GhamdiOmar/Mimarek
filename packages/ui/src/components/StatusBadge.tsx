@@ -80,19 +80,49 @@ const statusColorMap: Record<EntityType, Record<string, NonNullable<BadgeProps["
   },
 };
 
-export interface StatusBadgeProps extends Omit<BadgeProps, "variant"> {
+type SemanticVariant = "success" | "warning" | "danger" | "info" | "neutral";
+
+const semanticVariantMap: Record<SemanticVariant, NonNullable<BadgeProps["variant"]>> = {
+  success: "success",
+  warning: "warning",
+  danger: "error",
+  info: "info",
+  neutral: "default",
+};
+
+type EntityStatusBadgeProps = Omit<BadgeProps, "variant"> & {
   entityType: EntityType;
   status: string;
   label?: string;
-}
+  variant?: never;
+};
 
-function StatusBadge({ entityType, status, label, ...props }: StatusBadgeProps) {
+type SemanticStatusBadgeProps = Omit<BadgeProps, "variant"> & {
+  variant: SemanticVariant;
+  label: string;
+  entityType?: never;
+  status?: never;
+};
+
+export type StatusBadgeProps = EntityStatusBadgeProps | SemanticStatusBadgeProps;
+
+function StatusBadge(props: StatusBadgeProps) {
+  if ("variant" in props && props.variant) {
+    const { variant, label, entityType: _e, status: _s, ...rest } = props as SemanticStatusBadgeProps;
+    return (
+      <Badge variant={semanticVariantMap[variant]} {...rest}>
+        {label}
+      </Badge>
+    );
+  }
+
+  const { entityType, status, label, ...rest } = props as EntityStatusBadgeProps;
   const colorMap = statusColorMap[entityType] || {};
-  const variant = colorMap[status] || "default";
+  const badgeVariant = colorMap[status] || "default";
   const displayLabel = label || status.replace(/_/g, " ");
 
   return (
-    <Badge variant={variant} {...props}>
+    <Badge variant={badgeVariant} {...rest}>
       {displayLabel}
     </Badge>
   );

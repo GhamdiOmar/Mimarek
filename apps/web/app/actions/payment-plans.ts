@@ -63,7 +63,7 @@ export async function createPaymentPlan(
     organizationId: session.organizationId,
   });
 
-  revalidatePath(`/dashboard/sales/contracts/${contractId}`);
+  revalidatePath(`/dashboard/contracts/${contractId}`);
   return JSON.parse(JSON.stringify(plan));
 }
 

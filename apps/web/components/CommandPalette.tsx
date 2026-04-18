@@ -63,6 +63,7 @@ interface QuickAction {
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   permission?: string;
+  audience?: "tenant" | "platform";
 }
 
 const quickActions: QuickAction[] = [
@@ -72,6 +73,7 @@ const quickActions: QuickAction[] = [
     href: "/dashboard/crm?new=1",
     icon: UserPlus,
     permission: "crm:write",
+    audience: "tenant",
   },
   {
     id: "new-deal",
@@ -79,6 +81,7 @@ const quickActions: QuickAction[] = [
     href: "/dashboard/deals?new=1",
     icon: PlusCircle,
     permission: "deals:write",
+    audience: "tenant",
   },
   {
     id: "new-contract",
@@ -86,6 +89,7 @@ const quickActions: QuickAction[] = [
     href: "/dashboard/contracts?new=1",
     icon: FilePlus,
     permission: "contracts:write",
+    audience: "tenant",
   },
   {
     id: "new-payment",
@@ -93,6 +97,7 @@ const quickActions: QuickAction[] = [
     href: "/dashboard/payments?new=1",
     icon: DollarSign,
     permission: "payments:write",
+    audience: "tenant",
   },
   {
     id: "new-ticket",
@@ -100,6 +105,7 @@ const quickActions: QuickAction[] = [
     href: "/dashboard/maintenance/tickets?new=1",
     icon: Wrench,
     permission: "maintenance:write",
+    audience: "tenant",
   },
 ];
 
@@ -153,14 +159,20 @@ export function CommandPalette() {
           {lang === "ar" ? "لا توجد نتائج." : "No results found."}
         </CommandEmpty>
 
-        {!isPlatform && (
-          <>
-            <CommandGroup
-              heading={lang === "ar" ? "إجراءات سريعة" : "Quick actions"}
-            >
-              {quickActions
-                .filter((a) => !a.permission || can(a.permission as never))
-                .map((a) => {
+        {(() => {
+          const visibleQuickActions = quickActions.filter((a) => {
+            if (a.audience === "tenant" && isPlatform) return false;
+            if (a.audience === "platform" && !isPlatform) return false;
+            if (a.permission && !can(a.permission as never)) return false;
+            return true;
+          });
+          if (visibleQuickActions.length === 0) return null;
+          return (
+            <>
+              <CommandGroup
+                heading={lang === "ar" ? "إجراءات سريعة" : "Quick actions"}
+              >
+                {visibleQuickActions.map((a) => {
                   const Icon = a.icon;
                   return (
                     <CommandItem key={a.id} onSelect={() => go(a.href)}>
@@ -169,11 +181,12 @@ export function CommandPalette() {
                     </CommandItem>
                   );
                 })}
-            </CommandGroup>
+              </CommandGroup>
 
-            <CommandSeparator />
-          </>
-        )}
+              <CommandSeparator />
+            </>
+          );
+        })()}
 
         {sections.map((section) => {
           const items = navItems.filter((item) => {

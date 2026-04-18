@@ -68,8 +68,8 @@ const statusLabels: Record<string, { ar: string; en: string; variant: string }> 
 const priorityLabels: Record<string, { ar: string; en: string; color: string }> = {
   LOW: { ar: "منخفض", en: "Low", color: "text-muted-foreground" },
   MEDIUM: { ar: "متوسط", en: "Medium", color: "text-primary" },
-  HIGH: { ar: "عالي", en: "High", color: "text-amber-500" },
-  URGENT: { ar: "عاجل", en: "Urgent", color: "text-red-600" },
+  HIGH: { ar: "عالي", en: "High", color: "text-warning" },
+  URGENT: { ar: "عاجل", en: "Urgent", color: "text-destructive" },
 };
 
 const VALID_TRANSITIONS: Record<string, string[]> = {
@@ -530,6 +530,11 @@ export default function MaintenanceDetailPage() {
                 ? "لا توجد تحولات متاحة"
                 : "No transitions available"
             }
+            description={
+              lang === "ar"
+                ? "لا يمكن تغيير حالة هذا الطلب من الوضع الحالي."
+                : "This request's status cannot be changed from here."
+            }
           />
         ) : (
           <div className="space-y-2">
@@ -659,7 +664,7 @@ export default function MaintenanceDetailPage() {
       {validTransitions.length > 0 && (() => {
         const statusButtonStyles: Record<string, string> = {
           ASSIGNED: "bg-info/10 text-info border border-info/30 hover:bg-info/20",
-          IN_PROGRESS: "bg-amber-500/10 text-amber-700 border border-amber-500/30 hover:bg-amber-500/20",
+          IN_PROGRESS: "bg-warning/10 text-warning border border-warning/30 hover:bg-warning/20",
           ON_HOLD: "bg-warning/10 text-warning border border-warning/30 hover:bg-warning/20",
           RESOLVED: "bg-secondary/10 text-secondary border border-secondary/30 hover:bg-secondary/20",
           CLOSED: "bg-primary/10 text-primary border border-primary/30 hover:bg-primary/20",
@@ -706,7 +711,7 @@ export default function MaintenanceDetailPage() {
               label={lang === "ar" ? "تاريخ الاستحقاق" : "Due Date"}
               value={
                 request.dueDate ? (
-                  <span className={isOverdue ? "text-red-600 font-bold" : ""}>
+                  <span className={isOverdue ? "text-destructive font-bold" : ""}>
                     {formatDualDate(request.dueDate, lang)}
                   </span>
                 ) : "—"
@@ -811,10 +816,10 @@ export default function MaintenanceDetailPage() {
                       type="number"
                       value={actualCost}
                       onChange={(e) => { setActualCost(e.target.value); setCostErrors((prev) => { const n = { ...prev }; delete n.actualCost; return n; }); }}
-                      className={`${inputClass} ${costErrors.actualCost ? "border-red-500" : ""}`}
+                      className={`${inputClass} ${costErrors.actualCost ? "border-destructive" : ""}`}
                       placeholder="0.00"
                     />
-                    {costErrors.actualCost && <p className="text-xs text-red-500">{costErrors.actualCost}</p>}
+                    {costErrors.actualCost && <p className="text-xs text-destructive">{costErrors.actualCost}</p>}
                   </div>
                   <div className="space-y-1">
                     <label className="text-[10px] font-bold text-muted-foreground">{lang === "ar" ? "ساعات العمل" : "Labor Hours"}</label>
@@ -822,10 +827,10 @@ export default function MaintenanceDetailPage() {
                       type="number"
                       value={laborHours}
                       onChange={(e) => { setLaborHours(e.target.value); setCostErrors((prev) => { const n = { ...prev }; delete n.laborHours; return n; }); }}
-                      className={`${inputClass} ${costErrors.laborHours ? "border-red-500" : ""}`}
+                      className={`${inputClass} ${costErrors.laborHours ? "border-destructive" : ""}`}
                       placeholder="0"
                     />
-                    {costErrors.laborHours && <p className="text-xs text-red-500">{costErrors.laborHours}</p>}
+                    {costErrors.laborHours && <p className="text-xs text-destructive">{costErrors.laborHours}</p>}
                   </div>
                 </div>
                 <div className="space-y-1">

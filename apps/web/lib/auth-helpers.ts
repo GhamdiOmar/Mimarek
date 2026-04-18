@@ -1,5 +1,6 @@
 "use server";
 
+import { redirect } from "next/navigation";
 import { auth } from "../auth";
 import { db } from "@repo/db";
 import {
@@ -98,4 +99,41 @@ export async function getSessionWithPermissions(): Promise<AuthSession & { can: 
     ...session,
     can: (p: Permission) => hasPermission(session.role, p),
   };
+}
+
+// ─── Route Guards (CLAUDE.md § 8.3 — Layer 2) ─────────────────────────────
+// Audience-based gates for server layouts / pages. These complement Layer 2
+// middleware in `auth.config.ts` (defense-in-depth) and Layer 3 server-action
+// guards in `requirePermission` above. Unlike `requirePermission`, these do NOT
+// throw — they redirect, because they guard whole routes rather than actions.
+
+/**
+ * Gate a route segment to platform (system) staff only.
+ * - Redirects to `/auth/login` if unauthenticated.
+ * - Redirects to `/dashboard` if the user is a tenant user.
+ * - Returns the session for the caller to use.
+ *
+ * Per CLAUDE.md § 8: system users have `organizationId: null` and role in
+ * SYSTEM_* set (SYSTEM_ADMIN / SYSTEM_SUPPORT).
+ */
+export async function requireSystem() {
+  const session = await auth();
+  if (!session?.user) redirect("/auth/login");
+  if (!isSystemRole(session.user.role ?? "")) redirect("/dashboard");
+  return session;
+}
+
+/**
+ * Gate a route segment to tenant (customer) users only.
+ * - Redirects to `/auth/login` if unauthenticated.
+ * - Redirects to `/dashboard/admin` if the user is a system user.
+ * - Redirects to `/auth/login` if the tenant user has no `organizationId`.
+ * - Returns the session for the caller to use.
+ */
+export async function requireTenant() {
+  const session = await auth();
+  if (!session?.user) redirect("/auth/login");
+  if (isSystemRole(session.user.role ?? "")) redirect("/dashboard/admin");
+  if (!session.user.organizationId) redirect("/auth/login");
+  return session;
 }

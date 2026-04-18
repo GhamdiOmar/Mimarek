@@ -7,9 +7,10 @@ import {
   AlertCircle, Clock, CheckCircle, XCircle, ShieldAlert,
 } from "lucide-react";
 import {
-  AppBar, DataCard, DataTable, EmptyState, MobileKPICard, MobileTabs, Skeleton, Badge,
+  AppBar, Button, DataCard, DataTable, EmptyState, MobileKPICard, MobileTabs, Skeleton, Badge,
   type ColumnDef,
 } from "@repo/ui";
+import { PageHeader } from "@repo/ui/components/PageHeader";
 import { useLanguage } from "../../../../components/LanguageProvider";
 import { useSession } from "../../../../components/SimpleSessionProvider";
 import { isSystemRole } from "../../../../lib/permissions";
@@ -59,11 +60,11 @@ const CATEGORY_OPTIONS = [
 
 function statusBadge(status: string, lang: "ar" | "en") {
   const map: Record<string, { label: { ar: string; en: string }; cls: string; icon: React.ReactNode }> = {
-    OPEN:            { label: { ar: "مفتوح", en: "Open" },                cls: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",    icon: <AlertCircle className="h-3 w-3" /> },
-    IN_PROGRESS:     { label: { ar: "قيد المعالجة", en: "In Progress" },  cls: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300", icon: <Clock className="h-3 w-3" /> },
-    WAITING_ON_USER: { label: { ar: "بانتظار المستخدم", en: "Waiting" },  cls: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300", icon: <Clock className="h-3 w-3" /> },
-    RESOLVED:        { label: { ar: "محلول", en: "Resolved" },            cls: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300", icon: <CheckCircle className="h-3 w-3" /> },
-    CLOSED:          { label: { ar: "مغلق", en: "Closed" },               cls: "bg-muted text-muted-foreground",                                        icon: <XCircle className="h-3 w-3" /> },
+    OPEN:            { label: { ar: "مفتوح", en: "Open" },                cls: "bg-info/15 text-info",        icon: <AlertCircle className="h-3 w-3" /> },
+    IN_PROGRESS:     { label: { ar: "قيد المعالجة", en: "In Progress" },  cls: "bg-warning/15 text-warning",  icon: <Clock className="h-3 w-3" /> },
+    WAITING_ON_USER: { label: { ar: "بانتظار المستخدم", en: "Waiting" },  cls: "bg-primary/15 text-primary",  icon: <Clock className="h-3 w-3" /> },
+    RESOLVED:        { label: { ar: "محلول", en: "Resolved" },            cls: "bg-success/15 text-success",  icon: <CheckCircle className="h-3 w-3" /> },
+    CLOSED:          { label: { ar: "مغلق", en: "Closed" },               cls: "bg-muted text-muted-foreground", icon: <XCircle className="h-3 w-3" /> },
   };
   const entry = map[status] ?? { label: { ar: status, en: status }, cls: "bg-muted text-muted-foreground", icon: null };
   return (
@@ -77,9 +78,9 @@ function statusBadge(status: string, lang: "ar" | "en") {
 function priorityBadge(priority: string, lang: "ar" | "en") {
   const map: Record<string, { label: { ar: string; en: string }; cls: string }> = {
     LOW:    { label: { ar: "منخفض", en: "Low" },    cls: "bg-muted text-muted-foreground" },
-    MEDIUM: { label: { ar: "متوسط", en: "Medium" }, cls: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" },
-    HIGH:   { label: { ar: "عالي", en: "High" },    cls: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300" },
-    URGENT: { label: { ar: "عاجل", en: "Urgent" },  cls: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300" },
+    MEDIUM: { label: { ar: "متوسط", en: "Medium" }, cls: "bg-info/15 text-info" },
+    HIGH:   { label: { ar: "عالي", en: "High" },    cls: "bg-warning/15 text-warning" },
+    URGENT: { label: { ar: "عاجل", en: "Urgent" },  cls: "bg-destructive/15 text-destructive" },
   };
   const entry = map[priority] ?? { label: { ar: priority, en: priority }, cls: "bg-muted text-muted-foreground" };
   return (
@@ -368,15 +369,45 @@ export default function AdminTicketsPage() {
                 ))}
               </div>
             ) : tickets.length === 0 ? (
-              <EmptyState
-                icon={<Ticket className="h-10 w-10 text-primary" aria-hidden="true" />}
-                title={lang === "ar" ? "لا توجد تذاكر" : "No tickets"}
-                description={
-                  lang === "ar"
-                    ? "لا توجد تذاكر مطابقة للتصفية الحالية."
-                    : "No tickets match the current filter."
-                }
-              />
+              search || status || priority || category ? (
+                <EmptyState
+                  variant="filtered"
+                  icon={<Search className="h-10 w-10" aria-hidden="true" />}
+                  title={lang === "ar" ? "لا توجد نتائج مطابقة" : "No matching tickets"}
+                  description={
+                    lang === "ar"
+                      ? "جرّب تعديل البحث أو الحالة."
+                      : "Try adjusting your search or status filter."
+                  }
+                  action={
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setSearch("");
+                        setStatus("");
+                        setPriority("");
+                        setCategory("");
+                        setPage(1);
+                      }}
+                      style={{ display: "inline-flex" }}
+                    >
+                      {lang === "ar" ? "مسح الفلاتر" : "Clear filters"}
+                    </Button>
+                  }
+                />
+              ) : (
+                <EmptyState
+                  variant="first-time"
+                  icon={<Ticket className="h-12 w-12" aria-hidden="true" />}
+                  title={lang === "ar" ? "لا توجد تذاكر دعم" : "No support tickets"}
+                  description={
+                    lang === "ar"
+                      ? "تظهر هنا تذاكر العملاء التي يحتاجون فيها إلى المساعدة."
+                      : "Customer help requests from across the platform show up here."
+                  }
+                />
+              )
             ) : (
               <div className="rounded-2xl border border-border bg-card px-4">
                 {tickets.map((tk, idx) => {
@@ -443,28 +474,27 @@ export default function AdminTicketsPage() {
     <div className="space-y-6 animate-in fade-in duration-500" dir={lang === "ar" ? "rtl" : "ltr"}>
 
       {/* Header */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex items-center gap-4">
-          <div className="h-12 w-12 rounded-md bg-primary/10 flex items-center justify-center text-primary">
-            <Ticket className="h-7 w-7" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">
-              {lang === "ar" ? "تذاكر الدعم" : "Support Tickets"}
-            </h1>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              {lang === "ar" ? "إدارة طلبات دعم العملاء عبر جميع المنظمات" : "Manage customer support requests across all organizations"}
-            </p>
-          </div>
+      <div className="flex items-start gap-4">
+        <div className="h-12 w-12 rounded-md bg-primary/10 flex items-center justify-center text-primary shrink-0">
+          <Ticket className="h-7 w-7" />
         </div>
+        <PageHeader
+          className="flex-1"
+          title={lang === "ar" ? "تذاكر الدعم" : "Support Tickets"}
+          description={
+            lang === "ar"
+              ? "إدارة طلبات دعم العملاء عبر جميع المنظمات"
+              : "Manage customer support requests across all organizations"
+          }
+        />
       </div>
 
       {/* Stats bar */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
           { label: { ar: "إجمالي التذاكر", en: "Total Tickets" }, value: total, cls: "bg-primary/10 text-primary" },
-          { label: { ar: "مفتوح", en: "Open" }, value: openCount, cls: "bg-blue-500/10 text-blue-500" },
-          { label: { ar: "قيد المعالجة", en: "In Progress" }, value: inProgressCount, cls: "bg-amber-500/10 text-amber-500" },
+          { label: { ar: "مفتوح", en: "Open" }, value: openCount, cls: "bg-info/10 text-info" },
+          { label: { ar: "قيد المعالجة", en: "In Progress" }, value: inProgressCount, cls: "bg-warning/10 text-warning" },
           { label: { ar: "الصفحة الحالية", en: "This Page" }, value: tickets.length, cls: "bg-muted text-muted-foreground" },
         ].map((s, i) => (
           <div key={i} className="bg-card border border-border rounded-lg p-4 flex items-center gap-3">

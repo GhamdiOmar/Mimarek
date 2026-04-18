@@ -34,6 +34,7 @@ import {
 import { cn } from "@repo/ui/lib/utils";
 import { getTeamMembers, inviteTeamMember, removeTeamMember } from "../../../actions/team";
 import { hasPermission, CUSTOMER_ASSIGNABLE_ROLES } from "../../../../lib/permissions";
+import { toast } from "sonner";
 
 type TeamMember = {
   id: string;
@@ -116,7 +117,12 @@ export default function TeamManagementPage() {
       await removeTeamMember(userId);
       fetchTeam();
     } catch (err: any) {
-      alert(err.message);
+      toast.error(
+        lang === "ar"
+          ? "تعذّر إزالة العضو. يُرجى المحاولة مرة أخرى."
+          : "We couldn't remove the team member. Please try again.",
+      );
+      console.error(err);
     }
   };
 
@@ -357,16 +363,16 @@ export default function TeamManagementPage() {
                       </div>
                       <div className="flex flex-wrap gap-1">
                         {hasPermission(member.role, "customers:read_pii") && (
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-100 text-emerald-700">{lang === "ar" ? "بيانات شخصية" : "PII Access"}</span>
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-success/15 text-success">{lang === "ar" ? "بيانات شخصية" : "PII Access"}</span>
                         )}
                         {hasPermission(member.role, "customers:export") && (
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-100 text-blue-700">{lang === "ar" ? "تصدير" : "Export"}</span>
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-info/15 text-info">{lang === "ar" ? "تصدير" : "Export"}</span>
                         )}
                         {hasPermission(member.role, "finance:read") && (
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-700">{lang === "ar" ? "مالية" : "Finance"}</span>
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-warning/15 text-warning">{lang === "ar" ? "مالية" : "Finance"}</span>
                         )}
                         {hasPermission(member.role, "audit:read") && (
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-100 text-purple-700">{lang === "ar" ? "مراجعة" : "Audit"}</span>
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-primary/15 text-primary">{lang === "ar" ? "مراجعة" : "Audit"}</span>
                         )}
                       </div>
                     </div>
@@ -379,7 +385,7 @@ export default function TeamManagementPage() {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button variant="secondary" size="icon" className="h-8 w-8 rounded shadow-sm hover:text-destructive" onClick={() => handleRemove(member.id, member.name)} aria-label={lang === "ar" ? "إزالة" : "Remove"}>
+                      <Button variant="secondary" size="icon" className="h-11 w-11 sm:h-8 sm:w-8 rounded shadow-sm hover:text-destructive" onClick={() => handleRemove(member.id, member.name)} aria-label={lang === "ar" ? "إزالة" : "Remove"}>
                         <Trash2 className="h-[18px] w-[18px]" />
                       </Button>
                     </div>

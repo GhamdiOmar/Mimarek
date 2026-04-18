@@ -72,11 +72,11 @@ type Customer = { id: string; name: string };
 type Unit = { id: string; number: string; status: string };
 
 const CONTRACT_STATUS_COLORS: Record<string, string> = {
-  DRAFT: "bg-gray-100 text-gray-700",
-  SENT: "bg-blue-100 text-blue-800",
-  SIGNED: "bg-green-100 text-green-800",
-  CANCELLED: "bg-red-100 text-red-700",
-  VOID: "bg-orange-100 text-orange-700",
+  DRAFT: "bg-muted text-muted-foreground",
+  SENT: "bg-info/15 text-info",
+  SIGNED: "bg-success/15 text-success",
+  CANCELLED: "bg-destructive/15 text-destructive",
+  VOID: "bg-warning/15 text-warning",
 };
 
 const CONTRACT_STATUS_LABELS: Record<string, { ar: string; en: string }> = {
@@ -418,15 +418,50 @@ export default function ContractsPage() {
         )}
 
         {!loading && mobileFiltered.length === 0 && (
-          <EmptyState
-            icon={<FileText className="h-10 w-10 text-primary" aria-hidden="true" />}
-            title={lang === "ar" ? "لا توجد عقود" : "No contracts"}
-            description={
-              lang === "ar"
-                ? "لم يتم العثور على عقود مطابقة للتصفية الحالية."
-                : "No contracts match the current filter."
-            }
-          />
+          allContracts.length === 0 ? (
+            <EmptyState
+              variant="first-time"
+              icon={<FileText className="h-12 w-12" aria-hidden="true" />}
+              title={lang === "ar" ? "لا توجد عقود بعد" : "No contracts yet"}
+              description={
+                lang === "ar"
+                  ? "تتبّع كل عقد إيجار أو بيع من المسودة حتى التوقيع."
+                  : "Track every lease and sale from draft to signed."
+              }
+              action={
+                <Button size="sm" onClick={openSaleModal} style={{ display: "inline-flex" }}>
+                  <Plus className="h-4 w-4 me-1.5" />
+                  {lang === "ar" ? "إنشاء عقد" : "Create contract"}
+                </Button>
+              }
+              helpHref="/dashboard/help#contracts"
+              helpLabel={lang === "ar" ? "تعرّف على العقود" : "Learn about contracts"}
+            />
+          ) : (
+            <EmptyState
+              variant="filtered"
+              icon={<Search className="h-10 w-10" aria-hidden="true" />}
+              title={lang === "ar" ? "لا توجد نتائج مطابقة" : "No matching contracts"}
+              description={
+                lang === "ar"
+                  ? "جرّب تعديل البحث أو التبويب."
+                  : "Try adjusting your search or tab."
+              }
+              action={
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setSearch("");
+                    setMobileTab("ALL");
+                  }}
+                  style={{ display: "inline-flex" }}
+                >
+                  {lang === "ar" ? "مسح الفلاتر" : "Clear filters"}
+                </Button>
+              }
+            />
+          )
         )}
 
         {!loading && mobileFiltered.length > 0 && (
@@ -567,14 +602,14 @@ export default function ContractsPage() {
 
       {/* Tab bar */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex border border-gray-200 rounded-lg overflow-hidden">
+        <div className="flex border border-border rounded-lg overflow-hidden">
           <button
             onClick={() => setTab("SALE")}
             className={[
               "px-4 py-2 text-sm font-medium transition-colors",
               tab === "SALE"
-                ? "bg-purple-600 text-white"
-                : "bg-white text-gray-600 hover:bg-gray-50",
+                ? "bg-primary text-primary-foreground"
+                : "bg-card text-muted-foreground hover:bg-muted",
             ].join(" ")}
           >
             {lang === "ar" ? "عقود البيع" : "Sale Contracts"}
@@ -583,10 +618,10 @@ export default function ContractsPage() {
           <button
             onClick={() => setTab("LEASE")}
             className={[
-              "px-4 py-2 text-sm font-medium transition-colors border-s border-gray-200",
+              "px-4 py-2 text-sm font-medium transition-colors border-s border-border",
               tab === "LEASE"
-                ? "bg-purple-600 text-white"
-                : "bg-white text-gray-600 hover:bg-gray-50",
+                ? "bg-primary text-primary-foreground"
+                : "bg-card text-muted-foreground hover:bg-muted",
             ].join(" ")}
           >
             {lang === "ar" ? "عقود الإيجار" : "Lease Contracts"}
@@ -596,7 +631,7 @@ export default function ContractsPage() {
 
         <div className="flex items-center gap-3">
           <div className="relative">
-            <Search className="absolute top-1/2 -translate-y-1/2 start-3 w-4 h-4 text-gray-400 pointer-events-none" />
+            <Search className="absolute top-1/2 -translate-y-1/2 start-3 w-4 h-4 text-muted-foreground pointer-events-none" />
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -606,7 +641,7 @@ export default function ContractsPage() {
             {search && (
               <button
                 onClick={() => setSearch("")}
-                className="absolute top-1/2 -translate-y-1/2 end-3 text-gray-400 hover:text-gray-600"
+                className="absolute top-1/2 -translate-y-1/2 end-3 text-muted-foreground hover:text-foreground"
                 aria-label={lang === "ar" ? "مسح البحث" : "Clear search"}
               >
                 <X className="w-4 h-4" />
@@ -633,32 +668,64 @@ export default function ContractsPage() {
       <Card>
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <Loader2 className="w-6 h-6 animate-spin text-purple-600" />
+            <Loader2 className="w-6 h-6 animate-spin text-primary" />
           </div>
         ) : filtered.length === 0 ? (
-          <EmptyState
-            icon={<Handshake className="h-12 w-12" aria-hidden="true" />}
-            title={lang === "ar" ? "لا توجد عقود بعد" : "No contracts yet"}
-            description={
-              lang === "ar"
-                ? "تتبّع كل عقد إيجار أو بيع من المسودة حتى التوقيع."
-                : "Track every lease and sale from draft to signed."
-            }
-            action={
-              <Button
-                onClick={tab === "SALE" ? openSaleModal : openLeaseModal}
-                style={{ display: "inline-flex" }}
-                className="gap-2"
-              >
-                <Plus className="h-[18px] w-[18px]" />
-                {tab === "SALE"
-                  ? lang === "ar" ? "إنشاء عقد بيع" : "Create sale contract"
-                  : lang === "ar" ? "إنشاء عقد إيجار" : "Create lease contract"}
-              </Button>
-            }
-            helpHref="/dashboard/help#contracts"
-            helpLabel={lang === "ar" ? "تعرّف على العقود" : "Learn about contracts"}
-          />
+          allContracts.length === 0 || (tab === "SALE" ? saleContracts.length === 0 : leaseContracts.length === 0) ? (
+            <EmptyState
+              variant="first-time"
+              icon={<FileText className="h-12 w-12" aria-hidden="true" />}
+              title={
+                tab === "SALE"
+                  ? lang === "ar"
+                    ? "لا توجد عقود بيع بعد"
+                    : "No sale contracts yet"
+                  : lang === "ar"
+                    ? "لا توجد عقود إيجار بعد"
+                    : "No lease contracts yet"
+              }
+              description={
+                lang === "ar"
+                  ? "تتبّع كل عقد إيجار أو بيع من المسودة حتى التوقيع."
+                  : "Track every lease and sale from draft to signed."
+              }
+              action={
+                <Button
+                  onClick={tab === "SALE" ? openSaleModal : openLeaseModal}
+                  style={{ display: "inline-flex" }}
+                  className="gap-2"
+                >
+                  <Plus className="h-[18px] w-[18px]" />
+                  {tab === "SALE"
+                    ? lang === "ar" ? "إنشاء عقد بيع" : "Create sale contract"
+                    : lang === "ar" ? "إنشاء عقد إيجار" : "Create lease contract"}
+                </Button>
+              }
+              helpHref="/dashboard/help#contracts"
+              helpLabel={lang === "ar" ? "تعرّف على العقود" : "Learn about contracts"}
+            />
+          ) : (
+            <EmptyState
+              variant="filtered"
+              icon={<Search className="h-12 w-12" aria-hidden="true" />}
+              title={lang === "ar" ? "لا توجد نتائج مطابقة" : "No matching contracts"}
+              description={
+                lang === "ar"
+                  ? "جرّب تعديل البحث."
+                  : "Try adjusting your search."
+              }
+              action={
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSearch("")}
+                  style={{ display: "inline-flex" }}
+                >
+                  {lang === "ar" ? "مسح الفلاتر" : "Clear filters"}
+                </Button>
+              }
+            />
+          )
         ) : tab === "SALE" ? (
           <Table>
             <TableHeader>
@@ -675,14 +742,14 @@ export default function ContractsPage() {
             <TableBody>
               {filtered.map((c) => (
                 <TableRow key={c.id}>
-                  <TableCell className="font-mono text-xs text-gray-600">
+                  <TableCell className="font-mono text-xs text-muted-foreground">
                     {c.contractNumber ?? "—"}
                   </TableCell>
                   <TableCell className="font-medium">{c.customer.name}</TableCell>
                   <TableCell>
                     <div className="text-sm">
                       <p className="font-medium">{lang === "ar" ? "وحدة" : "Unit"} {c.unit.number}</p>
-                      <p className="text-gray-500 text-xs">{(c.unit as any).buildingName ?? (c.unit as any).city ?? "—"}</p>
+                      <p className="text-muted-foreground text-xs">{(c.unit as any).buildingName ?? (c.unit as any).city ?? "—"}</p>
                     </div>
                   </TableCell>
                   <TableCell>{SAR(Number(c.amount))}</TableCell>
@@ -691,17 +758,17 @@ export default function ContractsPage() {
                       {lang === "ar" ? (CONTRACT_STATUS_LABELS[c.status]?.ar ?? c.status) : (CONTRACT_STATUS_LABELS[c.status]?.en ?? c.status)}
                     </span>
                   </TableCell>
-                  <TableCell className="text-sm text-gray-600">
+                  <TableCell className="text-sm text-muted-foreground">
                     {c.signedAt
                       ? new Date(c.signedAt).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-SA")
-                      : <span className="text-gray-400">—</span>}
+                      : <span className="text-muted-foreground/70">—</span>}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-3">
                       {(c.status === "DRAFT" || c.status === "SENT") && (
                         <button
                           onClick={() => handleSignContract(c.id)}
-                          className="text-xs text-green-600 hover:text-green-800 font-medium"
+                          className="text-xs text-success hover:opacity-80 font-medium"
                         >
                           {lang === "ar" ? "توقيع" : "Sign"}
                         </button>
@@ -729,26 +796,26 @@ export default function ContractsPage() {
             <TableBody>
               {filtered.map((c) => (
                 <TableRow key={c.id}>
-                  <TableCell className="font-mono text-xs text-gray-600">
+                  <TableCell className="font-mono text-xs text-muted-foreground">
                     {c.contractNumber ?? "—"}
                   </TableCell>
                   <TableCell className="font-medium">{c.customer.name}</TableCell>
                   <TableCell>
                     <div className="text-sm">
                       <p className="font-medium">{lang === "ar" ? "وحدة" : "Unit"} {c.unit.number}</p>
-                      <p className="text-gray-500 text-xs">{(c.unit as any).buildingName ?? (c.unit as any).city ?? "—"}</p>
+                      <p className="text-muted-foreground text-xs">{(c.unit as any).buildingName ?? (c.unit as any).city ?? "—"}</p>
                     </div>
                   </TableCell>
                   <TableCell>{SAR(Number(c.amount))}</TableCell>
-                  <TableCell className="text-sm text-gray-600">
+                  <TableCell className="text-sm text-muted-foreground">
                     {c.lease?.startDate
                       ? new Date(c.lease.startDate).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-SA")
-                      : <span className="text-gray-400">—</span>}
+                      : <span className="text-muted-foreground/70">—</span>}
                   </TableCell>
-                  <TableCell className="text-sm text-gray-600">
+                  <TableCell className="text-sm text-muted-foreground">
                     {c.lease?.endDate
                       ? new Date(c.lease.endDate).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-SA")
-                      : <span className="text-gray-400">—</span>}
+                      : <span className="text-muted-foreground/70">—</span>}
                   </TableCell>
                   <TableCell>
                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${CONTRACT_STATUS_COLORS[c.status]}`}>
@@ -760,7 +827,7 @@ export default function ContractsPage() {
                       {(c.status === "DRAFT" || c.status === "SENT") && (
                         <button
                           onClick={() => handleSignContract(c.id)}
-                          className="text-xs text-green-600 hover:text-green-800 font-medium"
+                          className="text-xs text-success hover:opacity-80 font-medium"
                         >
                           {lang === "ar" ? "توقيع" : "Sign"}
                         </button>
@@ -801,7 +868,7 @@ export default function ContractsPage() {
         >
           {/* Customer */}
           <div className="space-y-1">
-            <label className="text-sm font-medium text-gray-700">
+            <label className="text-sm font-medium text-foreground">
               {lang === "ar" ? "العميل" : "Customer"} *
             </label>
             <div className="relative">
@@ -813,13 +880,13 @@ export default function ContractsPage() {
                 placeholder={lang === "ar" ? "ابحث عن العميل..." : "Search customer..."}
               />
               {saleForm.customerSearch && !saleForm.customerId && saleCustomerOptions.length > 0 && (
-                <div className="absolute z-10 top-full mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                <div className="absolute z-10 top-full mt-1 w-full bg-popover border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
                   {saleCustomerOptions.map((c) => (
                     <button
                       key={c.id}
                       type="button"
                       onClick={() => setSaleForm((f) => ({ ...f, customerId: c.id, customerName: c.name, customerSearch: c.name }))}
-                      className="w-full text-start px-3 py-2 text-sm hover:bg-gray-50"
+                      className="w-full text-start px-3 py-2 text-sm hover:bg-muted"
                     >
                       {c.name}
                     </button>
@@ -831,7 +898,7 @@ export default function ContractsPage() {
 
           {/* Unit */}
           <div className="space-y-1">
-            <label className="text-sm font-medium text-gray-700">
+            <label className="text-sm font-medium text-foreground">
               {lang === "ar" ? "الوحدة" : "Unit"} *
             </label>
             <div className="relative">
@@ -843,16 +910,16 @@ export default function ContractsPage() {
                 placeholder={lang === "ar" ? "ابحث عن وحدة..." : "Search unit..."}
               />
               {saleForm.unitSearch && !saleForm.unitId && saleUnitOptions.length > 0 && (
-                <div className="absolute z-10 top-full mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                <div className="absolute z-10 top-full mt-1 w-full bg-popover border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
                   {saleUnitOptions.map((u) => (
                     <button
                       key={u.id}
                       type="button"
                       onClick={() => setSaleForm((f) => ({ ...f, unitId: u.id, unitNumber: u.number, unitSearch: u.number }))}
-                      className="w-full text-start px-3 py-2 text-sm hover:bg-gray-50"
+                      className="w-full text-start px-3 py-2 text-sm hover:bg-muted"
                     >
                       {lang === "ar" ? "وحدة" : "Unit"} {u.number}
-                      <span className="ms-2 text-xs text-gray-400">{u.status}</span>
+                      <span className="ms-2 text-xs text-muted-foreground">{u.status}</span>
                     </button>
                   ))}
                 </div>
@@ -862,7 +929,7 @@ export default function ContractsPage() {
 
           {/* Amount */}
           <div className="space-y-1">
-            <label className="text-sm font-medium text-gray-700">
+            <label className="text-sm font-medium text-foreground">
               {lang === "ar" ? "مبلغ العقد (ريال)" : "Contract Amount (SAR)"} *
             </label>
             <SARAmountInput
@@ -874,7 +941,7 @@ export default function ContractsPage() {
 
           {/* Notes */}
           <div className="space-y-1">
-            <label className="text-sm font-medium text-gray-700">
+            <label className="text-sm font-medium text-foreground">
               {lang === "ar" ? "ملاحظات" : "Notes"}
             </label>
             <textarea
@@ -882,7 +949,7 @@ export default function ContractsPage() {
               onChange={(e) => setSaleForm((f) => ({ ...f, notes: e.target.value }))}
               rows={3}
               placeholder={lang === "ar" ? "ملاحظات اختيارية..." : "Optional notes..."}
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]"
             />
           </div>
         </form>
@@ -916,7 +983,7 @@ export default function ContractsPage() {
         >
           {/* Tenant */}
           <div className="space-y-1">
-            <label className="text-sm font-medium text-gray-700">
+            <label className="text-sm font-medium text-foreground">
               {lang === "ar" ? "المستأجر" : "Tenant/Customer"} *
             </label>
             <div className="relative">
@@ -928,13 +995,13 @@ export default function ContractsPage() {
                 placeholder={lang === "ar" ? "ابحث عن المستأجر..." : "Search tenant..."}
               />
               {leaseForm.customerSearch && !leaseForm.customerId && leaseCustomerOptions.length > 0 && (
-                <div className="absolute z-10 top-full mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                <div className="absolute z-10 top-full mt-1 w-full bg-popover border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
                   {leaseCustomerOptions.map((c) => (
                     <button
                       key={c.id}
                       type="button"
                       onClick={() => setLeaseForm((f) => ({ ...f, customerId: c.id, customerName: c.name, customerSearch: c.name }))}
-                      className="w-full text-start px-3 py-2 text-sm hover:bg-gray-50"
+                      className="w-full text-start px-3 py-2 text-sm hover:bg-muted"
                     >
                       {c.name}
                     </button>
@@ -946,7 +1013,7 @@ export default function ContractsPage() {
 
           {/* Unit */}
           <div className="space-y-1">
-            <label className="text-sm font-medium text-gray-700">
+            <label className="text-sm font-medium text-foreground">
               {lang === "ar" ? "الوحدة" : "Unit"} *
             </label>
             <div className="relative">
@@ -958,13 +1025,13 @@ export default function ContractsPage() {
                 placeholder={lang === "ar" ? "ابحث عن وحدة متاحة..." : "Search available unit..."}
               />
               {leaseForm.unitSearch && !leaseForm.unitId && leaseUnitOptions.length > 0 && (
-                <div className="absolute z-10 top-full mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                <div className="absolute z-10 top-full mt-1 w-full bg-popover border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
                   {leaseForm.unitSearch && !leaseForm.unitId && leaseUnitOptions.map((u) => (
                     <button
                       key={u.id}
                       type="button"
                       onClick={() => setLeaseForm((f) => ({ ...f, unitId: u.id, unitNumber: u.number, unitSearch: u.number }))}
-                      className="w-full text-start px-3 py-2 text-sm hover:bg-gray-50"
+                      className="w-full text-start px-3 py-2 text-sm hover:bg-muted"
                     >
                       {lang === "ar" ? "وحدة" : "Unit"} {u.number}
                     </button>
@@ -977,7 +1044,7 @@ export default function ContractsPage() {
           {/* Dates */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="text-sm font-medium text-gray-700">
+              <label className="text-sm font-medium text-foreground">
                 {lang === "ar" ? "تاريخ البداية" : "Start Date"} *
               </label>
               <HijriDatePicker
@@ -986,7 +1053,7 @@ export default function ContractsPage() {
               />
             </div>
             <div className="space-y-1">
-              <label className="text-sm font-medium text-gray-700">
+              <label className="text-sm font-medium text-foreground">
                 {lang === "ar" ? "تاريخ النهاية" : "End Date"} *
               </label>
               <HijriDatePicker
@@ -998,7 +1065,7 @@ export default function ContractsPage() {
 
           {/* Amount */}
           <div className="space-y-1">
-            <label className="text-sm font-medium text-gray-700">
+            <label className="text-sm font-medium text-foreground">
               {lang === "ar" ? "إجمالي الإيجار (ريال)" : "Total Amount (SAR)"} *
             </label>
             <SARAmountInput
@@ -1010,13 +1077,13 @@ export default function ContractsPage() {
 
           {/* Payment Frequency */}
           <div className="space-y-1">
-            <label className="text-sm font-medium text-gray-700">
+            <label className="text-sm font-medium text-foreground">
               {lang === "ar" ? "دورية الدفع" : "Payment Frequency"}
             </label>
             <select
               value={leaseForm.paymentFrequency}
               onChange={(e) => setLeaseForm((f) => ({ ...f, paymentFrequency: e.target.value }))}
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]"
             >
               <option value="MONTHLY">{lang === "ar" ? "شهري" : "Monthly"}</option>
               <option value="QUARTERLY">{lang === "ar" ? "ربع سنوي" : "Quarterly"}</option>
@@ -1027,7 +1094,7 @@ export default function ContractsPage() {
 
           {/* Notes */}
           <div className="space-y-1">
-            <label className="text-sm font-medium text-gray-700">
+            <label className="text-sm font-medium text-foreground">
               {lang === "ar" ? "ملاحظات" : "Notes"}
             </label>
             <textarea
@@ -1035,7 +1102,7 @@ export default function ContractsPage() {
               onChange={(e) => setLeaseForm((f) => ({ ...f, notes: e.target.value }))}
               rows={3}
               placeholder={lang === "ar" ? "ملاحظات اختيارية..." : "Optional notes..."}
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]"
             />
           </div>
         </form>

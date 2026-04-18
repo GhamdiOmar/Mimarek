@@ -15,9 +15,11 @@ import {
   Loader2,
 } from "lucide-react";
 import { Button, AppBar, SARAmount, Skeleton, DirectionalIcon } from "@repo/ui";
+import { PageHeader } from "@repo/ui/components/PageHeader";
 import Link from "next/link";
 import { getPlans, subscribeToPlan, getCurrentSubscription } from "../../../actions/billing";
 import { validateCoupon } from "../../../actions/coupons";
+import { toast } from "sonner";
 
 export default function PlansPage() {
   const { lang } = useLanguage();
@@ -97,7 +99,12 @@ export default function PlansPage() {
       const sub = await getCurrentSubscription();
       setCurrentSub(sub);
     } catch (error: any) {
-      alert(error.message);
+      toast.error(
+        lang === "ar"
+          ? "تعذّر الاشتراك في الخطة. يُرجى المحاولة مرة أخرى."
+          : "We couldn't start your subscription. Please try again.",
+      );
+      console.error(error);
     } finally {
       setSubscribing(null);
     }
@@ -368,8 +375,7 @@ export default function PlansPage() {
           <DirectionalIcon icon={ArrowLeft} className="w-4 h-4" />
           {t.backToBilling}
         </Link>
-        <h1 className="text-2xl font-bold text-foreground">{t.title}</h1>
-        <p className="text-sm text-muted-foreground mt-1">{t.subtitle}</p>
+        <PageHeader title={t.title} description={t.subtitle} />
       </div>
 
       {/* Billing Cycle Toggle */}
@@ -393,7 +399,7 @@ export default function PlansPage() {
           }`}
         >
           {t.annual}
-          <span className="text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-2 py-0.5 rounded-full whitespace-nowrap">
+          <span className="text-xs bg-success/15 text-success px-2 py-0.5 rounded-full whitespace-nowrap">
             {t.save20}
           </span>
         </button>
@@ -402,13 +408,13 @@ export default function PlansPage() {
       {/* Coupon Code Section */}
       <div className="max-w-md mx-auto" data-testid="coupon-section">
         {appliedCoupon ? (
-          <div className="flex items-center gap-3 p-3 rounded-lg border border-green-300 bg-green-50 dark:border-green-800 dark:bg-green-900/20">
-            <Tag className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+          <div className="flex items-center gap-3 p-3 rounded-lg border border-success/30 bg-success/10">
+            <Tag className="w-5 h-5 text-success flex-shrink-0" />
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-green-800 dark:text-green-300">
+              <p className="text-sm font-medium text-success">
                 {appliedCoupon.code}
               </p>
-              <p className="text-xs text-green-600 dark:text-green-400">
+              <p className="text-xs text-success">
                 {appliedCoupon.type === "PERCENTAGE"
                   ? `${appliedCoupon.value}% ${t.discount}`
                   : `${appliedCoupon.value} ${t.sar} ${t.discount}`}
@@ -418,7 +424,7 @@ export default function PlansPage() {
             </div>
             <button
               onClick={handleRemoveCoupon}
-              className="p-1 rounded-md hover:bg-green-100 dark:hover:bg-green-800/40 text-green-600 dark:text-green-400"
+              className="p-1 rounded-md hover:bg-success/15 text-success"
               title={t.removeCoupon}
               aria-label={t.removeCoupon}
             >
@@ -460,7 +466,7 @@ export default function PlansPage() {
           </div>
         )}
         {couponError && (
-          <p className="text-xs text-red-600 dark:text-red-400 mt-2" data-testid="coupon-error">
+          <p className="text-xs text-destructive mt-2" data-testid="coupon-error">
             {couponError}
           </p>
         )}
@@ -513,11 +519,11 @@ export default function PlansPage() {
                           <p className="text-sm text-muted-foreground line-through" data-testid="original-price">
                             {monthlyEquiv.toLocaleString(lang === "ar" ? "ar-SA" : "en-US")} {t.sar}/{t.month}
                           </p>
-                          <p className="text-3xl font-bold text-green-700 dark:text-green-400" data-testid="discounted-price">
+                          <p className="text-3xl font-bold text-success" data-testid="discounted-price">
                             {discountedMonthly.toLocaleString(lang === "ar" ? "ar-SA" : "en-US")}
                             <span className="text-base font-normal text-muted-foreground"> {t.sar}/{t.month}</span>
                           </p>
-                          <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                          <p className="text-xs text-success mt-1">
                             {t.youSave} {discountAmount.toLocaleString(lang === "ar" ? "ar-SA" : "en-US")} {t.sar}
                           </p>
                         </>
@@ -571,7 +577,7 @@ export default function PlansPage() {
                   return (
                     <div key={ent.featureKey} className="flex items-center gap-2 text-sm">
                       {granted ? (
-                        <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0" />
+                        <CheckCircle2 className="w-4 h-4 text-success flex-shrink-0" />
                       ) : (
                         <XCircle className="w-4 h-4 text-muted-foreground/40 flex-shrink-0" />
                       )}

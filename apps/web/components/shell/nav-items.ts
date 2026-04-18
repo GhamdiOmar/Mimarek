@@ -25,6 +25,8 @@ export const navItems: NavItem[] = [
   // Operations — tenant only
   { label: { ar: "المدفوعات", en: "Payments" }, icon: "CreditCard", href: "/dashboard/payments", section: "operations", permission: "payments:read", audience: "tenant" },
   { label: { ar: "الصيانة", en: "Maintenance" }, icon: "Wrench", href: "/dashboard/maintenance", section: "operations", permission: "maintenance:read", audience: "tenant" },
+  { label: { ar: "التقارير", en: "Reports" }, icon: "BarChart3", href: "/dashboard/reports", section: "operations", permission: "reports:read", audience: "tenant" },
+  { label: { ar: "المستندات", en: "Documents" }, icon: "FileText", href: "/dashboard/documents", section: "operations", permission: "documents:read", audience: "tenant" },
   // Sub-sections of Maintenance — exposed via the sub-tab bar inside /dashboard/maintenance
   // and Cmd-K search, but not as separate sidebar entries (IA: one top-level per workflow).
   { label: { ar: "تذاكر الصيانة", en: "Maintenance · Tickets" }, icon: "ClipboardList", href: "/dashboard/maintenance/tickets", section: "operations", permission: "maintenance:read", audience: "tenant", hiddenFromNav: true },
