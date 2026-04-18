@@ -981,6 +981,18 @@ All use bilingual labels, native Arabic/English placeholders, full RTL, and serv
 - Create GitHub release with release notes summarizing changes.
 - Never leave uncommitted work at the end of a task session.
 
+### 7.1 Release Notes Discipline (Hard Rule)
+- **Every tagged version MUST have a matching GitHub release** at `https://github.com/GhamdiOmar/Mimaric/releases/tag/<vX.Y.Z>`. A tag without a published release is a failure.
+- **CHANGELOG.md is the source; the GitHub release mirrors it.** Update `CHANGELOG.md` as part of the same commit that bumps the version — never after the fact.
+- **When the merge that ships a release lands on `main`:**
+  1. Tag the merge commit: `git tag -a vX.Y.Z <sha> -m "vX.Y.Z — <headline>"` then `git push origin vX.Y.Z`.
+  2. Create (or edit) the release: `gh release create vX.Y.Z --title "..." --notes-file <path> --latest` (or `gh release edit vX.Y.Z --notes-file <path>` if the tag/release already exists).
+  3. Release notes derive from the matching `CHANGELOG.md` section, reformatted for GitHub: headline paragraph, grouped headline changes, deferred items, upgrade notes, and a `compare` link to the previous tag.
+- **Every subsequent commit that is user-visible under a released version** (hotfix, follow-up a11y fix, copy change) — update the release notes for that version via `gh release edit` the same day. Don't let the published notes drift from reality.
+- **Patch-level bumps (`vX.Y.Z+1`)** — a new tag + new release, not an edit of the previous one. Edits are only for corrections to the notes of a version whose scope hasn't changed.
+- **No "Generated with Claude Code" or Co-Authored-By lines** in release notes or commit messages (§ 1).
+- **Compare link convention:** every release body ends with `**Full diff:** https://github.com/GhamdiOmar/Mimaric/compare/<prev-tag>...<this-tag>`.
+
 ---
 
 ## 8. Access Model — Tenant vs System (Hard Rule)
