@@ -297,9 +297,16 @@ export default function BillingDashboardPage() {
               )}
             </div>
             {invoices.length === 0 ? (
-              <div className="rounded-xl border border-border bg-card p-6 text-center">
-                <p className="text-sm text-muted-foreground">{t.noInvoices}</p>
-              </div>
+              <EmptyState
+                compact
+                icon={<Receipt className="h-8 w-8" />}
+                title={t.noInvoices}
+                description={
+                  lang === "ar"
+                    ? "ستظهر فواتيرك هنا بمجرد إصدار أول اشتراك."
+                    : "Your invoices appear here once your first subscription is billed."
+                }
+              />
             ) : (
               <div className="rounded-xl border border-border bg-card px-4">
                 {invoices.slice(0, 3).map((inv: any, idx: number) => (
@@ -545,7 +552,16 @@ export default function BillingDashboardPage() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground text-center py-4">{t.noInvoices}</p>
+                  <EmptyState
+                    compact
+                    icon={<Receipt className="h-8 w-8" />}
+                    title={t.noInvoices}
+                    description={
+                      lang === "ar"
+                        ? "ستظهر فواتيرك هنا بمجرد إصدار أول اشتراك."
+                        : "Your invoices appear here once your first subscription is billed."
+                    }
+                  />
                 )}
               </CardContent>
             </Card>

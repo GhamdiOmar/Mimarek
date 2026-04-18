@@ -269,15 +269,39 @@ export default function AdminPaymentsPage() {
                 ))}
               </div>
             ) : mobileInvoices.length === 0 ? (
-              <EmptyState
-                icon={<Receipt className="h-10 w-10 text-primary" aria-hidden="true" />}
-                title={lang === "ar" ? "لا توجد فواتير" : "No invoices"}
-                description={
-                  lang === "ar"
-                    ? "لا توجد فواتير مطابقة للتصفية الحالية."
-                    : "No invoices match the current filter."
-                }
-              />
+              invoices.length === 0 ? (
+                <EmptyState
+                  variant="first-time"
+                  icon={<Receipt className="h-12 w-12" aria-hidden="true" />}
+                  title={lang === "ar" ? "لا توجد فواتير بعد" : "No invoices yet"}
+                  description={
+                    lang === "ar"
+                      ? "ستظهر فواتير اشتراكات المستأجرين هنا فور إصدارها."
+                      : "Tenant subscription invoices appear here once issued."
+                  }
+                />
+              ) : (
+                <EmptyState
+                  variant="filtered"
+                  icon={<Receipt className="h-10 w-10" aria-hidden="true" />}
+                  title={lang === "ar" ? "لا توجد نتائج مطابقة" : "No matching invoices"}
+                  description={
+                    lang === "ar"
+                      ? "جرّب تعديل التصفية."
+                      : "Try adjusting the filter."
+                  }
+                  action={
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setMobileFilter("ALL")}
+                      style={{ display: "inline-flex" }}
+                    >
+                      {lang === "ar" ? "مسح الفلاتر" : "Clear filters"}
+                    </Button>
+                  }
+                />
+              )
             ) : (
               <div className="rounded-2xl border border-border bg-card px-4">
                 {mobileInvoices.map((inv, idx) => {
@@ -406,12 +430,16 @@ export default function AdminPaymentsPage() {
             <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
           </div>
         ) : invoices.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-            <Receipt className="h-12 w-12 mb-4 opacity-40" />
-            <p className="">
-              {lang === "ar" ? "لا توجد فواتير" : "No invoices found"}
-            </p>
-          </div>
+          <EmptyState
+            variant="first-time"
+            icon={<Receipt className="h-12 w-12" />}
+            title={lang === "ar" ? "لا توجد فواتير بعد" : "No invoices yet"}
+            description={
+              lang === "ar"
+                ? "ستظهر فواتير اشتراكات المستأجرين هنا فور إصدارها."
+                : "Tenant subscription invoices appear here once issued."
+            }
+          />
         ) : (
           <Table>
             <TableHeader>

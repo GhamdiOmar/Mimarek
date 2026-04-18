@@ -41,6 +41,7 @@ import {
   DataCard,
   BottomSheet,
   FAB,
+  EmptyState,
 } from "@repo/ui";
 import {
   getMaintenanceRequests,
@@ -426,12 +427,52 @@ export default function MaintenancePage() {
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </div>
         ) : visibleRequests.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-            <Wrench className="h-10 w-10 mb-3" />
-            <p className="text-sm">
-              {lang === "ar" ? "لا توجد طلبات صيانة" : "No maintenance requests"}
-            </p>
-          </div>
+          filterStatus || search || filterPriority || filterCategory ? (
+            <EmptyState
+              variant="filtered"
+              icon={<Search className="h-10 w-10" />}
+              title={lang === "ar" ? "لا توجد نتائج مطابقة" : "No matching requests"}
+              description={
+                lang === "ar"
+                  ? "جرّب تعديل الفلاتر أو البحث بكلمات أخرى."
+                  : "Try adjusting the filters or search terms."
+              }
+              action={
+                <Button
+                  variant="outline"
+                  size="sm"
+                  style={{ display: "inline-flex" }}
+                  onClick={() => {
+                    setFilterStatus("");
+                    setFilterPriority("");
+                    setFilterCategory("");
+                    setSearch("");
+                  }}
+                >
+                  {lang === "ar" ? "مسح الفلاتر" : "Clear filters"}
+                </Button>
+              }
+            />
+          ) : (
+            <EmptyState
+              variant="first-time"
+              icon={<Wrench className="h-12 w-12" />}
+              title={lang === "ar" ? "لا توجد طلبات صيانة بعد" : "No maintenance requests yet"}
+              description={
+                lang === "ar"
+                  ? "أنشئ طلبات صيانة وتابع حالتها حتى الإغلاق."
+                  : "Log maintenance requests and track them through to resolution."
+              }
+              action={
+                <Button size="sm" onClick={openCreate} style={{ display: "inline-flex" }}>
+                  <Plus className="h-4 w-4 me-1.5" />
+                  {lang === "ar" ? "طلب جديد" : "New request"}
+                </Button>
+              }
+              helpHref="/dashboard/help#maintenance"
+              helpLabel={lang === "ar" ? "تعرّف على الصيانة" : "Learn about maintenance"}
+            />
+          )
         ) : (
           <div>
             {visibleRequests.map((t: any) => {
@@ -732,10 +773,52 @@ export default function MaintenancePage() {
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : requests.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-            <Wrench className="h-12 w-12 mb-4" />
-            <p className="text-sm">{lang === "ar" ? "لا توجد طلبات صيانة" : "No maintenance requests"}</p>
-          </div>
+          filterStatus || search || filterPriority || filterCategory ? (
+            <EmptyState
+              variant="filtered"
+              icon={<Search className="h-12 w-12" />}
+              title={lang === "ar" ? "لا توجد نتائج مطابقة" : "No matching requests"}
+              description={
+                lang === "ar"
+                  ? "جرّب تعديل الفلاتر أو البحث بكلمات أخرى."
+                  : "Try adjusting the filters or search terms."
+              }
+              action={
+                <Button
+                  variant="outline"
+                  size="sm"
+                  style={{ display: "inline-flex" }}
+                  onClick={() => {
+                    setFilterStatus("");
+                    setFilterPriority("");
+                    setFilterCategory("");
+                    setSearch("");
+                  }}
+                >
+                  {lang === "ar" ? "مسح الفلاتر" : "Clear filters"}
+                </Button>
+              }
+            />
+          ) : (
+            <EmptyState
+              variant="first-time"
+              icon={<Wrench className="h-12 w-12" />}
+              title={lang === "ar" ? "لا توجد طلبات صيانة بعد" : "No maintenance requests yet"}
+              description={
+                lang === "ar"
+                  ? "أنشئ طلبات صيانة وتابع حالتها حتى الإغلاق."
+                  : "Log maintenance requests and track them through to resolution."
+              }
+              action={
+                <Button size="sm" onClick={openCreate} style={{ display: "inline-flex" }}>
+                  <Plus className="h-4 w-4 me-1.5" />
+                  {lang === "ar" ? "طلب جديد" : "New request"}
+                </Button>
+              }
+              helpHref="/dashboard/help#maintenance"
+              helpLabel={lang === "ar" ? "تعرّف على الصيانة" : "Learn about maintenance"}
+            />
+          )
         ) : (
           <Table>
             <TableHeader>

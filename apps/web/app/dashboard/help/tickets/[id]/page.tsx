@@ -13,8 +13,9 @@ import {
   CheckCircle2,
   XCircle,
   Loader2,
+  MessageSquare,
 } from "lucide-react";
-import { Button, AppBar, BottomSheet, Textarea, DirectionalIcon } from "@repo/ui";
+import { Button, AppBar, BottomSheet, Textarea, DirectionalIcon, EmptyState } from "@repo/ui";
 import { cn } from "@repo/ui/lib/utils";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -280,11 +281,16 @@ export default function TicketDetailPage() {
           </h2>
 
           {(!ticket.messages || ticket.messages.length === 0) && (
-            <div className="rounded-2xl border border-border bg-card p-6 text-center text-sm text-muted-foreground">
-              {lang === "ar"
-                ? "لا توجد رسائل بعد. كن أول من يرد."
-                : "No messages yet. Be the first to reply."}
-            </div>
+            <EmptyState
+              compact
+              icon={<MessageSquare className="h-10 w-10" />}
+              title={lang === "ar" ? "لا توجد رسائل بعد" : "No messages yet"}
+              description={
+                lang === "ar"
+                  ? "كن أول من يرد على هذه التذكرة."
+                  : "Be the first to reply to this ticket."
+              }
+            />
           )}
 
           {ticket.messages?.map((msg: any) => {
@@ -522,11 +528,16 @@ export default function TicketDetailPage() {
 
         <div className="p-4 space-y-3 max-h-[500px] overflow-y-auto">
           {(!ticket.messages || ticket.messages.length === 0) && (
-            <div className="text-center text-muted-foreground text-sm py-8">
-              {lang === "ar"
-                ? "لا توجد رسائل بعد. كن أول من يرد."
-                : "No messages yet. Be the first to reply."}
-            </div>
+            <EmptyState
+              compact
+              icon={<MessageSquare className="h-10 w-10" />}
+              title={lang === "ar" ? "لا توجد رسائل بعد" : "No messages yet"}
+              description={
+                lang === "ar"
+                  ? "كن أول من يرد على هذه التذكرة."
+                  : "Be the first to reply to this ticket."
+              }
+            />
           )}
 
           {ticket.messages?.map((msg: any) => {

@@ -430,15 +430,45 @@ export default function PaymentsPage() {
         )}
 
         {!loading && filtered.length === 0 && (
-          <EmptyState
-            icon={<CreditCard className="h-10 w-10 text-primary" aria-hidden="true" />}
-            title={lang === "ar" ? "لا توجد مدفوعات" : "No payments"}
-            description={
-              lang === "ar"
-                ? "لا توجد مدفوعات مطابقة للتصفية الحالية."
-                : "No payments match the current filter."
-            }
-          />
+          allEntries.length === 0 ? (
+            <EmptyState
+              variant="first-time"
+              icon={<CreditCard className="h-12 w-12" aria-hidden="true" />}
+              title={lang === "ar" ? "لا توجد مدفوعات بعد" : "No payments yet"}
+              description={
+                lang === "ar"
+                  ? "ستظهر أقساط الإيجار والبيع هنا بمجرد تفعيل أول عقد."
+                  : "Rent and sale installments show up here once contracts are active."
+              }
+              helpHref="/dashboard/help#payments"
+              helpLabel={lang === "ar" ? "تعرّف على المدفوعات" : "Learn about payments"}
+            />
+          ) : (
+            <EmptyState
+              variant="filtered"
+              icon={<Search className="h-12 w-12" aria-hidden="true" />}
+              title={lang === "ar" ? "لا توجد نتائج مطابقة" : "No matching payments"}
+              description={
+                lang === "ar"
+                  ? "جرّب تعديل البحث أو التبويب."
+                  : "Try adjusting your search or tab."
+              }
+              action={
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setSearch("");
+                    setTypeFilter("ALL");
+                    setStatusFilter("ALL");
+                  }}
+                  style={{ display: "inline-flex" }}
+                >
+                  {lang === "ar" ? "مسح الفلاتر" : "Clear filters"}
+                </Button>
+              }
+            />
+          )
         )}
 
         {!loading && filtered.length > 0 && (

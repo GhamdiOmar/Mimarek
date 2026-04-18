@@ -14,7 +14,7 @@ import {
   AlertTriangle,
   CheckCircle2,
 } from "lucide-react";
-import { Button, Card, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, ResponsiveDialog, DirectionalIcon } from "@repo/ui";
+import { Button, Card, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, ResponsiveDialog, DirectionalIcon, EmptyState } from "@repo/ui";
 import { PageHeader } from "@repo/ui/components/PageHeader";
 import Link from "next/link";
 import { adminGetAllPlans, adminUpsertPlan } from "../../../actions/billing";
@@ -341,23 +341,18 @@ export default function AdminPlansPage() {
 
       {/* Plans table */}
       {plans.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <CircleDollarSign className="w-12 h-12 text-muted-foreground/40 mb-4" />
-          <h3 className="text-lg font-semibold text-foreground">
-            {t.noPlans}
-          </h3>
-          <p className="text-sm text-muted-foreground mt-1 mb-6">
-            {t.noPlansDesc}
-          </p>
-          <Button
-            variant="primary"
-            onClick={openCreate}
-           
-          >
-            <Plus className="w-4 h-4" />
-            <span className="ms-1.5">{t.addPlan}</span>
-          </Button>
-        </div>
+        <EmptyState
+          variant="first-time"
+          icon={<CircleDollarSign className="h-12 w-12" />}
+          title={t.noPlans}
+          description={t.noPlansDesc}
+          action={
+            <Button variant="primary" onClick={openCreate} style={{ display: "inline-flex" }}>
+              <Plus className="w-4 h-4 me-1.5" />
+              {t.addPlan}
+            </Button>
+          }
+        />
       ) : (
         <Card className="overflow-hidden">
             <Table>

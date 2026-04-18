@@ -360,11 +360,35 @@ export default function AdminSubscriptionsPage() {
                 ))}
               </div>
             ) : filteredMobile.length === 0 ? (
-              <EmptyState
-                icon={<Receipt className="h-10 w-10 text-primary" aria-hidden="true" />}
-                title={t.noSubscriptions}
-                description={t.noSubscriptionsDesc}
-              />
+              subscriptions.length === 0 ? (
+                <EmptyState
+                  variant="first-time"
+                  icon={<Receipt className="h-12 w-12" aria-hidden="true" />}
+                  title={t.noSubscriptions}
+                  description={t.noSubscriptionsDesc}
+                />
+              ) : (
+                <EmptyState
+                  variant="filtered"
+                  icon={<Search className="h-10 w-10" aria-hidden="true" />}
+                  title={lang === "ar" ? "لا توجد نتائج مطابقة" : "No matching subscriptions"}
+                  description={
+                    lang === "ar"
+                      ? "جرّب بحثاً آخر."
+                      : "Try a different search."
+                  }
+                  action={
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setMobileSearch("")}
+                      style={{ display: "inline-flex" }}
+                    >
+                      {lang === "ar" ? "مسح الفلاتر" : "Clear filters"}
+                    </Button>
+                  }
+                />
+              )
             ) : (
               <div className="rounded-2xl border border-border bg-card px-4">
                 {filteredMobile.map((sub, idx) => {
@@ -508,10 +532,13 @@ export default function AdminSubscriptionsPage() {
               </TableRow>
             ) : subscriptions.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="py-16 text-center">
-                  <Receipt className="h-10 w-10 mx-auto mb-3 text-muted-foreground/30" />
-                  <p className="text-muted-foreground font-medium">{t.noSubscriptions}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{t.noSubscriptionsDesc}</p>
+                <TableCell colSpan={6} className="p-0">
+                  <EmptyState
+                    variant="first-time"
+                    icon={<Receipt className="h-12 w-12" />}
+                    title={t.noSubscriptions}
+                    description={t.noSubscriptionsDesc}
+                  />
                 </TableCell>
               </TableRow>
             ) : (

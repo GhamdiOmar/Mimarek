@@ -223,15 +223,54 @@ export default function DocumentVaultPage() {
         )}
 
         {!loading && mobileFiltered.length === 0 && (
-          <EmptyState
-            icon={<CloudUpload className="h-10 w-10 text-primary" aria-hidden="true" />}
-            title={lang === "ar" ? "لا توجد وثائق" : "No documents"}
-            description={
-              lang === "ar"
-                ? "لم يتم العثور على وثائق. ارفع أول وثيقة للبدء."
-                : "No documents yet. Upload one to get started."
-            }
-          />
+          docs.length === 0 ? (
+            <EmptyState
+              variant="first-time"
+              icon={<CloudUpload className="h-12 w-12" aria-hidden="true" />}
+              title={lang === "ar" ? "لا توجد وثائق بعد" : "No documents yet"}
+              description={
+                lang === "ar"
+                  ? "ارفع المخططات والعقود والمستندات في مكان واحد آمن."
+                  : "Upload blueprints, contracts, and records in one safe place."
+              }
+              action={
+                canWrite ? (
+                  <Button
+                    size="sm"
+                    onClick={triggerMobileUpload}
+                    style={{ display: "inline-flex" }}
+                  >
+                    <CloudUpload className="h-4 w-4 me-1.5" />
+                    {lang === "ar" ? "رفع وثيقة" : "Upload document"}
+                  </Button>
+                ) : undefined
+              }
+              helpHref="/dashboard/help#documents"
+              helpLabel={lang === "ar" ? "تعرّف على خزنة الوثائق" : "Learn about the vault"}
+            />
+          ) : (
+            <EmptyState
+              variant="filtered"
+              icon={<CloudUpload className="h-10 w-10" aria-hidden="true" />}
+              title={lang === "ar" ? "لا توجد نتائج مطابقة" : "No matching documents"}
+              description={
+                lang === "ar" ? "جرّب فئة أو بحثاً آخر." : "Try a different category or search."
+              }
+              action={
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setActiveCategory("all");
+                    setMobileSearch("");
+                  }}
+                  style={{ display: "inline-flex" }}
+                >
+                  {lang === "ar" ? "مسح الفلاتر" : "Clear filters"}
+                </Button>
+              }
+            />
+          )
         )}
 
         {!loading && mobileFiltered.length > 0 && (
@@ -429,29 +468,51 @@ export default function DocumentVaultPage() {
                ))}
              </div>
            ) : docs.filter((doc) => activeCategory === "all" || doc.category === activeCategory).length === 0 ? (
-             <EmptyState
-               icon={<CloudUpload className="h-12 w-12" aria-hidden="true" />}
-               title={lang === "ar" ? "لا توجد وثائق بعد" : "No documents yet"}
-               description={
-                 lang === "ar"
-                   ? "ارفع المخططات والعقود والمستندات في مكان واحد آمن."
-                   : "Upload blueprints, contracts, and records in one safe place."
-               }
-               action={
-                 canWrite ? (
+             docs.length === 0 ? (
+               <EmptyState
+                 variant="first-time"
+                 icon={<CloudUpload className="h-12 w-12" aria-hidden="true" />}
+                 title={lang === "ar" ? "لا توجد وثائق بعد" : "No documents yet"}
+                 description={
+                   lang === "ar"
+                     ? "ارفع المخططات والعقود والمستندات في مكان واحد آمن."
+                     : "Upload blueprints, contracts, and records in one safe place."
+                 }
+                 action={
+                   canWrite ? (
+                     <Button
+                       onClick={triggerMobileUpload}
+                       style={{ display: "inline-flex" }}
+                       className="gap-2"
+                     >
+                       <CloudUpload className="h-[18px] w-[18px]" />
+                       {lang === "ar" ? "رفع وثيقة" : "Upload document"}
+                     </Button>
+                   ) : undefined
+                 }
+                 helpHref="/dashboard/help#documents"
+                 helpLabel={lang === "ar" ? "تعرّف على خزنة الوثائق" : "Learn about the vault"}
+               />
+             ) : (
+               <EmptyState
+                 variant="filtered"
+                 icon={<CloudUpload className="h-12 w-12" aria-hidden="true" />}
+                 title={lang === "ar" ? "لا توجد وثائق في هذه الفئة" : "No documents in this category"}
+                 description={
+                   lang === "ar" ? "جرّب فئة أخرى." : "Try another category."
+                 }
+                 action={
                    <Button
-                     onClick={triggerMobileUpload}
+                     variant="outline"
+                     size="sm"
+                     onClick={() => setActiveCategory("all")}
                      style={{ display: "inline-flex" }}
-                     className="gap-2"
                    >
-                     <CloudUpload className="h-[18px] w-[18px]" />
-                     {lang === "ar" ? "رفع وثيقة" : "Upload document"}
+                     {lang === "ar" ? "عرض الكل" : "View all"}
                    </Button>
-                 ) : undefined
-               }
-               helpHref="/dashboard/help#documents"
-               helpLabel={lang === "ar" ? "تعرّف على خزنة الوثائق" : "Learn about the vault"}
-             />
+                 }
+               />
+             )
            ) : (
            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               {docs.filter((doc) => activeCategory === "all" || doc.category === activeCategory).map((doc) => (

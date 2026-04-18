@@ -179,12 +179,38 @@ export default function InvoicesPage() {
             ))}
           </div>
         ) : filteredMobile.length === 0 ? (
-          <EmptyState
-            icon={<Receipt className="w-10 h-10 text-primary" aria-hidden="true" />}
-            title={t.noInvoices}
-            description={t.subtitle}
-            compact
-          />
+          data.invoices.length === 0 ? (
+            <EmptyState
+              variant="first-time"
+              icon={<Receipt className="h-12 w-12" aria-hidden="true" />}
+              title={t.noInvoices}
+              description={
+                lang === "ar"
+                  ? "ستظهر فواتيرك هنا بمجرد إصدار أول اشتراك."
+                  : "Your invoices appear here once your first subscription is billed."
+              }
+            />
+          ) : (
+            <EmptyState
+              variant="filtered"
+              icon={<Receipt className="w-10 h-10" aria-hidden="true" />}
+              title={lang === "ar" ? "لا توجد نتائج مطابقة" : "No matching invoices"}
+              description={
+                lang === "ar" ? "جرّب تصفية أخرى." : "Try a different filter."
+              }
+              action={
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setMobileFilter("ALL")}
+                  style={{ display: "inline-flex" }}
+                >
+                  {lang === "ar" ? "مسح الفلاتر" : "Clear filters"}
+                </Button>
+              }
+              compact
+            />
+          )
         ) : (
           <div className="rounded-xl border border-border bg-card px-4">
             {filteredMobile.map((inv: any, idx: number) => {
@@ -463,10 +489,16 @@ export default function InvoicesPage() {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
           </div>
         ) : data.invoices.length === 0 ? (
-          <div className="text-center py-12">
-            <Receipt className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-            <p className="text-muted-foreground">{t.noInvoices}</p>
-          </div>
+          <EmptyState
+            variant="first-time"
+            icon={<Receipt className="h-12 w-12" />}
+            title={t.noInvoices}
+            description={
+              lang === "ar"
+                ? "ستظهر فواتيرك هنا بمجرد إصدار أول اشتراك."
+                : "Your invoices appear here once your first subscription is billed."
+            }
+          />
         ) : (
           <>
             <Table>

@@ -418,15 +418,50 @@ export default function ContractsPage() {
         )}
 
         {!loading && mobileFiltered.length === 0 && (
-          <EmptyState
-            icon={<FileText className="h-10 w-10 text-primary" aria-hidden="true" />}
-            title={lang === "ar" ? "لا توجد عقود" : "No contracts"}
-            description={
-              lang === "ar"
-                ? "لم يتم العثور على عقود مطابقة للتصفية الحالية."
-                : "No contracts match the current filter."
-            }
-          />
+          allContracts.length === 0 ? (
+            <EmptyState
+              variant="first-time"
+              icon={<FileText className="h-12 w-12" aria-hidden="true" />}
+              title={lang === "ar" ? "لا توجد عقود بعد" : "No contracts yet"}
+              description={
+                lang === "ar"
+                  ? "تتبّع كل عقد إيجار أو بيع من المسودة حتى التوقيع."
+                  : "Track every lease and sale from draft to signed."
+              }
+              action={
+                <Button size="sm" onClick={openSaleModal} style={{ display: "inline-flex" }}>
+                  <Plus className="h-4 w-4 me-1.5" />
+                  {lang === "ar" ? "إنشاء عقد" : "Create contract"}
+                </Button>
+              }
+              helpHref="/dashboard/help#contracts"
+              helpLabel={lang === "ar" ? "تعرّف على العقود" : "Learn about contracts"}
+            />
+          ) : (
+            <EmptyState
+              variant="filtered"
+              icon={<Search className="h-10 w-10" aria-hidden="true" />}
+              title={lang === "ar" ? "لا توجد نتائج مطابقة" : "No matching contracts"}
+              description={
+                lang === "ar"
+                  ? "جرّب تعديل البحث أو التبويب."
+                  : "Try adjusting your search or tab."
+              }
+              action={
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setSearch("");
+                    setMobileTab("ALL");
+                  }}
+                  style={{ display: "inline-flex" }}
+                >
+                  {lang === "ar" ? "مسح الفلاتر" : "Clear filters"}
+                </Button>
+              }
+            />
+          )
         )}
 
         {!loading && mobileFiltered.length > 0 && (
@@ -636,29 +671,61 @@ export default function ContractsPage() {
             <Loader2 className="w-6 h-6 animate-spin text-primary" />
           </div>
         ) : filtered.length === 0 ? (
-          <EmptyState
-            icon={<Handshake className="h-12 w-12" aria-hidden="true" />}
-            title={lang === "ar" ? "لا توجد عقود بعد" : "No contracts yet"}
-            description={
-              lang === "ar"
-                ? "تتبّع كل عقد إيجار أو بيع من المسودة حتى التوقيع."
-                : "Track every lease and sale from draft to signed."
-            }
-            action={
-              <Button
-                onClick={tab === "SALE" ? openSaleModal : openLeaseModal}
-                style={{ display: "inline-flex" }}
-                className="gap-2"
-              >
-                <Plus className="h-[18px] w-[18px]" />
-                {tab === "SALE"
-                  ? lang === "ar" ? "إنشاء عقد بيع" : "Create sale contract"
-                  : lang === "ar" ? "إنشاء عقد إيجار" : "Create lease contract"}
-              </Button>
-            }
-            helpHref="/dashboard/help#contracts"
-            helpLabel={lang === "ar" ? "تعرّف على العقود" : "Learn about contracts"}
-          />
+          allContracts.length === 0 || (tab === "SALE" ? saleContracts.length === 0 : leaseContracts.length === 0) ? (
+            <EmptyState
+              variant="first-time"
+              icon={<FileText className="h-12 w-12" aria-hidden="true" />}
+              title={
+                tab === "SALE"
+                  ? lang === "ar"
+                    ? "لا توجد عقود بيع بعد"
+                    : "No sale contracts yet"
+                  : lang === "ar"
+                    ? "لا توجد عقود إيجار بعد"
+                    : "No lease contracts yet"
+              }
+              description={
+                lang === "ar"
+                  ? "تتبّع كل عقد إيجار أو بيع من المسودة حتى التوقيع."
+                  : "Track every lease and sale from draft to signed."
+              }
+              action={
+                <Button
+                  onClick={tab === "SALE" ? openSaleModal : openLeaseModal}
+                  style={{ display: "inline-flex" }}
+                  className="gap-2"
+                >
+                  <Plus className="h-[18px] w-[18px]" />
+                  {tab === "SALE"
+                    ? lang === "ar" ? "إنشاء عقد بيع" : "Create sale contract"
+                    : lang === "ar" ? "إنشاء عقد إيجار" : "Create lease contract"}
+                </Button>
+              }
+              helpHref="/dashboard/help#contracts"
+              helpLabel={lang === "ar" ? "تعرّف على العقود" : "Learn about contracts"}
+            />
+          ) : (
+            <EmptyState
+              variant="filtered"
+              icon={<Search className="h-12 w-12" aria-hidden="true" />}
+              title={lang === "ar" ? "لا توجد نتائج مطابقة" : "No matching contracts"}
+              description={
+                lang === "ar"
+                  ? "جرّب تعديل البحث."
+                  : "Try adjusting your search."
+              }
+              action={
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSearch("")}
+                  style={{ display: "inline-flex" }}
+                >
+                  {lang === "ar" ? "مسح الفلاتر" : "Clear filters"}
+                </Button>
+              }
+            />
+          )
         ) : tab === "SALE" ? (
           <Table>
             <TableHeader>

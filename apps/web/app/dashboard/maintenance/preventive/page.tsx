@@ -374,19 +374,49 @@ export default function PreventiveMaintenancePage() {
             ))}
           </div>
         ) : filteredPlans.length === 0 ? (
-          <EmptyState
-            icon={<CalendarCheck className="h-12 w-12" />}
-            title={lang === "ar" ? "لا توجد خطط وقائية" : "No preventive plans"}
-            description={
-              search
-                ? lang === "ar"
-                  ? "جرّب تعديل البحث."
-                  : "Try adjusting your search."
-                : lang === "ar"
-                  ? "أضف أول خطة صيانة وقائية."
-                  : "Add your first preventive plan."
-            }
-          />
+          search ? (
+            <EmptyState
+              variant="filtered"
+              icon={<Search className="h-12 w-12" />}
+              title={lang === "ar" ? "لا توجد نتائج مطابقة" : "No matching plans"}
+              description={
+                lang === "ar" ? "جرّب تعديل البحث." : "Try adjusting your search."
+              }
+              action={
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSearch("")}
+                  style={{ display: "inline-flex" }}
+                >
+                  {lang === "ar" ? "مسح الفلاتر" : "Clear filters"}
+                </Button>
+              }
+            />
+          ) : (
+            <EmptyState
+              variant="first-time"
+              icon={<CalendarCheck className="h-12 w-12" />}
+              title={lang === "ar" ? "لا توجد خطط وقائية بعد" : "No preventive plans yet"}
+              description={
+                lang === "ar"
+                  ? "جدولة الصيانة الدورية تمنع الأعطال وتطيل عمر الأصول."
+                  : "Scheduled upkeep prevents breakdowns and extends asset life."
+              }
+              action={
+                <Button size="sm" onClick={openCreate} style={{ display: "inline-flex" }}>
+                  <Plus className="h-4 w-4 me-1.5" />
+                  {lang === "ar" ? "إنشاء خطة" : "Create plan"}
+                </Button>
+              }
+              helpHref="/dashboard/help#preventive-maintenance"
+              helpLabel={
+                lang === "ar"
+                  ? "تعرّف على الصيانة الوقائية"
+                  : "Learn about preventive maintenance"
+              }
+            />
+          )
         ) : (
           <div className="space-y-1">
             {filteredPlans.map((plan: any) => {

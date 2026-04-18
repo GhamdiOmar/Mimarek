@@ -7,7 +7,7 @@ import {
   AlertCircle, Clock, CheckCircle, XCircle, ShieldAlert,
 } from "lucide-react";
 import {
-  AppBar, DataCard, DataTable, EmptyState, MobileKPICard, MobileTabs, Skeleton, Badge,
+  AppBar, Button, DataCard, DataTable, EmptyState, MobileKPICard, MobileTabs, Skeleton, Badge,
   type ColumnDef,
 } from "@repo/ui";
 import { PageHeader } from "@repo/ui/components/PageHeader";
@@ -369,15 +369,45 @@ export default function AdminTicketsPage() {
                 ))}
               </div>
             ) : tickets.length === 0 ? (
-              <EmptyState
-                icon={<Ticket className="h-10 w-10 text-primary" aria-hidden="true" />}
-                title={lang === "ar" ? "لا توجد تذاكر" : "No tickets"}
-                description={
-                  lang === "ar"
-                    ? "لا توجد تذاكر مطابقة للتصفية الحالية."
-                    : "No tickets match the current filter."
-                }
-              />
+              search || status || priority || category ? (
+                <EmptyState
+                  variant="filtered"
+                  icon={<Search className="h-10 w-10" aria-hidden="true" />}
+                  title={lang === "ar" ? "لا توجد نتائج مطابقة" : "No matching tickets"}
+                  description={
+                    lang === "ar"
+                      ? "جرّب تعديل البحث أو الحالة."
+                      : "Try adjusting your search or status filter."
+                  }
+                  action={
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setSearch("");
+                        setStatus("");
+                        setPriority("");
+                        setCategory("");
+                        setPage(1);
+                      }}
+                      style={{ display: "inline-flex" }}
+                    >
+                      {lang === "ar" ? "مسح الفلاتر" : "Clear filters"}
+                    </Button>
+                  }
+                />
+              ) : (
+                <EmptyState
+                  variant="first-time"
+                  icon={<Ticket className="h-12 w-12" aria-hidden="true" />}
+                  title={lang === "ar" ? "لا توجد تذاكر دعم" : "No support tickets"}
+                  description={
+                    lang === "ar"
+                      ? "تظهر هنا تذاكر العملاء التي يحتاجون فيها إلى المساعدة."
+                      : "Customer help requests from across the platform show up here."
+                  }
+                />
+              )
             ) : (
               <div className="rounded-2xl border border-border bg-card px-4">
                 {tickets.map((tk, idx) => {

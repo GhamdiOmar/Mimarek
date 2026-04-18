@@ -457,23 +457,48 @@ export default function CouponManagementPage() {
                 ))}
               </div>
             ) : filteredMobileCoupons.length === 0 ? (
-              <EmptyState
-                icon={<Ticket className="h-10 w-10 text-primary" aria-hidden="true" />}
-                title={labels.noCoupons}
-                description={labels.noCouponsDesc}
-                action={
-                  <Button
-                    onClick={() => {
-                      resetForm();
-                      setShowModal(true);
-                    }}
-                    style={{ display: "inline-flex" }}
-                  >
-                    <Plus className="h-4 w-4 me-2" />
-                    {labels.createCoupon}
-                  </Button>
-                }
-              />
+              coupons.length === 0 ? (
+                <EmptyState
+                  variant="first-time"
+                  icon={<Ticket className="h-12 w-12" aria-hidden="true" />}
+                  title={labels.noCoupons}
+                  description={labels.noCouponsDesc}
+                  action={
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        resetForm();
+                        setShowModal(true);
+                      }}
+                      style={{ display: "inline-flex" }}
+                    >
+                      <Plus className="h-4 w-4 me-1.5" />
+                      {labels.createCoupon}
+                    </Button>
+                  }
+                  helpHref="/dashboard/help#coupons"
+                  helpLabel={lang === "ar" ? "تعرّف على الكوبونات" : "Learn about coupons"}
+                />
+              ) : (
+                <EmptyState
+                  variant="filtered"
+                  icon={<Search className="h-10 w-10" aria-hidden="true" />}
+                  title={lang === "ar" ? "لا توجد نتائج مطابقة" : "No matching coupons"}
+                  description={
+                    lang === "ar" ? "جرّب بحثاً آخر." : "Try a different search."
+                  }
+                  action={
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setMobileSearch("")}
+                      style={{ display: "inline-flex" }}
+                    >
+                      {lang === "ar" ? "مسح الفلاتر" : "Clear filters"}
+                    </Button>
+                  }
+                />
+              )
             ) : (
               <div className="rounded-2xl border border-border bg-card px-4">
                 {filteredMobileCoupons.map((coupon, idx) => {

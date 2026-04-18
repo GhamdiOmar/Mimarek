@@ -54,6 +54,7 @@ import {
   NationalIdInput,
   SaudiPhoneInput,
   DataTable,
+  EmptyState,
   type ColumnDef,
 } from "@repo/ui";
 import { cn } from "@repo/ui/lib/utils";
@@ -803,11 +804,15 @@ function CustomerDrawer({
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
               </div>
             ) : interests.length === 0 ? (
-              <p className="text-xs text-muted-foreground text-center py-4 border border-dashed border-border rounded-lg">
-                {lang === "ar"
-                  ? "لا توجد اهتمامات مرتبطة / No properties linked yet"
-                  : "No properties linked yet / لا توجد اهتمامات مرتبطة"}
-              </p>
+              <EmptyState
+                compact
+                title={lang === "ar" ? "لا توجد اهتمامات مرتبطة" : "No properties linked yet"}
+                description={
+                  lang === "ar"
+                    ? "ابدأ بربط وحدات يهتم بها العميل."
+                    : "Link units this contact is interested in."
+                }
+              />
             ) : (
               <div className="space-y-2">
                 {interests.map((interest) => {
@@ -911,11 +916,15 @@ function CustomerDrawer({
             </h3>
 
             {assignments.length === 0 ? (
-              <p className="text-xs text-muted-foreground text-center py-4 border border-dashed border-border rounded-lg">
-                {lang === "ar"
-                  ? "لا توجد صفقات أو عقود نشطة"
-                  : "No active deals or contracts"}
-              </p>
+              <EmptyState
+                compact
+                title={lang === "ar" ? "لا توجد صفقات أو عقود نشطة" : "No active deals or contracts"}
+                description={
+                  lang === "ar"
+                    ? "عند إنشاء صفقة أو عقد ستظهر هنا."
+                    : "Deals and contracts for this contact will show up here."
+                }
+              />
             ) : (
               <div className="space-y-2">
                 {assignments.map((item: any, idx: number) => {
@@ -2138,10 +2147,48 @@ export default function CRMPage() {
 
   function renderMobileCardList(rows: any[], emptyLabel: { ar: string; en: string }) {
     if (rows.length === 0) {
-      return (
-        <div className="rounded-2xl border border-dashed border-border bg-muted/30 p-8 text-center">
-          <p className="text-sm text-muted-foreground">{emptyLabel[lang]}</p>
-        </div>
+      // No filters active AND no customers at all → first-time empty. Otherwise filter-empty.
+      const isFirstTime = customers.length === 0;
+      return isFirstTime ? (
+        <EmptyState
+          variant="first-time"
+          icon={<Users className="h-12 w-12" />}
+          title={lang === "ar" ? "لا يوجد عملاء بعد" : "No contacts yet"}
+          description={
+            lang === "ar"
+              ? "أضف أول عميل محتمل وابدأ ببناء خط أعمالك."
+              : "Add your first lead and start building your pipeline."
+          }
+          action={
+            canWrite ? (
+              <Button size="sm" onClick={openAddCustomerModal} style={{ display: "inline-flex" }}>
+                <Plus className="h-4 w-4 me-1.5" />
+                {lang === "ar" ? "إضافة عميل" : "Add contact"}
+              </Button>
+            ) : undefined
+          }
+          helpHref="/dashboard/help#crm"
+          helpLabel={lang === "ar" ? "تعرّف على CRM" : "Learn about CRM"}
+        />
+      ) : (
+        <EmptyState
+          variant="filtered"
+          icon={<Search className="h-10 w-10" />}
+          title={emptyLabel[lang]}
+          description={
+            lang === "ar" ? "جرّب تعديل البحث أو الفلاتر." : "Try adjusting your search or filters."
+          }
+          action={
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSearch("")}
+              style={{ display: "inline-flex" }}
+            >
+              {lang === "ar" ? "مسح الفلاتر" : "Clear filters"}
+            </Button>
+          }
+        />
       );
     }
     return (

@@ -15,6 +15,7 @@ import {
   Stamp,
   Tag,
   ChevronRight,
+  Search,
   type LucideIcon,
 } from "lucide-react";
 import {
@@ -27,6 +28,7 @@ import {
   CardHeader,
   AppBar,
   Input,
+  EmptyState,
   cn,
 } from "@repo/ui";
 import { useLanguage } from "../../../components/LanguageProvider";
@@ -724,9 +726,24 @@ export default function ReportsPage() {
         })}
 
         {mobileFiltered.length === 0 && (
-          <div className="rounded-2xl border border-border bg-card p-6 text-center text-sm text-muted-foreground">
-            {lang === "ar" ? "لا توجد تقارير مطابقة." : "No matching reports."}
-          </div>
+          <EmptyState
+            icon={<Search className="h-12 w-12" />}
+            title={lang === "ar" ? "لا توجد نتائج" : "No results"}
+            description={
+              lang === "ar"
+                ? `لا توجد تقارير تطابق "${mobileSearch}".`
+                : `No reports match "${mobileSearch}".`
+            }
+            action={
+              <Button
+                variant="secondary"
+                style={{ display: "inline-flex" }}
+                onClick={() => setMobileSearch("")}
+              >
+                {lang === "ar" ? "مسح البحث" : "Clear search"}
+              </Button>
+            }
+          />
         )}
       </div>
     </div>

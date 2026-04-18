@@ -7,6 +7,7 @@ import {
   Users,
   CalendarClock,
   AlertTriangle,
+  BarChart3,
 } from "lucide-react";
 import {
   KPICard,
@@ -19,6 +20,7 @@ import {
   DateRangePicker,
   LastUpdatedAgo,
   ChartContainer,
+  EmptyState,
   type ChartConfig,
 } from "@repo/ui";
 import {
@@ -215,9 +217,16 @@ export default function LeasingDashboardPage() {
             {loading ? (
               <div className="h-64 animate-pulse rounded bg-muted" />
             ) : funnelData.length === 0 ? (
-              <p className="py-16 text-center text-sm text-muted-foreground">
-                {lang === "ar" ? "لا توجد بيانات بعد" : "No data yet"}
-              </p>
+              <EmptyState
+                compact
+                icon={<BarChart3 className="h-10 w-10" />}
+                title={lang === "ar" ? "لا توجد بيانات بعد" : "No pipeline data yet"}
+                description={
+                  lang === "ar"
+                    ? "ستظهر صفقات التأجير هنا عند إنشائها."
+                    : "Leasing deals will appear here once created."
+                }
+              />
             ) : (
               <ChartContainer config={chartConfig} className="h-64 w-full">
                 <ResponsiveContainer width="100%" height="100%">
@@ -275,9 +284,16 @@ export default function LeasingDashboardPage() {
             {loading ? (
               <div className="h-64 animate-pulse rounded bg-muted" />
             ) : funnelData.length === 0 ? (
-              <p className="py-16 text-center text-sm text-muted-foreground">
-                {lang === "ar" ? "لا توجد بيانات بعد" : "No data yet"}
-              </p>
+              <EmptyState
+                compact
+                icon={<BarChart3 className="h-10 w-10" />}
+                title={lang === "ar" ? "لا توجد بيانات بعد" : "No pipeline data yet"}
+                description={
+                  lang === "ar"
+                    ? "ستظهر قيم المسار هنا عند إضافة صفقات."
+                    : "Pipeline values will appear here once deals are added."
+                }
+              />
             ) : (
               <div className="space-y-3">
                 {funnelData.map((d) => {

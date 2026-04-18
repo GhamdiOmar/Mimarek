@@ -426,15 +426,52 @@ export default function DealsPage() {
         )}
 
         {!loading && filtered.length === 0 && (
-          <EmptyState
-            icon={<Handshake className="h-10 w-10 text-primary" aria-hidden="true" />}
-            title={lang === "ar" ? "لا توجد حجوزات" : "No reservations"}
-            description={
-              lang === "ar"
-                ? "لم يتم العثور على حجوزات مطابقة للتصفية الحالية."
-                : "No reservations match the current filter."
-            }
-          />
+          deals.length === 0 ? (
+            <EmptyState
+              variant="first-time"
+              icon={<Handshake className="h-12 w-12" aria-hidden="true" />}
+              title={lang === "ar" ? "لا توجد صفقات بعد" : "No deals yet"}
+              description={
+                lang === "ar"
+                  ? "أطلق عربون الحجز وتابع الصفقة حتى التحويل إلى عقد."
+                  : "Reserve a unit and follow the deal through to contract."
+              }
+              action={
+                canWriteDeals ? (
+                  <Button size="sm" onClick={openCreate} style={{ display: "inline-flex" }}>
+                    <Plus className="h-4 w-4 me-1.5" />
+                    {lang === "ar" ? "إنشاء صفقة" : "Create deal"}
+                  </Button>
+                ) : undefined
+              }
+              helpHref="/dashboard/help#deals"
+              helpLabel={lang === "ar" ? "تعرّف على الصفقات" : "Learn about deals"}
+            />
+          ) : (
+            <EmptyState
+              variant="filtered"
+              icon={<Search className="h-10 w-10" aria-hidden="true" />}
+              title={lang === "ar" ? "لا توجد نتائج مطابقة" : "No matching reservations"}
+              description={
+                lang === "ar"
+                  ? "جرّب تعديل الفلاتر أو البحث بكلمات أخرى."
+                  : "Try adjusting the filters or search terms."
+              }
+              action={
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setSearch("");
+                    setStatusFilter("ALL");
+                  }}
+                  style={{ display: "inline-flex" }}
+                >
+                  {lang === "ar" ? "مسح الفلاتر" : "Clear filters"}
+                </Button>
+              }
+            />
+          )
         )}
 
         {!loading && filtered.length > 0 && (
@@ -633,27 +670,56 @@ export default function DealsPage() {
             <Loader2 className="w-6 h-6 animate-spin text-primary" />
           </div>
         ) : filtered.length === 0 ? (
-          <EmptyState
-            icon={<Handshake className="h-12 w-12" aria-hidden="true" />}
-            title={lang === "ar" ? "لا توجد صفقات بعد" : "No deals yet"}
-            description={
-              lang === "ar"
-                ? "أطلق عربون الحجز وتابع الصفقة حتى التحويل إلى عقد."
-                : "Reserve a unit and follow the deal through to contract."
-            }
-            action={
-              <Button
-                onClick={openCreate}
-                style={{ display: "inline-flex" }}
-                className="gap-2"
-              >
-                <Plus className="h-[18px] w-[18px]" />
-                {lang === "ar" ? "إنشاء صفقة" : "Create deal"}
-              </Button>
-            }
-            helpHref="/dashboard/help#deals"
-            helpLabel={lang === "ar" ? "تعرّف على الصفقات" : "Learn about deals"}
-          />
+          deals.length === 0 ? (
+            <EmptyState
+              variant="first-time"
+              icon={<Handshake className="h-12 w-12" aria-hidden="true" />}
+              title={lang === "ar" ? "لا توجد صفقات بعد" : "No deals yet"}
+              description={
+                lang === "ar"
+                  ? "أطلق عربون الحجز وتابع الصفقة حتى التحويل إلى عقد."
+                  : "Reserve a unit and follow the deal through to contract."
+              }
+              action={
+                canWriteDeals ? (
+                  <Button
+                    onClick={openCreate}
+                    style={{ display: "inline-flex" }}
+                    className="gap-2"
+                  >
+                    <Plus className="h-[18px] w-[18px]" />
+                    {lang === "ar" ? "إنشاء صفقة" : "Create deal"}
+                  </Button>
+                ) : undefined
+              }
+              helpHref="/dashboard/help#deals"
+              helpLabel={lang === "ar" ? "تعرّف على الصفقات" : "Learn about deals"}
+            />
+          ) : (
+            <EmptyState
+              variant="filtered"
+              icon={<Search className="h-12 w-12" aria-hidden="true" />}
+              title={lang === "ar" ? "لا توجد نتائج مطابقة" : "No matching deals"}
+              description={
+                lang === "ar"
+                  ? "جرّب تعديل الفلاتر أو البحث بكلمات أخرى."
+                  : "Try adjusting the filters or search terms."
+              }
+              action={
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setSearch("");
+                    setStatusFilter("ALL");
+                  }}
+                  style={{ display: "inline-flex" }}
+                >
+                  {lang === "ar" ? "مسح الفلاتر" : "Clear filters"}
+                </Button>
+              }
+            />
+          )
         ) : (
           <Table>
             <TableHeader>

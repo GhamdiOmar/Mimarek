@@ -28,6 +28,7 @@ import {
   DataCard,
   DateRangePicker,
   LastUpdatedAgo,
+  EmptyState,
 } from "@repo/ui";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "../../components/LanguageProvider";
@@ -452,11 +453,19 @@ export default function DashboardPage() {
                   upcomingPaymentsCount === 0 &&
                   (!stats || stats.pendingPayments === 0) &&
                   openMaintenanceCount + inProgressMaintenanceCount === 0 && (
-                    <p className="py-6 text-center text-sm text-muted-foreground">
-                      {lang === "ar"
-                        ? "لا توجد أولويات لهذا اليوم"
-                        : "No priorities for today"}
-                    </p>
+                    <EmptyState
+                      compact
+                      title={
+                        lang === "ar"
+                          ? "لا توجد أولويات لهذا اليوم"
+                          : "No priorities for today"
+                      }
+                      description={
+                        lang === "ar"
+                          ? "يومك هادئ — استمتع بوقتك."
+                          : "Your day looks clear — enjoy it."
+                      }
+                    />
                   )}
               </div>
             )}
@@ -627,9 +636,27 @@ export default function DashboardPage() {
                 ))}
               </div>
             ) : deals.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-6 text-center">
-                {lang === "ar" ? "لا توجد صفقات حتى الآن" : "No deals yet"}
-              </p>
+              <EmptyState
+                compact
+                variant="first-time"
+                icon={<Handshake className="h-8 w-8" />}
+                title={lang === "ar" ? "لا توجد صفقات بعد" : "No deals yet"}
+                description={
+                  lang === "ar"
+                    ? "ستظهر آخر الحجوزات هنا بمجرد إنشائها."
+                    : "Recent reservations show up here once created."
+                }
+                action={
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => router.push("/dashboard/deals")}
+                    style={{ display: "inline-flex" }}
+                  >
+                    {lang === "ar" ? "فتح الصفقات" : "Open deals"}
+                  </Button>
+                }
+              />
             ) : (
               <div className="divide-y divide-border">
                 {deals.map((deal) => (
@@ -673,9 +700,16 @@ export default function DashboardPage() {
                 ))}
               </div>
             ) : payments.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-6 text-center">
-                {lang === "ar" ? "لا توجد أقساط قادمة" : "No upcoming payments"}
-              </p>
+              <EmptyState
+                compact
+                icon={<Calendar className="h-8 w-8" />}
+                title={lang === "ar" ? "لا توجد أقساط قادمة" : "No upcoming payments"}
+                description={
+                  lang === "ar"
+                    ? "سنُنبّهك هنا عند اقتراب أي موعد استحقاق."
+                    : "We'll surface upcoming due dates here."
+                }
+              />
             ) : (
               <div className="divide-y divide-border">
                 {payments.map((inst) => (
@@ -716,9 +750,16 @@ export default function DashboardPage() {
                 ))}
               </div>
             ) : maintenance.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-6 text-center">
-                {lang === "ar" ? "لا توجد طلبات صيانة" : "No maintenance requests"}
-              </p>
+              <EmptyState
+                compact
+                icon={<Wrench className="h-8 w-8" />}
+                title={lang === "ar" ? "لا توجد طلبات صيانة" : "No maintenance requests"}
+                description={
+                  lang === "ar"
+                    ? "كل الأصول تعمل بسلاسة — ستظهر الطلبات الجديدة هنا."
+                    : "All assets look healthy — new requests show up here."
+                }
+              />
             ) : (
               <div className="space-y-3">
                 {maintenance.map((item) => (

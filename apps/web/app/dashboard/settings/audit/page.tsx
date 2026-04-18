@@ -280,11 +280,38 @@ export default function AuditLogPage() {
               {lang === "ar" ? "جاري التحميل..." : "Loading..."}
             </div>
           ) : logs.length === 0 ? (
-            <EmptyState
-              icon={<History className="h-12 w-12" />}
-              title={t.noLogs}
-              description={t.noLogsDesc}
-            />
+            actionFilter || resourceFilter ? (
+              <EmptyState
+                variant="filtered"
+                icon={<Filter className="h-12 w-12" />}
+                title={lang === "ar" ? "لا توجد نتائج مطابقة" : "No matching events"}
+                description={
+                  lang === "ar"
+                    ? "جرّب تعديل عوامل التصفية."
+                    : "Try adjusting the filters."
+                }
+                action={
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setActionFilter("");
+                      setResourceFilter("");
+                    }}
+                    style={{ display: "inline-flex" }}
+                  >
+                    {lang === "ar" ? "مسح الفلاتر" : "Clear filters"}
+                  </Button>
+                }
+              />
+            ) : (
+              <EmptyState
+                variant="first-time"
+                icon={<History className="h-12 w-12" />}
+                title={t.noLogs}
+                description={t.noLogsDesc}
+              />
+            )
           ) : (
             <ActivityTimeline events={timelineEvents} />
           )}

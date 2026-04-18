@@ -530,6 +530,11 @@ export default function MaintenanceDetailPage() {
                 ? "لا توجد تحولات متاحة"
                 : "No transitions available"
             }
+            description={
+              lang === "ar"
+                ? "لا يمكن تغيير حالة هذا الطلب من الوضع الحالي."
+                : "This request's status cannot be changed from here."
+            }
           />
         ) : (
           <div className="space-y-2">

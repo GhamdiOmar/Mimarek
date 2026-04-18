@@ -19,6 +19,7 @@ import {
   DateRangePicker,
   LastUpdatedAgo,
   ChartContainer,
+  EmptyState,
   type ChartConfig,
 } from "@repo/ui";
 import {
@@ -255,11 +256,20 @@ export default function FinanceDashboardPage() {
             {loading ? (
               <div className="h-64 animate-pulse rounded bg-muted" />
             ) : agingData.every((d) => d.amount === 0) ? (
-              <p className="py-16 text-center text-sm text-muted-foreground">
-                {lang === "ar"
-                  ? "لا توجد مستحقات متأخرة"
-                  : "No outstanding receivables"}
-              </p>
+              <EmptyState
+                compact
+                icon={<CreditCard className="h-10 w-10" />}
+                title={
+                  lang === "ar"
+                    ? "لا توجد مستحقات متأخرة"
+                    : "No outstanding receivables"
+                }
+                description={
+                  lang === "ar"
+                    ? "كل المدفوعات محصّلة في موعدها."
+                    : "All payments are collected on time."
+                }
+              />
             ) : (
               <ChartContainer config={chartConfig} className="h-64 w-full">
                 <ResponsiveContainer width="100%" height="100%">
