@@ -1,11 +1,6 @@
-import { auth } from "../../../auth";
-import { redirect } from "next/navigation";
-import { isSystemRole } from "../../../lib/permissions";
+import { requireSystem } from "../../../lib/auth-helpers";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const session = await auth();
-  if (!isSystemRole(session?.user?.role ?? "")) {
-    redirect("/dashboard");
-  }
+  await requireSystem();
   return <>{children}</>;
 }

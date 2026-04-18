@@ -35,6 +35,8 @@ import {
   Input as UIInput,
   Textarea,
   BottomSheet,
+  DataTable,
+  type ColumnDef,
 } from "@repo/ui";
 import { exportToExcel } from "../../../lib/export";
 import { cn } from "@repo/ui/lib/utils";
@@ -337,6 +339,286 @@ export default function HelpPage() {
     const resolved = myTickets.filter((t: any) => t.status === "RESOLVED" || t.status === "CLOSED").length;
     return { open, resolved, total: myTickets.length };
   }, [myTickets]);
+
+  // ─── DataTable columns (reference tables migrated from raw <table>) ──
+  // Columns are defined inside the component so cell renderers close over
+  // `lang` and any inline-review state. All four tables below disable
+  // pagination and do not supply a searchPlaceholder — they're short
+  // role/state-scoped lists, not data grids. The mobile-card transform
+  // comes from the DataTable primitive's `mobileCard` prop (per
+  // CLAUDE.md § 6.10 / § 6.14.3).
+
+  const ticketColumns: ColumnDef<any, unknown>[] = [
+    {
+      id: "ticketNumber",
+      accessorKey: "ticketNumber",
+      header: "#",
+      cell: ({ row }) => (
+        <span className="font-mono text-xs">{row.original.ticketNumber}</span>
+      ),
+    },
+    {
+      id: "subject",
+      accessorKey: "subject",
+      header: lang === "ar" ? "الموضوع" : "Subject",
+      cell: ({ row }) => (
+        <Link
+          href={`/dashboard/help/tickets/${row.original.id}`}
+          className="text-primary hover:underline font-medium"
+        >
+          {row.original.subject}
+        </Link>
+      ),
+    },
+    {
+      id: "category",
+      accessorKey: "category",
+      header: lang === "ar" ? "الفئة" : "Category",
+      cell: ({ row }) => (
+        <span className="text-xs text-muted-foreground">
+          {categoryLabel(row.original.category)}
+        </span>
+      ),
+    },
+    {
+      id: "priority",
+      accessorKey: "priority",
+      header: lang === "ar" ? "الأولوية" : "Priority",
+      cell: ({ row }) => priorityBadge(row.original.priority),
+      meta: { align: "center" },
+    },
+    {
+      id: "status",
+      accessorKey: "status",
+      header: lang === "ar" ? "الحالة" : "Status",
+      cell: ({ row }) => statusBadge(row.original.status),
+      meta: { align: "center" },
+    },
+    {
+      id: "messages",
+      header: () => <MessageSquare className="h-3.5 w-3.5" aria-label={lang === "ar" ? "الرسائل" : "Messages"} />,
+      cell: ({ row }) => (
+        <span className="text-xs text-muted-foreground tabular-nums">
+          {row.original._count?.messages ?? 0}
+        </span>
+      ),
+      meta: { align: "center" },
+      enableSorting: false,
+    },
+    {
+      id: "createdAt",
+      accessorKey: "createdAt",
+      header: lang === "ar" ? "التاريخ" : "Date",
+      cell: ({ row }) => (
+        <span className="text-xs text-muted-foreground">
+          {new Date(row.original.createdAt).toLocaleDateString("en-CA")}
+        </span>
+      ),
+    },
+  ];
+
+  const permHistoryColumns: ColumnDef<any, unknown>[] = [
+    {
+      id: "requestedRole",
+      accessorKey: "requestedRole",
+      header: lang === "ar" ? "الدور المطلوب" : "Requested Role",
+      cell: ({ row }) => (
+        <span className="font-medium">{row.original.requestedRole}</span>
+      ),
+    },
+    {
+      id: "reason",
+      accessorKey: "reason",
+      header: lang === "ar" ? "السبب" : "Reason",
+      cell: ({ row }) => (
+        <span className="text-xs text-muted-foreground block max-w-[200px] truncate">
+          {row.original.reason}
+        </span>
+      ),
+    },
+    {
+      id: "status",
+      accessorKey: "status",
+      header: lang === "ar" ? "الحالة" : "Status",
+      cell: ({ row }) => statusBadge(row.original.status),
+      meta: { align: "center" },
+    },
+    {
+      id: "reviewNote",
+      accessorKey: "reviewNote",
+      header: lang === "ar" ? "ملاحظة المراجع" : "Review Note",
+      cell: ({ row }) => (
+        <span className="text-xs text-muted-foreground">
+          {row.original.reviewNote ?? "—"}
+        </span>
+      ),
+    },
+    {
+      id: "createdAt",
+      accessorKey: "createdAt",
+      header: lang === "ar" ? "التاريخ" : "Date",
+      cell: ({ row }) => (
+        <span className="text-xs text-muted-foreground">
+          {new Date(row.original.createdAt).toLocaleDateString("en-CA")}
+        </span>
+      ),
+    },
+  ];
+
+  const pendingPermRequestColumns: ColumnDef<any, unknown>[] = [
+    {
+      id: "user",
+      header: lang === "ar" ? "المستخدم" : "User",
+      cell: ({ row }) => (
+        <div>
+          <div className="font-medium">{row.original.user?.name}</div>
+          <div className="text-[10px] text-muted-foreground">{row.original.user?.email}</div>
+        </div>
+      ),
+    },
+    {
+      id: "currentRole",
+      header: lang === "ar" ? "الدور الحالي" : "Current Role",
+      cell: ({ row }) => <span className="text-xs">{row.original.user?.role}</span>,
+    },
+    {
+      id: "requestedRole",
+      accessorKey: "requestedRole",
+      header: lang === "ar" ? "الدور المطلوب" : "Requested Role",
+      cell: ({ row }) => (
+        <span className="text-xs font-bold text-secondary">{row.original.requestedRole}</span>
+      ),
+    },
+    {
+      id: "reason",
+      accessorKey: "reason",
+      header: lang === "ar" ? "السبب" : "Reason",
+      cell: ({ row }) => (
+        <span className="text-xs text-muted-foreground block max-w-[200px]">
+          {row.original.reason}
+        </span>
+      ),
+    },
+    {
+      id: "createdAt",
+      accessorKey: "createdAt",
+      header: lang === "ar" ? "التاريخ" : "Date",
+      cell: ({ row }) => (
+        <span className="text-xs text-muted-foreground">
+          {new Date(row.original.createdAt).toLocaleDateString("en-CA")}
+        </span>
+      ),
+    },
+    {
+      id: "action",
+      header: lang === "ar" ? "إجراء" : "Action",
+      enableSorting: false,
+      cell: ({ row }) => {
+        const req = row.original;
+        if (reviewingId === req.id) {
+          return (
+            <div className="space-y-2">
+              <input
+                type="text"
+                value={reviewNote}
+                onChange={(e) => setReviewNote(e.target.value)}
+                placeholder={lang === "ar" ? "ملاحظة (اختياري)" : "Note (optional)"}
+                className="w-full border border-border rounded px-2 py-1 text-xs outline-none"
+              />
+              <div className="flex gap-1">
+                <Button size="sm" variant="success" onClick={() => handleReview(req.id, "APPROVED")} disabled={reviewActionLoading} className="h-6 px-2 text-[10px]" style={{ display: "inline-flex" }}>
+                  {reviewActionLoading ? <Loader2 className="h-3 w-3 me-1 animate-spin" /> : <CheckCircle2 className="h-3 w-3 me-1" />}{lang === "ar" ? "موافقة" : "Approve"}
+                </Button>
+                <Button size="sm" variant="danger" onClick={() => handleReview(req.id, "DECLINED")} disabled={reviewActionLoading} className="h-6 px-2 text-[10px]" style={{ display: "inline-flex" }}>
+                  {reviewActionLoading ? <Loader2 className="h-3 w-3 me-1 animate-spin" /> : <XCircle className="h-3 w-3 me-1" />}{lang === "ar" ? "رفض" : "Decline"}
+                </Button>
+              </div>
+            </div>
+          );
+        }
+        return (
+          <Button size="sm" variant="secondary" onClick={() => setReviewingId(req.id)} className="h-7 text-xs">
+            {lang === "ar" ? "مراجعة" : "Review"}
+          </Button>
+        );
+      },
+    },
+  ];
+
+  const pendingJoinRequestColumns: ColumnDef<any, unknown>[] = [
+    {
+      id: "user",
+      header: lang === "ar" ? "المستخدم" : "User",
+      cell: ({ row }) => (
+        <div>
+          <div className="font-medium">{row.original.user?.name}</div>
+          <div className="text-[10px] text-muted-foreground">{row.original.user?.email}</div>
+        </div>
+      ),
+    },
+    {
+      id: "crNumber",
+      accessorKey: "crNumber",
+      header: lang === "ar" ? "رقم السجل" : "CR Number",
+      cell: ({ row }) => (
+        <span className="font-mono text-xs">{row.original.crNumber}</span>
+      ),
+    },
+    {
+      id: "reason",
+      accessorKey: "reason",
+      header: lang === "ar" ? "السبب" : "Reason",
+      cell: ({ row }) => (
+        <span className="text-xs text-muted-foreground block max-w-[200px]">
+          {row.original.reason ?? "—"}
+        </span>
+      ),
+    },
+    {
+      id: "createdAt",
+      accessorKey: "createdAt",
+      header: lang === "ar" ? "التاريخ" : "Date",
+      cell: ({ row }) => (
+        <span className="text-xs text-muted-foreground">
+          {new Date(row.original.createdAt).toLocaleDateString("en-CA")}
+        </span>
+      ),
+    },
+    {
+      id: "action",
+      header: lang === "ar" ? "إجراء" : "Action",
+      enableSorting: false,
+      cell: ({ row }) => {
+        const req = row.original;
+        if (joinReviewingId === req.id) {
+          return (
+            <div className="space-y-2">
+              <input
+                type="text"
+                value={joinReviewNote}
+                onChange={(e) => setJoinReviewNote(e.target.value)}
+                placeholder={lang === "ar" ? "ملاحظة (اختياري)" : "Note (optional)"}
+                className="w-full border border-border rounded px-2 py-1 text-xs outline-none"
+              />
+              <div className="flex gap-1">
+                <Button size="sm" variant="success" onClick={() => handleJoinReview(req.id, "APPROVED_JOIN")} disabled={joinReviewActionLoading} className="h-6 px-2 text-[10px]" style={{ display: "inline-flex" }}>
+                  {joinReviewActionLoading ? <Loader2 className="h-3 w-3 me-1 animate-spin" /> : <CheckCircle2 className="h-3 w-3 me-1" />}{lang === "ar" ? "موافقة" : "Approve"}
+                </Button>
+                <Button size="sm" variant="danger" onClick={() => handleJoinReview(req.id, "DECLINED_JOIN")} disabled={joinReviewActionLoading} className="h-6 px-2 text-[10px]" style={{ display: "inline-flex" }}>
+                  {joinReviewActionLoading ? <Loader2 className="h-3 w-3 me-1 animate-spin" /> : <XCircle className="h-3 w-3 me-1" />}{lang === "ar" ? "رفض" : "Decline"}
+                </Button>
+              </div>
+            </div>
+          );
+        }
+        return (
+          <Button size="sm" variant="secondary" onClick={() => setJoinReviewingId(req.id)} className="h-7 text-xs">
+            {lang === "ar" ? "مراجعة" : "Review"}
+          </Button>
+        );
+      },
+    },
+  ];
 
   return (
     <>
@@ -840,50 +1122,41 @@ export default function HelpPage() {
             </div>
           )}
 
-          {/*
-            Tickets Table — kept as raw <table> rather than DataTable primitive.
-            Per-user ticket history is a short-lived list (typically < 20 rows);
-            sort/filter/pagination add cost without UX benefit. Revisit if a user
-            accumulates hundreds of tickets. Same rationale applies to the three
-            review-queue tables below (permissions history, pending permission
-            requests, pending join requests) — the latter two also embed an
-            inline review form in the Action column, which would require
-            lifting state into DataTable cell renderers for no visible gain.
-          */}
-          <div className="bg-card rounded-md border border-border overflow-hidden">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/30 text-muted-foreground text-[10px] uppercase">
-                <tr>
-                  <th className="px-3 py-2 text-start">#</th>
-                  <th className="px-3 py-2 text-start">{lang === "ar" ? "الموضوع" : "Subject"}</th>
-                  <th className="px-3 py-2 text-start">{lang === "ar" ? "الفئة" : "Category"}</th>
-                  <th className="px-3 py-2 text-center">{lang === "ar" ? "الأولوية" : "Priority"}</th>
-                  <th className="px-3 py-2 text-center">{lang === "ar" ? "الحالة" : "Status"}</th>
-                  <th className="px-3 py-2 text-center"><MessageSquare className="h-3.5 w-3.5" /></th>
-                  <th className="px-3 py-2 text-start">{lang === "ar" ? "التاريخ" : "Date"}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {myTickets.length === 0 ? (
-                  <tr><td colSpan={7} className="px-3 py-8 text-center text-muted-foreground">{lang === "ar" ? "لا توجد تذاكر" : "No tickets yet"}</td></tr>
-                ) : (
-                  myTickets.map((ticket: any) => (
-                    <tr key={ticket.id} className="hover:bg-muted/10 transition-colors">
-                      <td className="px-3 py-2 font-mono text-xs">{ticket.ticketNumber}</td>
-                      <td className="px-3 py-2">
-                        <Link href={`/dashboard/help/tickets/${ticket.id}`} className="text-primary hover:underline font-medium">{ticket.subject}</Link>
-                      </td>
-                      <td className="px-3 py-2 text-xs text-muted-foreground">{categoryLabel(ticket.category)}</td>
-                      <td className="px-3 py-2 text-center">{priorityBadge(ticket.priority)}</td>
-                      <td className="px-3 py-2 text-center">{statusBadge(ticket.status)}</td>
-                      <td className="px-3 py-2 text-center text-xs text-muted-foreground">{ticket._count?.messages ?? 0}</td>
-                      <td className="px-3 py-2 text-xs text-muted-foreground">{new Date(ticket.createdAt).toLocaleDateString("en-CA")}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            columns={ticketColumns}
+            data={myTickets}
+            locale={lang}
+            pagination={false}
+            getRowId={(t) => t.id}
+            emptyTitle={lang === "ar" ? "لا توجد تذاكر" : "No tickets yet"}
+            emptyDescription={lang === "ar" ? "ستظهر تذاكرك هنا عند إنشائها." : "Your support tickets will appear here once you create them."}
+            mobileCard={(ticket: any) => (
+              <div className="space-y-2">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <Link href={`/dashboard/help/tickets/${ticket.id}`} className="font-medium text-primary hover:underline block truncate">
+                      {ticket.subject}
+                    </Link>
+                    <span className="font-mono text-[10px] text-muted-foreground">{ticket.ticketNumber}</span>
+                  </div>
+                  <div className="flex flex-col items-end gap-1 shrink-0">
+                    {statusBadge(ticket.status)}
+                    {priorityBadge(ticket.priority)}
+                  </div>
+                </div>
+                <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                  <span>{categoryLabel(ticket.category)}</span>
+                  <span className="inline-flex items-center gap-1">
+                    <MessageSquare className="h-3 w-3" />
+                    <span className="tabular-nums">{ticket._count?.messages ?? 0}</span>
+                  </span>
+                </div>
+                <div className="text-[11px] text-muted-foreground">
+                  {new Date(ticket.createdAt).toLocaleDateString("en-CA")}
+                </div>
+              </div>
+            )}
+          />
         </div>
       )}
 
@@ -913,34 +1186,35 @@ export default function HelpPage() {
           {/* Request History */}
           <div>
             <h3 className="font-bold text-foreground mb-2">{lang === "ar" ? "سجل الطلبات" : "Request History"}</h3>
-            <div className="bg-card rounded-md border border-border overflow-hidden">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/30 text-muted-foreground text-[10px] uppercase">
-                  <tr>
-                    <th className="px-3 py-2 text-start">{lang === "ar" ? "الدور المطلوب" : "Requested Role"}</th>
-                    <th className="px-3 py-2 text-start">{lang === "ar" ? "السبب" : "Reason"}</th>
-                    <th className="px-3 py-2 text-center">{lang === "ar" ? "الحالة" : "Status"}</th>
-                    <th className="px-3 py-2 text-start">{lang === "ar" ? "ملاحظة المراجع" : "Review Note"}</th>
-                    <th className="px-3 py-2 text-start">{lang === "ar" ? "التاريخ" : "Date"}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {myRequests.length === 0 ? (
-                    <tr><td colSpan={5} className="px-3 py-8 text-center text-muted-foreground">{lang === "ar" ? "لا توجد طلبات" : "No requests yet"}</td></tr>
-                  ) : (
-                    myRequests.map((req: any) => (
-                      <tr key={req.id}>
-                        <td className="px-3 py-2 font-medium">{req.requestedRole}</td>
-                        <td className="px-3 py-2 text-xs text-muted-foreground max-w-[200px] truncate">{req.reason}</td>
-                        <td className="px-3 py-2 text-center">{statusBadge(req.status)}</td>
-                        <td className="px-3 py-2 text-xs text-muted-foreground">{req.reviewNote ?? "—"}</td>
-                        <td className="px-3 py-2 text-xs text-muted-foreground">{new Date(req.createdAt).toLocaleDateString("en-CA")}</td>
-                      </tr>
-                    ))
+            <DataTable
+              columns={permHistoryColumns}
+              data={myRequests}
+              locale={lang}
+              pagination={false}
+              getRowId={(r) => r.id}
+              emptyTitle={lang === "ar" ? "لا توجد طلبات" : "No requests yet"}
+              emptyDescription={lang === "ar" ? "ستظهر طلبات الصلاحيات هنا." : "Your permission requests will appear here."}
+              mobileCard={(req: any) => (
+                <div className="space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="font-medium">{req.requestedRole}</div>
+                      <p className="text-xs text-muted-foreground line-clamp-2">{req.reason}</p>
+                    </div>
+                    <div className="shrink-0">{statusBadge(req.status)}</div>
+                  </div>
+                  {req.reviewNote && (
+                    <div className="text-xs text-muted-foreground">
+                      <span className="font-medium">{lang === "ar" ? "ملاحظة المراجع: " : "Review note: "}</span>
+                      {req.reviewNote}
+                    </div>
                   )}
-                </tbody>
-              </table>
-            </div>
+                  <div className="text-[11px] text-muted-foreground">
+                    {new Date(req.createdAt).toLocaleDateString("en-CA")}
+                  </div>
+                </div>
+              )}
+            />
           </div>
         </div>
       )}
@@ -951,123 +1225,117 @@ export default function HelpPage() {
           {/* Pending Permission Requests */}
           <div>
             <h2 className="text-lg font-bold text-foreground mb-3">{lang === "ar" ? "طلبات الصلاحيات المعلقة" : "Pending Permission Requests"}</h2>
-            <div className="bg-card rounded-md border border-border overflow-hidden">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/30 text-muted-foreground text-[10px] uppercase">
-                  <tr>
-                    <th className="px-3 py-2 text-start">{lang === "ar" ? "المستخدم" : "User"}</th>
-                    <th className="px-3 py-2 text-start">{lang === "ar" ? "الدور الحالي" : "Current Role"}</th>
-                    <th className="px-3 py-2 text-start">{lang === "ar" ? "الدور المطلوب" : "Requested Role"}</th>
-                    <th className="px-3 py-2 text-start">{lang === "ar" ? "السبب" : "Reason"}</th>
-                    <th className="px-3 py-2 text-start">{lang === "ar" ? "التاريخ" : "Date"}</th>
-                    <th className="px-3 py-2 text-center">{lang === "ar" ? "إجراء" : "Action"}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {pendingRequests.length === 0 ? (
-                    <tr><td colSpan={6} className="px-3 py-8 text-center text-muted-foreground">{lang === "ar" ? "لا توجد طلبات معلقة" : "No pending requests"}</td></tr>
-                  ) : (
-                    pendingRequests.map((req: any) => (
-                      <tr key={req.id}>
-                        <td className="px-3 py-2">
-                          <div className="font-medium">{req.user?.name}</div>
-                          <div className="text-[10px] text-muted-foreground">{req.user?.email}</div>
-                        </td>
-                        <td className="px-3 py-2 text-xs">{req.user?.role}</td>
-                        <td className="px-3 py-2 text-xs font-bold text-secondary">{req.requestedRole}</td>
-                        <td className="px-3 py-2 text-xs text-muted-foreground max-w-[200px]">{req.reason}</td>
-                        <td className="px-3 py-2 text-xs text-muted-foreground">{new Date(req.createdAt).toLocaleDateString("en-CA")}</td>
-                        <td className="px-3 py-2">
-                          {reviewingId === req.id ? (
-                            <div className="space-y-2">
-                              <input
-                                type="text"
-                                value={reviewNote}
-                                onChange={(e) => setReviewNote(e.target.value)}
-                                placeholder={lang === "ar" ? "ملاحظة (اختياري)" : "Note (optional)"}
-                                className="w-full border border-border rounded px-2 py-1 text-xs outline-none"
-                              />
-                              <div className="flex gap-1">
-                                <Button size="sm" variant="success" onClick={() => handleReview(req.id, "APPROVED")} disabled={reviewActionLoading} className="h-6 px-2 text-[10px]" style={{ display: "inline-flex" }}>
-                                  {reviewActionLoading ? <Loader2 className="h-3 w-3 me-1 animate-spin" /> : <CheckCircle2 className="h-3 w-3 me-1" />}{lang === "ar" ? "موافقة" : "Approve"}
-                                </Button>
-                                <Button size="sm" variant="danger" onClick={() => handleReview(req.id, "DECLINED")} disabled={reviewActionLoading} className="h-6 px-2 text-[10px]" style={{ display: "inline-flex" }}>
-                                  {reviewActionLoading ? <Loader2 className="h-3 w-3 me-1 animate-spin" /> : <XCircle className="h-3 w-3 me-1" />}{lang === "ar" ? "رفض" : "Decline"}
-                                </Button>
-                              </div>
-                            </div>
-                          ) : (
-                            <Button size="sm" variant="secondary" onClick={() => setReviewingId(req.id)} className="h-7 text-xs">
-                              {lang === "ar" ? "مراجعة" : "Review"}
-                            </Button>
-                          )}
-                        </td>
-                      </tr>
-                    ))
+            <DataTable
+              columns={pendingPermRequestColumns}
+              data={pendingRequests}
+              locale={lang}
+              pagination={false}
+              getRowId={(r) => r.id}
+              emptyTitle={lang === "ar" ? "لا توجد طلبات معلقة" : "No pending requests"}
+              emptyDescription={lang === "ar" ? "ستظهر هنا طلبات ترقية الصلاحيات التي تنتظر المراجعة." : "Permission-upgrade requests awaiting review will appear here."}
+              mobileCard={(req: any) => (
+                <div className="space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="font-medium">{req.user?.name}</div>
+                      <div className="text-[10px] text-muted-foreground truncate">{req.user?.email}</div>
+                    </div>
+                    <div className="text-end shrink-0 text-[11px]">
+                      <span className="text-muted-foreground">{req.user?.role}</span>
+                      <ChevronRight className="inline h-3 w-3 mx-1 icon-directional" />
+                      <span className="font-bold text-secondary">{req.requestedRole}</span>
+                    </div>
+                  </div>
+                  {req.reason && (
+                    <p className="text-xs text-muted-foreground line-clamp-2">{req.reason}</p>
                   )}
-                </tbody>
-              </table>
-            </div>
+                  <div className="text-[11px] text-muted-foreground">
+                    {new Date(req.createdAt).toLocaleDateString("en-CA")}
+                  </div>
+                  <div className="pt-1">
+                    {reviewingId === req.id ? (
+                      <div className="space-y-2">
+                        <input
+                          type="text"
+                          value={reviewNote}
+                          onChange={(e) => setReviewNote(e.target.value)}
+                          placeholder={lang === "ar" ? "ملاحظة (اختياري)" : "Note (optional)"}
+                          className="w-full border border-border rounded px-2 py-1 text-xs outline-none"
+                        />
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="success" onClick={() => handleReview(req.id, "APPROVED")} disabled={reviewActionLoading} className="h-8 px-3 text-xs flex-1" style={{ display: "inline-flex" }}>
+                            {reviewActionLoading ? <Loader2 className="h-3 w-3 me-1 animate-spin" /> : <CheckCircle2 className="h-3 w-3 me-1" />}{lang === "ar" ? "موافقة" : "Approve"}
+                          </Button>
+                          <Button size="sm" variant="danger" onClick={() => handleReview(req.id, "DECLINED")} disabled={reviewActionLoading} className="h-8 px-3 text-xs flex-1" style={{ display: "inline-flex" }}>
+                            {reviewActionLoading ? <Loader2 className="h-3 w-3 me-1 animate-spin" /> : <XCircle className="h-3 w-3 me-1" />}{lang === "ar" ? "رفض" : "Decline"}
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <Button size="sm" variant="secondary" onClick={() => setReviewingId(req.id)} className="h-8 text-xs w-full">
+                        {lang === "ar" ? "مراجعة" : "Review"}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              )}
+            />
           </div>
 
           {/* Pending Join Requests */}
           <div>
             <h2 className="text-lg font-bold text-foreground mb-3">{lang === "ar" ? "طلبات الانضمام المعلقة" : "Pending Join Requests"}</h2>
-            <div className="bg-card rounded-md border border-border overflow-hidden">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/30 text-muted-foreground text-[10px] uppercase">
-                  <tr>
-                    <th className="px-3 py-2 text-start">{lang === "ar" ? "المستخدم" : "User"}</th>
-                    <th className="px-3 py-2 text-start">{lang === "ar" ? "رقم السجل" : "CR Number"}</th>
-                    <th className="px-3 py-2 text-start">{lang === "ar" ? "السبب" : "Reason"}</th>
-                    <th className="px-3 py-2 text-start">{lang === "ar" ? "التاريخ" : "Date"}</th>
-                    <th className="px-3 py-2 text-center">{lang === "ar" ? "إجراء" : "Action"}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {pendingJoinRequests.length === 0 ? (
-                    <tr><td colSpan={5} className="px-3 py-8 text-center text-muted-foreground">{lang === "ar" ? "لا توجد طلبات انضمام" : "No pending join requests"}</td></tr>
-                  ) : (
-                    pendingJoinRequests.map((req: any) => (
-                      <tr key={req.id}>
-                        <td className="px-3 py-2">
-                          <div className="font-medium">{req.user?.name}</div>
-                          <div className="text-[10px] text-muted-foreground">{req.user?.email}</div>
-                        </td>
-                        <td className="px-3 py-2 font-mono text-xs">{req.crNumber}</td>
-                        <td className="px-3 py-2 text-xs text-muted-foreground max-w-[200px]">{req.reason ?? "—"}</td>
-                        <td className="px-3 py-2 text-xs text-muted-foreground">{new Date(req.createdAt).toLocaleDateString("en-CA")}</td>
-                        <td className="px-3 py-2">
-                          {joinReviewingId === req.id ? (
-                            <div className="space-y-2">
-                              <input
-                                type="text"
-                                value={joinReviewNote}
-                                onChange={(e) => setJoinReviewNote(e.target.value)}
-                                placeholder={lang === "ar" ? "ملاحظة (اختياري)" : "Note (optional)"}
-                                className="w-full border border-border rounded px-2 py-1 text-xs outline-none"
-                              />
-                              <div className="flex gap-1">
-                                <Button size="sm" variant="success" onClick={() => handleJoinReview(req.id, "APPROVED_JOIN")} disabled={joinReviewActionLoading} className="h-6 px-2 text-[10px]" style={{ display: "inline-flex" }}>
-                                  {joinReviewActionLoading ? <Loader2 className="h-3 w-3 me-1 animate-spin" /> : <CheckCircle2 className="h-3 w-3 me-1" />}{lang === "ar" ? "موافقة" : "Approve"}
-                                </Button>
-                                <Button size="sm" variant="danger" onClick={() => handleJoinReview(req.id, "DECLINED_JOIN")} disabled={joinReviewActionLoading} className="h-6 px-2 text-[10px]" style={{ display: "inline-flex" }}>
-                                  {joinReviewActionLoading ? <Loader2 className="h-3 w-3 me-1 animate-spin" /> : <XCircle className="h-3 w-3 me-1" />}{lang === "ar" ? "رفض" : "Decline"}
-                                </Button>
-                              </div>
-                            </div>
-                          ) : (
-                            <Button size="sm" variant="secondary" onClick={() => setJoinReviewingId(req.id)} className="h-7 text-xs">
-                              {lang === "ar" ? "مراجعة" : "Review"}
-                            </Button>
-                          )}
-                        </td>
-                      </tr>
-                    ))
+            <DataTable
+              columns={pendingJoinRequestColumns}
+              data={pendingJoinRequests}
+              locale={lang}
+              pagination={false}
+              getRowId={(r) => r.id}
+              emptyTitle={lang === "ar" ? "لا توجد طلبات انضمام" : "No pending join requests"}
+              emptyDescription={lang === "ar" ? "ستظهر هنا طلبات الانضمام للمنظمة التي تنتظر المراجعة." : "Organization join requests awaiting review will appear here."}
+              mobileCard={(req: any) => (
+                <div className="space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="font-medium">{req.user?.name}</div>
+                      <div className="text-[10px] text-muted-foreground truncate">{req.user?.email}</div>
+                    </div>
+                    <span className="font-mono text-[11px] text-muted-foreground shrink-0">{req.crNumber}</span>
+                  </div>
+                  {req.reason && (
+                    <p className="text-xs text-muted-foreground line-clamp-2">{req.reason}</p>
                   )}
-                </tbody>
-              </table>
-            </div>
+                  <div className="text-[11px] text-muted-foreground">
+                    {new Date(req.createdAt).toLocaleDateString("en-CA")}
+                  </div>
+                  <div className="pt-1">
+                    {joinReviewingId === req.id ? (
+                      <div className="space-y-2">
+                        <input
+                          type="text"
+                          value={joinReviewNote}
+                          onChange={(e) => setJoinReviewNote(e.target.value)}
+                          placeholder={lang === "ar" ? "ملاحظة (اختياري)" : "Note (optional)"}
+                          className="w-full border border-border rounded px-2 py-1 text-xs outline-none"
+                        />
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="success" onClick={() => handleJoinReview(req.id, "APPROVED_JOIN")} disabled={joinReviewActionLoading} className="h-8 px-3 text-xs flex-1" style={{ display: "inline-flex" }}>
+                            {joinReviewActionLoading ? <Loader2 className="h-3 w-3 me-1 animate-spin" /> : <CheckCircle2 className="h-3 w-3 me-1" />}{lang === "ar" ? "موافقة" : "Approve"}
+                          </Button>
+                          <Button size="sm" variant="danger" onClick={() => handleJoinReview(req.id, "DECLINED_JOIN")} disabled={joinReviewActionLoading} className="h-8 px-3 text-xs flex-1" style={{ display: "inline-flex" }}>
+                            {joinReviewActionLoading ? <Loader2 className="h-3 w-3 me-1 animate-spin" /> : <XCircle className="h-3 w-3 me-1" />}{lang === "ar" ? "رفض" : "Decline"}
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <Button size="sm" variant="secondary" onClick={() => setJoinReviewingId(req.id)} className="h-8 text-xs w-full">
+                        {lang === "ar" ? "مراجعة" : "Review"}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              )}
+            />
           </div>
         </div>
       )}
