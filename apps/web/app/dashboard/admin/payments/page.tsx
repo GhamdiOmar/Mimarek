@@ -35,6 +35,7 @@ import {
   Badge,
   DirectionalIcon,
 } from "@repo/ui";
+import { PageHeader } from "@repo/ui/components/PageHeader";
 import Link from "next/link";
 import { adminGetAllInvoices } from "../../../actions/billing";
 
@@ -62,26 +63,23 @@ const statusConfig: Record<
 > = {
   PAID: {
     label: { ar: "مدفوعة", en: "Paid" },
-    className:
-      "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
+    className: "bg-success/15 text-success",
   },
   ISSUED: {
     label: { ar: "صادرة", en: "Issued" },
-    className:
-      "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300",
+    className: "bg-info/15 text-info",
   },
   OVERDUE: {
     label: { ar: "متأخرة", en: "Overdue" },
-    className: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300",
+    className: "bg-destructive/15 text-destructive",
   },
   DRAFT: {
     label: { ar: "مسودة", en: "Draft" },
-    className:
-      "bg-gray-100 text-gray-800 dark:bg-gray-700/40 dark:text-gray-300",
+    className: "bg-muted text-muted-foreground",
   },
   CANCELED: {
     label: { ar: "ملغاة", en: "Canceled" },
-    className: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300",
+    className: "bg-destructive/15 text-destructive",
   },
 };
 
@@ -152,29 +150,29 @@ export default function AdminPaymentsPage() {
       label: { ar: "إجمالي الإيرادات", en: "Total Revenue" },
       value: formatCurrency(totalRevenue, lang),
       icon: CircleDollarSign,
-      color: "text-emerald-600 dark:text-emerald-400",
-      bg: "bg-emerald-100 dark:bg-emerald-900/30",
+      color: "text-success",
+      bg: "bg-success/15",
     },
     {
       label: { ar: "إجمالي الفواتير", en: "Total Invoices" },
       value: total.toString(),
       icon: FileText,
-      color: "text-blue-600 dark:text-blue-400",
-      bg: "bg-blue-100 dark:bg-blue-900/30",
+      color: "text-info",
+      bg: "bg-info/15",
     },
     {
       label: { ar: "مدفوعة", en: "Paid" },
       value: paidCount.toString(),
       icon: CheckCircle2,
-      color: "text-emerald-600 dark:text-emerald-400",
-      bg: "bg-emerald-100 dark:bg-emerald-900/30",
+      color: "text-success",
+      bg: "bg-success/15",
     },
     {
       label: { ar: "متأخرة", en: "Overdue" },
       value: overdueCount.toString(),
       icon: AlertTriangle,
-      color: "text-red-600 dark:text-red-400",
-      bg: "bg-red-100 dark:bg-red-900/30",
+      color: "text-destructive",
+      bg: "bg-destructive/15",
     },
   ];
 
@@ -362,22 +360,19 @@ export default function AdminPaymentsPage() {
       </Link>
 
       {/* Header */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between px-2">
-        <div className="flex items-center gap-4">
-          <div className="h-12 w-12 rounded-md bg-primary/10 flex items-center justify-center text-primary">
-            <Receipt className="h-7 w-7" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-primary">
-              {lang === "ar" ? "الفواتير والمدفوعات" : "Invoices & Payments"}
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              {lang === "ar"
-                ? "عرض جميع الفواتير والمعاملات المالية عبر جميع المنظمات"
-                : "View all invoices and payment transactions across all organizations"}
-            </p>
-          </div>
+      <div className="flex items-start gap-4 px-2">
+        <div className="h-12 w-12 rounded-md bg-primary/10 flex items-center justify-center text-primary shrink-0">
+          <Receipt className="h-7 w-7" />
         </div>
+        <PageHeader
+          className="flex-1"
+          title={lang === "ar" ? "الفواتير والمدفوعات" : "Invoices & Payments"}
+          description={
+            lang === "ar"
+              ? "عرض جميع الفواتير والمعاملات المالية عبر جميع المنظمات"
+              : "View all invoices and payment transactions across all organizations"
+          }
+        />
       </div>
 
       {/* Stats */}
@@ -452,7 +447,7 @@ export default function AdminPaymentsPage() {
             </TableHeader>
             <TableBody>
               {invoices.map((invoice) => {
-                const sc = statusConfig[invoice.status] ?? { label: { ar: "مسودة", en: "Draft" }, className: "bg-gray-100 text-gray-800 dark:bg-gray-900/40 dark:text-gray-300" };
+                const sc = statusConfig[invoice.status] ?? { label: { ar: "مسودة", en: "Draft" }, className: "bg-muted text-muted-foreground" };
                 return (
                   <TableRow key={invoice.id}>
                     <TableCell className="font-mono text-xs text-foreground">

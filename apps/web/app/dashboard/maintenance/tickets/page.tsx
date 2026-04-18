@@ -78,8 +78,8 @@ const statusLabels: Record<string, { ar: string; en: string }> = {
 const priorityLabels: Record<string, { ar: string; en: string; color: string }> = {
   LOW: { ar: "منخفض", en: "Low", color: "text-muted-foreground" },
   MEDIUM: { ar: "متوسط", en: "Medium", color: "text-primary" },
-  HIGH: { ar: "عالي", en: "High", color: "text-amber-600" },
-  URGENT: { ar: "عاجل", en: "Urgent", color: "text-red-600" },
+  HIGH: { ar: "عالي", en: "High", color: "text-warning" },
+  URGENT: { ar: "عاجل", en: "Urgent", color: "text-destructive" },
 };
 
 export default function MaintenancePage() {
@@ -766,7 +766,7 @@ export default function MaintenancePage() {
                       >
                         {r.title}
                         {r.isPreventive && (
-                          <span className="text-[9px] text-emerald-600 me-1">[{lang === "ar" ? "وقائي" : "Preventive"}]</span>
+                          <span className="text-[9px] text-success me-1">[{lang === "ar" ? "وقائي" : "Preventive"}]</span>
                         )}
                       </Link>
                     </TableCell>
@@ -788,7 +788,7 @@ export default function MaintenancePage() {
                     <TableCell className="text-xs text-muted-foreground">{r.assignedTo?.name ?? "\u2014"}</TableCell>
                     <TableCell>
                       {r.dueDate ? (
-                        <span className={`text-xs ${isOverdue ? "text-red-600 font-semibold" : "text-muted-foreground"}`}>
+                        <span className={`text-xs ${isOverdue ? "text-destructive font-semibold" : "text-muted-foreground"}`}>
                           {new Date(r.dueDate).toLocaleDateString("en-SA")}
                           {isOverdue && <AlertTriangle className="inline h-3 w-3 me-1" />}
                         </span>
@@ -809,7 +809,7 @@ export default function MaintenancePage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="text-red-500 hover:text-red-600"
+                          className="text-destructive hover:text-destructive/80"
                           onClick={() => handleDelete(r.id)}
                           style={{ display: "inline-flex" }}
                           aria-label={lang === "ar" ? "حذف" : "Delete"}
@@ -870,10 +870,10 @@ export default function MaintenancePage() {
             <input
               value={form.title}
               onChange={(e) => updateField("title", e.target.value)}
-              className={`${inputClass} ${formErrors.title ? "border-red-500 focus-visible:ring-red-500/30" : ""}`}
+              className={`${inputClass} ${formErrors.title ? "border-destructive focus-visible:ring-destructive/30" : ""}`}
               placeholder={lang === "ar" ? "مثال: تسريب ماء في الحمام" : "e.g. Water leak in bathroom"}
             />
-            {formErrors.title && <p className="text-xs text-red-500">{formErrors.title}</p>}
+            {formErrors.title && <p className="text-xs text-destructive">{formErrors.title}</p>}
           </div>
 
           <div className="space-y-1.5">
@@ -883,9 +883,9 @@ export default function MaintenancePage() {
             <textarea
               value={form.description}
               onChange={(e) => updateField("description", e.target.value)}
-              className={`${inputClass} h-20 py-2 ${formErrors.description ? "border-red-500 focus-visible:ring-red-500/30" : ""}`}
+              className={`${inputClass} h-20 py-2 ${formErrors.description ? "border-destructive focus-visible:ring-destructive/30" : ""}`}
             />
-            {formErrors.description && <p className="text-xs text-red-500">{formErrors.description}</p>}
+            {formErrors.description && <p className="text-xs text-destructive">{formErrors.description}</p>}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -896,13 +896,13 @@ export default function MaintenancePage() {
               <select
                 value={form.category}
                 onChange={(e) => updateField("category", e.target.value)}
-                className={`${inputClass} ${formErrors.category ? "border-red-500 focus-visible:ring-red-500/30" : ""}`}
+                className={`${inputClass} ${formErrors.category ? "border-destructive focus-visible:ring-destructive/30" : ""}`}
               >
                 {Object.entries(categoryLabels).map(([k, v]) => (
                   <option key={k} value={k}>{v[lang]}</option>
                 ))}
               </select>
-              {formErrors.category && <p className="text-xs text-red-500">{formErrors.category}</p>}
+              {formErrors.category && <p className="text-xs text-destructive">{formErrors.category}</p>}
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-muted-foreground">
@@ -911,13 +911,13 @@ export default function MaintenancePage() {
               <select
                 value={form.priority}
                 onChange={(e) => updateField("priority", e.target.value)}
-                className={`${inputClass} ${formErrors.priority ? "border-red-500 focus-visible:ring-red-500/30" : ""}`}
+                className={`${inputClass} ${formErrors.priority ? "border-destructive focus-visible:ring-destructive/30" : ""}`}
               >
                 {Object.entries(priorityLabels).map(([k, v]) => (
                   <option key={k} value={k}>{v[lang]}</option>
                 ))}
               </select>
-              {formErrors.priority && <p className="text-xs text-red-500">{formErrors.priority}</p>}
+              {formErrors.priority && <p className="text-xs text-destructive">{formErrors.priority}</p>}
             </div>
           </div>
 
@@ -929,7 +929,7 @@ export default function MaintenancePage() {
               <select
                 value={form.unitId}
                 onChange={(e) => updateField("unitId", e.target.value)}
-                className={`${inputClass} ${formErrors.unitId ? "border-red-500 focus-visible:ring-red-500/30" : ""}`}
+                className={`${inputClass} ${formErrors.unitId ? "border-destructive focus-visible:ring-destructive/30" : ""}`}
               >
                 <option value="">{lang === "ar" ? "اختر الوحدة" : "Select Unit"}</option>
                 {units.map((u: any) => (
@@ -938,7 +938,7 @@ export default function MaintenancePage() {
                   </option>
                 ))}
               </select>
-              {formErrors.unitId && <p className="text-xs text-red-500">{formErrors.unitId}</p>}
+              {formErrors.unitId && <p className="text-xs text-destructive">{formErrors.unitId}</p>}
             </div>
           )}
 

@@ -21,6 +21,7 @@ import {
   ChartContainer,
   type ChartConfig,
 } from "@repo/ui";
+import { PageHeader } from "@repo/ui/components/PageHeader";
 import {
   LineChart,
   Line,
@@ -198,24 +199,25 @@ export default function SystemAdminPage() {
     <div className="space-y-8 animate-in fade-in duration-500" dir={lang === "ar" ? "rtl" : "ltr"}>
 
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="h-12 w-12 rounded-md bg-primary/10 flex items-center justify-center text-primary">
-            <Settings className="h-7 w-7" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">
-              {lang === "ar" ? "إدارة المنصة" : "Platform Administration"}
-            </h1>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              {lang === "ar" ? "نظرة عامة على الإحصاءات والوصول إلى أدوات الإدارة" : "Platform-wide statistics and management tools"}
-            </p>
-          </div>
+      <div className="flex items-start gap-4">
+        <div className="h-12 w-12 rounded-md bg-primary/10 flex items-center justify-center text-primary shrink-0">
+          <Settings className="h-7 w-7" />
         </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <DateRangePicker locale={lang} />
-          <LastUpdatedAgo timestamp={lastLoaded} locale={lang} onRefresh={load} />
-        </div>
+        <PageHeader
+          className="flex-1"
+          title={lang === "ar" ? "إدارة المنصة" : "Platform Administration"}
+          description={
+            lang === "ar"
+              ? "نظرة عامة على الإحصاءات والوصول إلى أدوات الإدارة"
+              : "Platform-wide statistics and management tools"
+          }
+          actions={
+            <>
+              <DateRangePicker locale={lang} />
+              <LastUpdatedAgo timestamp={lastLoaded} locale={lang} onRefresh={load} />
+            </>
+          }
+        />
       </div>
 
       {/* North Star — Active Orgs hero card (§ 6.9.1) */}
@@ -254,10 +256,10 @@ export default function SystemAdminPage() {
               {lang === "ar" ? "حجم المنصة" : "Platform Scale"}
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <StatCard label={{ ar: "إجمالي المستخدمين", en: "Total Users" }} value={fmt(stats.userCount)} icon={Users} color="bg-blue-500/10 text-blue-500" />
-              <StatCard label={{ ar: "إجمالي الوحدات", en: "Total Properties" }} value={fmt(stats.propertyCount)} icon={Home} color="bg-indigo-500/10 text-indigo-500" />
-              <StatCard label={{ ar: "إجمالي العقود", en: "Total Contracts" }} value={fmt(stats.contractCount)} icon={FileText} color="bg-violet-500/10 text-violet-500" />
-              <StatCard label={{ ar: "تذاكر مفتوحة", en: "Open Tickets" }} value={fmt(stats.openTickets + stats.inProgressTickets)} icon={Ticket} color="bg-orange-500/10 text-orange-500" />
+              <StatCard label={{ ar: "إجمالي المستخدمين", en: "Total Users" }} value={fmt(stats.userCount)} icon={Users} color="bg-info/10 text-info" />
+              <StatCard label={{ ar: "إجمالي الوحدات", en: "Total Properties" }} value={fmt(stats.propertyCount)} icon={Home} color="bg-primary/10 text-primary" />
+              <StatCard label={{ ar: "إجمالي العقود", en: "Total Contracts" }} value={fmt(stats.contractCount)} icon={FileText} color="bg-primary/10 text-primary" />
+              <StatCard label={{ ar: "تذاكر مفتوحة", en: "Open Tickets" }} value={fmt(stats.openTickets + stats.inProgressTickets)} icon={Ticket} color="bg-warning/10 text-warning" />
             </div>
           </section>
 
@@ -267,9 +269,9 @@ export default function SystemAdminPage() {
               {lang === "ar" ? "صحة الاشتراكات" : "Subscription Health"}
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <StatCard label={{ ar: "اشتراكات نشطة", en: "Active" }} value={fmt(stats.activeSubscriptions)} icon={CheckCircle} color="bg-green-500/10 text-green-500" />
-              <StatCard label={{ ar: "فترة تجريبية", en: "Trialing" }} value={fmt(stats.trialingSubscriptions)} icon={Clock} color="bg-blue-500/10 text-blue-500" />
-              <StatCard label={{ ar: "متأخرة الدفع", en: "Past Due" }} value={fmt(stats.pastDueSubscriptions)} icon={AlertCircle} color="bg-amber-500/10 text-amber-500" />
+              <StatCard label={{ ar: "اشتراكات نشطة", en: "Active" }} value={fmt(stats.activeSubscriptions)} icon={CheckCircle} color="bg-success/10 text-success" />
+              <StatCard label={{ ar: "فترة تجريبية", en: "Trialing" }} value={fmt(stats.trialingSubscriptions)} icon={Clock} color="bg-info/10 text-info" />
+              <StatCard label={{ ar: "متأخرة الدفع", en: "Past Due" }} value={fmt(stats.pastDueSubscriptions)} icon={AlertCircle} color="bg-warning/10 text-warning" />
               <StatCard label={{ ar: "ملغاة", en: "Canceled" }} value={fmt(stats.canceledSubscriptions)} icon={XCircle} color="bg-muted text-muted-foreground" />
             </div>
           </section>
@@ -280,9 +282,9 @@ export default function SystemAdminPage() {
               {lang === "ar" ? "صحة الفوترة" : "Billing Health"}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <StatCard label={{ ar: "فواتير مدفوعة", en: "Paid Invoices" }} value={fmt(stats.paidInvoices)} icon={BadgeDollarSign} color="bg-green-500/10 text-green-500" />
-              <StatCard label={{ ar: "فواتير غير مدفوعة", en: "Unpaid Invoices" }} value={fmt(stats.unpaidInvoices)} icon={TrendingUp} color="bg-amber-500/10 text-amber-500" />
-              <StatCard label={{ ar: "فواتير متأخرة", en: "Overdue Invoices" }} value={fmt(stats.overdueInvoices)} icon={AlertCircle} color="bg-red-500/10 text-red-500" />
+              <StatCard label={{ ar: "فواتير مدفوعة", en: "Paid Invoices" }} value={fmt(stats.paidInvoices)} icon={BadgeDollarSign} color="bg-success/10 text-success" />
+              <StatCard label={{ ar: "فواتير غير مدفوعة", en: "Unpaid Invoices" }} value={fmt(stats.unpaidInvoices)} icon={TrendingUp} color="bg-warning/10 text-warning" />
+              <StatCard label={{ ar: "فواتير متأخرة", en: "Overdue Invoices" }} value={fmt(stats.overdueInvoices)} icon={AlertCircle} color="bg-destructive/10 text-destructive" />
             </div>
           </section>
 

@@ -32,6 +32,7 @@ import {
   DirectionalIcon,
 } from "@repo/ui";
 import Link from "next/link";
+import { PageHeader } from "@repo/ui/components/PageHeader";
 import { getInvoices, getInvoiceById } from "../../../actions/billing";
 import { exportToPDF } from "../../../../lib/export";
 
@@ -97,12 +98,12 @@ export default function InvoicesPage() {
   const t = translations[lang];
 
   const statusConfig: Record<string, { color: string; labelAr: string; labelEn: string }> = {
-    DRAFT: { color: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300", labelAr: "مسودة", labelEn: "Draft" },
-    ISSUED: { color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300", labelAr: "صادرة", labelEn: "Issued" },
-    PAID: { color: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300", labelAr: "مدفوعة", labelEn: "Paid" },
-    OVERDUE: { color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300", labelAr: "متأخرة", labelEn: "Overdue" },
-    CANCELED: { color: "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400", labelAr: "ملغاة", labelEn: "Canceled" },
-    REFUNDED: { color: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300", labelAr: "مستردة", labelEn: "Refunded" },
+    DRAFT: { color: "bg-muted text-muted-foreground", labelAr: "مسودة", labelEn: "Draft" },
+    ISSUED: { color: "bg-info/15 text-info", labelAr: "صادرة", labelEn: "Issued" },
+    PAID: { color: "bg-success/15 text-success", labelAr: "مدفوعة", labelEn: "Paid" },
+    OVERDUE: { color: "bg-destructive/15 text-destructive", labelAr: "متأخرة", labelEn: "Overdue" },
+    CANCELED: { color: "bg-muted text-muted-foreground", labelAr: "ملغاة", labelEn: "Canceled" },
+    REFUNDED: { color: "bg-primary/15 text-primary", labelAr: "مستردة", labelEn: "Refunded" },
   };
 
   function badgeVariant(
@@ -448,11 +449,11 @@ export default function InvoicesPage() {
           <DirectionalIcon icon={ArrowLeft} className="w-4 h-4" />
           {t.backToBilling}
         </Link>
-        <div className="flex items-center gap-2">
-          <Receipt className="w-6 h-6 text-primary" />
-          <h1 className="text-2xl font-bold text-foreground">{t.title}</h1>
-        </div>
-        <p className="text-sm text-muted-foreground mt-1">{t.subtitle}</p>
+        <PageHeader
+          title={t.title}
+          description={t.subtitle}
+          badge={<Receipt className="w-6 h-6 text-primary" aria-hidden="true" />}
+        />
       </div>
 
       {/* Invoices Table */}
@@ -636,7 +637,7 @@ export default function InvoicesPage() {
                   <span className="font-medium">{Number(viewInvoice.vatAmount).toLocaleString()} {t.sar}</span>
                 </div>
                 {viewInvoice.discount > 0 && (
-                  <div className="flex justify-between text-green-600">
+                  <div className="flex justify-between text-success">
                     <span>{lang === "ar" ? "الخصم" : "Discount"}</span>
                     <span>-{Number(viewInvoice.discount).toLocaleString()} {t.sar}</span>
                   </div>

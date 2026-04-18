@@ -80,10 +80,10 @@ type MaintenanceSummaryItem = { status: string; count: number };
 
 function statusBadge(status: string, lang: "ar" | "en") {
   const map: Record<string, { label: { ar: string; en: string }; cls: string }> = {
-    PENDING:   { label: { ar: "معلق", en: "Pending" },     cls: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300" },
-    CONFIRMED: { label: { ar: "مؤكد", en: "Confirmed" },   cls: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300" },
-    SIGNED:    { label: { ar: "موقع", en: "Signed" },      cls: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300" },
-    CANCELLED: { label: { ar: "ملغى", en: "Cancelled" },   cls: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300" },
+    PENDING:   { label: { ar: "معلق", en: "Pending" },     cls: "bg-warning/15 text-warning" },
+    CONFIRMED: { label: { ar: "مؤكد", en: "Confirmed" },   cls: "bg-info/15 text-info" },
+    SIGNED:    { label: { ar: "موقع", en: "Signed" },      cls: "bg-success/15 text-success" },
+    CANCELLED: { label: { ar: "ملغى", en: "Cancelled" },   cls: "bg-destructive/15 text-destructive" },
   };
   const entry = map[status] ?? { label: { ar: status, en: status }, cls: "bg-muted text-muted-foreground" };
   return (
@@ -95,10 +95,10 @@ function statusBadge(status: string, lang: "ar" | "en") {
 
 function maintenanceStatusIcon(status: string) {
   if (status === "RESOLVED" || status === "CLOSED" || status === "COMPLETED")
-    return <CheckCircle className="h-4 w-4 text-green-500" />;
+    return <CheckCircle className="h-4 w-4 text-success" />;
   if (status === "IN_PROGRESS" || status === "ASSIGNED")
-    return <Clock className="h-4 w-4 text-blue-500" />;
-  return <Circle className="h-4 w-4 text-amber-500" />;
+    return <Clock className="h-4 w-4 text-info" />;
+  return <Circle className="h-4 w-4 text-warning" />;
 }
 
 function maintenanceStatusLabel(status: string, lang: "ar" | "en"): string {
@@ -493,9 +493,9 @@ export default function DashboardPage() {
 
       {/* Error State */}
       {error && (
-        <div className="flex items-center gap-3 p-4 rounded-lg border border-red-200 bg-red-50 dark:border-red-900/50 dark:bg-red-950/20">
-          <AlertTriangle className="h-5 w-5 text-red-600 shrink-0" />
-          <p className="text-sm text-red-700 dark:text-red-400 flex-1">{error}</p>
+        <div className="flex items-center gap-3 p-4 rounded-lg border border-destructive/30 bg-destructive/10">
+          <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
+          <p className="text-sm text-destructive flex-1">{error}</p>
           <Button variant="outline" size="sm" onClick={loadDashboard} style={{ display: "inline-flex" }}>
             {lang === "ar" ? "إعادة المحاولة" : "Retry"}
           </Button>

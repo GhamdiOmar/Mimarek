@@ -363,16 +363,16 @@ export default function TeamManagementPage() {
                       </div>
                       <div className="flex flex-wrap gap-1">
                         {hasPermission(member.role, "customers:read_pii") && (
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-100 text-emerald-700">{lang === "ar" ? "بيانات شخصية" : "PII Access"}</span>
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-success/15 text-success">{lang === "ar" ? "بيانات شخصية" : "PII Access"}</span>
                         )}
                         {hasPermission(member.role, "customers:export") && (
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-100 text-blue-700">{lang === "ar" ? "تصدير" : "Export"}</span>
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-info/15 text-info">{lang === "ar" ? "تصدير" : "Export"}</span>
                         )}
                         {hasPermission(member.role, "finance:read") && (
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-700">{lang === "ar" ? "مالية" : "Finance"}</span>
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-warning/15 text-warning">{lang === "ar" ? "مالية" : "Finance"}</span>
                         )}
                         {hasPermission(member.role, "audit:read") && (
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-100 text-purple-700">{lang === "ar" ? "مراجعة" : "Audit"}</span>
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-primary/15 text-primary">{lang === "ar" ? "مراجعة" : "Audit"}</span>
                         )}
                       </div>
                     </div>

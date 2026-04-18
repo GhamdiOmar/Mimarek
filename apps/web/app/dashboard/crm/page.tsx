@@ -83,32 +83,32 @@ const PIPELINE_STAGES = [
   {
     key: "NEW",
     label: { ar: "جديد", en: "New Lead" },
-    color: "bg-blue-500/10 text-blue-600 border-blue-200 dark:border-blue-800",
-    dotColor: "bg-blue-500",
+    color: "bg-info/10 text-info border-info/30",
+    dotColor: "bg-info",
   },
   {
     key: "CONTACTED",
     label: { ar: "تم التواصل", en: "Contacted" },
-    color: "bg-violet-500/10 text-violet-600 border-violet-200 dark:border-violet-800",
-    dotColor: "bg-violet-500",
+    color: "bg-primary/10 text-primary border-primary/30",
+    dotColor: "bg-primary",
   },
   {
     key: "QUALIFIED",
     label: { ar: "مؤهل", en: "Qualified" },
-    color: "bg-amber-500/10 text-amber-600 border-amber-200 dark:border-amber-800",
-    dotColor: "bg-amber-500",
+    color: "bg-warning/10 text-warning border-warning/30",
+    dotColor: "bg-warning",
   },
   {
     key: "VIEWING",
     label: { ar: "معاينة", en: "Viewing" },
-    color: "bg-orange-500/10 text-orange-600 border-orange-200 dark:border-orange-800",
-    dotColor: "bg-orange-500",
+    color: "bg-warning/10 text-warning border-warning/30",
+    dotColor: "bg-warning",
   },
   {
     key: "NEGOTIATION",
     label: { ar: "تفاوض", en: "Negotiation" },
-    color: "bg-green-500/10 text-green-600 border-green-200 dark:border-green-800",
-    dotColor: "bg-green-500",
+    color: "bg-success/10 text-success border-success/30",
+    dotColor: "bg-success",
   },
 ];
 
@@ -132,38 +132,38 @@ const ALL_STATUS_CONFIGS = [
   {
     key: "INTERESTED",
     label: { ar: "مهتم", en: "Interested" },
-    color: "bg-violet-500/10 text-violet-600 border-violet-200 dark:border-violet-800",
-    dotColor: "bg-violet-500",
+    color: "bg-primary/10 text-primary border-primary/30",
+    dotColor: "bg-primary",
   },
   {
     key: "RESERVED",
     label: { ar: "محجوز", en: "Reserved" },
-    color: "bg-teal-500/10 text-teal-600 border-teal-200 dark:border-teal-800",
-    dotColor: "bg-teal-500",
+    color: "bg-info/10 text-info border-info/30",
+    dotColor: "bg-info",
   },
   {
     key: "CONVERTED",
     label: { ar: "تم التحويل", en: "Converted" },
-    color: "bg-emerald-500/10 text-emerald-600 border-emerald-200 dark:border-emerald-800",
-    dotColor: "bg-emerald-500",
+    color: "bg-success/10 text-success border-success/30",
+    dotColor: "bg-success",
   },
   {
     key: "LOST",
     label: { ar: "خسارة", en: "Lost" },
-    color: "bg-red-500/10 text-red-600 border-red-200 dark:border-red-800",
-    dotColor: "bg-red-500",
+    color: "bg-destructive/10 text-destructive border-destructive/30",
+    dotColor: "bg-destructive",
   },
   {
     key: "ACTIVE_TENANT",
     label: { ar: "مستأجر نشط", en: "Active Tenant" },
-    color: "bg-cyan-500/10 text-cyan-600 border-cyan-200 dark:border-cyan-800",
-    dotColor: "bg-cyan-500",
+    color: "bg-info/10 text-info border-info/30",
+    dotColor: "bg-info",
   },
   {
     key: "PAST_TENANT",
     label: { ar: "مستأجر سابق", en: "Past Tenant" },
-    color: "bg-slate-500/10 text-slate-600 border-slate-200 dark:border-slate-800",
-    dotColor: "bg-slate-500",
+    color: "bg-muted text-muted-foreground border-border",
+    dotColor: "bg-muted-foreground",
   },
 ];
 
@@ -557,7 +557,7 @@ function CustomerDrawer({
 
         {/* Toast */}
         {drawerToast && (
-          <div className="mx-4 mt-3 flex items-center gap-2 px-3 py-2 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 text-xs font-medium animate-in fade-in duration-200">
+          <div className="mx-4 mt-3 flex items-center gap-2 px-3 py-2 rounded-lg bg-success/10 border border-success/30 text-success text-xs font-medium animate-in fade-in duration-200">
             <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
             {drawerToast}
           </div>
@@ -680,13 +680,13 @@ function CustomerDrawer({
 
           {/* Lost Reason */}
           {customer.status === "LOST" && customer.lostReason && (
-            <div className="flex items-start gap-2.5 p-3 rounded-lg bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800">
-              <AlertTriangle className="h-4 w-4 text-red-500 mt-0.5 shrink-0" />
+            <div className="flex items-start gap-2.5 p-3 rounded-lg bg-destructive/10 border border-destructive/30">
+              <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
               <div>
-                <p className="text-xs font-bold text-red-700 dark:text-red-300">
+                <p className="text-xs font-bold text-destructive">
                   {lang === "ar" ? "سبب الخسارة" : "Lost Reason"}
                 </p>
-                <p className="text-xs text-red-600 dark:text-red-400 mt-0.5">
+                <p className="text-xs text-destructive mt-0.5">
                   {LOST_REASONS.find(r => r.key === customer.lostReason)?.label[lang] ?? customer.lostReason}
                 </p>
               </div>
@@ -845,8 +845,8 @@ function CustomerDrawer({
                               className={cn(
                                 "text-[10px] font-semibold px-2 py-0.5 rounded-full border",
                                 interest.intent === "BUY"
-                                  ? "bg-blue-500/10 text-blue-600 border-blue-200 dark:border-blue-800"
-                                  : "bg-violet-500/10 text-violet-600 border-violet-200 dark:border-violet-800"
+                                  ? "bg-info/10 text-info border-info/30"
+                                  : "bg-primary/10 text-primary border-primary/30"
                               )}
                             >
                               {interest.intent === "BUY"
@@ -857,10 +857,10 @@ function CustomerDrawer({
                               className={cn(
                                 "text-[10px] font-semibold px-2 py-0.5 rounded-full border",
                                 interest.status === "ACTIVE"
-                                  ? "bg-green-500/10 text-green-600 border-green-200 dark:border-green-800"
+                                  ? "bg-success/10 text-success border-success/30"
                                   : interest.status === "CONVERTED"
-                                    ? "bg-amber-500/10 text-amber-600 border-amber-200 dark:border-amber-800"
-                                    : "bg-slate-500/10 text-slate-500 border-slate-200 dark:border-slate-700"
+                                    ? "bg-warning/10 text-warning border-warning/30"
+                                    : "bg-muted text-muted-foreground border-border"
                               )}
                             >
                               {interest.status === "ACTIVE"
@@ -950,8 +950,8 @@ function CustomerDrawer({
                             className={cn(
                               "text-[10px] font-semibold px-2 py-0.5 rounded-full border",
                               item.status === "CONFIRMED" || item.status === "SIGNED" || item.status === "ACTIVE"
-                                ? "bg-green-500/10 text-green-600 border-green-200 dark:border-green-800"
-                                : "bg-amber-500/10 text-amber-600 border-amber-200 dark:border-amber-800"
+                                ? "bg-success/10 text-success border-success/30"
+                                : "bg-warning/10 text-warning border-warning/30"
                             )}
                           >
                             {item.status}
@@ -1134,12 +1134,12 @@ function CustomerDrawer({
           </div>
 
           {editError && (
-            <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2">
+            <p className="text-sm text-destructive bg-destructive/10 border border-destructive/30 rounded-lg px-3 py-2">
               {editError}
             </p>
           )}
           {editSuccess && (
-            <p className="text-sm text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg px-3 py-2 flex items-center gap-2">
+            <p className="text-sm text-success bg-success/10 border border-success/30 rounded-lg px-3 py-2 flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4 shrink-0" />
               {lang === "ar" ? "تم الحفظ بنجاح" : "Saved successfully"}
             </p>
@@ -1232,7 +1232,7 @@ function CustomerDrawer({
                       </div>
                       <div className="text-[10px] text-muted-foreground text-end shrink-0">
                         {unit.markupPrice && <div>{formatSAR(unit.markupPrice, lang)}</div>}
-                        {unit.rentalPrice && <div className="text-violet-600">{formatSAR(unit.rentalPrice, lang)}/{lang === "ar" ? "شهر" : "mo"}</div>}
+                        {unit.rentalPrice && <div className="text-primary">{formatSAR(unit.rentalPrice, lang)}/{lang === "ar" ? "شهر" : "mo"}</div>}
                       </div>
                     </div>
                   </button>
@@ -1253,7 +1253,7 @@ function CustomerDrawer({
                     className={cn(
                       "flex-1 py-2 rounded-lg border text-sm font-semibold transition-colors",
                       linkIntent === "BUY"
-                        ? "border-blue-400/50 bg-blue-500/10 text-blue-700 dark:text-blue-300"
+                        ? "border-info/50 bg-info/10 text-info"
                         : "border-border text-muted-foreground hover:bg-muted/30"
                     )}
                     style={{ display: "inline-flex", justifyContent: "center" }}
@@ -1266,7 +1266,7 @@ function CustomerDrawer({
                     className={cn(
                       "flex-1 py-2 rounded-lg border text-sm font-semibold transition-colors",
                       linkIntent === "RENT"
-                        ? "border-violet-400/50 bg-violet-500/10 text-violet-700 dark:text-violet-300"
+                        ? "border-primary/50 bg-primary/10 text-primary"
                         : "border-border text-muted-foreground hover:bg-muted/30"
                     )}
                     style={{ display: "inline-flex", justifyContent: "center" }}
@@ -1278,7 +1278,7 @@ function CustomerDrawer({
             )}
 
             {linkError && (
-              <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2">
+              <p className="text-sm text-destructive bg-destructive/10 border border-destructive/30 rounded-lg px-3 py-2">
                 {linkError}
               </p>
             )}
@@ -1392,7 +1392,7 @@ function CustomerDrawer({
             </div>
 
             {convertError && (
-              <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2">
+              <p className="text-sm text-destructive bg-destructive/10 border border-destructive/30 rounded-lg px-3 py-2">
                 {convertError}
               </p>
             )}
@@ -1710,15 +1710,15 @@ export default function CRMPage() {
     const ratio = unitPrice / b;
     if (ratio > 1.05) return {
       label: lang === "ar" ? "فوق الميزانية" : "Over Budget",
-      color: "text-destructive bg-destructive/10 dark:bg-destructive/20",
+      color: "text-destructive bg-destructive/10",
     };
     if (ratio >= 0.9) return {
       label: lang === "ar" ? "ضمن الميزانية" : "On Budget",
-      color: "text-green-700 bg-green-50 dark:text-green-400 dark:bg-green-950/30",
+      color: "text-success bg-success/10",
     };
     return {
       label: lang === "ar" ? "أقل من الميزانية" : "Under Budget",
-      color: "text-blue-700 bg-blue-50 dark:text-blue-400 dark:bg-blue-950/30",
+      color: "text-info bg-info/10",
     };
   }
 
@@ -2470,7 +2470,7 @@ export default function CRMPage() {
                 className={cn(
                   "h-8 px-3 rounded-lg border text-xs font-medium transition-colors",
                   showPii
-                    ? "border-amber-400/50 bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                    ? "border-warning/50 bg-warning/10 text-warning"
                     : "border-border bg-card text-muted-foreground hover:bg-muted/30"
                 )}
                 style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
@@ -2511,9 +2511,9 @@ export default function CRMPage() {
 
       {/* ── Error Banner ── */}
       {error && (
-        <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
-          <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
-          <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600" aria-label={lang === "ar" ? "إغلاق" : "Dismiss"}>
+        <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-destructive/10 border border-destructive/30">
+          <p className="text-sm text-destructive">{error}</p>
+          <button onClick={() => setError(null)} className="text-destructive/70 hover:text-destructive" aria-label={lang === "ar" ? "إغلاق" : "Dismiss"}>
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -2596,7 +2596,7 @@ export default function CRMPage() {
               className={cn(
                 "px-3.5 py-2 rounded-full text-sm font-medium border transition-colors",
                 showLost
-                  ? "border-red-400/30 bg-red-500/10 text-red-700 dark:text-red-400"
+                  ? "border-destructive/30 bg-destructive/10 text-destructive"
                   : "border-border bg-card text-muted-foreground hover:bg-muted/50"
               )}
               style={{ display: "inline-flex" }}
@@ -2959,8 +2959,8 @@ export default function CRMPage() {
                           <span className={cn(
                             "text-[10px] font-bold px-1.5 py-0.5 rounded-full",
                             newCustIntent === "BUY"
-                              ? "bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400"
-                              : "bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-400"
+                              ? "bg-info/15 text-info"
+                              : "bg-primary/15 text-primary"
                           )}>
                             {newCustIntent === "BUY" ? (lang === "ar" ? "شراء" : "BUY") : (lang === "ar" ? "إيجار" : "RENT")}
                           </span>
@@ -3056,7 +3056,7 @@ export default function CRMPage() {
                           className={cn(
                             "flex-1 py-2 text-sm font-medium rounded-lg border transition-colors",
                             newCustIntent === "BUY"
-                              ? "bg-blue-600 text-white border-blue-600"
+                              ? "bg-info text-info-foreground border-info"
                               : "border-border text-muted-foreground hover:bg-muted/50"
                           )}
                         >
@@ -3068,7 +3068,7 @@ export default function CRMPage() {
                           className={cn(
                             "flex-1 py-2 text-sm font-medium rounded-lg border transition-colors",
                             newCustIntent === "RENT"
-                              ? "bg-violet-600 text-white border-violet-600"
+                              ? "bg-primary text-primary-foreground border-primary"
                               : "border-border text-muted-foreground hover:bg-muted/50"
                           )}
                         >
@@ -3186,7 +3186,7 @@ export default function CRMPage() {
 
               {/* Inline error */}
               {error && (
-                <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2">
+                <p className="text-sm text-destructive bg-destructive/10 border border-destructive/30 rounded-lg px-3 py-2">
                   {error}
                 </p>
               )}
@@ -3257,7 +3257,7 @@ export default function CRMPage() {
                 className={cn(
                   "w-full text-start px-4 py-3 rounded-lg border text-sm font-medium transition-colors",
                   lostReason === reason.key
-                    ? "border-red-400/50 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300"
+                    ? "border-destructive/50 bg-destructive/10 text-destructive"
                     : "border-border bg-card text-foreground hover:bg-muted/30"
                 )}
                 style={{ display: "block" }}
@@ -3301,7 +3301,7 @@ export default function CRMPage() {
           </div>
         }
       >
-        {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+        {error && <p className="text-sm text-destructive">{error}</p>}
       </ResponsiveDialog>
     </div>
     </div>

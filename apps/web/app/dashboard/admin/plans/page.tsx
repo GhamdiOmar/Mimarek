@@ -15,6 +15,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { Button, Card, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, ResponsiveDialog, DirectionalIcon } from "@repo/ui";
+import { PageHeader } from "@repo/ui/components/PageHeader";
 import Link from "next/link";
 import { adminGetAllPlans, adminUpsertPlan } from "../../../actions/billing";
 
@@ -309,31 +310,24 @@ export default function AdminPlansPage() {
       </div>
 
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">{t.title}</h1>
-          <p className="text-sm text-muted-foreground mt-1">{t.subtitle}</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={openCreate}
-           
-          >
+      <PageHeader
+        title={t.title}
+        description={t.subtitle}
+        actions={
+          <Button variant="primary" size="sm" onClick={openCreate}>
             <Plus className="w-4 h-4" />
             <span className="ms-1.5">{t.addPlan}</span>
           </Button>
-        </div>
-      </div>
+        }
+      />
 
       {/* Feedback toast (page-level, shown after modal closes) */}
       {feedback && !modalOpen && (
         <div
           className={`flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium border ${
             feedback.type === "success"
-              ? "bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-300 border-green-200 dark:border-green-800"
-              : "bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300 border-red-200 dark:border-red-800"
+              ? "bg-success/10 text-success border-success/30"
+              : "bg-destructive/10 text-destructive border-destructive/30"
           }`}
         >
           {feedback.type === "success" ? (
@@ -409,7 +403,7 @@ export default function AdminPlansPage() {
                         </span>
                       </div>
                       {plan.isDefault && (
-                        <span className="mt-1 inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
+                        <span className="mt-1 inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-info/15 text-info">
                           {t.default}
                         </span>
                       )}
@@ -452,7 +446,7 @@ export default function AdminPlansPage() {
                     {/* Status */}
                     <TableCell className="text-center">
                       {plan.isPublic ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-success/15 text-success">
                           <Eye className="w-3.5 h-3.5" />
                           {t.public}
                         </span>
@@ -535,8 +529,8 @@ export default function AdminPlansPage() {
             <div
               className={`flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium border ${
                 feedback.type === "success"
-                  ? "bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-300 border-green-200 dark:border-green-800"
-                  : "bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300 border-red-200 dark:border-red-800"
+                  ? "bg-success/10 text-success border-success/30"
+                  : "bg-destructive/10 text-destructive border-destructive/30"
               }`}
             >
               {feedback.type === "success" ? (
@@ -689,7 +683,7 @@ export default function AdminPlansPage() {
           <div className="flex items-center justify-between rounded-lg border border-border bg-muted/30 px-4 py-3">
             <div className="flex items-center gap-3">
               {form.isPublic ? (
-                <Eye className="w-5 h-5 text-green-600 dark:text-green-400" />
+                <Eye className="w-5 h-5 text-success" />
               ) : (
                 <EyeOff className="w-5 h-5 text-muted-foreground" />
               )}
@@ -711,7 +705,7 @@ export default function AdminPlansPage() {
               onClick={() => updateField("isPublic", !form.isPublic)}
               className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
                 form.isPublic
-                  ? "bg-green-600 dark:bg-green-500"
+                  ? "bg-success"
                   : "bg-muted-foreground/30"
               }`}
             >
@@ -747,7 +741,7 @@ function FieldGroup({
     <div className="space-y-1.5">
       <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide">
         {label}
-        {required && <span className="text-red-500 ms-0.5">*</span>}
+        {required && <span className="text-destructive ms-0.5">*</span>}
       </label>
       {children}
     </div>

@@ -665,9 +665,9 @@ function AdvancedUnitMatrixPage() {
 
       {/* Inline Error Display */}
       {error && (
-        <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
-          <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
-          <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600" aria-label={lang === "ar" ? "إغلاق" : "Close"}>
+        <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-destructive/10 border border-destructive/30">
+          <p className="text-sm text-destructive">{error}</p>
+          <button onClick={() => setError(null)} className="text-destructive/70 hover:text-destructive" aria-label={lang === "ar" ? "إغلاق" : "Close"}>
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -756,7 +756,7 @@ function AdvancedUnitMatrixPage() {
                   size="sm"
                   variant="danger"
                   style={{ display: "inline-flex" }}
-                  className="gap-2 bg-red-500/80 hover:bg-red-500 whitespace-nowrap"
+                  className="gap-2 bg-destructive/80 hover:bg-destructive whitespace-nowrap"
                   onClick={handleBulkDelete}
                   disabled={updating || deleting}
                 >
@@ -1251,7 +1251,7 @@ function AdvancedUnitMatrixPage() {
                       <span className="text-[9px] font-bold text-muted-foreground uppercase">
                         {lang === "ar" ? "تكاليف صيانة" : "Maintenance"}
                       </span>
-                      <p className="text-sm font-bold text-red-600 mt-0.5">
+                      <p className="text-sm font-bold text-destructive mt-0.5">
                         <SARAmount
                           value={detailFinancials.totalMaintenanceCost}
                           size={10}
@@ -1264,7 +1264,7 @@ function AdvancedUnitMatrixPage() {
                         {lang === "ar" ? "صافي الدخل" : "Net Income"}
                       </span>
                       <p
-                        className={`text-sm font-bold mt-0.5 ${detailFinancials.netIncome >= 0 ? "text-secondary" : "text-red-600"}`}
+                        className={`text-sm font-bold mt-0.5 ${detailFinancials.netIncome >= 0 ? "text-secondary" : "text-destructive"}`}
                       >
                         <SARAmount
                           value={detailFinancials.netIncome}
@@ -1652,7 +1652,7 @@ function AdvancedUnitMatrixPage() {
         }
       >
         {error && (
-          <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+          <p className="text-sm text-destructive">{error}</p>
         )}
       </ResponsiveDialog>
       </div>

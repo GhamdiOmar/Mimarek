@@ -40,6 +40,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   DirectionalIcon,
+  PageHeader,
 } from "@repo/ui";
 import { toast } from "sonner";
 import {
@@ -466,30 +467,33 @@ export default function PreventiveMaintenancePage() {
     <div className="hidden md:block">
     <div className="space-y-8 animate-in fade-in duration-500">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" onClick={() => router.push("/dashboard/maintenance/tickets")}>
-            <DirectionalIcon icon={ArrowLeft} className="h-[18px] w-[18px]" />
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold text-primary">
-              {lang === "ar" ? "خطط الصيانة الوقائية" : "Preventive Maintenance Plans"}
-            </h1>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              {lang === "ar" ? "جدولة الصيانة الدورية للمباني والوحدات" : "Schedule recurring maintenance for buildings and units"}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <Button variant="secondary" size="sm" className="gap-2" onClick={() => setRunConfirmOpen(true)} disabled={generating}>
-            {generating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-4 w-4" />}
-            {lang === "ar" ? "تشغيل الآن" : "Run Now"}
-          </Button>
-          <Button size="sm" className="gap-2" onClick={openCreate}>
-            <Plus className="h-4 w-4" />
-            {lang === "ar" ? "خطة جديدة" : "New Plan"}
-          </Button>
-        </div>
+      <div className="flex items-start gap-3">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => router.push("/dashboard/maintenance/tickets")}
+          aria-label={lang === "ar" ? "رجوع" : "Back"}
+          className="shrink-0"
+        >
+          <DirectionalIcon icon={ArrowLeft} className="h-[18px] w-[18px]" />
+        </Button>
+        <PageHeader
+          className="flex-1"
+          title={lang === "ar" ? "خطط الصيانة الوقائية" : "Preventive Maintenance Plans"}
+          description={lang === "ar" ? "جدولة الصيانة الدورية للمباني والوحدات" : "Schedule recurring maintenance for buildings and units"}
+          actions={
+            <>
+              <Button variant="secondary" size="sm" className="gap-2" onClick={() => setRunConfirmOpen(true)} disabled={generating}>
+                {generating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-4 w-4" />}
+                {lang === "ar" ? "تشغيل الآن" : "Run Now"}
+              </Button>
+              <Button size="sm" className="gap-2" onClick={openCreate}>
+                <Plus className="h-4 w-4" />
+                {lang === "ar" ? "خطة جديدة" : "New Plan"}
+              </Button>
+            </>
+          }
+        />
       </div>
 
       {/* Plans Grid */}
@@ -541,12 +545,12 @@ export default function PreventiveMaintenancePage() {
                   </div>
                   <div className="flex items-center gap-1">
                     <Button variant="ghost" size="sm" onClick={() => handleToggle(plan.id)}>
-                      {plan.isActive ? <Pause className="h-3.5 w-3.5 text-amber-500" /> : <Play className="h-3.5 w-3.5 text-secondary" />}
+                      {plan.isActive ? <Pause className="h-3.5 w-3.5 text-warning" /> : <Play className="h-3.5 w-3.5 text-secondary" />}
                     </Button>
                     <Button variant="ghost" size="sm" onClick={() => openEdit(plan)} aria-label={lang === "ar" ? "تعديل" : "Edit"}>
                       <Pencil className="h-3.5 w-3.5" />
                     </Button>
-                    <Button variant="ghost" size="sm" className="text-red-500 hover:bg-red-50 hover:text-red-600" onClick={() => setDeleteTargetId(plan.id)} aria-label={lang === "ar" ? "حذف" : "Delete"}>
+                    <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => setDeleteTargetId(plan.id)} aria-label={lang === "ar" ? "حذف" : "Delete"}>
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>
@@ -576,7 +580,7 @@ export default function PreventiveMaintenancePage() {
                   </div>
                   <div>
                     <span className="text-[10px] text-muted-foreground uppercase font-bold">{lang === "ar" ? "التشغيل التالي" : "Next Run"}</span>
-                    <p className={`font-medium ${isDue && plan.isActive ? "text-red-600" : "text-primary"}`}>
+                    <p className={`font-medium ${isDue && plan.isActive ? "text-destructive" : "text-primary"}`}>
                       {plan.nextRunDate ? new Date(plan.nextRunDate).toLocaleDateString("en-SA") : "—"}
                     </p>
                   </div>

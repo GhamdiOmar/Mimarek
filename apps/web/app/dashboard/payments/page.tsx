@@ -140,10 +140,10 @@ function getPaymentTone(entry: {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  PAID: "bg-green-100 text-green-800",
-  UNPAID: "bg-amber-100 text-amber-800",
-  OVERDUE: "bg-red-100 text-red-800",
-  PARTIALLY_PAID: "bg-orange-100 text-orange-800",
+  PAID: "bg-success/15 text-success",
+  UNPAID: "bg-warning/15 text-warning",
+  OVERDUE: "bg-destructive/15 text-destructive",
+  PARTIALLY_PAID: "bg-warning/15 text-warning",
 };
 
 const STATUS_LABELS: Record<string, { ar: string; en: string }> = {
@@ -529,43 +529,43 @@ export default function PaymentsPage() {
       {/* KPI Banner */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="p-4 flex items-start gap-3">
-          <div className="p-2 bg-green-100 rounded-lg">
-            <TrendingUp className="w-5 h-5 text-green-700" />
+          <div className="p-2 bg-success/15 rounded-lg">
+            <TrendingUp className="w-5 h-5 text-success" />
           </div>
           <div>
-            <p className="text-xs text-gray-500">{lang === "ar" ? "المُحصَّل هذا الشهر" : "Collected This Month"}</p>
+            <p className="text-xs text-muted-foreground">{lang === "ar" ? "المُحصَّل هذا الشهر" : "Collected This Month"}</p>
             {loading ? (
-              <Loader2 className="w-4 h-4 animate-spin mt-1 text-gray-400" />
+              <Loader2 className="w-4 h-4 animate-spin mt-1 text-muted-foreground" />
             ) : (
-              <p className="text-xl font-bold text-gray-900 mt-0.5">{SAR(collectedThisMonth)}</p>
+              <p className="text-xl font-bold text-foreground mt-0.5">{SAR(collectedThisMonth)}</p>
             )}
           </div>
         </Card>
 
         <Card className="p-4 flex items-start gap-3">
-          <div className="p-2 bg-red-100 rounded-lg">
-            <AlertCircle className="w-5 h-5 text-red-700" />
+          <div className="p-2 bg-destructive/15 rounded-lg">
+            <AlertCircle className="w-5 h-5 text-destructive" />
           </div>
           <div>
-            <p className="text-xs text-gray-500">{lang === "ar" ? "إجمالي المتأخرات" : "Total Overdue"}</p>
+            <p className="text-xs text-muted-foreground">{lang === "ar" ? "إجمالي المتأخرات" : "Total Overdue"}</p>
             {loading ? (
-              <Loader2 className="w-4 h-4 animate-spin mt-1 text-gray-400" />
+              <Loader2 className="w-4 h-4 animate-spin mt-1 text-muted-foreground" />
             ) : (
-              <p className="text-xl font-bold text-red-700 mt-0.5">{SAR(totalOverdue)}</p>
+              <p className="text-xl font-bold text-destructive mt-0.5">{SAR(totalOverdue)}</p>
             )}
           </div>
         </Card>
 
         <Card className="p-4 flex items-start gap-3">
-          <div className="p-2 bg-amber-100 rounded-lg">
-            <CreditCard className="w-5 h-5 text-amber-700" />
+          <div className="p-2 bg-warning/15 rounded-lg">
+            <CreditCard className="w-5 h-5 text-warning" />
           </div>
           <div>
-            <p className="text-xs text-gray-500">{lang === "ar" ? "المتوقع خلال 30 يوماً" : "Expected Next 30 Days"}</p>
+            <p className="text-xs text-muted-foreground">{lang === "ar" ? "المتوقع خلال 30 يوماً" : "Expected Next 30 Days"}</p>
             {loading ? (
-              <Loader2 className="w-4 h-4 animate-spin mt-1 text-gray-400" />
+              <Loader2 className="w-4 h-4 animate-spin mt-1 text-muted-foreground" />
             ) : (
-              <p className="text-xl font-bold text-gray-900 mt-0.5">{SAR(expectedNext30)}</p>
+              <p className="text-xl font-bold text-foreground mt-0.5">{SAR(expectedNext30)}</p>
             )}
           </div>
         </Card>
@@ -582,8 +582,8 @@ export default function PaymentsPage() {
               className={[
                 "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
                 typeFilter === tab.key
-                  ? "bg-purple-600 text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200",
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80",
               ].join(" ")}
             >
               {lang === "ar" ? tab.ar : tab.en}
@@ -601,8 +601,8 @@ export default function PaymentsPage() {
                 className={[
                   "px-3 py-1 rounded-md text-xs font-medium transition-colors border",
                   statusFilter === tab.key
-                    ? "border-purple-600 bg-purple-50 text-purple-700"
-                    : "border-gray-200 bg-white text-gray-600 hover:border-gray-300",
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border bg-card text-muted-foreground hover:border-muted-foreground/50",
                 ].join(" ")}
               >
                 {lang === "ar" ? tab.ar : tab.en}
@@ -611,7 +611,7 @@ export default function PaymentsPage() {
           </div>
 
           <div className="relative ms-auto">
-            <Search className="absolute top-1/2 -translate-y-1/2 start-3 w-4 h-4 text-gray-400 pointer-events-none" />
+            <Search className="absolute top-1/2 -translate-y-1/2 start-3 w-4 h-4 text-muted-foreground pointer-events-none" />
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -621,7 +621,7 @@ export default function PaymentsPage() {
             {search && (
               <button
                 onClick={() => setSearch("")}
-                className="absolute top-1/2 -translate-y-1/2 end-3 text-gray-400 hover:text-gray-600"
+                className="absolute top-1/2 -translate-y-1/2 end-3 text-muted-foreground hover:text-foreground"
                 aria-label={lang === "ar" ? "مسح البحث" : "Clear search"}
               >
                 <X className="w-4 h-4" />
@@ -635,7 +635,7 @@ export default function PaymentsPage() {
       <Card>
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <Loader2 className="w-6 h-6 animate-spin text-purple-600" />
+            <Loader2 className="w-6 h-6 animate-spin text-primary" />
           </div>
         ) : filtered.length === 0 ? (
           allEntries.length === 0 ? (
@@ -694,9 +694,9 @@ export default function PaymentsPage() {
                 return (
                 <TableRow key={entry.id} className={tone.rowClass}>
                   <TableCell className="font-medium">{entry.clientName}</TableCell>
-                  <TableCell className="text-sm text-gray-600">{entry.propertyLabel}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{entry.propertyLabel}</TableCell>
                   <TableCell>
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/15 text-primary">
                       {entry.type === "rent"
                         ? lang === "ar" ? "إيجار" : "Rent"
                         : lang === "ar" ? "بيع" : "Sale"}
@@ -715,13 +715,13 @@ export default function PaymentsPage() {
                     {can("payments:write") && entry.status !== "PAID" && (
                       <button
                         onClick={() => openPayModal(entry)}
-                        className="text-xs text-purple-600 hover:text-purple-800 font-medium transition-colors"
+                        className="text-xs text-primary hover:opacity-80 font-medium transition-colors"
                       >
                         {lang === "ar" ? "تسجيل دفعة" : "Record Payment"}
                       </button>
                     )}
                     {entry.status === "PAID" && (
-                      <span className="text-xs text-gray-400">{lang === "ar" ? "مُسدَّد" : "Settled"}</span>
+                      <span className="text-xs text-muted-foreground">{lang === "ar" ? "مُسدَّد" : "Settled"}</span>
                     )}
                   </TableCell>
                 </TableRow>
@@ -770,15 +770,15 @@ export default function PaymentsPage() {
             className="space-y-4 py-2"
           >
             {/* Summary */}
-            <div className="bg-gray-50 rounded-lg px-4 py-3 text-sm space-y-1">
-              <p className="text-gray-500">{lang === "ar" ? "العميل" : "Client"}: <span className="text-gray-900 font-medium">{paymentTarget.clientName}</span></p>
-              <p className="text-gray-500">{lang === "ar" ? "العقار" : "Property"}: <span className="text-gray-900 font-medium">{paymentTarget.propertyLabel}</span></p>
-              <p className="text-gray-500">{lang === "ar" ? "المبلغ المستحق" : "Due Amount"}: <span className="text-gray-900 font-medium">{SAR(paymentTarget.amount)}</span></p>
+            <div className="bg-muted rounded-lg px-4 py-3 text-sm space-y-1">
+              <p className="text-muted-foreground">{lang === "ar" ? "العميل" : "Client"}: <span className="text-foreground font-medium">{paymentTarget.clientName}</span></p>
+              <p className="text-muted-foreground">{lang === "ar" ? "العقار" : "Property"}: <span className="text-foreground font-medium">{paymentTarget.propertyLabel}</span></p>
+              <p className="text-muted-foreground">{lang === "ar" ? "المبلغ المستحق" : "Due Amount"}: <span className="text-foreground font-medium">{SAR(paymentTarget.amount)}</span></p>
             </div>
 
             {/* Amount */}
             <div className="space-y-1">
-              <label className="text-sm font-medium text-gray-700">
+              <label className="text-sm font-medium text-foreground">
                 {lang === "ar" ? "المبلغ المدفوع (ريال)" : "Payment Amount (SAR)"} *
               </label>
               <SARAmountInput
@@ -790,7 +790,7 @@ export default function PaymentsPage() {
 
             {/* Payment Date */}
             <div className="space-y-1">
-              <label className="text-sm font-medium text-gray-700">
+              <label className="text-sm font-medium text-foreground">
                 {lang === "ar" ? "تاريخ الدفع" : "Payment Date"} *
               </label>
               <Input
@@ -802,13 +802,13 @@ export default function PaymentsPage() {
 
             {/* Payment Method */}
             <div className="space-y-1">
-              <label className="text-sm font-medium text-gray-700">
+              <label className="text-sm font-medium text-foreground">
                 {lang === "ar" ? "طريقة الدفع" : "Payment Method"} *
               </label>
               <select
                 value={payForm.paymentMethod}
                 onChange={(e) => setPayForm((f) => ({ ...f, paymentMethod: e.target.value }))}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]"
               >
                 {PAYMENT_METHODS.map((m) => (
                   <option key={m.value} value={m.value}>
@@ -820,7 +820,7 @@ export default function PaymentsPage() {
 
             {/* Reference Number */}
             <div className="space-y-1">
-              <label className="text-sm font-medium text-gray-700">
+              <label className="text-sm font-medium text-foreground">
                 {lang === "ar" ? "رقم المرجع" : "Reference Number"}
               </label>
               <Input
@@ -832,7 +832,7 @@ export default function PaymentsPage() {
 
             {/* Notes */}
             <div className="space-y-1">
-              <label className="text-sm font-medium text-gray-700">
+              <label className="text-sm font-medium text-foreground">
                 {lang === "ar" ? "ملاحظات" : "Notes"}
               </label>
               <textarea
@@ -840,7 +840,7 @@ export default function PaymentsPage() {
                 onChange={(e) => setPayForm((f) => ({ ...f, notes: e.target.value }))}
                 rows={2}
                 placeholder={lang === "ar" ? "ملاحظات اختيارية..." : "Optional notes..."}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]"
               />
             </div>
           </form>

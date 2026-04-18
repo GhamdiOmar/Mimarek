@@ -235,14 +235,14 @@ export default function HelpPage() {
 
   const statusBadge = (status: string) => {
     const map: Record<string, string> = {
-      OPEN: "bg-gray-100 text-gray-700",
-      IN_PROGRESS: "bg-blue-50 text-blue-700",
-      WAITING_ON_USER: "bg-amber-50 text-amber-700",
-      RESOLVED: "bg-green-50 text-green-700",
+      OPEN: "bg-muted text-muted-foreground",
+      IN_PROGRESS: "bg-info/10 text-info",
+      WAITING_ON_USER: "bg-warning/10 text-warning",
+      RESOLVED: "bg-success/10 text-success",
       CLOSED: "bg-primary/10 text-primary",
-      PENDING: "bg-amber-50 text-amber-700",
-      APPROVED: "bg-green-50 text-green-700",
-      DECLINED: "bg-red-50 text-red-700",
+      PENDING: "bg-warning/10 text-warning",
+      APPROVED: "bg-success/10 text-success",
+      DECLINED: "bg-destructive/10 text-destructive",
     };
     const labels: Record<string, { ar: string; en: string }> = {
       OPEN: { ar: "مفتوحة", en: "Open" },
@@ -255,7 +255,7 @@ export default function HelpPage() {
       DECLINED: { ar: "مرفوض", en: "Declined" },
     };
     return (
-      <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold", map[status] ?? "bg-gray-100 text-gray-600")}>
+      <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold", map[status] ?? "bg-muted text-muted-foreground")}>
         {(labels[status] ?? { ar: status, en: status })[lang]}
       </span>
     );
@@ -263,10 +263,10 @@ export default function HelpPage() {
 
   const priorityBadge = (priority: string) => {
     const map: Record<string, string> = {
-      LOW: "bg-gray-100 text-gray-600",
-      MEDIUM: "bg-blue-50 text-blue-600",
-      HIGH: "bg-orange-50 text-orange-600",
-      URGENT: "bg-red-50 text-red-600",
+      LOW: "bg-muted text-muted-foreground",
+      MEDIUM: "bg-info/10 text-info",
+      HIGH: "bg-warning/10 text-warning",
+      URGENT: "bg-destructive/10 text-destructive",
     };
     const labels: Record<string, { ar: string; en: string }> = {
       LOW: { ar: "منخفضة", en: "Low" },
@@ -275,7 +275,7 @@ export default function HelpPage() {
       URGENT: { ar: "عاجلة", en: "Urgent" },
     };
     return (
-      <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold", map[priority] ?? "bg-gray-100")}>
+      <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold", map[priority] ?? "bg-muted")}>
         {(labels[priority] ?? { ar: priority, en: priority })[lang]}
       </span>
     );
@@ -662,7 +662,7 @@ export default function HelpPage() {
               <p className="text-xs text-muted-foreground mt-1">{lang === "ar" ? "أبلغ عن مشكلة أو اطلب ميزة جديدة" : "Report an issue or request a feature"}</p>
             </button>
             <button onClick={() => setActiveTab("permissions")} className="bg-card p-6 rounded-md shadow-card border border-border hover:shadow-lg hover:-translate-y-0.5 transition-all text-start">
-              <ShieldCheck className="h-8 w-8 text-amber-500 mb-3" />
+              <ShieldCheck className="h-8 w-8 text-warning mb-3" />
               <h3 className="font-bold text-foreground">{lang === "ar" ? "طلب صلاحيات" : "Request Permissions"}</h3>
               <p className="text-xs text-muted-foreground mt-1">{lang === "ar" ? "اطلب ترقية صلاحياتك في النظام" : "Request a role upgrade in the system"}</p>
             </button>
@@ -804,10 +804,10 @@ export default function HelpPage() {
                   value={ticketForm.subject}
                   onChange={(e) => { setTicketForm({ ...ticketForm, subject: e.target.value }); if (ticketErrors.subject) setTicketErrors((prev) => ({ ...prev, subject: false })); }}
                   placeholder={lang === "ar" ? "الموضوع" : "Subject"}
-                  className={`w-full border rounded-md px-3 py-2 text-sm focus:border-primary/30 outline-none ${ticketErrors.subject ? "border-red-500" : "border-border"}`}
+                  className={`w-full border rounded-md px-3 py-2 text-sm focus:border-primary/30 outline-none ${ticketErrors.subject ? "border-destructive" : "border-border"}`}
                 />
                 {ticketErrors.subject && (
-                  <p className="text-xs text-red-500 mt-1">{lang === "ar" ? "هذا الحقل مطلوب" : "This field is required"}</p>
+                  <p className="text-xs text-destructive mt-1">{lang === "ar" ? "هذا الحقل مطلوب" : "This field is required"}</p>
                 )}
               </div>
               <div className="flex gap-3">
@@ -824,10 +824,10 @@ export default function HelpPage() {
                   onChange={(e) => { setTicketForm({ ...ticketForm, description: e.target.value }); if (ticketErrors.description) setTicketErrors((prev) => ({ ...prev, description: false })); }}
                   placeholder={lang === "ar" ? "وصف المشكلة أو الطلب..." : "Describe the issue or request..."}
                   rows={4}
-                  className={`w-full border rounded-md px-3 py-2 text-sm focus:border-primary/30 outline-none resize-none ${ticketErrors.description ? "border-red-500" : "border-border"}`}
+                  className={`w-full border rounded-md px-3 py-2 text-sm focus:border-primary/30 outline-none resize-none ${ticketErrors.description ? "border-destructive" : "border-border"}`}
                 />
                 {ticketErrors.description && (
-                  <p className="text-xs text-red-500 mt-1">{lang === "ar" ? "هذا الحقل مطلوب" : "This field is required"}</p>
+                  <p className="text-xs text-destructive mt-1">{lang === "ar" ? "هذا الحقل مطلوب" : "This field is required"}</p>
                 )}
               </div>
               <div className="flex gap-2 justify-end">

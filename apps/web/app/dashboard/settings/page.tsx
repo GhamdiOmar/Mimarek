@@ -709,10 +709,10 @@ export default function OrgSettingsPage() {
                   <Input
                     value={form.name}
                     onChange={(e) => set("name", e.target.value)}
-                    className={fieldErrors.name ? "border-red-500 focus-visible:ring-red-500" : ""}
+                    className={fieldErrors.name ? "border-destructive focus-visible:ring-destructive" : ""}
                   />
                   {fieldErrors.name && (
-                    <p className="text-xs text-red-500">
+                    <p className="text-xs text-destructive">
                       {lang === "ar" ? "هذا الحقل مطلوب" : "This field is required"}
                     </p>
                   )}
@@ -1238,7 +1238,7 @@ export default function OrgSettingsPage() {
               href="/dashboard/settings/security"
               className="flex items-center gap-3 p-3 rounded-md hover:bg-muted/30 transition-colors group"
             >
-              <div className="p-2 bg-amber-500/10 rounded text-amber-600 group-hover:bg-amber-500/15 transition-colors">
+              <div className="p-2 bg-warning/10 rounded text-warning group-hover:bg-warning/15 transition-colors">
                 <Lock className="h-5 w-5" />
               </div>
               <div>

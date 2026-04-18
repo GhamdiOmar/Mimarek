@@ -29,6 +29,7 @@ import {
   Alert,
   AlertDescription,
 } from "@repo/ui";
+import { PageHeader } from "@repo/ui/components/PageHeader";
 import { cn } from "@repo/ui/lib/utils";
 import { getDocuments, registerFileInDb } from "../../actions/documents";
 import { UploadButton } from "../../../lib/uploadthing";
@@ -294,48 +295,49 @@ export default function DocumentVaultPage() {
     <div className="hidden md:block">
     <div className="space-y-8 animate-in fade-in duration-500" dir={lang === "ar" ? "rtl" : "ltr"}>
       {/* Header */}
-      <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between px-2">
-        <div>
-          <h1 className="text-2xl font-bold text-primary">
-            {lang === "ar" ? "خزنة الوثائق" : "Document Vault"}
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            {lang === "ar" ? "إدارة وتخزين كافة الوثائق الهندسية والقانونية للمشاريع." : "Manage and store all engineering and legal project documents."}
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm" style={{ display: "inline-flex" }} onClick={handleExportDocuments} disabled={exporting} className="gap-2">
-            {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-            {exporting ? (lang === "ar" ? "جاري التصدير..." : "Exporting...") : (lang === "ar" ? "تصدير القائمة" : "Export List")}
-          </Button>
-          <UploadButton
-            endpoint="blueprintUploader"
-            onClientUploadComplete={handleUploadComplete}
-            onUploadError={(error: Error) => {
-              console.error(error);
-              setUploadError(lang === "ar" ? "تعذّر رفع الملف. يُرجى المحاولة مرة أخرى." : "We couldn't upload this file. Please try again.");
-            }}
-            appearance={{
-              button: "bg-secondary hover:bg-green-bright text-white text-sm font-bold gap-2 flex h-9 px-4 rounded-md",
-              allowedContent: "hidden"
-            }}
-            content={{
-              button: (
-                <div className="flex items-center gap-2">
-                  <CloudUpload className="h-[18px] w-[18px]" />
-                  {lang === "ar" ? "رفع وثيقة" : "Upload Document"}
-                </div>
-              )
-            }}
-          />
-        </div>
-      </div>
+      <PageHeader
+        className="px-2"
+        title={lang === "ar" ? "خزنة الوثائق" : "Document Vault"}
+        description={
+          lang === "ar"
+            ? "إدارة وتخزين كافة الوثائق الهندسية والقانونية للمشاريع."
+            : "Manage and store all engineering and legal project documents."
+        }
+        actions={
+          <>
+            <Button variant="outline" size="sm" style={{ display: "inline-flex" }} onClick={handleExportDocuments} disabled={exporting} className="gap-2">
+              {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+              {exporting ? (lang === "ar" ? "جاري التصدير..." : "Exporting...") : (lang === "ar" ? "تصدير القائمة" : "Export List")}
+            </Button>
+            <UploadButton
+              endpoint="blueprintUploader"
+              onClientUploadComplete={handleUploadComplete}
+              onUploadError={(error: Error) => {
+                console.error(error);
+                setUploadError(lang === "ar" ? "تعذّر رفع الملف. يُرجى المحاولة مرة أخرى." : "We couldn't upload this file. Please try again.");
+              }}
+              appearance={{
+                button: "bg-secondary hover:bg-green-bright text-white text-sm font-bold gap-2 flex h-9 px-4 rounded-md",
+                allowedContent: "hidden"
+              }}
+              content={{
+                button: (
+                  <div className="flex items-center gap-2">
+                    <CloudUpload className="h-[18px] w-[18px]" />
+                    {lang === "ar" ? "رفع وثيقة" : "Upload Document"}
+                  </div>
+                )
+              }}
+            />
+          </>
+        }
+      />
 
       {/* Upload Error */}
       {uploadError && (
-        <div className="flex items-center gap-2 px-4 py-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
-          <p className="text-sm text-red-600 dark:text-red-400 flex-1">{uploadError}</p>
-          <button onClick={() => setUploadError(null)} className="text-red-400 hover:text-red-600 text-xs font-medium">
+        <div className="flex items-center gap-2 px-4 py-2 bg-destructive/10 border border-destructive/30 rounded-md">
+          <p className="text-sm text-destructive flex-1">{uploadError}</p>
+          <button onClick={() => setUploadError(null)} className="text-destructive/70 hover:text-destructive text-xs font-medium">
             {lang === "ar" ? "إغلاق" : "Dismiss"}
           </button>
         </div>
@@ -457,7 +459,7 @@ export default function DocumentVaultPage() {
                    <div className="flex items-start justify-between mb-4">
                       <div className={cn(
                         "h-12 w-12 rounded flex items-center justify-center",
-                        ['pdf'].includes(doc.type?.toLowerCase()) ? "bg-red-50 text-red-500" : ['jpg', 'png', 'jpeg'].includes(doc.type?.toLowerCase()) ? "bg-blue-50 text-blue-500" : "bg-green-50 text-green-500"
+                        ['pdf'].includes(doc.type?.toLowerCase()) ? "bg-destructive/10 text-destructive" : ['jpg', 'png', 'jpeg'].includes(doc.type?.toLowerCase()) ? "bg-info/10 text-info" : "bg-success/10 text-success"
                       )}>
                          {['pdf'].includes(doc.type?.toLowerCase()) ? <FilePdf className="h-7 w-7" /> : ['jpg', 'png', 'jpeg'].includes(doc.type?.toLowerCase()) ? <FileImage className="h-7 w-7" /> : <FileText className="h-7 w-7" />}
                       </div>
