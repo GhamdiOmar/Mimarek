@@ -56,7 +56,7 @@ Two universes that never share surfaces or data:
 - **System users** (`SYSTEM_ADMIN`, `SYSTEM_SUPPORT`) — operate the product itself. `organizationId = null`. See only `/dashboard/admin/*`.
 - **Tenant users** (`ADMIN`, `MANAGER`, `AGENT`, `LEASING`, `FINANCE`, `TECHNICIAN`, `USER`) — run their own organization. Bound to a single `organizationId`. See only their org's tenant surfaces.
 
-Separation is enforced in three layers: navigation filter, route guard, and server-action audience gate. See [CLAUDE.md § 8](CLAUDE.md#8-access-model--tenant-vs-system-hard-rule) for the full spec.
+Separation is enforced in three layers: navigation filter, route guard, and server-action audience gate.
 
 ---
 
@@ -89,7 +89,7 @@ Separation is enforced in three layers: navigation filter, route guard, and serv
     └── typescript-config/# Shared tsconfig
 ```
 
-Design system source of truth: [CLAUDE.md § 6](CLAUDE.md#6-design-system--single-source-of-truth) and [`packages/ui/src/globals.css`](packages/ui/src/globals.css).
+Design-system source of truth: [`packages/ui/src/globals.css`](packages/ui/src/globals.css) (tokens) + the internal design spec.
 
 ---
 
@@ -131,7 +131,7 @@ npx prisma db seed                # seed test users + sample tenant data
 cd ../..
 ```
 
-Default seed password is `mimaric2026`. See [CLAUDE.md § 9](CLAUDE.md#9-test-credentials-seed-data--localdev-only) for the full credentials table.
+The seed script (`packages/db/prisma/seed.ts`) creates one account per role for local development. Credentials are local-only and not documented here; read the seed file if you need them.
 
 ### 4. Run
 
@@ -139,15 +139,7 @@ Default seed password is `mimaric2026`. See [CLAUDE.md § 9](CLAUDE.md#9-test-cr
 npm run dev                       # starts apps/web on http://localhost:3000
 ```
 
-Visit [`http://localhost:3000/auth/login`](http://localhost:3000/auth/login) and sign in with one of the seeded accounts:
-
-| Role | Email | Dashboard |
-|---|---|---|
-| Platform admin | `system@mimaric.sa` | `/dashboard/admin` |
-| Org owner | `admin@mimaric.sa` | `/dashboard` |
-| Finance | `fatima@mimaric.sa` (pw: `finance2026`) | `/dashboard/finance` |
-| Sales agent | `ahmed@mimaric.sa` (pw: `sales2026`) | `/dashboard/leasing` |
-| Technician | `khalid@mimaric.sa` (pw: `sales2026`) | `/dashboard/maintenance` |
+Visit [`http://localhost:3000/auth/login`](http://localhost:3000/auth/login) and sign in with a seeded account. Five roles are covered: Platform admin, Org owner, Finance, Sales agent, Technician — each lands on its own role-specific dashboard.
 
 ---
 
@@ -167,7 +159,7 @@ Visit [`http://localhost:3000/auth/login`](http://localhost:3000/auth/login) and
 
 ## Design system
 
-Mimaric ships a first-class design system — see [CLAUDE.md § 6](CLAUDE.md#6-design-system--single-source-of-truth) for the full 600-line spec. Highlights:
+Mimaric ships a first-class design system documented internally. Highlights:
 
 - **Brand** — Mimaric Purple (`hsl(270 50% 45%)`) is the single UI color. Semantic colors only: blue=info · red=danger · amber=warning · green=success · gold=premium tier.
 - **Typography** — IBM Plex Sans Arabic + DM Sans + IBM Plex Mono, loaded via `next/font/google` with AR-specific line-height and letter-spacing tuning.
@@ -204,7 +196,7 @@ See [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
 - **UI-first principle.** Every feature, CRUD action, and server action must be reachable from a nav link or button — no orphan URLs.
 - **Commits.** Single author (Omar Alghamdi). No Co-Authored-By attribution.
 
-Full engineering contract in [CLAUDE.md](CLAUDE.md).
+Engineering contract is maintained in an internal spec.
 
 ---
 
