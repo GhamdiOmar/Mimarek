@@ -69,9 +69,11 @@ type Installment = {
   dueDate: string;
   amount: number;
   status: string;
-  contract: {
-    customer: { id: string; name: string };
-    unit: { id: string; number: string };
+  paymentPlan: {
+    contract: {
+      customer: { id: string; name: string };
+      unit: { id: string; number: string };
+    };
   };
 };
 
@@ -355,7 +357,7 @@ export default function DashboardPage() {
                     subtitle={
                       nextPayment
                         ? [
-                            nextPayment.contract.customer.name,
+                            nextPayment.paymentPlan.contract.customer.name,
                             formatDueDate(nextPayment.dueDate, lang),
                           ]
                         : lang === "ar"
@@ -716,10 +718,10 @@ export default function DashboardPage() {
                   <div key={inst.id} className="flex items-center justify-between py-3 gap-2">
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-card-foreground truncate">
-                        {inst.contract.customer.name}
+                        {inst.paymentPlan.contract.customer.name}
                       </p>
                       <p className="text-[11px] text-muted-foreground font-latin">
-                        {lang === "ar" ? "وحدة" : "Unit"} {inst.contract.unit.number}
+                        {lang === "ar" ? "وحدة" : "Unit"} {inst.paymentPlan.contract.unit.number}
                         {" · "}
                         {formatDueDate(inst.dueDate, lang)}
                       </p>
