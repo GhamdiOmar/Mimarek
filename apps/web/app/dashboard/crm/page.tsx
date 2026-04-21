@@ -2874,6 +2874,98 @@ export default function CRMPage() {
         />
       )}
 
+
+      {/* ── Lost Reason Modal ── */}
+      <ResponsiveDialog
+        open={showLostModal}
+        onOpenChange={(open) => { if (!open) setShowLostModal(false); }}
+        title={lang === "ar" ? "تحديد سبب الخسارة" : "Mark as Lost"}
+        description={
+          lang === "ar"
+            ? `الرجاء تحديد سبب خسارة العميل "${lostTarget?.name}"`
+            : `Please select why "${lostTarget?.name}" was lost`
+        }
+        footer={
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button
+              variant="secondary"
+              style={{ display: "inline-flex" }}
+              onClick={() => setShowLostModal(false)}
+              disabled={savingLost}
+            >
+              {lang === "ar" ? "إلغاء" : "Cancel"}
+            </Button>
+            <Button
+              variant="danger"
+              style={{ display: "inline-flex" }}
+              className="gap-2"
+              onClick={confirmLost}
+              disabled={!lostReason || savingLost}
+            >
+              {savingLost && <Loader2 className="h-4 w-4 animate-spin" />}
+              {lang === "ar" ? "تأكيد الخسارة" : "Confirm Lost"}
+            </Button>
+          </div>
+        }
+      >
+        <div dir={lang === "ar" ? "rtl" : "ltr"} className="space-y-2 py-2">
+            {LOST_REASONS.map((reason) => (
+              <button
+                key={reason.key}
+                type="button"
+                onClick={() => setLostReason(reason.key)}
+                className={cn(
+                  "w-full text-start px-4 py-3 rounded-lg border text-sm font-medium transition-colors",
+                  lostReason === reason.key
+                    ? "border-destructive/50 bg-destructive/10 text-destructive"
+                    : "border-border bg-card text-foreground hover:bg-muted/30"
+                )}
+                style={{ display: "block" }}
+              >
+                {reason.label[lang]}
+              </button>
+            ))}
+        </div>
+      </ResponsiveDialog>
+
+      {/* ── Delete Dialog ── */}
+      <ResponsiveDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        title={lang === "ar" ? "تأكيد الحذف" : "Confirm Deletion"}
+        description={
+          lang === "ar"
+            ? `هل أنت متأكد من حذف "${deleteTarget?.name}"؟ لا يمكن التراجع عن هذا الإجراء.`
+            : `Are you sure you want to delete "${deleteTarget?.name}"? This action cannot be undone.`
+        }
+        footer={
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button
+              variant="secondary"
+              style={{ display: "inline-flex" }}
+              onClick={() => { setShowDeleteDialog(false); setError(null); }}
+              disabled={deleting}
+            >
+              {lang === "ar" ? "إلغاء" : "Cancel"}
+            </Button>
+            <Button
+              variant="danger"
+              style={{ display: "inline-flex" }}
+              className="gap-2"
+              onClick={confirmDelete}
+              disabled={deleting}
+            >
+              {deleting && <Loader2 className="h-4 w-4 animate-spin" />}
+              {lang === "ar" ? "حذف" : "Delete"}
+            </Button>
+          </div>
+        }
+      >
+        {error && <p className="text-sm text-destructive">{error}</p>}
+      </ResponsiveDialog>
+    </div>
+    </div>
+
       {/* ── Add Modal ── */}
       {showAddModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-300">
@@ -3261,97 +3353,6 @@ export default function CRMPage() {
           </div>
         </div>
       )}
-
-      {/* ── Lost Reason Modal ── */}
-      <ResponsiveDialog
-        open={showLostModal}
-        onOpenChange={(open) => { if (!open) setShowLostModal(false); }}
-        title={lang === "ar" ? "تحديد سبب الخسارة" : "Mark as Lost"}
-        description={
-          lang === "ar"
-            ? `الرجاء تحديد سبب خسارة العميل "${lostTarget?.name}"`
-            : `Please select why "${lostTarget?.name}" was lost`
-        }
-        footer={
-          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-            <Button
-              variant="secondary"
-              style={{ display: "inline-flex" }}
-              onClick={() => setShowLostModal(false)}
-              disabled={savingLost}
-            >
-              {lang === "ar" ? "إلغاء" : "Cancel"}
-            </Button>
-            <Button
-              variant="danger"
-              style={{ display: "inline-flex" }}
-              className="gap-2"
-              onClick={confirmLost}
-              disabled={!lostReason || savingLost}
-            >
-              {savingLost && <Loader2 className="h-4 w-4 animate-spin" />}
-              {lang === "ar" ? "تأكيد الخسارة" : "Confirm Lost"}
-            </Button>
-          </div>
-        }
-      >
-        <div dir={lang === "ar" ? "rtl" : "ltr"} className="space-y-2 py-2">
-            {LOST_REASONS.map((reason) => (
-              <button
-                key={reason.key}
-                type="button"
-                onClick={() => setLostReason(reason.key)}
-                className={cn(
-                  "w-full text-start px-4 py-3 rounded-lg border text-sm font-medium transition-colors",
-                  lostReason === reason.key
-                    ? "border-destructive/50 bg-destructive/10 text-destructive"
-                    : "border-border bg-card text-foreground hover:bg-muted/30"
-                )}
-                style={{ display: "block" }}
-              >
-                {reason.label[lang]}
-              </button>
-            ))}
-        </div>
-      </ResponsiveDialog>
-
-      {/* ── Delete Dialog ── */}
-      <ResponsiveDialog
-        open={showDeleteDialog}
-        onOpenChange={setShowDeleteDialog}
-        title={lang === "ar" ? "تأكيد الحذف" : "Confirm Deletion"}
-        description={
-          lang === "ar"
-            ? `هل أنت متأكد من حذف "${deleteTarget?.name}"؟ لا يمكن التراجع عن هذا الإجراء.`
-            : `Are you sure you want to delete "${deleteTarget?.name}"? This action cannot be undone.`
-        }
-        footer={
-          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-            <Button
-              variant="secondary"
-              style={{ display: "inline-flex" }}
-              onClick={() => { setShowDeleteDialog(false); setError(null); }}
-              disabled={deleting}
-            >
-              {lang === "ar" ? "إلغاء" : "Cancel"}
-            </Button>
-            <Button
-              variant="danger"
-              style={{ display: "inline-flex" }}
-              className="gap-2"
-              onClick={confirmDelete}
-              disabled={deleting}
-            >
-              {deleting && <Loader2 className="h-4 w-4 animate-spin" />}
-              {lang === "ar" ? "حذف" : "Delete"}
-            </Button>
-          </div>
-        }
-      >
-        {error && <p className="text-sm text-destructive">{error}</p>}
-      </ResponsiveDialog>
-    </div>
-    </div>
 
     {/* ── Profile Drawer (shared across mobile + desktop) ── */}
     {drawerCustomer && (
