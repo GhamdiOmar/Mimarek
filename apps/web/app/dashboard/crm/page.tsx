@@ -2291,7 +2291,7 @@ export default function CRMPage() {
         />
       </div>
 
-      <div className="flex-1 px-4 pb-24 pt-3">
+      <div className="flex-1 px-4 py-3">
         {error && (
           <div className="mb-3 flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
             <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
