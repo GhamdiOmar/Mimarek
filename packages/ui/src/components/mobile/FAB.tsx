@@ -43,6 +43,7 @@ export function FAB({
         aria-label={label}
         className={mergedClassName}
         onClick={onClick}
+        style={{ touchAction: "manipulation" }}
       >
         <Icon className="h-6 w-6" aria-hidden="true" />
       </Link>
@@ -55,7 +56,7 @@ export function FAB({
       aria-label={label}
       onClick={onClick}
       className={mergedClassName}
-      style={{ display: "inline-flex" }}
+      style={{ display: "inline-flex", touchAction: "manipulation" }}
     >
       <Icon className="h-6 w-6" aria-hidden="true" />
     </button>
