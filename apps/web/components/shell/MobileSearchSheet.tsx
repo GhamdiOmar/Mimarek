@@ -86,6 +86,7 @@ export function MobileSearchSheet({ open, onOpenChange }: MobileSearchSheetProps
               value={query}
               onChange={(e) => handleInput(e.target.value)}
               placeholder={lang === "ar" ? "بحث عن عميل أو وحدة أو عقد..." : "Search customers, units, contracts..."}
+              aria-label={lang === "ar" ? "بحث" : "Search"}
               className="w-full rounded-md bg-muted/40 py-2 ps-9 pe-9 text-sm outline-none focus:bg-background focus:ring-2 focus:ring-primary/30"
             />
             {query && (
