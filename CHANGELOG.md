@@ -1,26 +1,45 @@
 # Changelog — Mimaric PropTech
 
-## [Unreleased]
+## [4.2.0] — 2026-05-09 — Tenant Portal, Transactional Email & Multi-Org Auth
+
+**Commits:** `6a169d8`, `fe099ba`, `0ebab9c` (3 commits post v4.1.0).
+
+Three interlocking features that complete the tenant-facing surface and lay the email infrastructure foundation.
 
 ### Added
-- **Tenant Portal MVP** (`/portal`) — read-only tenant view with lease summary, documents, and a maintenance request entry point. Mounted in `apps/web` so tenant + management users share the same session/auth surface. New `app/actions/portal.ts` resolves the tenant `Customer` for a logged-in `USER`-role account.
-- **Dual-mode login** — `/auth/login` now discriminates between Management (default) and Tenant Portal via a `?mode=tenant` toggle. Wrong-mode attempts surface a friendly redirect rather than a generic auth error.
-- **Transactional email infrastructure** — Hostinger SMTP via `nodemailer`, encrypted password storage on `SystemConfig`, branded HTML templates (`lib/email-templates.ts`), and a public-URL helper (`lib/app-url.ts`). Wired into the invitation flow so new teammates receive a real invite email.
-- **Admin email settings page** (`/dashboard/admin/email`) — gated by `billing:admin`; lets a system admin configure SMTP host/port/credentials, From identity, and send a live test message. Test runs are logged to `SystemConfig.emailLastTest*` for audit visibility.
-- Codex agent docs (`AGENTS.md`, `.codex/config.toml`) so Codex sessions inherit the same Mimaric guardrails as Claude Code.
+
+- **Tenant Portal MVP** (`/portal`) — read-only tenant view with lease summary, documents, and a maintenance request entry point. Mounted in `apps/web` so tenant and management users share the same session and auth surface. New `app/actions/portal.ts` resolves the logged-in `USER`-role account's `Customer` record.
+- **Dual-mode login** — `/auth/login` now discriminates between Management (default) and Tenant Portal via a `?mode=tenant` toggle. Wrong-mode login attempts surface a friendly redirect rather than a generic auth error.
+- **Transactional email infrastructure** — Hostinger SMTP via `nodemailer`, encrypted password storage on `SystemConfig` (last-4 retained for UI audit display), branded bilingual HTML templates (`lib/email-templates.ts`), and a public-URL helper (`lib/app-url.ts`). Wired into the invitation flow so new teammates receive a real invite email.
+- **Admin email settings page** (`/dashboard/admin/email`) — gated by `billing:admin`; lets a system admin configure SMTP host/port/credentials and From identity, and send a live test message. Test results persisted to `SystemConfig.emailLastTest*` for audit visibility.
+- **Codex agent docs** (`AGENTS.md`, `.codex/config.toml`) — Codex sessions now inherit the same Mimaric guardrails as Claude Code sessions.
 
 ### Changed
-- **`User.organizationId` is now nullable** to support system/platform users without a tenant org. `auth-helpers.ts` exposes a stricter `requireTenantPermission()` companion for actions that must run inside an org context.
+
+- **`User.organizationId` is now nullable** — system/platform users can exist without a tenant org. `auth-helpers.ts` exposes a stricter `requireTenantPermission()` companion for server actions that must run inside an org context.
 - `PaymentPlan.organizationId` and `AuditLog.organizationId` follow suit (nullable).
-- `apps/web/app/dashboard/settings/team/page.tsx` reorganised around the new invitation+email flow.
+- `apps/web/app/dashboard/settings/team/page.tsx` reorganised around the new invitation + email flow.
 - `apps/portal/app/page.tsx` and `apps/portal/app/dashboard/leases/page.tsx` simplified — heavy logic moved to the unified portal in `apps/web/app/portal/`.
+- Office lock files (`~$*`) globally gitignored.
 
 ### Fixed
-- Removed stray PowerPoint lock file (`docs/demo-deck/~$mimaric-demo-ar.pptx`); Office lock files now ignored globally.
+
+- CI: added `DMARC` to cspell allowlist.
+- Removed stray PowerPoint lock file from `docs/demo-deck/`.
 
 ### Migration notes
-- Schema change requires `npm --prefix packages/db exec prisma db push` (per project convention — not migrations).
-- Set SMTP credentials via `/dashboard/admin/email` before relying on transactional email.
+
+- Schema change requires `npm --prefix packages/db exec prisma db push` (project uses push, not migrations).
+- Set SMTP credentials via `/dashboard/admin/email` before relying on transactional email in the invitation flow.
+- System/platform users seeded with `organizationId: null` — re-run seed if local data has system users with an org attached.
+
+### Metrics
+
+- 33 files touched, +1,850 / −727 LOC across portal, email, and auth layers.
+- Build green (`turbo run build` — 2/2 tasks, 37.9s).
+- Schema in sync with Supabase (verified via `prisma db push`).
+
+**Full diff:** https://github.com/GhamdiOmar/Mimaric/compare/v4.1.0...v4.2.0
 
 ---
 
