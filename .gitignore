@@ -48,6 +48,9 @@ yarn-error.log*
 .DS_Store
 *.pem
 
+# Office lock files
+~$*
+
 # MCP config (local)
 .mcp.json
 
