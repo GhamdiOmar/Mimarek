@@ -76,21 +76,30 @@ function toPublicSettings(config: Awaited<ReturnType<typeof db.systemConfig.find
 }
 
 export async function getEmailSettings(): Promise<EmailSettings> {
-  const config = await db.systemConfig.findUnique({ where: { id: "system" } });
-  return toPublicSettings(config);
+  try {
+    const config = await db.systemConfig.findUnique({ where: { id: "system" } });
+    return toPublicSettings(config);
+  } catch {
+    return toPublicSettings(null);
+  }
 }
 
 async function getSecretEmailSettings(): Promise<SecretEmailSettings> {
-  const config = await db.systemConfig.findUnique({ where: { id: "system" } });
-  const settings = toPublicSettings(config);
-
-  if (!config?.smtpPasswordEncrypted) {
-    return { ...settings, smtpPassword: null };
-  }
-
   try {
-    return { ...settings, smtpPassword: decrypt(config.smtpPasswordEncrypted) };
+    const config = await db.systemConfig.findUnique({ where: { id: "system" } });
+    const settings = toPublicSettings(config);
+
+    if (!config?.smtpPasswordEncrypted) {
+      return { ...settings, smtpPassword: null };
+    }
+
+    try {
+      return { ...settings, smtpPassword: decrypt(config.smtpPasswordEncrypted) };
+    } catch {
+      return { ...settings, smtpPassword: null };
+    }
   } catch {
+    const settings = toPublicSettings(null);
     return { ...settings, smtpPassword: null };
   }
 }

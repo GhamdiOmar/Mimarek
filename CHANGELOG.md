@@ -1,5 +1,29 @@
 # Changelog — Mimaric PropTech
 
+## [4.2.1] — 2026-05-09 — Portal a11y, Admin Email SMTP fix, Route hygiene
+
+Patch release targeting three issues deferred from v4.2.0.
+
+### Fixed
+
+- **Admin email SMTP 500 error** — `getEmailSettings()` and `getSecretEmailSettings()` in `lib/email.ts` now wrap `db.systemConfig.findUnique` in try/catch, returning safe defaults when no `SystemConfig` record exists. Previously, a missing record caused two `Failed to load resource: 500` errors on page load (React Strict Mode ran the fetch effect twice). `load()` in `admin/email/page.tsx` now has a proper `catch {}` block so failures degrade gracefully to the defaults form state.
+- **Admin email hydration mismatch** — Added `suppressHydrationWarning` to the `dir`-bearing outer wrapper div in `admin/email/page.tsx`. The `dir` attribute is driven by `useLanguage()` which defaults to `"ar"` on the server but may differ on the client after localStorage is read; the suppression prevents a one-time React reconciliation warning.
+- **Portal a11y — landmark and ARIA structure** — `PortalClient.tsx` now passes axe-core structural checks: skip-to-content link added; `id="main-content"` on the main content wrapper; all three content `<section>` elements carry `aria-labelledby` referencing their `<h3>` headings; document download links carry `aria-label` with filename; the category/priority field group uses `<fieldset>` + `<legend class="sr-only">`; a `role="status" aria-live="polite"` region announces maintenance-request submission results to screen readers.
+- **Route segment hygiene for `admin/email`** — Added `loading.tsx`, `error.tsx`, and `not-found.tsx` to `app/dashboard/admin/email/`, matching every other admin sub-route. `error.tsx` uses the shared `RouteError` primitive (shows `error.digest` only, `console.error`s full error for observability).
+
+### Known remaining
+
+- Portal color-contrast violations (axe-core `2.43–2.47:1` ratio on specific badge and muted-text elements) — the structural fixes above eliminate the majority of the ~101 violations, but semantic-token contrast on the `Badge` `available`/`success`/`info` variants (text on `/10` opacity background) is borderline under WCAG AA for `text-xs` in certain themes. Tracked for v4.3 design-system pass.
+
+### Metrics
+
+- 6 files changed: 3 modified + 3 new route-segment files.
+- TypeScript clean (`tsc --noEmit` green across `apps/web` and `apps/portal`).
+
+**Full diff:** https://github.com/GhamdiOmar/Mimaric/compare/v4.2.0...v4.2.1
+
+---
+
 ## [4.2.0] — 2026-05-09 — Tenant Portal, Transactional Email & Multi-Org Auth
 
 **Commits:** `6a169d8`, `fe099ba`, `0ebab9c` (3 commits post v4.1.0).

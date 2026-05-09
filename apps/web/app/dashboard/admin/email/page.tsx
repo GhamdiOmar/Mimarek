@@ -144,6 +144,7 @@ export default function AdminEmailSettingsPage() {
         emailReplyTo: settings.emailReplyTo ?? "",
         emailTestRecipient: settings.emailTestRecipient ?? "",
       });
+    } catch {
     } finally {
       setLoading(false);
     }
@@ -215,7 +216,7 @@ export default function AdminEmailSettingsPage() {
   }
 
   return (
-    <div className="space-y-6 p-4 md:p-6" dir={dir}>
+    <div className="space-y-6 p-4 md:p-6" dir={dir} suppressHydrationWarning>
       <PageHeader
         title={t.title}
         description={t.description}
