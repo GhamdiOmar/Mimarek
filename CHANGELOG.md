@@ -26,6 +26,9 @@ Three interlocking features that complete the tenant-facing surface and lay the 
 
 - CI: added `DMARC` to cspell allowlist.
 - Removed stray PowerPoint lock file from `docs/demo-deck/`.
+- **a11y:** added `aria-label` to desktop (`AppTopbar`) and mobile (`MobileSearchSheet`) search inputs — resolves unlabelled-input axe violation.
+- **gitignore:** ignore `*.Zone.Identifier` Windows metadata files.
+- **lockfile:** removed stale `"peer": true` entries from `package-lock.json` (npm metadata sync).
 
 ### Migration notes
 
