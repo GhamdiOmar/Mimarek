@@ -2,7 +2,7 @@
 
 import { db } from "@repo/db";
 import { revalidatePath } from "next/cache";
-import { getSessionOrThrow } from "../../lib/auth-helpers";
+import { getTenantSessionOrThrow } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
 import { notifyAdmins } from "../../lib/create-notification";
 
@@ -57,7 +57,7 @@ function isValidVAT(vat: string): boolean {
 // ─── 1. lookupOrgByCR ───────────────────────────────────────────────────────
 
 export async function lookupOrgByCR(crNumber: string) {
-  const session = await getSessionOrThrow();
+  const session = await getTenantSessionOrThrow();
 
   // Rate limit check
   if (checkCRLookupLimit(session.userId)) {
@@ -108,7 +108,7 @@ export async function createJoinRequest(data: {
   crNumber: string;
   reason?: string;
 }) {
-  const session = await getSessionOrThrow();
+  const session = await getTenantSessionOrThrow();
 
   try {
     // Check user isn't already in target org
@@ -177,7 +177,7 @@ export async function createJoinRequest(data: {
 // ─── 3. convertPersonalOrg ──────────────────────────────────────────────────
 
 export async function convertPersonalOrg(crNumber: string) {
-  const session = await getSessionOrThrow();
+  const session = await getTenantSessionOrThrow();
 
   if (!isValidCR(crNumber)) {
     return { success: false, error: "INVALID_CR_FORMAT" };
@@ -222,7 +222,7 @@ export async function updateOnboardingOrg(data: {
   entityType?: string;
   legalForm?: string;
 }) {
-  const session = await getSessionOrThrow();
+  const session = await getTenantSessionOrThrow();
 
   try {
     // Validate CR format if provided
@@ -279,7 +279,7 @@ export async function updateOnboardingContact(data: {
   city?: string;
   region?: string;
 }) {
-  const session = await getSessionOrThrow();
+  const session = await getTenantSessionOrThrow();
 
   try {
     // Fetch current org to merge JSON fields
@@ -331,7 +331,7 @@ export async function updateOnboardingContact(data: {
 // ─── 6. completeOnboarding ──────────────────────────────────────────────────
 
 export async function completeOnboarding() {
-  const session = await getSessionOrThrow();
+  const session = await getTenantSessionOrThrow();
 
   try {
     await db.user.update({
@@ -361,7 +361,7 @@ export async function completeOnboarding() {
 // ─── 7. getMyJoinRequests ───────────────────────────────────────────────────
 
 export async function getMyJoinRequests() {
-  const session = await getSessionOrThrow();
+  const session = await getTenantSessionOrThrow();
 
   try {
     return await db.joinRequest.findMany({

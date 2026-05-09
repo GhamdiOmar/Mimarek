@@ -1,5 +1,29 @@
 # Changelog — Mimaric PropTech
 
+## [Unreleased]
+
+### Added
+- **Tenant Portal MVP** (`/portal`) — read-only tenant view with lease summary, documents, and a maintenance request entry point. Mounted in `apps/web` so tenant + management users share the same session/auth surface. New `app/actions/portal.ts` resolves the tenant `Customer` for a logged-in `USER`-role account.
+- **Dual-mode login** — `/auth/login` now discriminates between Management (default) and Tenant Portal via a `?mode=tenant` toggle. Wrong-mode attempts surface a friendly redirect rather than a generic auth error.
+- **Transactional email infrastructure** — Hostinger SMTP via `nodemailer`, encrypted password storage on `SystemConfig`, branded HTML templates (`lib/email-templates.ts`), and a public-URL helper (`lib/app-url.ts`). Wired into the invitation flow so new teammates receive a real invite email.
+- **Admin email settings page** (`/dashboard/admin/email`) — gated by `billing:admin`; lets a system admin configure SMTP host/port/credentials, From identity, and send a live test message. Test runs are logged to `SystemConfig.emailLastTest*` for audit visibility.
+- Codex agent docs (`AGENTS.md`, `.codex/config.toml`) so Codex sessions inherit the same Mimaric guardrails as Claude Code.
+
+### Changed
+- **`User.organizationId` is now nullable** to support system/platform users without a tenant org. `auth-helpers.ts` exposes a stricter `requireTenantPermission()` companion for actions that must run inside an org context.
+- `PaymentPlan.organizationId` and `AuditLog.organizationId` follow suit (nullable).
+- `apps/web/app/dashboard/settings/team/page.tsx` reorganised around the new invitation+email flow.
+- `apps/portal/app/page.tsx` and `apps/portal/app/dashboard/leases/page.tsx` simplified — heavy logic moved to the unified portal in `apps/web/app/portal/`.
+
+### Fixed
+- Removed stray PowerPoint lock file (`docs/demo-deck/~$mimaric-demo-ar.pptx`); Office lock files now ignored globally.
+
+### Migration notes
+- Schema change requires `npm --prefix packages/db exec prisma db push` (per project convention — not migrations).
+- Set SMTP credentials via `/dashboard/admin/email` before relying on transactional email.
+
+---
+
 ## [4.1.0] — 2026-04-18 — UX Coherence Pass
 
 **Branch:** `release/v4.1-wave-a` (4 commits).

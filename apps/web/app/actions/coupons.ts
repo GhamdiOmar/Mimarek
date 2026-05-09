@@ -2,7 +2,7 @@
 
 import { db } from "@repo/db";
 import { revalidatePath } from "next/cache";
-import { requirePermission, getSessionOrThrow } from "../../lib/auth-helpers";
+import { requirePermission, getTenantSessionOrThrow } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -14,7 +14,7 @@ import { logAuditEvent } from "../../lib/audit";
  * Used during checkout before applying.
  */
 export async function validateCoupon(code: string, planId?: string) {
-  await getSessionOrThrow();
+  await getTenantSessionOrThrow();
 
   const coupon = await db.coupon.findUnique({
     where: { code: code.toUpperCase().trim() },
@@ -66,7 +66,7 @@ export async function validateCoupon(code: string, planId?: string) {
  * Apply a coupon to an invoice and record the redemption.
  */
 export async function applyCoupon(couponId: string, invoiceId: string) {
-  const session = await getSessionOrThrow();
+  const session = await getTenantSessionOrThrow();
 
   const [coupon, invoice] = await Promise.all([
     db.coupon.findUnique({ where: { id: couponId } }),

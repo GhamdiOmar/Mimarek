@@ -29,6 +29,9 @@ const roleLabels: Record<string, { ar: string; en: string }> = {
   // Backward compat
   SUPER_ADMIN: { ar: "مدير الشركة", en: "Company Admin" },
   DEV_ADMIN: { ar: "دعم المنصة", en: "System Support" },
+  ADMIN: { ar: "مدير", en: "Admin" },
+  MANAGER: { ar: "مدير عمليات", en: "Manager" },
+  AGENT: { ar: "وكيل", en: "Agent" },
   PROJECT_MANAGER: { ar: "مدير مشاريع", en: "Project Manager" },
   SALES_MANAGER: { ar: "مدير مبيعات", en: "Sales Manager" },
   SALES_AGENT: { ar: "وكيل مبيعات", en: "Sales Agent" },

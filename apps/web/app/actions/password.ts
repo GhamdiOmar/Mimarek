@@ -6,6 +6,9 @@ import { randomBytes } from "crypto";
 import { getSessionOrThrow } from "../../lib/auth-helpers";
 import { validatePassword } from "../../lib/password-policy";
 import { logAuditEvent } from "../../lib/audit";
+import { getAppUrl } from "../../lib/app-url";
+import { sendTransactionalEmail } from "../../lib/email";
+import { passwordResetEmail } from "../../lib/email-templates";
 
 /**
  * In-memory rate limiter for password reset requests.
@@ -112,8 +115,14 @@ export async function requestPasswordReset(email: string) {
     },
   });
 
-  // TODO: Send password reset email with link: /auth/reset-password?token=${token}
-  // Email service integration needed. Until then, tokens are stored in DB only.
+  const resetUrl = `${getAppUrl()}/auth/reset-password?token=${token}`;
+  const template = passwordResetEmail({ name: user.name, resetUrl });
+  const emailResult = await sendTransactionalEmail({
+    to: user.email,
+    subject: template.subject,
+    html: template.html,
+    text: template.text,
+  });
 
   logAuditEvent({
     userId: user.id,
@@ -121,6 +130,7 @@ export async function requestPasswordReset(email: string) {
     userRole: user.role,
     action: "PASSWORD_RESET_REQUEST",
     resource: "Auth",
+    metadata: { emailSent: emailResult.ok, emailCode: emailResult.code },
     organizationId: user.organizationId,
   });
 

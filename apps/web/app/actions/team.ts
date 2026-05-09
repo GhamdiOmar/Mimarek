@@ -1,13 +1,10 @@
 "use server";
 
-import { db } from "@repo/db";
-import bcrypt from "bcryptjs";
+import { db, type UserRole } from "@repo/db";
 import { revalidatePath } from "next/cache";
 import { requirePermission } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
-import { validatePassword } from "../../lib/password-policy";
 import { isSystemRole } from "../../lib/permissions";
-import { checkLimit, FEATURE_KEYS } from "../../lib/entitlements";
 
 export async function getTeamMembers() {
   const session = await requirePermission("team:read");
@@ -26,55 +23,7 @@ export async function getTeamMembers() {
   });
 }
 
-export async function inviteTeamMember(data: {
-  name: string;
-  email: string;
-  role: any;
-  password: string;
-}) {
-  const session = await requirePermission("team:write");
-
-  // Guard: non-system users cannot assign system roles
-  if (isSystemRole(data.role) && !isSystemRole(session.role)) {
-    throw new Error("You don't have permission to assign system-level roles. Please contact a system administrator.");
-  }
-
-  // Entitlement check: users.max
-  const userCount = await db.user.count({ where: { organizationId: session.organizationId } });
-  const entitlement = await checkLimit(session.organizationId, FEATURE_KEYS.USERS_MAX, userCount);
-  if (!entitlement.granted) {
-    throw new Error(entitlement.reason ?? "Team member limit reached. Please upgrade your plan.");
-  }
-
-  // Validate password strength
-  const validation = validatePassword(data.password, { name: data.name, email: data.email });
-  if (!validation.valid) {
-    throw new Error(validation.errors.map((e) => e.en).join(" "));
-  }
-
-  // Check if email already exists
-  const existing = await db.user.findUnique({ where: { email: data.email } });
-  if (existing) throw new Error("A user with this email address already exists. Please use a different email or check the existing team members.");
-
-  const hashedPassword = await bcrypt.hash(data.password, 12);
-
-  const user = await db.user.create({
-    data: {
-      name: data.name,
-      email: data.email,
-      role: data.role,
-      password: hashedPassword,
-      organizationId: session.organizationId,
-    },
-  });
-
-  logAuditEvent({ userId: session.userId, userEmail: session.email, userRole: session.role, action: "CREATE", resource: "User", resourceId: user.id, metadata: { role: data.role }, organizationId: session.organizationId });
-
-  revalidatePath("/dashboard/settings/team");
-  return { id: user.id, name: user.name, email: user.email, role: user.role };
-}
-
-export async function updateTeamMember(userId: string, data: { role?: any; name?: string }) {
+export async function updateTeamMember(userId: string, data: { role?: UserRole; name?: string }) {
   const session = await requirePermission("team:write");
 
   // Guard: non-system users cannot assign system roles

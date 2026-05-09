@@ -16,8 +16,10 @@ export type AuthSession = {
   email: string;
   name: string | null;
   role: string;
-  organizationId: string;
+  organizationId: string | null;
 };
+
+export type TenantAuthSession = AuthSession & { organizationId: string };
 
 /**
  * Get the authenticated session or throw an error.
@@ -31,13 +33,13 @@ export async function getSessionOrThrow(): Promise<AuthSession> {
   }
 
   // If session already has organizationId (from JWT), use it directly
-  if (session.user.organizationId && session.user.role) {
+  if (session.user.role) {
     return {
       userId: session.user.id,
       email: session.user.email!,
       name: session.user.name ?? null,
       role: session.user.role,
-      organizationId: session.user.organizationId,
+      organizationId: session.user.organizationId ?? null,
     };
   }
 
@@ -47,8 +49,8 @@ export async function getSessionOrThrow(): Promise<AuthSession> {
     select: { organizationId: true, role: true, name: true },
   });
 
-  if (!user?.organizationId) {
-    throw new Error("User has no organization");
+  if (!user) {
+    throw new Error("User not found");
   }
 
   return {
@@ -56,8 +58,16 @@ export async function getSessionOrThrow(): Promise<AuthSession> {
     email: session.user.email!,
     name: user.name ?? session.user.name ?? null,
     role: user.role,
-    organizationId: user.organizationId,
+    organizationId: user.organizationId ?? null,
   };
+}
+
+export async function getTenantSessionOrThrow(): Promise<TenantAuthSession> {
+  const session = await getSessionOrThrow();
+  if (!session.organizationId) {
+    throw new Error("User has no organization");
+  }
+  return session as TenantAuthSession;
 }
 
 /**
@@ -69,7 +79,7 @@ export async function getSessionOrThrow(): Promise<AuthSession> {
  * - System-only permissions reject tenant roles. Tenant roles already lack the
  *   permission, so this is defense-in-depth against permission-matrix drift.
  */
-export async function requirePermission(permission: Permission): Promise<AuthSession> {
+export async function requirePermission(permission: Permission): Promise<TenantAuthSession> {
   const session = await getSessionOrThrow();
   if (!hasPermission(session.role, permission)) {
     throw new Error(`Forbidden: missing permission '${permission}'`);
@@ -81,20 +91,31 @@ export async function requirePermission(permission: Permission): Promise<AuthSes
       `Forbidden: '${permission}' is tenant-scoped — platform users may not invoke this action`,
     );
   }
+  if (TENANT_SCOPED_PERMISSIONS.includes(permission) && !session.organizationId) {
+    throw new Error(`Forbidden: '${permission}' requires an organization context`);
+  }
   if (SYSTEM_ONLY_PERMISSIONS.includes(permission) && !isSystem) {
     throw new Error(
       `Forbidden: '${permission}' is platform-only — tenant users may not invoke this action`,
     );
   }
 
-  return session;
+  return session as TenantAuthSession;
+}
+
+export async function requireTenantPermission(permission: Permission): Promise<TenantAuthSession> {
+  const session = await requirePermission(permission);
+  if (!session.organizationId) {
+    throw new Error(`Forbidden: '${permission}' requires an organization context`);
+  }
+  return session as TenantAuthSession;
 }
 
 /**
  * Get session with a convenience `can()` method for checking permissions inline.
  */
-export async function getSessionWithPermissions(): Promise<AuthSession & { can: (p: Permission) => boolean }> {
-  const session = await getSessionOrThrow();
+export async function getSessionWithPermissions(): Promise<TenantAuthSession & { can: (p: Permission) => boolean }> {
+  const session = await getTenantSessionOrThrow();
   return {
     ...session,
     can: (p: Permission) => hasPermission(session.role, p),

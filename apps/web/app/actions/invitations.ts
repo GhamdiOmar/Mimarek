@@ -4,12 +4,16 @@ import { db } from "@repo/db";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
-import { requirePermission, getSessionOrThrow } from "../../lib/auth-helpers";
+import { requirePermission } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
 import { createNotification } from "../../lib/create-notification";
 import { validatePassword } from "../../lib/password-policy";
 import { isSystemRole } from "../../lib/permissions";
 import { signIn } from "../../auth";
+import { getAppUrl } from "../../lib/app-url";
+import { sendTransactionalEmail } from "../../lib/email";
+import { invitationEmail } from "../../lib/email-templates";
+import { checkLimit, FEATURE_KEYS } from "../../lib/entitlements";
 
 // ─── Invitation Rate Limiter ─────────────────────────────────────────────────
 
@@ -68,6 +72,12 @@ export async function createInvitation(data: { email: string; role?: string }) {
       return { success: false, error: "Cannot assign system-level roles" };
     }
 
+    const userCount = await db.user.count({ where: { organizationId: session.organizationId } });
+    const entitlement = await checkLimit(session.organizationId, FEATURE_KEYS.USERS_MAX, userCount);
+    if (!entitlement.granted) {
+      return { success: false, error: entitlement.reason ?? "Team member limit reached. Please upgrade your plan." };
+    }
+
     // Check if email already belongs to an existing user
     const existingUser = await db.user.findUnique({ where: { email } });
     if (existingUser) {
@@ -99,9 +109,26 @@ export async function createInvitation(data: { email: string; role?: string }) {
         status: "PENDING_INVITE",
         expiresAt,
       },
+      include: {
+        organization: { select: { name: true } },
+        invitedBy: { select: { name: true } },
+      },
     });
 
     recordInviteAttempt(session.organizationId);
+    const inviteUrl = `${getAppUrl()}/auth/invite/${token}`;
+    const template = invitationEmail({
+      inviteUrl,
+      organizationName: invitation.organization.name,
+      inviterName: invitation.invitedBy.name,
+      role: invitation.role,
+    });
+    const emailResult = await sendTransactionalEmail({
+      to: invitation.email,
+      subject: template.subject,
+      html: template.html,
+      text: template.text,
+    });
 
     logAuditEvent({
       userId: session.userId,
@@ -110,7 +137,7 @@ export async function createInvitation(data: { email: string; role?: string }) {
       action: "CREATE",
       resource: "Invitation",
       resourceId: invitation.id,
-      metadata: { invitedEmail: email, role: data.role || "USER" },
+      metadata: { invitedEmail: email, role: data.role || "USER", emailSent: emailResult.ok, emailCode: emailResult.code },
       organizationId: session.organizationId,
     });
 
@@ -118,7 +145,9 @@ export async function createInvitation(data: { email: string; role?: string }) {
 
     return {
       success: true,
-      inviteUrl: `/auth/invite/${token}`,
+      inviteUrl,
+      emailSent: emailResult.ok,
+      emailMessage: emailResult.message,
     };
   } catch (error: any) {
     console.error("[Invitations] createInvitation error:", error);
@@ -370,6 +399,10 @@ export async function resendInvitation(invitationId: string) {
         id: invitationId,
         organizationId: session.organizationId,
       },
+      include: {
+        organization: { select: { name: true } },
+        invitedBy: { select: { name: true } },
+      },
     });
 
     if (!invitation) {
@@ -379,7 +412,7 @@ export async function resendInvitation(invitationId: string) {
     const newToken = crypto.randomUUID();
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
-    await db.invitation.update({
+    const updatedInvitation = await db.invitation.update({
       where: { id: invitationId },
       data: {
         token: newToken,
@@ -389,6 +422,20 @@ export async function resendInvitation(invitationId: string) {
     });
 
     recordInviteAttempt(session.organizationId);
+    const inviteUrl = `${getAppUrl()}/auth/invite/${newToken}`;
+    const template = invitationEmail({
+      inviteUrl,
+      organizationName: invitation.organization.name,
+      inviterName: invitation.invitedBy.name,
+      role: updatedInvitation.role,
+      resend: true,
+    });
+    const emailResult = await sendTransactionalEmail({
+      to: invitation.email,
+      subject: template.subject,
+      html: template.html,
+      text: template.text,
+    });
 
     logAuditEvent({
       userId: session.userId,
@@ -397,7 +444,7 @@ export async function resendInvitation(invitationId: string) {
       action: "UPDATE",
       resource: "Invitation",
       resourceId: invitationId,
-      metadata: { action: "resent", email: invitation.email },
+      metadata: { action: "resent", email: invitation.email, emailSent: emailResult.ok, emailCode: emailResult.code },
       organizationId: session.organizationId,
     });
 
@@ -405,7 +452,9 @@ export async function resendInvitation(invitationId: string) {
 
     return {
       success: true,
-      inviteUrl: `/auth/invite/${newToken}`,
+      inviteUrl,
+      emailSent: emailResult.ok,
+      emailMessage: emailResult.message,
     };
   } catch (error: any) {
     console.error("[Invitations] resendInvitation error:", error);

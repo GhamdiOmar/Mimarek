@@ -84,7 +84,7 @@ export const authConfig = {
       if (token.sub && session.user) {
         session.user.id = token.sub;
         (session.user as any).role = (token.role as string) ?? "USER";
-        (session.user as any).organizationId = (token.organizationId as string) ?? "";
+        (session.user as any).organizationId = (token.organizationId as string | null) ?? null;
         (session.user as any).onboardingCompleted = token.onboardingCompleted ?? true;
         (session.user as any).accountType = token.accountType ?? null;
         (session.user as any).subscriptionStatus = token.subscriptionStatus ?? null;
