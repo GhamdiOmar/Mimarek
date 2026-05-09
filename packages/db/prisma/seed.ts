@@ -163,8 +163,8 @@ async function main() {
 
   await prisma.user.upsert({
     where: { email: "dev_admin@mimaric.sa" },
-    update: { role: "SYSTEM_SUPPORT" },
-    create: { email: "dev_admin@mimaric.sa", name: "Saeed Al-Anzi", password: testPassword, role: "SYSTEM_SUPPORT", organizationId: org.id, onboardingCompleted: true, accountType: "company" },
+    update: { role: "SYSTEM_SUPPORT", organizationId: null },
+    create: { email: "dev_admin@mimaric.sa", name: "Saeed Al-Anzi", password: testPassword, role: "SYSTEM_SUPPORT", organizationId: null, onboardingCompleted: true, accountType: "company" },
   });
   await prisma.user.upsert({
     where: { email: "pm@mimaric.sa" },
@@ -199,14 +199,14 @@ async function main() {
   // System Admin — Mimaric platform admin (for testing system-level ticket management)
   await prisma.user.upsert({
     where: { email: "system@mimaric.sa" },
-    update: { role: "SYSTEM_ADMIN" },
-    create: { email: "system@mimaric.sa", name: "Mimaric System Admin", password: testPassword, role: "SYSTEM_ADMIN", organizationId: org.id, onboardingCompleted: true, accountType: "company" },
+    update: { role: "SYSTEM_ADMIN", organizationId: null },
+    create: { email: "system@mimaric.sa", name: "Mimaric System Admin", password: testPassword, role: "SYSTEM_ADMIN", organizationId: null, onboardingCompleted: true, accountType: "company" },
   });
   // System Support — Mimaric support/engineering team
   await prisma.user.upsert({
     where: { email: "support@mimaric.sa" },
-    update: { role: "SYSTEM_SUPPORT" },
-    create: { email: "support@mimaric.sa", name: "Mimaric Support Agent", password: testPassword, role: "SYSTEM_SUPPORT", organizationId: org.id, onboardingCompleted: true, accountType: "company" },
+    update: { role: "SYSTEM_SUPPORT", organizationId: null },
+    create: { email: "support@mimaric.sa", name: "Mimaric Support Agent", password: testPassword, role: "SYSTEM_SUPPORT", organizationId: null, onboardingCompleted: true, accountType: "company" },
   });
   console.log("Created 9 role test users (7 operational + 2 system)");
 
@@ -558,7 +558,7 @@ async function main() {
         name: "Fahad Al-Tamimi",
         nameArabic: "فهد عبدالرحمن التميمي",
         phone: "0523334455",
-        email: "f.tamimi@gmail.com",
+        email: "tenant@mimaric.sa",
         nationalId: "2087654321",
         personType: "RESIDENT",
         gender: "MALE",

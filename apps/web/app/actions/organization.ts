@@ -2,12 +2,12 @@
 
 import { db } from "@repo/db";
 import { revalidatePath } from "next/cache";
-import { requirePermission, getSessionOrThrow } from "../../lib/auth-helpers";
+import { requirePermission, getTenantSessionOrThrow } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
 
 /** Lightweight org name lookup — any authenticated user can see their own org name */
 export async function getOrgName(): Promise<{ name: string; nameArabic?: string | null; nameEnglish?: string | null } | null> {
-  const session = await getSessionOrThrow();
+  const session = await getTenantSessionOrThrow();
   const org = await db.organization.findUnique({
     where: { id: session.organizationId },
     select: { name: true, nameArabic: true, nameEnglish: true },
@@ -63,6 +63,6 @@ export async function updateOrganization(data: {
 }
 
 export async function clearAppCache() {
-  await getSessionOrThrow();
+  await getTenantSessionOrThrow();
   revalidatePath("/dashboard", "layout");
 }

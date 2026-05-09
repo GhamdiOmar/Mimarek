@@ -12,14 +12,14 @@ export const t = {
     // Hero
     heroTitle: "المنصة السعودية لإدارة العقارات والمرافق",
     heroSubtitle:
-      "أدِر مشاريعك، مبيعاتك، إيجاراتك، وصيانتك — في منصة واحدة متوافقة مع الأنظمة السعودية",
+      "أدِر مشاريعك، مبيعاتك، إيجاراتك، وصيانتك — في منصة واحدة مبنية لبيانات السوق السعودي",
     watchDemo: "شاهد العرض",
 
     // Trust badges
     vision2030Aligned: "متوافق مع رؤية 2030",
-    baladyCompliant: "متوافق مع بلدي",
-    zatcaInvoicing: "فوترة إلكترونية ZATCA",
-    wafiReady: "جاهز لوافي",
+    baladyCompliant: "حقول بلدي جاهزة",
+    zatcaInvoicing: "بيانات فواتير جاهزة لـ ZATCA",
+    wafiReady: "حقول وافي جاهزة",
 
     // Logo bar
     trustedBy: "موثوق من قبل شركات التطوير العقاري في المملكة",
@@ -34,27 +34,27 @@ export const t = {
 
     projectManagement: "إدارة المشاريع",
     projectManagementDesc:
-      "تتبع مشاريعك العقارية من البداية للنهاية مع التوافق الكامل مع أنظمة بلدي",
+      "تتبع مشاريعك العقارية من البداية للنهاية مع حقول بيانات جاهزة لبلدي",
     projectFeature1: "تتبع الصكوك وأرقام القطع",
     projectFeature2: "مراحل البناء والتقدم",
-    projectFeature3: "التوافق مع وافي للبيع على الخارطة",
+    projectFeature3: "حقول جاهزة للبيع على الخارطة ووافي",
     projectFeature4: "إحداثيات الموقع وتصنيف الأراضي",
 
     salesOffplan: "المبيعات والبيع على الخارطة",
     salesOffplanDesc:
-      "أدِر رحلة المشتري بالكامل من الحجز إلى التسليم مع التحقق من هوية العملاء",
+      "أدِر رحلة المشتري بالكامل من الحجز إلى التسليم مع تحقق داخلي من بيانات الهوية",
     salesFeature1: "موجات الإطلاق والحجوزات",
     salesFeature2: "خط سير المبيعات المتكامل",
-    salesFeature3: "التحقق من العملاء عبر أبشر",
+    salesFeature3: "التحقق من صيغة الهوية السعودية",
     salesFeature4: "العقود الرقمية والدفعات",
 
     rentalManagement: "إدارة الإيجارات",
     rentalManagementDesc:
       "تابع عقود الإيجار والمستأجرين والدفعات في مكان واحد",
     rentalFeature1: "إدارة عقود الإيجار",
-    rentalFeature2: "بوابة المستأجر",
+    rentalFeature2: "بوابة مستأجر أساسية",
     rentalFeature3: "تتبع الدفعات التلقائي",
-    rentalFeature4: "التوافق مع إيجار",
+    rentalFeature4: "حقول إيجار وتتبع المراجع يدوياً",
 
     maintenance: "الصيانة (CMMS)",
     maintenanceDesc:
@@ -66,8 +66,8 @@ export const t = {
 
     financeBilling: "المالية والفوترة",
     financeBillingDesc:
-      "فوترة إلكترونية متوافقة مع هيئة الزكاة والضريبة والجمارك",
-    financeFeature1: "فوترة إلكترونية ZATCA",
+      "بيانات فواتير جاهزة لتدفقات ضريبة القيمة المضافة في السعودية",
+    financeFeature1: "بيانات فواتير جاهزة لـ ZATCA",
     financeFeature2: "ضريبة القيمة المضافة 15%",
     financeFeature3: "بوابات الدفع (مدى، فيزا، ماستركارد)",
     financeFeature4: "التقارير المالية والتحليلات",
@@ -81,7 +81,7 @@ export const t = {
       "سير عمل بلا أوراق، منصة سحابية بالكامل، وإدارة ذكية للعقارات",
     regulatoryCompliance: "الامتثال التنظيمي",
     regulatoryComplianceDesc:
-      "متوافق مع وزارة التجارة، بلدي، هيئة الزكاة والضريبة والجمارك، ووافي",
+      "حقول وبيانات منظمة لوزارة التجارة، بلدي، هيئة الزكاة والضريبة والجمارك، ووافي",
     economicDiversification: "التنويع الاقتصادي",
     economicDiversificationDesc:
       "دعم نمو القطاع العقاري وتطوير البنية التحتية الرقمية",
@@ -99,9 +99,9 @@ export const t = {
     // Stats
     statsTitle: "مصمم للعقارات السعودية",
     statVat: "15%",
-    statVatLabel: "ضريبة القيمة المضافة — فوترة متوافقة مع ZATCA",
+    statVatLabel: "ضريبة القيمة المضافة — بيانات فواتير جاهزة",
     statCompliance: "100%",
-    statComplianceLabel: "توافق مع أنظمة بلدي",
+    statComplianceLabel: "حقول بلدي منظمة",
     statTrial: "14",
     statTrialLabel: "يوم تجربة مجانية",
     statPlans: "3",
@@ -113,7 +113,7 @@ export const t = {
     testimonial1Author: "م. خالد العتيبي",
     testimonial1Role: "مدير التطوير — شركة الأفق العقارية",
     testimonial2:
-      "الفوترة الإلكترونية المتوافقة مع ZATCA وفّرت علينا ساعات عمل أسبوعياً.",
+      "تجهيز بيانات الفواتير لضريبة القيمة المضافة وفّر علينا ساعات عمل أسبوعياً.",
     testimonial2Author: "أ. نورة الشمري",
     testimonial2Role: "المدير المالي — مجموعة البناء الحديث",
     testimonial3:
@@ -164,7 +164,7 @@ export const t = {
     faqTitle: "الأسئلة الشائعة",
     faq1Q: "ما هو ميماريك؟",
     faq1A:
-      "ميماريك هو منصة سعودية متكاملة لإدارة العقارات والمرافق. يغطي إدارة المشاريع، المبيعات، الإيجارات، الصيانة، والفوترة — كل ذلك في منصة واحدة متوافقة مع الأنظمة السعودية.",
+      "ميماريك هو منصة سعودية متكاملة لإدارة العقارات والمرافق. يغطي إدارة المشاريع، المبيعات، الإيجارات، الصيانة، والفوترة — كل ذلك في منصة واحدة مع حقول بيانات مناسبة للسوق السعودي.",
     faq2Q: "هل يوجد اشتراك مجاني؟",
     faq2A:
       "نعم! خطة المبتدئ مجانية بالكامل وتشمل حتى 3 مشاريع، 5 مستخدمين، و50 وحدة. يمكنك الترقية في أي وقت.",
@@ -180,9 +180,9 @@ export const t = {
     faq6Q: "هل يمكنني تغيير خطتي؟",
     faq6A:
       "بالتأكيد. يمكنك الترقية أو تغيير خطتك في أي وقت من إعدادات الفوترة. التغييرات تسري فوراً.",
-    faq7Q: "هل ميماريك متوافق مع الأنظمة السعودية؟",
+    faq7Q: "كيف يدعم ميماريك بيانات الأنظمة السعودية؟",
     faq7A:
-      "نعم. ميماريك متوافق مع أنظمة بلدي (رخص البناء)، وزارة التجارة (السجل التجاري)، هيئة الزكاة والضريبة والجمارك (الفوترة الإلكترونية)، ووافي (البيع على الخارطة).",
+      "ميماريك يوفّر حقولاً وتدفقات جاهزة لبيانات بلدي، وزارة التجارة، ZATCA، ووافي. أي تكامل مباشر يُذكر فقط عند تفعيله فعلياً.",
 
     // Final CTA
     finalCtaTitle: "جاهز لتحويل إدارة عقاراتك؟",
@@ -218,14 +218,14 @@ export const t = {
     // Hero
     heroTitle: "The Saudi Platform for Property & Facility Management",
     heroSubtitle:
-      "Manage projects, sales, rentals, and maintenance — all in one platform aligned with Saudi regulations",
+      "Manage projects, sales, rentals, and maintenance — all in one platform structured for Saudi real estate data",
     watchDemo: "Watch Demo",
 
     // Trust badges
     vision2030Aligned: "Vision 2030 Aligned",
-    baladyCompliant: "Balady Compliant",
-    zatcaInvoicing: "ZATCA E-Invoicing",
-    wafiReady: "Wafi Ready",
+    baladyCompliant: "Balady-ready fields",
+    zatcaInvoicing: "ZATCA-ready invoice data",
+    wafiReady: "Wafi-ready fields",
 
     // Logo bar
     trustedBy: "Trusted by real estate developers across Saudi Arabia",
@@ -240,27 +240,27 @@ export const t = {
 
     projectManagement: "Project Management",
     projectManagementDesc:
-      "Track your real estate projects from start to finish with full Balady compliance",
+      "Track your real estate projects from start to finish with Balady-ready data fields",
     projectFeature1: "Deed & parcel number tracking",
     projectFeature2: "Construction stages & progress",
-    projectFeature3: "Wafi compliance for off-plan sales",
+    projectFeature3: "Wafi-ready off-plan fields",
     projectFeature4: "GPS coordinates & land classification",
 
     salesOffplan: "Sales & Off-Plan",
     salesOffplanDesc:
-      "Manage the complete buyer journey from reservation to handover with identity verification",
+      "Manage the complete buyer journey from reservation to handover with Saudi ID validation",
     salesFeature1: "Launch waves & reservations",
     salesFeature2: "Integrated sales pipeline",
-    salesFeature3: "Absher customer verification",
+    salesFeature3: "Saudi ID validation",
     salesFeature4: "Digital contracts & payments",
 
     rentalManagement: "Rental Management",
     rentalManagementDesc:
       "Track leases, tenants, and payments all in one place",
     rentalFeature1: "Lease contract management",
-    rentalFeature2: "Tenant portal",
+    rentalFeature2: "Tenant portal MVP",
     rentalFeature3: "Automated payment tracking",
-    rentalFeature4: "Ejar compliance",
+    rentalFeature4: "Ejar-ready fields and manual reference tracking",
 
     maintenance: "Maintenance (CMMS)",
     maintenanceDesc:
@@ -272,9 +272,9 @@ export const t = {
 
     financeBilling: "Finance & Billing",
     financeBillingDesc:
-      "E-invoicing fully compliant with ZATCA regulations",
-    financeFeature1: "ZATCA e-invoicing",
-    financeFeature2: "15% VAT compliance",
+      "Invoice data prepared for Saudi VAT workflows",
+    financeFeature1: "ZATCA-ready invoice data",
+    financeFeature2: "15% VAT fields",
     financeFeature3: "Payment gateways (mada, Visa, Mastercard)",
     financeFeature4: "Financial reports & analytics",
 
@@ -287,7 +287,7 @@ export const t = {
       "Paperless workflows, fully cloud-based platform, and intelligent property management",
     regulatoryCompliance: "Regulatory Compliance",
     regulatoryComplianceDesc:
-      "Compliant with MOC, Balady, ZATCA, and Wafi regulations",
+      "Structured fields for MOC, Balady, ZATCA, and Wafi workflows",
     economicDiversification: "Economic Diversification",
     economicDiversificationDesc:
       "Supporting real estate sector growth and digital infrastructure development",
@@ -308,9 +308,9 @@ export const t = {
     // Stats
     statsTitle: "Built for Saudi Real Estate",
     statVat: "15%",
-    statVatLabel: "VAT — ZATCA-compliant invoicing",
+    statVatLabel: "VAT — ZATCA-ready invoice data",
     statCompliance: "100%",
-    statComplianceLabel: "Balady regulatory alignment",
+    statComplianceLabel: "Balady-ready project fields",
     statTrial: "14",
     statTrialLabel: "Day free trial",
     statPlans: "3",
@@ -322,7 +322,7 @@ export const t = {
     testimonial1Author: "Eng. Khaled Al-Otaibi",
     testimonial1Role: "Development Director — Al-Ofoq Real Estate",
     testimonial2:
-      "ZATCA-compliant e-invoicing saves us hours of work every week.",
+      "VAT-ready invoice data saves us hours of work every week.",
     testimonial2Author: "Noura Al-Shammari",
     testimonial2Role: "CFO — Modern Construction Group",
     testimonial3:
@@ -373,7 +373,7 @@ export const t = {
     faqTitle: "Frequently Asked Questions",
     faq1Q: "What is Mimaric?",
     faq1A:
-      "Mimaric is a comprehensive Saudi platform for property and facility management. It covers project management, sales, rentals, maintenance, and billing — all in one platform compliant with Saudi regulations.",
+      "Mimaric is a comprehensive Saudi platform for property and facility management. It covers project management, sales, rentals, maintenance, and billing — all in one platform with data fields built for the Saudi market.",
     faq2Q: "Is there a free plan?",
     faq2A:
       "Yes! The Starter plan is completely free and includes up to 3 projects, 5 users, and 50 units. You can upgrade anytime.",
@@ -389,9 +389,9 @@ export const t = {
     faq6Q: "Can I switch plans?",
     faq6A:
       "Absolutely. You can upgrade or change your plan anytime from billing settings. Changes take effect immediately.",
-    faq7Q: "Is Mimaric compliant with Saudi regulations?",
+    faq7Q: "How does Mimaric support Saudi regulatory data?",
     faq7A:
-      "Yes. Mimaric is compliant with Balady (building permits), MOC (commercial registration), ZATCA (e-invoicing), and Wafi (off-plan sales).",
+      "Mimaric provides structured fields and workflows for Balady, MOC, ZATCA, and Wafi data. Direct integrations are described only when they are live.",
 
     // Final CTA
     finalCtaTitle: "Ready to transform your property management?",

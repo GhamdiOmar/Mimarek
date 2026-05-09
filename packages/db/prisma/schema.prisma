@@ -101,8 +101,8 @@ model User {
   name                  String?
   password              String
   role                  UserRole             @default(USER)
-  organizationId        String
-  organization          Organization         @relation(fields: [organizationId], references: [id])
+  organizationId        String?
+  organization          Organization?        @relation(fields: [organizationId], references: [id])
   accountType           String?              // "individual" | "company"
   onboardingCompleted   Boolean              @default(false)
   invitedBy             String?              // userId of the person who invited this user
@@ -382,7 +382,7 @@ model PaymentPlan {
   downPayment    Decimal?
   status         PaymentPlanStatus @default(DRAFT_PLAN)
   installments   PaymentPlanInstallment[]
-  organizationId String
+  organizationId String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }
@@ -704,7 +704,7 @@ model AuditLog {
   changeSnapshot Json?    // RED: {before: {...}, after: {...}} for UPDATE, full payload for CREATE
   fieldChanges   Json?    // RED: [{field, oldValue, newValue}, ...] auto-computed diff
   ipAddress      String?
-  organizationId String
+  organizationId String?
   createdAt      DateTime @default(now())
 
   @@index([organizationId, createdAt])
@@ -1369,6 +1369,23 @@ model SystemConfig {
   schemaOrgTwitter   String?
   schemaOrgLinkedIn  String?
   schemaOrgInstagram String?
+
+  // Transactional Email (Hostinger SMTP)
+  emailProvider          String?   @default("HOSTINGER_SMTP")
+  emailEnabled           Boolean   @default(false)
+  emailFromName          String?
+  emailFromAddress       String?
+  emailReplyTo           String?
+  smtpHost               String?   @default("smtp.hostinger.com")
+  smtpPort               Int?      @default(465)
+  smtpSecure             Boolean   @default(true)
+  smtpUsername           String?
+  smtpPasswordEncrypted  String?   @db.Text
+  smtpPasswordLast4      String?
+  emailTestRecipient     String?
+  emailLastTestAt        DateTime?
+  emailLastTestStatus    String?
+  emailLastTestMessage   String?   @db.Text
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

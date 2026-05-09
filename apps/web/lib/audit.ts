@@ -23,7 +23,7 @@ export interface AuditEventParams {
   resource: string;
   resourceId?: string;
   metadata?: Record<string, unknown>;
-  organizationId: string;
+  organizationId: string | null;
   /** RED: record state before mutation (for UPDATE/DELETE) */
   before?: Record<string, unknown>;
   /** RED: record state after mutation (for CREATE/UPDATE) */

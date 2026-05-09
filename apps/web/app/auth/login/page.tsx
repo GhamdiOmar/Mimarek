@@ -13,11 +13,17 @@ export default function LoginPage() {
   const [lang, setLang] = React.useState<"ar" | "en">("ar");
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
+  const [mode, setMode] = React.useState<"management" | "tenant">("management");
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [rateLimitSeconds, setRateLimitSeconds] = React.useState(0);
   const [showPassword, setShowPassword] = React.useState(false);
   const router = useRouter();
+
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("mode") === "tenant") setMode("tenant");
+  }, []);
 
   React.useEffect(() => {
     if (rateLimitSeconds <= 0) return;
@@ -46,6 +52,14 @@ export default function LoginPage() {
     UNKNOWN_ERROR: {
       ar: "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.",
       en: "An unexpected error occurred. Please try again."
+    },
+    USE_TENANT_MODE: {
+      ar: "هذا الحساب مخصص لبوابة المستأجر. اختر بوابة المستأجر ثم حاول مرة أخرى.",
+      en: "This account belongs to the tenant portal. Select Tenant portal and try again."
+    },
+    USE_MANAGEMENT_MODE: {
+      ar: "هذا الحساب مخصص لإدارة العقارات. اختر إدارة العقارات ثم حاول مرة أخرى.",
+      en: "This account belongs to property management. Select Property management and try again."
     }
   };
 
@@ -56,6 +70,7 @@ export default function LoginPage() {
     const formData = new FormData();
     formData.append("email", email);
     formData.append("password", password);
+    formData.append("mode", mode);
 
     try {
       const result = await loginAction(formData);
@@ -74,7 +89,7 @@ export default function LoginPage() {
         setError(typeof msg === 'string' ? msg : msg[lang]);
         setLoading(false);
       } else {
-        router.push("/dashboard");
+        router.push(result?.redirectTo ?? (mode === "tenant" ? "/portal" : "/dashboard"));
       }
     } catch (err: any) {
       if (err.message?.includes("NEXT_REDIRECT")) return;
@@ -157,6 +172,23 @@ export default function LoginPage() {
             </div>
 
             <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-2 rounded-md bg-muted p-1">
+                <button
+                  type="button"
+                  onClick={() => setMode("management")}
+                  className={`min-h-[44px] rounded px-3 text-sm font-medium transition-colors ${mode === "management" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                >
+                  {lang === "ar" ? "إدارة العقارات" : "Property management"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMode("tenant")}
+                  className={`min-h-[44px] rounded px-3 text-sm font-medium transition-colors ${mode === "tenant" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                >
+                  {lang === "ar" ? "بوابة المستأجر" : "Tenant portal"}
+                </button>
+              </div>
+
               {error && (
                 <div className="p-3 bg-destructive/10 border border-destructive/20 text-destructive text-sm rounded-lg">
                   {error}

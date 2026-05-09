@@ -36,6 +36,7 @@ export const navItems: NavItem[] = [
   { label: { ar: "الاشتراك والفوترة", en: "Billing" }, icon: "Receipt", href: "/dashboard/billing", section: "system", permission: "billing:read", audience: "tenant" },
   { label: { ar: "إدارة المنصة", en: "Admin" }, icon: "ShieldCheck", href: "/dashboard/admin", section: "system", permission: "billing:admin", audience: "platform" },
   { label: { ar: "إعدادات SEO", en: "SEO Settings" }, icon: "SearchCheck", href: "/dashboard/admin/seo", section: "system", permission: "billing:admin", audience: "platform" },
+  { label: { ar: "إعدادات البريد", en: "Email Settings" }, icon: "Mail", href: "/dashboard/admin/email", section: "system", permission: "billing:admin", audience: "platform" },
   { label: { ar: "تذاكر الدعم", en: "Support Tickets" }, icon: "TicketCheck", href: "/dashboard/admin/tickets", section: "system", permission: "billing:admin", audience: "platform" },
   { label: { ar: "الإعدادات", en: "Settings" }, icon: "Settings", href: "/dashboard/settings", section: "system", permission: "organization:read" },
 ];
@@ -59,6 +60,7 @@ export const breadcrumbLabels: Record<string, { ar: string; en: string }> = {
   "invoices": { ar: "الفواتير", en: "Invoices" },
   "admin": { ar: "إدارة المنصة", en: "Admin" },
   "seo": { ar: "إعدادات SEO", en: "SEO Settings" },
+  "email": { ar: "إعدادات البريد", en: "Email Settings" },
   "coupons": { ar: "الكوبونات", en: "Coupons" },
   "subscriptions": { ar: "الاشتراكات", en: "Subscriptions" },
   "help": { ar: "المساعدة", en: "Help" },

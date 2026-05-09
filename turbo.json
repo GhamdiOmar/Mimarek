@@ -1,13 +1,13 @@
 {
   "$schema": "https://turborepo.dev/schema.json",
   "ui": "tui",
-  "globalEnv": ["DATABASE_URL", "AUTH_SECRET", "AUTH_TRUST_HOST", "AUTH_URL", "PII_ENCRYPTION_KEY"],
+  "globalEnv": ["DATABASE_URL", "AUTH_SECRET", "AUTH_TRUST_HOST", "AUTH_URL", "APP_URL", "NEXT_PUBLIC_APP_URL", "NEXTAUTH_URL", "PII_ENCRYPTION_KEY"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "outputs": [".next/**", "!.next/cache/**"],
-      "env": ["DATABASE_URL", "AUTH_SECRET", "AUTH_TRUST_HOST", "AUTH_URL", "NEXT_PUBLIC_API_URL"]
+      "env": ["DATABASE_URL", "AUTH_SECRET", "AUTH_TRUST_HOST", "AUTH_URL", "APP_URL", "NEXT_PUBLIC_APP_URL", "NEXTAUTH_URL", "NEXT_PUBLIC_API_URL"]
     },
     "lint": {
       "dependsOn": ["^lint"]

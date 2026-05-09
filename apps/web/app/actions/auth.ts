@@ -17,16 +17,24 @@ const ALLOWED_LANDING_PAGES = [
 export async function loginAction(formData: FormData) {
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
+  const mode = (formData.get("mode") as string) === "tenant" ? "tenant" : "management";
+  const normalizedEmail = email.toLowerCase().trim();
 
   // Look up user's preferred landing page
   let redirectTo = "/dashboard";
   try {
     const user = await db.user.findUnique({
-      where: { email: email.toLowerCase().trim() },
-      select: { preferences: true },
+      where: { email: normalizedEmail },
+      select: { preferences: true, role: true },
     });
+    if (mode === "tenant") {
+      if (user && user.role !== "USER") return { error: "USE_MANAGEMENT_MODE" };
+      redirectTo = "/portal";
+    } else if (user?.role === "USER") {
+      return { error: "USE_TENANT_MODE" };
+    }
     const prefs = user?.preferences as any;
-    if (prefs?.landingPage && ALLOWED_LANDING_PAGES.includes(prefs.landingPage)) {
+    if (mode === "management" && prefs?.landingPage && ALLOWED_LANDING_PAGES.includes(prefs.landingPage)) {
       redirectTo = prefs.landingPage;
     }
   } catch {}
@@ -35,8 +43,9 @@ export async function loginAction(formData: FormData) {
     await signIn("credentials", {
       email,
       password,
-      redirectTo,
+      redirect: false,
     });
+    return { success: true, redirectTo };
   } catch (error: any) {
     if (error instanceof AuthError) {
       // The error message might be wrapped by NextAuth

@@ -1,40 +1,31 @@
 "use client";
 
-import { useLanguage } from "../../../../components/LanguageProvider";
 import * as React from "react";
+import { ClipboardCopy, Clock, Mail, RotateCcw, Trash2, User, UserPlus, X } from "lucide-react";
+import { toast } from "sonner";
 import {
-  UserPlus,
-  Mail,
-  ShieldCheck,
-  Clock,
-  Trash2,
-  UserCog,
-  X,
-  User,
-} from "lucide-react";
-import {
-  Button,
-  Input,
+  AppBar,
   Badge,
+  Button,
   Card,
   CardContent,
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-  PageHeader,
-  AppBar,
   DataCard,
-  FAB,
   EmptyState,
+  FAB,
+  Input,
+  PageHeader,
   ResponsiveDialog,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@repo/ui";
-import { cn } from "@repo/ui/lib/utils";
-import { getTeamMembers, inviteTeamMember, removeTeamMember } from "../../../actions/team";
-import { hasPermission, CUSTOMER_ASSIGNABLE_ROLES } from "../../../../lib/permissions";
-import { toast } from "sonner";
+import { useLanguage } from "../../../../components/LanguageProvider";
+import { CUSTOMER_ASSIGNABLE_ROLES } from "../../../../lib/permissions";
+import { getTeamMembers, removeTeamMember } from "../../../actions/team";
+import { createInvitation, getOrgInvitations, resendInvitation, revokeInvitation } from "../../../actions/invitations";
 
 type TeamMember = {
   id: string;
@@ -42,379 +33,429 @@ type TeamMember = {
   email: string;
   role: string;
   createdAt: string | Date;
-  updatedAt: string | Date;
 };
 
-const roleLabels: Record<string, string> = {
-  SYSTEM_ADMIN: "System Admin",
-  SYSTEM_SUPPORT: "System Support",
-  COMPANY_ADMIN: "Company Admin",
-  // Backward compat
-  SUPER_ADMIN: "Company Admin",
-  DEV_ADMIN: "System Support",
-  PROJECT_MANAGER: "Project Manager",
-  SALES_MANAGER: "Sales Manager",
-  SALES_AGENT: "Sales Agent",
-  PROPERTY_MANAGER: "Property Manager",
-  FINANCE_OFFICER: "Finance Officer",
-  TECHNICIAN: "Technician",
-  BUYER: "Buyer",
-  TENANT: "Tenant",
-  USER: "User",
+type Invitation = {
+  id: string;
+  email: string;
+  role: string;
+  status: string;
+  expiresAt: string | Date;
+  createdAt: string | Date;
+  invitedBy?: { name: string | null } | null;
 };
 
-// Only customer-assignable roles shown in invite dropdown
-const inviteRoleOptions: { value: string; label: string }[] = CUSTOMER_ASSIGNABLE_ROLES.map((r) => ({
-  value: r,
-  label: roleLabels[r] ?? r,
+const roleLabels: Record<string, { ar: string; en: string }> = {
+  ADMIN: { ar: "مدير", en: "Admin" },
+  MANAGER: { ar: "مدير عمليات", en: "Manager" },
+  AGENT: { ar: "وكيل", en: "Agent" },
+  TECHNICIAN: { ar: "فني صيانة", en: "Technician" },
+  USER: { ar: "مستخدم", en: "User" },
+};
+
+const inviteRoleOptions = CUSTOMER_ASSIGNABLE_ROLES.map((role) => ({
+  value: role,
+  label: roleLabels[role] ?? { ar: role, en: role },
 }));
 
 export default function TeamManagementPage() {
   const { lang } = useLanguage();
+  const dir = lang === "ar" ? "rtl" : "ltr";
   const [members, setMembers] = React.useState<TeamMember[]>([]);
+  const [invitations, setInvitations] = React.useState<Invitation[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [showInvite, setShowInvite] = React.useState(false);
-  const [inviteName, setInviteName] = React.useState("");
   const [inviteEmail, setInviteEmail] = React.useState("");
-  const [inviteRole, setInviteRole] = React.useState("SALES_AGENT");
-  const [invitePassword, setInvitePassword] = React.useState("");
+  const [inviteRole, setInviteRole] = React.useState("AGENT");
+  const [inviteFallbackUrl, setInviteFallbackUrl] = React.useState<string | null>(null);
+  const [removeCandidate, setRemoveCandidate] = React.useState<TeamMember | null>(null);
+  const [busyId, setBusyId] = React.useState<string | null>(null);
   const [inviting, setInviting] = React.useState(false);
   const [inviteError, setInviteError] = React.useState<string | null>(null);
 
-  const fetchTeam = React.useCallback(() => {
-    getTeamMembers()
-      .then((data) => setMembers(data as TeamMember[]))
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, []);
+  const fetchTeam = React.useCallback(async () => {
+    setLoading(true);
+    try {
+      const [teamData, inviteData] = await Promise.all([getTeamMembers(), getOrgInvitations()]);
+      setMembers(teamData as TeamMember[]);
+      setInvitations(inviteData as Invitation[]);
+    } catch (error) {
+      console.error(error);
+      toast.error(lang === "ar" ? "تعذر تحميل الفريق" : "Could not load team");
+    } finally {
+      setLoading(false);
+    }
+  }, [lang]);
 
-  React.useEffect(() => { fetchTeam(); }, [fetchTeam]);
+  React.useEffect(() => {
+    void fetchTeam();
+  }, [fetchTeam]);
 
-  const handleInvite = async () => {
-    if (!inviteName || !inviteEmail || !invitePassword) return;
+  async function handleInvite() {
+    if (!inviteEmail) return;
     setInviting(true);
     setInviteError(null);
+    setInviteFallbackUrl(null);
     try {
-      await inviteTeamMember({ name: inviteName, email: inviteEmail, role: inviteRole, password: invitePassword });
-      setShowInvite(false);
-      setInviteName(""); setInviteEmail(""); setInvitePassword(""); setInviteRole("SALES_AGENT");
-      fetchTeam();
-    } catch (err: any) {
-      setInviteError(
-        err?.message ||
-          (lang === "ar"
-            ? "تعذّر إرسال الدعوة. يرجى التحقق من البيانات والمحاولة مرة أخرى."
-            : "Could not send the invite. Please check the details and try again."),
-      );
+      const result = await createInvitation({ email: inviteEmail, role: inviteRole });
+      if (!result.success) {
+        setInviteError(result.error ?? (lang === "ar" ? "تعذر إرسال الدعوة" : "Could not send invitation"));
+        return;
+      }
+      setInviteFallbackUrl(result.emailSent ? null : result.inviteUrl ?? null);
+      toast.success(result.emailSent ? (lang === "ar" ? "تم إرسال الدعوة" : "Invitation sent") : result.emailMessage);
+      setInviteEmail("");
+      setInviteRole("AGENT");
+      await fetchTeam();
     } finally {
       setInviting(false);
     }
-  };
+  }
 
-  const handleRemove = async (userId: string, name: string | null) => {
-    if (!confirm(`${lang === "ar" ? "هل أنت متأكد من حذف" : "Remove"} ${name}?`)) return;
+  async function handleRemove(userId: string) {
+    setBusyId(userId);
     try {
       await removeTeamMember(userId);
-      fetchTeam();
-    } catch (err: any) {
-      toast.error(
-        lang === "ar"
-          ? "تعذّر إزالة العضو. يُرجى المحاولة مرة أخرى."
-          : "We couldn't remove the team member. Please try again.",
-      );
-      console.error(err);
+      toast.success(lang === "ar" ? "تمت إزالة العضو" : "Team member removed");
+      await fetchTeam();
+    } catch {
+      toast.error(lang === "ar" ? "تعذر إزالة العضو" : "Could not remove team member");
+    } finally {
+      setBusyId(null);
     }
-  };
+  }
+
+  async function handleResend(invitationId: string) {
+    setBusyId(invitationId);
+    try {
+      const result = await resendInvitation(invitationId);
+      if (!result.success) {
+        toast.error(result.error ?? (lang === "ar" ? "تعذر إعادة الإرسال" : "Could not resend invitation"));
+        return;
+      }
+      setInviteFallbackUrl(result.emailSent ? null : result.inviteUrl ?? null);
+      toast.success(result.emailSent ? (lang === "ar" ? "تم إرسال الدعوة مرة أخرى" : "Invitation resent") : result.emailMessage);
+      await fetchTeam();
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleRevoke(invitationId: string) {
+    setBusyId(invitationId);
+    try {
+      const result = await revokeInvitation(invitationId);
+      if (!result.success) {
+        toast.error(result.error ?? (lang === "ar" ? "تعذر إلغاء الدعوة" : "Could not revoke invitation"));
+        return;
+      }
+      toast.success(lang === "ar" ? "تم إلغاء الدعوة" : "Invitation revoked");
+      await fetchTeam();
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function copyFallbackUrl() {
+    if (!inviteFallbackUrl) return;
+    try {
+      await navigator.clipboard.writeText(inviteFallbackUrl);
+      toast.success(lang === "ar" ? "تم نسخ رابط الدعوة" : "Invitation link copied");
+    } catch {
+      toast.error(lang === "ar" ? "تعذر نسخ رابط الدعوة" : "Could not copy the invitation link");
+    }
+  }
 
   const inviteForm = (
     <div className="space-y-4">
-      {inviteError && (
-        <div className="p-3 bg-destructive/10 border border-destructive/30 text-destructive text-sm rounded-lg">
-          {inviteError}
+      {inviteError && <div className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">{inviteError}</div>}
+      {inviteFallbackUrl && (
+        <div className="rounded-md border border-warning/30 bg-warning/10 p-3 text-sm text-foreground">
+          <p className="font-medium">{lang === "ar" ? "البريد غير مكتمل. استخدم الرابط مؤقتاً." : "Email is not configured. Use this fallback link for now."}</p>
+          <Button type="button" variant="secondary" size="sm" className="mt-3" onClick={copyFallbackUrl} style={{ display: "inline-flex" }}>
+            <ClipboardCopy className="h-4 w-4" />
+            {lang === "ar" ? "نسخ رابط الدعوة" : "Copy invite link"}
+          </Button>
         </div>
       )}
-      <div className="space-y-2">
-        <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-          {lang === "ar" ? "الاسم" : "Name"}
-        </label>
-        <Input
-          className="h-11"
-          placeholder={lang === "ar" ? "الاسم" : "Name"}
-          value={inviteName}
-          onChange={(e) => setInviteName(e.target.value)}
-        />
-      </div>
-      <div className="space-y-2">
-        <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-          {lang === "ar" ? "البريد الإلكتروني" : "Email"}
-        </label>
-        <Input
-          type="email"
-          className="h-11"
-          placeholder={lang === "ar" ? "البريد الإلكتروني" : "Email"}
-          value={inviteEmail}
-          onChange={(e) => setInviteEmail(e.target.value)}
-          dir="ltr"
-        />
-      </div>
-      <div className="space-y-2">
-        <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-          {lang === "ar" ? "كلمة المرور" : "Password"}
-        </label>
-        <Input
-          type="password"
-          className="h-11"
-          placeholder={lang === "ar" ? "كلمة المرور" : "Password"}
-          value={invitePassword}
-          onChange={(e) => setInvitePassword(e.target.value)}
-        />
-      </div>
-      <div className="space-y-2">
-        <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-          {lang === "ar" ? "الدور" : "Role"}
-        </label>
-        <select
-          value={inviteRole}
-          onChange={(e) => setInviteRole(e.target.value)}
-          className="h-11 w-full rounded-md border border-border bg-background px-3 text-sm"
-        >
-          {inviteRoleOptions.map(({ value, label }) => (
-            <option key={value} value={value}>{label}</option>
+      <label className="space-y-2 text-sm font-medium">
+        {lang === "ar" ? "البريد الإلكتروني" : "Email"}
+        <Input type="email" value={inviteEmail} onChange={(event) => setInviteEmail(event.target.value)} dir="ltr" placeholder="name@example.com" />
+      </label>
+      <label className="space-y-2 text-sm font-medium">
+        {lang === "ar" ? "الدور" : "Role"}
+        <select value={inviteRole} onChange={(event) => setInviteRole(event.target.value)} className="h-11 w-full rounded-md border border-border bg-background px-3 text-sm">
+          {inviteRoleOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label[lang]}
+            </option>
           ))}
         </select>
-      </div>
-      <Button
-        className="w-full min-h-[44px]"
-        onClick={handleInvite}
-        disabled={inviting || !inviteName || !inviteEmail || !invitePassword}
-        style={{ display: "inline-flex" }}
-      >
-        {inviting
-          ? (lang === "ar" ? "جاري الإضافة..." : "Adding...")
-          : (lang === "ar" ? "إضافة" : "Add Member")}
+      </label>
+      <Button className="min-h-[44px] w-full" onClick={handleInvite} disabled={inviting || !inviteEmail} loading={inviting} style={{ display: "inline-flex" }}>
+        <Mail className="h-4 w-4" />
+        {lang === "ar" ? "إرسال الدعوة" : "Send invitation"}
       </Button>
     </div>
   );
 
+  const pendingInvitations = invitations.filter((invite) => invite.status === "PENDING_INVITE");
+
   return (
     <>
-      {/* ─── Mobile (< md) ─────────────────────────────────────────────── */}
-      <div
-        className="md:hidden -m-4 sm:-m-6 min-h-dvh flex flex-col bg-background"
-        dir={lang === "ar" ? "rtl" : "ltr"}
-      >
-        <AppBar
-          title={lang === "ar" ? "الفريق" : "Team"}
-          subtitle={
-            lang === "ar"
-              ? "أعضاء الفريق والأدوار"
-              : "Team members & roles"
-          }
-          lang={lang}
-        />
-
-        <div className="flex-1 px-4 py-4 pb-28">
+      <div className="md:hidden -m-4 flex min-h-dvh flex-col bg-background sm:-m-6" dir={dir}>
+        <AppBar title={lang === "ar" ? "الفريق" : "Team"} subtitle={lang === "ar" ? "الأعضاء والدعوات" : "Members and invitations"} lang={lang} />
+        <div className="flex-1 space-y-5 px-4 py-4 pb-28">
           {loading ? (
-            <div className="py-12 text-center text-sm text-muted-foreground animate-pulse">
-              {lang === "ar" ? "جاري التحميل..." : "Loading..."}
-            </div>
-          ) : members.length === 0 ? (
-            <EmptyState
-              icon={<User className="h-12 w-12" />}
-              title={lang === "ar" ? "لا يوجد أعضاء" : "No team members"}
-              description={
-                lang === "ar"
-                  ? "ابدأ بدعوة عضو جديد إلى فريقك."
-                  : "Start by inviting a new member to your team."
-              }
-            />
+            <div className="py-12 text-center text-sm text-foreground animate-pulse">{lang === "ar" ? "جاري التحميل..." : "Loading..."}</div>
           ) : (
-            <div className="rounded-lg border border-border bg-card px-4">
-              {members.map((member, idx) => (
-                <DataCard
-                  key={member.id}
-                  icon={User}
-                  iconTone="purple"
-                  title={member.name || member.email}
-                  subtitle={[
-                    <span key="email" className="font-latin">{member.email}</span>,
-                    <span key="joined" className="tabular-nums">
-                      {new Date(member.createdAt).toLocaleDateString(
-                        lang === "ar" ? "ar-SA" : "en-US",
-                        { month: "short", day: "numeric", year: "numeric" },
-                      )}
-                    </span>,
-                  ]}
-                  trailing={
-                    <Badge variant="outline" size="sm">
-                      {roleLabels[member.role] ?? member.role}
-                    </Badge>
-                  }
-                  divider={idx < members.length - 1}
-                />
-              ))}
-            </div>
+            <>
+              <TeamList members={members} lang={lang} onRemove={(member) => setRemoveCandidate(member)} busyId={busyId} compact />
+              <InvitationList invitations={pendingInvitations} lang={lang} onResend={handleResend} onRevoke={handleRevoke} busyId={busyId} />
+            </>
           )}
         </div>
-
-        <FAB
-          icon={UserPlus}
-          label={lang === "ar" ? "دعوة عضو جديد" : "Invite member"}
-          onClick={() => {
-            setInviteError(null);
-            setShowInvite(true);
-          }}
-        />
-
-        <ResponsiveDialog
-          open={showInvite}
-          onOpenChange={(open) => {
-            setShowInvite(open);
-            if (!open) setInviteError(null);
-          }}
-          title={lang === "ar" ? "دعوة عضو جديد" : "Invite New Member"}
-          description={
-            lang === "ar"
-              ? "أدخل بيانات العضو الجديد لإضافته إلى الفريق."
-              : "Enter the new member's details to add them to the team."
-          }
-        >
+        <FAB icon={UserPlus} label={lang === "ar" ? "دعوة عضو" : "Invite member"} onClick={() => setShowInvite(true)} />
+        <ResponsiveDialog open={showInvite} onOpenChange={setShowInvite} title={lang === "ar" ? "دعوة عضو جديد" : "Invite team member"} description={lang === "ar" ? "الدعوة ترسل عبر البريد ويقوم العضو بإنشاء كلمة المرور." : "The invite is sent by email and the member creates their own password."}>
           {inviteForm}
         </ResponsiveDialog>
       </div>
 
-      {/* ─── Desktop (≥ md) ────────────────────────────────────────────── */}
-      <div className="hidden md:block space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="hidden space-y-6 md:block" dir={dir}>
         <PageHeader
           title={lang === "ar" ? "إدارة فريق العمل" : "Team Management"}
-          description={lang === "ar" ? "دعوة الموظفين وتعيين الصلاحيات وإدارة أدوار الفريق." : "Invite staff, assign permissions, and manage team roles."}
+          description={lang === "ar" ? "دعوات آمنة عبر البريد مع روابط قبول منتهية الصلاحية." : "Secure email invitations with expiring acceptance links."}
           actions={
-            <Button size="sm" className="gap-2 bg-secondary hover:bg-green-bright transition-colors" onClick={() => setShowInvite(true)}>
-              <UserPlus className="h-[18px] w-[18px]" />
-              {lang === "ar" ? "دعوة عضو جديد" : "Invite Member"}
+            <Button size="sm" onClick={() => setShowInvite(true)} style={{ display: "inline-flex" }}>
+              <UserPlus className="h-4 w-4" />
+              {lang === "ar" ? "دعوة عضو جديد" : "Invite member"}
             </Button>
           }
         />
 
-        {/* Invite Modal (desktop-inline) */}
         {showInvite && (
-          <Card className="border-secondary/30 p-6">
-            <div className="space-y-4">
+          <Card>
+            <CardContent className="space-y-4 p-5">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold text-foreground">{lang === "ar" ? "دعوة عضو جديد" : "Invite New Member"}</h3>
-                <button onClick={() => setShowInvite(false)} aria-label={lang === "ar" ? "إغلاق" : "Close"}><X className="h-[18px] w-[18px] text-muted-foreground" /></button>
+                <h2 className="text-base font-semibold">{lang === "ar" ? "دعوة عضو جديد" : "Invite team member"}</h2>
+                <button type="button" onClick={() => setShowInvite(false)} aria-label={lang === "ar" ? "إغلاق" : "Close"} className="rounded-md p-2 hover:bg-muted">
+                  <X className="h-4 w-4" />
+                </button>
               </div>
-              {inviteError && (
-                <div className="p-3 bg-destructive/10 border border-destructive/30 text-destructive text-sm rounded-lg">
-                  {inviteError}
-                </div>
-              )}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Input placeholder={lang === "ar" ? "الاسم" : "Name"} value={inviteName} onChange={(e) => setInviteName(e.target.value)} />
-                <Input type="email" placeholder={lang === "ar" ? "البريد الإلكتروني" : "Email"} value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} />
-                <Input type="password" placeholder={lang === "ar" ? "كلمة المرور" : "Password"} value={invitePassword} onChange={(e) => setInvitePassword(e.target.value)} />
-                <select value={inviteRole} onChange={(e) => setInviteRole(e.target.value)} className="rounded border border-border px-3 py-2 text-sm">
-                  {inviteRoleOptions.map(({ value, label }) => (
-                    <option key={value} value={value}>{label}</option>
+              <div className="grid gap-4 md:grid-cols-[1fr_220px_auto]">
+                <Input type="email" value={inviteEmail} onChange={(event) => setInviteEmail(event.target.value)} placeholder="name@example.com" dir="ltr" />
+                <select value={inviteRole} onChange={(event) => setInviteRole(event.target.value)} className="h-10 rounded-md border border-border bg-background px-3 text-sm">
+                  {inviteRoleOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label[lang]}
+                    </option>
                   ))}
                 </select>
+                <Button onClick={handleInvite} loading={inviting} disabled={!inviteEmail} style={{ display: "inline-flex" }}>
+                  <Mail className="h-4 w-4" />
+                  {lang === "ar" ? "إرسال الدعوة" : "Send invitation"}
+                </Button>
               </div>
-              <Button className="bg-secondary" onClick={handleInvite} disabled={inviting}>
-                {inviting ? "..." : (lang === "ar" ? "إضافة" : "Add Member")}
-              </Button>
-            </div>
+              {inviteError && <div className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">{inviteError}</div>}
+              {inviteFallbackUrl && (
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-warning/30 bg-warning/10 p-3 text-sm">
+                  <span>{lang === "ar" ? "البريد غير مكتمل. استخدم الرابط مؤقتاً." : "Email is not configured. Use this fallback link for now."}</span>
+                  <Button type="button" variant="secondary" size="sm" onClick={copyFallbackUrl} style={{ display: "inline-flex" }}>
+                    <ClipboardCopy className="h-4 w-4" />
+                    {lang === "ar" ? "نسخ الرابط" : "Copy link"}
+                  </Button>
+                </div>
+              )}
+            </CardContent>
           </Card>
         )}
 
-        {/* Table */}
-        <Card className="overflow-hidden">
-          <Table className="text-start">
-            <TableHeader>
-              <TableRow>
-                <TableHead className="font-latin">{lang === "ar" ? "العضو" : "Member"}</TableHead>
-                <TableHead className="font-latin">{lang === "ar" ? "الدور" : "Role"}</TableHead>
-                <TableHead className="font-latin">{lang === "ar" ? "تاريخ الانضمام" : "Joined"}</TableHead>
-                <TableHead className="text-center font-latin">{lang === "ar" ? "إجراءات" : "Actions"}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody className="divide-y divide-border">
-              {loading ? (
-                <TableRow><TableCell colSpan={4} className="py-12 text-center text-muted-foreground text-sm animate-pulse">{lang === "ar" ? "جاري التحميل..." : "Loading..."}</TableCell></TableRow>
-              ) : members.length === 0 ? (
-                <TableRow><TableCell colSpan={4} className="py-12 text-center text-muted-foreground text-sm">{lang === "ar" ? "لا يوجد أعضاء" : "No team members"}</TableCell></TableRow>
-              ) : members.map((member) => (
-                <TableRow key={member.id} className="group">
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full bg-primary/5 flex items-center justify-center text-primary group-hover:bg-primary/10 transition-colors">
-                        <span className="text-xs font-bold uppercase font-latin">{(member.name ?? "?").split(' ').map(n => n[0]).join('')}</span>
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-foreground">{member.name}</p>
-                        <p className="text-[10px] text-muted-foreground font-latin">{member.email}</p>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-col gap-1.5">
-                      <div className="flex items-center gap-2">
-                        <UserCog className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-xs font-semibold text-foreground font-latin">{roleLabels[member.role] ?? member.role}</span>
-                      </div>
-                      <div className="flex flex-wrap gap-1">
-                        {hasPermission(member.role, "customers:read_pii") && (
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-success/15 text-success">{lang === "ar" ? "بيانات شخصية" : "PII Access"}</span>
-                        )}
-                        {hasPermission(member.role, "customers:export") && (
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-info/15 text-info">{lang === "ar" ? "تصدير" : "Export"}</span>
-                        )}
-                        {hasPermission(member.role, "finance:read") && (
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-warning/15 text-warning">{lang === "ar" ? "مالية" : "Finance"}</span>
-                        )}
-                        {hasPermission(member.role, "audit:read") && (
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-primary/15 text-primary">{lang === "ar" ? "مراجعة" : "Audit"}</span>
-                        )}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2 text-[10px] text-muted-foreground font-latin">
-                      <Clock className="h-3.5 w-3.5" />
-                      {new Date(member.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button variant="secondary" size="icon" className="h-11 w-11 sm:h-8 sm:w-8 rounded shadow-sm hover:text-destructive" onClick={() => handleRemove(member.id, member.name)} aria-label={lang === "ar" ? "إزالة" : "Remove"}>
-                        <Trash2 className="h-[18px] w-[18px]" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </Card>
-
-        {/* Help Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {[
-            { title: { ar: "الأدوار والصلاحيات", en: "Roles & Permissions" }, desc: { ar: "إدارة من يمكنه رؤية البيانات الحساسة أو تعديل الأسعار.", en: "Manage who can see sensitive data or modify prices." }, icon: ShieldCheck },
-            { title: { ar: "تقارير النشاط", en: "Activity Reports" }, desc: { ar: "تتبع نشاط الفريق والمهام المنجزة في النظام.", en: "Track team activity and completed tasks." }, icon: UserCog },
-            { title: { ar: "نظام الدعوات", en: "Invitation System" }, desc: { ar: "دعوة آمنة عبر البريد الإلكتروني مع انتهاء تلقائي.", en: "Secure email invitations with auto-expiry." }, icon: Mail },
-          ].map((item, i) => (
-            <Card key={i} className="p-6 flex items-start gap-4 hover:border-secondary/20 transition-all">
-              <div className="p-3 bg-secondary/10 rounded text-secondary">
-                <item.icon className="h-6 w-6" />
-              </div>
-              <div>
-                <h4 className="text-sm font-bold text-foreground">{item.title[lang]}</h4>
-                <p className="text-[10px] text-muted-foreground mt-1 leading-relaxed">{item.desc[lang]}</p>
-              </div>
-            </Card>
-          ))}
-        </div>
+        <TeamList members={members} lang={lang} onRemove={(member) => setRemoveCandidate(member)} busyId={busyId} loading={loading} />
+        <InvitationList invitations={pendingInvitations} lang={lang} onResend={handleResend} onRevoke={handleRevoke} busyId={busyId} />
       </div>
+
+      <ResponsiveDialog
+        open={Boolean(removeCandidate)}
+        onOpenChange={(open) => {
+          if (!open) setRemoveCandidate(null);
+        }}
+        title={lang === "ar" ? "إزالة عضو الفريق" : "Remove team member"}
+        description={
+          lang === "ar"
+            ? "سيتم إلغاء وصول هذا العضو إلى مساحة العمل. يمكن دعوته مرة أخرى لاحقاً."
+            : "This removes the member's access to this workspace. You can invite them again later."
+        }
+      >
+        <div className="space-y-4">
+          <div className="rounded-md border border-border bg-muted/40 p-3 text-sm">
+            <p className="font-medium">{removeCandidate?.name ?? removeCandidate?.email}</p>
+            <p className="text-foreground">{removeCandidate?.email}</p>
+          </div>
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button type="button" variant="secondary" onClick={() => setRemoveCandidate(null)} style={{ display: "inline-flex" }}>
+              {lang === "ar" ? "إلغاء" : "Cancel"}
+            </Button>
+            <Button
+              type="button"
+              variant="danger"
+              loading={Boolean(removeCandidate && busyId === removeCandidate.id)}
+              onClick={async () => {
+                if (!removeCandidate) return;
+                await handleRemove(removeCandidate.id);
+                setRemoveCandidate(null);
+              }}
+              style={{ display: "inline-flex" }}
+            >
+              <Trash2 className="h-4 w-4" />
+              {lang === "ar" ? "إزالة العضو" : "Remove member"}
+            </Button>
+          </div>
+        </div>
+      </ResponsiveDialog>
     </>
+  );
+}
+
+function TeamList({
+  members,
+  lang,
+  onRemove,
+  busyId,
+  loading = false,
+  compact = false,
+}: {
+  members: TeamMember[];
+  lang: "ar" | "en";
+  onRemove: (member: TeamMember) => void;
+  busyId: string | null;
+  loading?: boolean;
+  compact?: boolean;
+}) {
+  if (compact) {
+    if (!members.length) return <EmptyState icon={<User className="h-12 w-12" />} title={lang === "ar" ? "لا يوجد أعضاء" : "No team members"} description={lang === "ar" ? "ابدأ بإرسال دعوة." : "Start by sending an invitation."} />;
+    return (
+      <div className="rounded-lg border border-border bg-card px-4">
+        {members.map((member, index) => (
+          <DataCard
+            key={member.id}
+            icon={User}
+            iconTone="purple"
+            title={member.name || member.email}
+            subtitle={[member.email]}
+            trailing={
+              <div className="flex items-center gap-2">
+                <Badge variant="outline">{roleLabels[member.role]?.[lang] ?? member.role}</Badge>
+                <Button variant="secondary" size="icon" className="h-11 w-11" onClick={() => onRemove(member)} aria-label={lang === "ar" ? "إزالة" : "Remove"} style={{ display: "inline-flex" }}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            }
+            divider={index < members.length - 1}
+          />
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <Card className="overflow-hidden">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>{lang === "ar" ? "العضو" : "Member"}</TableHead>
+            <TableHead>{lang === "ar" ? "الدور" : "Role"}</TableHead>
+            <TableHead>{lang === "ar" ? "تاريخ الانضمام" : "Joined"}</TableHead>
+            <TableHead className="text-center">{lang === "ar" ? "إجراءات" : "Actions"}</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {loading ? (
+            <TableRow>
+              <TableCell colSpan={4} className="py-12 text-center text-sm text-foreground animate-pulse">{lang === "ar" ? "جاري التحميل..." : "Loading..."}</TableCell>
+            </TableRow>
+          ) : members.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={4} className="py-12 text-center text-sm text-foreground">{lang === "ar" ? "لا يوجد أعضاء" : "No team members"}</TableCell>
+            </TableRow>
+          ) : (
+            members.map((member) => (
+              <TableRow key={member.id}>
+                <TableCell>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+                      <User className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold">{member.name ?? member.email}</p>
+                      <p className="text-xs text-foreground">{member.email}</p>
+                    </div>
+                  </div>
+                </TableCell>
+                <TableCell><Badge variant="outline">{roleLabels[member.role]?.[lang] ?? member.role}</Badge></TableCell>
+                <TableCell className="text-sm text-foreground">{new Date(member.createdAt).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-US")}</TableCell>
+                <TableCell className="text-center">
+                  <Button variant="secondary" size="icon" onClick={() => onRemove(member)} loading={busyId === member.id} aria-label={lang === "ar" ? "إزالة" : "Remove"} style={{ display: "inline-flex" }}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))
+          )}
+        </TableBody>
+      </Table>
+    </Card>
+  );
+}
+
+function InvitationList({
+  invitations,
+  lang,
+  onResend,
+  onRevoke,
+  busyId,
+}: {
+  invitations: Invitation[];
+  lang: "ar" | "en";
+  onResend: (id: string) => void;
+  onRevoke: (id: string) => void;
+  busyId: string | null;
+}) {
+  return (
+    <Card>
+      <CardContent className="space-y-4 p-5">
+        <div>
+          <h2 className="text-base font-semibold">{lang === "ar" ? "الدعوات المعلقة" : "Pending invitations"}</h2>
+          <p className="text-sm text-foreground">{lang === "ar" ? "يمكن إعادة إرسال الدعوات أو إلغاؤها من هنا." : "Resend or revoke email invitations from here."}</p>
+        </div>
+        {invitations.length === 0 ? (
+          <div className="rounded-md border border-dashed border-border p-6 text-center text-sm text-foreground">{lang === "ar" ? "لا توجد دعوات معلقة" : "No pending invitations"}</div>
+        ) : (
+          <div className="space-y-3">
+            {invitations.map((invitation) => (
+              <div key={invitation.id} className="flex flex-col gap-3 rounded-md border border-border p-3 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <p className="font-medium">{invitation.email}</p>
+                  <p className="mt-1 flex items-center gap-2 text-xs text-foreground">
+                    <Clock className="h-3.5 w-3.5" />
+                    {lang === "ar" ? "تنتهي في" : "Expires"} {new Date(invitation.expiresAt).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-US")}
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant="outline">{roleLabels[invitation.role]?.[lang] ?? invitation.role}</Badge>
+                  <Button variant="secondary" size="sm" onClick={() => onResend(invitation.id)} loading={busyId === invitation.id} style={{ display: "inline-flex" }}>
+                    <RotateCcw className="h-4 w-4" />
+                    {lang === "ar" ? "إعادة إرسال" : "Resend"}
+                  </Button>
+                  <Button variant="danger" size="sm" onClick={() => onRevoke(invitation.id)} loading={busyId === invitation.id} style={{ display: "inline-flex" }}>
+                    <Trash2 className="h-4 w-4" />
+                    {lang === "ar" ? "إلغاء" : "Revoke"}
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
