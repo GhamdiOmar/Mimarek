@@ -120,6 +120,7 @@ export function AppTopbar({ onMenuClick }: { onMenuClick: () => void }) {
             onFocus={() => searchResults && setShowSearch(true)}
             onBlur={() => setTimeout(() => setShowSearch(false), 200)}
             placeholder={lang === "ar" ? "بحث..." : "Search..."}
+            aria-label={lang === "ar" ? "بحث" : "Search"}
             className="w-full bg-muted/40 border border-transparent rounded-md py-2 ps-9 pe-3 text-sm focus:bg-background focus:border-border focus:ring-2 focus:ring-ring/20 transition-all outline-none placeholder:text-muted-foreground"
           />
           {showSearch && searchResults && (
