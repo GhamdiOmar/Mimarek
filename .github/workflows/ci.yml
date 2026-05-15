@@ -52,7 +52,6 @@ jobs:
         run: cd apps/web && npx playwright install --with-deps
 
       - name: Run Playwright Tests
-        continue-on-error: true  # E2E tests require a seeded database and running dev server
         run: cd apps/web && npx playwright test
 
       - name: Upload Playwright Artifacts

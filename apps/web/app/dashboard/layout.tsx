@@ -1,4 +1,4 @@
-import { auth } from "../../auth";
+import { requireTenant } from "../../lib/auth-helpers";
 import DashboardClientLayout from "./DashboardClientLayout";
 
 export default async function DashboardLayout({
@@ -6,7 +6,7 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth();
+  const session = await requireTenant();
   return (
     <DashboardClientLayout session={session}>
       {children}

@@ -119,17 +119,17 @@ cp .env.example .env.local
 
 `AUTH_SECRET` can be generated with `openssl rand -base64 32`.
 
-### 3. Push schema & seed
-
-> The DB uses `prisma db push` (no migrations) because of schema drift from initial setup.
+### 3. Apply migrations & seed
 
 ```bash
 npx turbo run db:generate         # generate Prisma client
 cd packages/db
-npx prisma db push                # sync schema to database
+npx prisma migrate dev            # apply all pending migrations (creates baseline on first run)
 npx prisma db seed                # seed test users + sample tenant data
 cd ../..
 ```
+
+> **Note:** The repo tracks a full migration history under `packages/db/prisma/migrations/`. Always use `prisma migrate dev` (local) or `prisma migrate deploy` (CI/prod) — never `db push`, which bypasses migration tracking.
 
 The seed script (`packages/db/prisma/seed.ts`) creates one account per role for local development. Credentials are local-only and not documented here; read the seed file if you need them.
 
@@ -191,7 +191,7 @@ See [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
 ## Project conventions
 
 - **Server Actions, not REST.** All data operations are Next.js Server Actions with `organizationId` scoping.
-- **`prisma db push`, not migrations.** Schema is managed in-place; the DB has drift from initial setup.
+- **`prisma migrate dev/deploy`, not `db push`.** Schema changes are tracked as versioned migrations under `packages/db/prisma/migrations/`. Use `prisma migrate dev` locally and `prisma migrate deploy` in CI/prod.
 - **Decimal handling.** Prisma `Decimal` is serialized via `JSON.parse(JSON.stringify(…))` before crossing the Server Action boundary.
 - **UI-first principle.** Every feature, CRUD action, and server action must be reachable from a nav link or button — no orphan URLs.
 - **Commits.** Single author (Omar Alghamdi). No Co-Authored-By attribution.

@@ -2,8 +2,21 @@
 
 import { db } from "@repo/db";
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 import { requirePermission } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
+
+const CreateMaintenanceRequestSchema = z.object({
+  title: z.string().min(1),
+  description: z.string().optional(),
+  category: z.string().optional(),
+  priority: z.enum(["URGENT", "HIGH", "MEDIUM", "LOW"]).optional(),
+  unitId: z.string().cuid(),
+  assignedToId: z.string().cuid().optional(),
+  scheduledDate: z.string().optional(),
+  estimatedCost: z.number().nonnegative().optional(),
+  notes: z.string().optional(),
+});
 
 // ─── SLA Due Date Computation ─────────────────────────────────────────────────
 
@@ -46,22 +59,46 @@ export async function createMaintenanceRequest(data: {
   estimatedCost?: number;
   notes?: string;
 }) {
+  const parsed = CreateMaintenanceRequestSchema.safeParse(data);
+  if (!parsed.success) {
+    throw new Error("Invalid input: " + parsed.error.issues.map(i => i.message).join(", "));
+  }
+
   const session = await requirePermission("maintenance:write");
-  const priority = data.priority ?? "MEDIUM";
+  const priority = parsed.data.priority ?? "MEDIUM";
+
+  // Validate referenced records belong to the same org before creating
+  const unit = await db.unit.findFirst({
+    where: { id: parsed.data.unitId, organizationId: session.organizationId },
+    select: { id: true },
+  });
+  if (!unit) {
+    throw new Error("Unit not found or you don't have access. Please verify the unit exists in your organization.");
+  }
+
+  if (parsed.data.assignedToId) {
+    const assignee = await db.user.findFirst({
+      where: { id: parsed.data.assignedToId, organizationId: session.organizationId },
+      select: { id: true },
+    });
+    if (!assignee) {
+      throw new Error("Assigned user not found or does not belong to your organization.");
+    }
+  }
 
   const request = await db.maintenanceRequest.create({
     data: {
-      title: data.title,
-      description: data.description,
-      category: (data.category as any) ?? "GENERAL",
+      title: parsed.data.title,
+      description: parsed.data.description,
+      category: (parsed.data.category as any) ?? "GENERAL",
       priority: priority as any,
-      unitId: data.unitId,
-      assignedToId: data.assignedToId || undefined,
-      status: data.assignedToId ? ("ASSIGNED" as any) : "OPEN",
-      scheduledDate: data.scheduledDate ? new Date(data.scheduledDate) : undefined,
+      unitId: parsed.data.unitId,
+      assignedToId: parsed.data.assignedToId || undefined,
+      status: parsed.data.assignedToId ? ("ASSIGNED" as any) : "OPEN",
+      scheduledDate: parsed.data.scheduledDate ? new Date(parsed.data.scheduledDate) : undefined,
       dueDate: computeDueDate(priority),
-      estimatedCost: data.estimatedCost,
-      notes: data.notes,
+      estimatedCost: parsed.data.estimatedCost,
+      notes: parsed.data.notes,
       organizationId: session.organizationId,
     },
   });
@@ -79,6 +116,8 @@ export async function getMaintenanceRequests(filters?: {
   unitId?: string;
   search?: string;
   overdue?: boolean;
+  page?: number;
+  pageSize?: number;
 }) {
   const session = await requirePermission("maintenance:read");
 
@@ -95,6 +134,10 @@ export async function getMaintenanceRequests(filters?: {
     where.status = { notIn: ["RESOLVED", "CLOSED"] };
   }
 
+  const page = Math.max(1, filters?.page ?? 1);
+  const pageSize = Math.min(100, Math.max(1, filters?.pageSize ?? 50));
+  const skip = (page - 1) * pageSize;
+
   const results = await db.maintenanceRequest.findMany({
     where,
     include: {
@@ -102,6 +145,8 @@ export async function getMaintenanceRequests(filters?: {
       assignedTo: { select: { id: true, name: true } },
     },
     orderBy: { createdAt: "desc" },
+    skip,
+    take: pageSize,
   });
   return JSON.parse(JSON.stringify(results));
 }
@@ -278,23 +323,6 @@ export async function getMaintenanceForUnit(unitId: string) {
   const results = await db.maintenanceRequest.findMany({
     where: { unitId, organizationId: session.organizationId },
     include: {
-      assignedTo: { select: { id: true, name: true } },
-    },
-    orderBy: { createdAt: "desc" },
-  });
-  return JSON.parse(JSON.stringify(results));
-}
-
-// ─── Get Maintenance for Project ──────────────────────────────────────────────
-
-export async function getMaintenanceForProject(_projectId: string) {
-  const session = await requirePermission("maintenance:read");
-
-  // Building model removed — return all org maintenance requests
-  const results = await db.maintenanceRequest.findMany({
-    where: { organizationId: session.organizationId },
-    include: {
-      unit: true,
       assignedTo: { select: { id: true, name: true } },
     },
     orderBy: { createdAt: "desc" },
