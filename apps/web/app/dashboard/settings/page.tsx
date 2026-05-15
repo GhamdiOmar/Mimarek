@@ -535,7 +535,6 @@ export default function OrgSettingsPage() {
                         className="h-11 w-full rounded-md border border-border bg-background px-3 text-sm"
                       >
                         <option value="/dashboard">{lang === "ar" ? "نظرة عامة" : "Overview"}</option>
-                        <option value="/dashboard/projects">{lang === "ar" ? "المشاريع" : "Projects"}</option>
                         <option value="/dashboard/units">{lang === "ar" ? "الوحدات" : "Units"}</option>
                         <option value="/dashboard/crm">{lang === "ar" ? "العملاء" : "Customers"}</option>
                         <option value="/dashboard/contracts">{lang === "ar" ? "المبيعات" : "Sales"}</option>
@@ -1283,9 +1282,6 @@ export default function OrgSettingsPage() {
             >
               <option value="/dashboard">
                 {lang === "ar" ? "نظرة عامة" : "Overview"}
-              </option>
-              <option value="/dashboard/projects">
-                {lang === "ar" ? "المشاريع" : "Projects"}
               </option>
               <option value="/dashboard/units">
                 {lang === "ar" ? "الوحدات" : "Units"}
