@@ -1,6 +1,6 @@
 "use server";
 
-import { db } from "@repo/db";
+import { db, CustomerStatus } from "@repo/db";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requirePermission, getSessionWithPermissions } from "../../lib/auth-helpers";
@@ -59,7 +59,7 @@ export async function updateCustomerStatus(customerId: string, status: any, lost
   if (validatedStatus === "LOST") {
     await db.$transaction(async (tx) => {
       const activeReservations = await tx.reservation.findMany({
-        where: { customerId: existing.id, organizationId: session.organizationId, status: { in: ["PENDING", "CONFIRMED"] } },
+        where: { customerId: existing.id, status: { in: ["PENDING", "CONFIRMED"] } },
         select: { id: true, unitId: true },
       });
       for (const res of activeReservations) {
@@ -72,7 +72,7 @@ export async function updateCustomerStatus(customerId: string, status: any, lost
       });
       await tx.customer.update({
         where: { id: existing.id },
-        data: { status: validatedStatus, ...(resolvedLostReason !== undefined ? { lostReason: resolvedLostReason } : {}) },
+        data: { status: validatedStatus as CustomerStatus, ...(resolvedLostReason !== undefined ? { lostReason: resolvedLostReason } : {}) },
       });
     });
 
@@ -83,7 +83,7 @@ export async function updateCustomerStatus(customerId: string, status: any, lost
 
   const customer = await db.customer.update({
     where: { id: customerId, organizationId: session.organizationId },
-    data: { status: validatedStatus, ...(resolvedLostReason !== undefined ? { lostReason: resolvedLostReason } : {}) },
+    data: { status: validatedStatus as CustomerStatus, ...(resolvedLostReason !== undefined ? { lostReason: resolvedLostReason } : {}) },
   });
 
   logAuditEvent({ userId: session.userId, userEmail: session.email, userRole: session.role, action: "UPDATE", resource: "Customer", resourceId: customerId, metadata: { field: "status", newStatus: validatedStatus }, organizationId: session.organizationId });
