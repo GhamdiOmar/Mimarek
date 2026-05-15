@@ -9,11 +9,6 @@ import {
   Receipt,
   Wrench,
   Sheet,
-  MapPin,
-  HardHat,
-  Rocket,
-  Stamp,
-  Tag,
   ChevronRight,
   Search,
   type LucideIcon,
@@ -37,12 +32,7 @@ import {
   getOccupancyReport,
   getRentCollectionReport,
   getMaintenanceReport,
-  getLandPortfolioReport,
-  getProjectProgressReport,
   getMaintenanceCostReport,
-  getDevelopmentPipelineReport,
-  getApprovalStatusReport,
-  getPricingAnalysisReport,
 } from "../../actions/reports";
 import { generateReportPDF } from "../../../lib/report-pdf";
 import { exportToExcel } from "../../../lib/export";
@@ -119,26 +109,6 @@ const REPORTS: ReportDef[] = [
     icon: Wrench,
   },
   {
-    id: "land",
-    name: "تقرير محفظة الأراضي",
-    nameEn: "Land Portfolio Report",
-    desc: "تحليل شامل لمحفظة الأراضي والاستثمارات",
-    descEn: "Comprehensive land holdings and investment analysis",
-    type: "استثماري",
-    typeEn: "Investment",
-    icon: MapPin,
-  },
-  {
-    id: "project-progress",
-    name: "تقرير تقدم المشاريع",
-    nameEn: "Project Progress Report",
-    desc: "تتبع حالة المشاريع ونسب البيع والتأجير",
-    descEn: "Project status with sale and lease percentages",
-    type: "تشغيلي",
-    typeEn: "Operational",
-    icon: HardHat,
-  },
-  {
     id: "maintenance-costs",
     name: "تقرير تكاليف الصيانة",
     nameEn: "Maintenance Cost Report",
@@ -147,36 +117,6 @@ const REPORTS: ReportDef[] = [
     type: "مالي",
     typeEn: "Financial",
     icon: Wrench,
-  },
-  {
-    id: "dev-pipeline",
-    name: "تقرير مسار التطوير",
-    nameEn: "Development Pipeline Report",
-    desc: "توزيع المشاريع على مراحل التطوير العقاري على الخارطة",
-    descEn: "Projects distributed across development pipeline stages",
-    type: "تطويري",
-    typeEn: "Development",
-    icon: Rocket,
-  },
-  {
-    id: "approval-status",
-    name: "تقرير حالة الموافقات",
-    nameEn: "Approval Status Report",
-    desc: "تتبع طلبات الموافقة من الجهات الحكومية ونسب القبول",
-    descEn: "Government approval requests tracking and acceptance rates",
-    type: "تنظيمي",
-    typeEn: "Regulatory",
-    icon: Stamp,
-  },
-  {
-    id: "pricing-analysis",
-    name: "تقرير تحليل التسعير",
-    nameEn: "Pricing Analysis Report",
-    desc: "تحليل الأسعار حسب نوع المنتج وقواعد التسعير النشطة",
-    descEn: "Price analysis by product type and active pricing rules",
-    type: "مالي",
-    typeEn: "Financial",
-    icon: Tag,
   },
 ];
 
@@ -315,52 +255,6 @@ export default function ReportsPage() {
             },
           ],
         });
-      } else if (reportId === "land") {
-        const data = await getLandPortfolioReport(startDate, endDate);
-        await generateReportPDF({
-          title: "تقرير محفظة الأراضي",
-          subtitle: "Land Portfolio Report",
-          dateRange,
-          sections: [
-            {
-              title: "ملخص",
-              rows: [
-                { label: "عدد الأراضي", value: data.totalParcels.toString() },
-                { label: "إجمالي المساحة (م²)", value: fmt(data.totalArea) },
-                { label: "القيمة التقديرية (ر.س)", value: fmt(data.totalEstimatedValue) },
-                { label: "تكلفة الاستحواذ (ر.س)", value: fmt(data.totalAcquisitionCost) },
-                { label: "الربح/الخسارة غير المحققة (ر.س)", value: fmt(data.unrealizedGainLoss) },
-              ],
-            },
-            ...data.parcels.map((p: any) => ({
-              title: p.name,
-              rows: [
-                { label: "المساحة", value: p.area ? `${p.area.toLocaleString()} م²` : "—" },
-                { label: "القيمة التقديرية", value: `${fmt(p.estimatedValue)} ر.س` },
-                { label: "الموقع", value: p.location || "—" },
-                { label: "الحالة", value: p.status },
-              ],
-            })),
-          ],
-        });
-      } else if (reportId === "project-progress") {
-        const data = await getProjectProgressReport(startDate, endDate);
-        await generateReportPDF({
-          title: "تقرير تقدم المشاريع",
-          subtitle: "Project Progress Report",
-          dateRange,
-          sections: data.projects.map((p: any) => ({
-            title: p.name,
-            rows: [
-              { label: "الحالة", value: p.status },
-              { label: "عدد الوحدات", value: p.totalUnits.toString() },
-              { label: "نسبة البيع", value: `${p.soldPercent}%` },
-              { label: "نسبة التأجير", value: `${p.rentedPercent}%` },
-              { label: "إجمالي الإيرادات (ر.س)", value: fmt(p.totalRevenue) },
-              { label: "قيمة المتبقي (ر.س)", value: fmt(p.remainingValue) },
-            ],
-          })),
-        });
       } else if (reportId === "maintenance-costs") {
         const data = await getMaintenanceCostReport(startDate, endDate);
         await generateReportPDF({
@@ -390,84 +284,6 @@ export default function ReportsPage() {
               rows: data.byBuilding.map((b: any) => ({
                 label: b.name,
                 value: `${fmt(b.actual)} ر.س (${b.costPerSqm} ر.س/م²)`,
-              })),
-            },
-          ],
-        });
-      } else if (reportId === "dev-pipeline") {
-        const data = await getDevelopmentPipelineReport();
-        await generateReportPDF({
-          title: "تقرير مسار التطوير",
-          subtitle: "Development Pipeline Report",
-          dateRange,
-          sections: [
-            {
-              title: "ملخص",
-              rows: [
-                { label: "إجمالي المشاريع", value: String(data.totalProjects) },
-              ],
-            },
-            ...data.stages.filter((s: any) => s.count > 0).map((s: any) => ({
-              title: s.stage,
-              rows: s.projects.map((p: string, i: number) => ({
-                label: `${i + 1}. ${p}`,
-                value: "",
-              })),
-            })),
-          ],
-        });
-      } else if (reportId === "approval-status") {
-        const data = await getApprovalStatusReport();
-        await generateReportPDF({
-          title: "تقرير حالة الموافقات",
-          subtitle: "Approval Status Report",
-          dateRange,
-          sections: [
-            {
-              title: "ملخص",
-              rows: [
-                { label: "إجمالي الطلبات", value: String(data.total) },
-                { label: "معتمدة", value: String(data.approved) },
-                { label: "مرفوضة", value: String(data.rejected) },
-                { label: "قيد المراجعة", value: String(data.pending) },
-                { label: "نسبة القبول", value: `${data.successRate}%` },
-              ],
-            },
-            {
-              title: "حسب النوع",
-              rows: data.byType.map((t: any) => ({
-                label: t.type,
-                value: `${t.approved}/${t.total} معتمدة`,
-              })),
-            },
-          ],
-        });
-      } else if (reportId === "pricing-analysis") {
-        const data = await getPricingAnalysisReport();
-        await generateReportPDF({
-          title: "تقرير تحليل التسعير",
-          subtitle: "Pricing Analysis Report",
-          dateRange,
-          sections: [
-            {
-              title: "ملخص",
-              rows: [
-                { label: "عدد الوحدات", value: String(data.totalItems) },
-                { label: "إجمالي القيمة (ر.س)", value: fmt(data.totalValue) },
-              ],
-            },
-            {
-              title: "حسب نوع المنتج",
-              rows: data.byProductType.map((t: any) => ({
-                label: t.type,
-                value: `${t.count} وحدة — متوسط ${fmt(t.avgPrice)} ر.س`,
-              })),
-            },
-            {
-              title: "قواعد التسعير النشطة",
-              rows: data.activeRules.map((r: any) => ({
-                label: r.name,
-                value: r.fixedAmount > 0 ? `${fmt(r.fixedAmount)} ر.س` : `${r.factor}x`,
               })),
             },
           ],
@@ -541,37 +357,6 @@ export default function ReportsPage() {
           filename: "maintenance-report",
           title: "تقرير الصيانة",
         });
-      } else if (reportId === "land") {
-        const data = await getLandPortfolioReport(startDate, endDate);
-        await exportToExcel({
-          data: data.parcels,
-          columns: [
-            { header: "الاسم", key: "name" },
-            { header: "المساحة", key: "area" },
-            { header: "القيمة التقديرية", key: "estimatedValue", render: (v: number) => fmt(v) },
-            { header: "تكلفة الاستحواذ", key: "acquisitionCost", render: (v: number) => fmt(v) },
-            { header: "الموقع", key: "location" },
-            { header: "الحالة", key: "status" },
-          ],
-          filename: "land-portfolio-report",
-          title: "تقرير محفظة الأراضي",
-        });
-      } else if (reportId === "project-progress") {
-        const data = await getProjectProgressReport(startDate, endDate);
-        await exportToExcel({
-          data: data.projects,
-          columns: [
-            { header: "المشروع", key: "name" },
-            { header: "الحالة", key: "status" },
-            { header: "الوحدات", key: "totalUnits" },
-            { header: "بيع %", key: "soldPercent", render: (v: number) => `${v}%` },
-            { header: "تأجير %", key: "rentedPercent", render: (v: number) => `${v}%` },
-            { header: "الإيرادات", key: "totalRevenue", render: (v: number) => fmt(v) },
-            { header: "المتبقي", key: "remainingValue", render: (v: number) => fmt(v) },
-          ],
-          filename: "project-progress-report",
-          title: "تقرير تقدم المشاريع",
-        });
       } else if (reportId === "maintenance-costs") {
         const data = await getMaintenanceCostReport(startDate, endDate);
         await exportToExcel({
@@ -584,45 +369,6 @@ export default function ReportsPage() {
           ],
           filename: "maintenance-cost-report",
           title: "تقرير تكاليف الصيانة",
-        });
-      } else if (reportId === "dev-pipeline") {
-        const data = await getDevelopmentPipelineReport();
-        await exportToExcel({
-          data: data.stages,
-          columns: [
-            { header: "المرحلة", key: "stage" },
-            { header: "Stage", key: "stageEn" },
-            { header: "عدد المشاريع", key: "count" },
-          ],
-          filename: "development-pipeline-report",
-          title: "تقرير مسار التطوير",
-        });
-      } else if (reportId === "approval-status") {
-        const data = await getApprovalStatusReport();
-        await exportToExcel({
-          data: data.details,
-          columns: [
-            { header: "المشروع", key: "project" },
-            { header: "النوع", key: "type" },
-            { header: "الجهة", key: "authority" },
-            { header: "الحالة", key: "status" },
-            { header: "تاريخ التقديم", key: "submittedAt" },
-          ],
-          filename: "approval-status-report",
-          title: "تقرير حالة الموافقات",
-        });
-      } else if (reportId === "pricing-analysis") {
-        const data = await getPricingAnalysisReport();
-        await exportToExcel({
-          data: data.byProductType,
-          columns: [
-            { header: "نوع المنتج", key: "type" },
-            { header: "عدد الوحدات", key: "count" },
-            { header: "إجمالي القيمة", key: "totalValue", render: (v: number) => fmt(v) },
-            { header: "متوسط السعر", key: "avgPrice", render: (v: number) => fmt(v) },
-          ],
-          filename: "pricing-analysis-report",
-          title: "تقرير تحليل التسعير",
         });
       }
     } catch (e) {
