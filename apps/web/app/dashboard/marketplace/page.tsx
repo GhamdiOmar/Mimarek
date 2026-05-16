@@ -14,6 +14,7 @@ import {
   Loader2,
   AlertCircle,
   Handshake,
+  Tags,
 } from "lucide-react";
 import {
   Button,
@@ -33,6 +34,7 @@ import {
 } from "@repo/ui";
 import { cn } from "@repo/ui/lib/utils";
 import { useLanguage } from "../../../components/LanguageProvider";
+import { usePermissions } from "../../../hooks/usePermissions";
 import {
   browseMarketplaceListings,
   getMarketplaceSellerOrgFilters,
@@ -119,6 +121,7 @@ export default function MarketplacePageWrapper() {
 
 function MarketplacePage() {
   const { lang } = useLanguage();
+  const { can } = usePermissions();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -261,6 +264,16 @@ function MarketplacePage() {
           lang === "ar"
             ? "تصفّح العقارات المتاحة للبيع من المطورين والمؤسسات الأخرى"
             : "Browse properties listed for sale by developers and other organizations"
+        }
+        actions={
+          can("marketplace:manage_own") ? (
+            <Button asChild variant="secondary" className="gap-2">
+              <Link href="/dashboard/marketplace/my-listings">
+                <Tags className="h-4 w-4" aria-hidden="true" />
+                {lang === "ar" ? "إعلاناتي" : "My Listings"}
+              </Link>
+            </Button>
+          ) : undefined
         }
       />
 

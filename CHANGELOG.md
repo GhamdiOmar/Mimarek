@@ -13,11 +13,16 @@ Verified-organization-only B2B marketplace: full workflow from seller publicatio
 - **Maintenance guard** — transferred-away units reject new seller-side maintenance (`MAINTENANCE_BLOCKED_NOT_OWNER` audit event).
 - **UI** — `/dashboard/marketplace` (buyer browse, filters, cards/table responsive), `/dashboard/marketplace/[listingId]` (detail + National Address validation + Google Maps `api=1` link + confirmation modal), `/dashboard/marketplace/my-listings` (seller listings, incoming inquiries, convert, settle), `/dashboard/admin/marketplace` (platform moderation/suspend), Publish dialog launched from `/dashboard/units`, Marketplace badge/filter on `/dashboard/crm`. Nav + Cmd-K wired. Bilingual AR/RTL-first, design tokens, audit trail on every transition.
 
+### Fixed
+
+- **My Listings was not discoverable (UI-First violation).** The seller "My Listings" route was set `hiddenFromNav` on the wrong assumption it was reachable via the marketplace page tabs (those are buyer-only: Browse / My Inquiries). Added a permission-gated **"My Listings"** action button in the marketplace page header (visible to `marketplace:manage_own`) and a **"Back to marketplace"** link on the My Listings page. Verified end-to-end in a real browser. AGENTS.md §3.1 updated with a `hiddenFromNav` discoverability rule.
+
 ### Verification
 
 - Full `tsc --noEmit` green; `next build` green (all four marketplace routes compiled).
-- Functional cross-org E2E through the UI (two real orgs): seller publish (eligibility gate enforced incl. `MISSING_ADDRESS`) → buyer cross-org browse → listing detail (Maps URL exact) → buyer express interest → seller CRM customer created (`source=MARKETPLACE`, in seller org) → convert to deal (cross-org reservation + `PENDING_SETTLEMENT` transfer) → **settlement correctly refused without a SIGNED sale contract**. Zero console errors; mobile 375px no overflow; buyer-browse own-org exclusion confirmed.
-- **Not evidenced (release-gate blocker):** light/dark × AR/EN screenshots — preview screenshot renderer times out in this environment. Tag/push withheld pending user decision per AGENTS §3.9.
+- Functional cross-org E2E through the UI (two real orgs, Playwright + Chromium): seller publish (eligibility gate enforced incl. `MISSING_ADDRESS`) → buyer cross-org browse → listing detail (Maps URL exact) → buyer express interest → seller CRM customer created (`source=MARKETPLACE`, in seller org) → convert to deal (cross-org reservation + `PENDING_SETTLEMENT` transfer) → **settlement correctly refused without a SIGNED sale contract**. Zero marketplace-attributable console errors; mobile 375px no overflow; buyer-browse own-org exclusion confirmed.
+- **Screenshot evidence captured** — light/dark × AR/EN for browse, detail, my-listings + admin moderation + mobile (`apps/web/e2e/__screenshots__/marketplace/`). The earlier preview-renderer limitation was bypassed by running the suite under Playwright/Chromium.
+- **axe-core accessible-name scan** — zero violations across all marketplace surfaces and dialogs (browse, my-listings, detail, admin moderation, publish/interest/edit/suspend dialogs). Pre-existing name violations elsewhere (`/dashboard/settings`, `/dashboard/reports`, `/dashboard/maintenance/tickets`) are out of scope for this feature.
 
 ---
 
