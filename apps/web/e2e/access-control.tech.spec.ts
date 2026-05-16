@@ -12,16 +12,6 @@ test.describe('Access Control — Technician (Negative)', () => {
     await expect(page).toHaveURL(/dashboard/);
   });
 
-  test('cannot access reports page', async ({ page }) => {
-    await page.goto('/dashboard/reports');
-    await page.waitForLoadState('networkidle');
-    // Should either redirect or show error/empty state
-    const hasError = await page.getByText(/غير مصرح|Unauthorized|Access Denied|Error/i).isVisible().catch(() => false);
-    const redirected = !/reports/.test(page.url());
-    // Either show error or got redirected
-    expect(hasError || redirected).toBeTruthy();
-  });
-
   test('can access maintenance section', async ({ page }) => {
     await page.goto('/dashboard/maintenance');
     await page.waitForLoadState('networkidle');

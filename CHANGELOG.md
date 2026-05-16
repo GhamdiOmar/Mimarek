@@ -28,13 +28,55 @@ The first non-patch release since v4.2.x: a **verified-organization-only B2B mar
 - Schema is **additive** (new models/enums + nullable columns on `Unit`/`Reservation`/`Contract`). Apply with `prisma db push` (per AGENTS §4 — no destructive migration). No backfill required; the one unique index is on a new nullable column (multiple NULLs allowed in Postgres).
 - New permissions are auto-granted by role map: `ADMIN`/`MANAGER` get the full tenant marketplace set, `AGENT` gets read + inquiry, `SYSTEM_ADMIN` gets `marketplace:moderate`. No manual role migration needed.
 
-**Full diff:** https://github.com/GhamdiOmar/Mimaric/compare/v4.2.3...v4.3.0
+**Full diff:** https://github.com/GhamdiOmar/Mimaric/compare/v4.2.5...v4.3.0
+
+---
+
+## [4.2.5] — 2026-05-16 — Off-plan module removal & Wafi reference cleanup
+
+Full removal of the off-plan sales module, project route, and all Wafi branding/content that was surfaced as dead code after the v4.2.x schema cleanup.
+
+### Removed
+
+- **7 stale E2E specs and page objects** — `dashboard.admin.spec.ts`, `analytics.pm.spec.ts`, `launch-readiness.pm.spec.ts`, `reservations.sales.spec.ts`, `reports.admin.spec.ts`, `pages/project-detail.page.ts`, `pages/reports.page.ts`. All tested removed off-plan/project-detail flows; their absence was causing 47 CI failures.
+- **Wafi trust badge** — `Hero.tsx` no longer shows the `wafiReady` badge; `HardHat` icon import removed.
+- **Wafi translations** — `wafiReady` key removed from `translations.ts` (ar + en); four strings mentioning Wafi updated to reference only Balady/MOC/ZATCA.
+- **Wafi help content** — `help-content.ts`: FAQ entry `sc-6` ("What is Wafi?"), FAQ entry `sc-9` ("How do I create a Wafi-compliant sale contract?"), and guide `guide-23` ("Create a Wafi Sale Contract") removed. Entry `sc-13` updated to remove Wafi terminology from question and answer.
+- **`/dashboard/projects` landing page option** — removed from `ALLOWED_LANDING_PAGES` in `auth.ts` and `preferences.ts` (route was deleted in v4.2.x; storing it as a preference caused silent redirect failures on login).
+- **`pricing:read` and `launch:read` permissions** — removed from the `Permission` union type and from `ALL_PERMISSIONS` and `TENANT_SCOPED_PERMISSIONS` arrays in `permissions.ts`. No server action or route guard references these permissions.
+- **Dead seed blocks** — two `try { prisma.project/building/subdivisionPlan.create ... } catch` sections removed from `seed.ts` (~450 lines). These were temporary guards added in v4.2.4; the underlying models are gone and the blocks can never succeed.
+
+### Metrics
+
+- 14 files changed: 7 deleted, 7 modified. Net −1,160 lines.
+- TypeScript clean after removal.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimaric/compare/v4.2.4...v4.2.5
+
+---
+
+## [4.2.4] — 2026-05-16 — CI infrastructure & seed stability
+
+Fixes the GitHub Actions E2E pipeline which had never successfully completed an authenticated test run.
+
+### Fixed
+
+- **CI: PostgreSQL service missing** — Playwright tests were hitting `ECONNREFUSED` because no database was available in the Actions runner. Added a `postgres:16` service container with health-check, exposed on port 5432.
+- **CI: `--skip-generate` flag invalid in Prisma 7.x** — `prisma db push` no longer accepts this flag; removed.
+- **CI: schema push and seed added** — `prisma db push --accept-data-loss` and `tsx prisma/seed.ts` steps added after Prisma client generation so the E2E database has the correct schema and demo users before tests run.
+- **Seed: removed-model crash** — `seed.ts` referenced `prisma.project`, `prisma.building`, and `prisma.subdivisionPlan` which were removed from the schema in v4.2.x. The seed crashed before reaching the demo-user upserts, leaving E2E tests with no auth state. Wrapped both blocks in try-catch so demo users (`dummy@demo.sa`, `pm@demo.sa`, `sales@demo.sa`, `tech@demo.sa`) are always created.
+
+### Commits
+
+`ad2f223`, `9e9864c`, `368b118` (merged via PR #5)
+
+**Full diff:** https://github.com/GhamdiOmar/Mimaric/compare/v4.2.3...v4.2.4
 
 ---
 
 ## [4.2.3] — 2026-05-16 — Admin dashboard render fix
 
-Patch targeting three bugs that prevented `/dashboard/admin` from rendering for `SYSTEM_ADMIN` users after the v4.2.2 tenant-isolation hardening.
+Patch targeting bugs that prevented `/dashboard/admin` from rendering for `SYSTEM_ADMIN` users after the v4.2.2 tenant-isolation hardening, plus dead report-domain code removal.
 
 ### Fixed
 
@@ -44,9 +86,13 @@ Patch targeting three bugs that prevented `/dashboard/admin` from rendering for 
 - **`customers.ts` TS2353 — `organizationId` on `Reservation`** — `updateCustomerStatus` LOST-path transaction incorrectly included `organizationId` in the `Reservation.findMany` where-clause; `Reservation` has no direct `organizationId` field (tenant isolation is enforced via `customerId → Customer.organizationId`). Field removed.
 - **`customers.ts` TS2322 — `CustomerStatus` enum cast** — Zod schema returns `string`; both `customer.update` calls now cast `validatedStatus as CustomerStatus` and import the enum from `@repo/db`.
 
+### Removed
+
+- **Dead report scaffolding** — 5 project-domain report functions returning hardcoded zeros removed from `reports.ts` (`getProjectProgressReport`, `getApprovalStatusReport`, `getSalesVelocityReport`, `getLaunchReadinessReport`, `getOffPlanInventoryReport`). Route `/dashboard/reports` retained; only the off-plan-specific report types were deleted.
+
 ### Metrics
 
-- 3 files changed: `dashboard/layout.tsx`, `actions/customers.ts`, `actions/trends/getMrrTrend.ts` (new).
+- 4 files changed: `dashboard/layout.tsx`, `actions/customers.ts`, `actions/trends/getMrrTrend.ts` (new), `actions/reports.ts`.
 - TypeScript clean (`tsc --noEmit` zero errors across `apps/web`).
 
 **Full diff:** https://github.com/GhamdiOmar/Mimaric/compare/v4.2.2...v4.2.3

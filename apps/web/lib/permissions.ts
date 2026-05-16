@@ -101,9 +101,7 @@ export type Permission =
   | "reservations:write"
   | "preventive_maintenance:delete"
   | "finance:read"
-  | "finance:write"
-  | "pricing:read"
-  | "launch:read";
+  | "finance:write";
 
 // ─── All permissions list (used by SYSTEM_ADMIN) ──────────────────────────────
 
@@ -134,7 +132,6 @@ const ALL_PERMISSIONS: Permission[] = [
   "reservations:read", "reservations:write",
   "preventive_maintenance:delete",
   "finance:read", "finance:write",
-  "pricing:read", "launch:read",
 ];
 
 // ─── System Permissions (Mimaric platform staff only) ────────────────────────
@@ -186,7 +183,6 @@ export const TENANT_SCOPED_PERMISSIONS: Permission[] = [
   "units:read", "units:write", "units:delete",
   "reservations:read", "reservations:write",
   "finance:read", "finance:write",
-  "pricing:read", "launch:read",
 ];
 
 export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
