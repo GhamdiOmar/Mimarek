@@ -70,10 +70,27 @@ export async function createMaintenanceRequest(data: {
   // Validate referenced records belong to the same org before creating
   const unit = await db.unit.findFirst({
     where: { id: parsed.data.unitId, organizationId: session.organizationId },
-    select: { id: true },
+    select: { id: true, transferredToOrgId: true },
   });
   if (!unit) {
     throw new Error("Unit not found or you don't have access. Please verify the unit exists in your organization.");
+  }
+
+  // Marketplace guard: a unit transferred to a buyer org via the marketplace
+  // can no longer receive seller-side maintenance (ownership moved).
+  if (unit.transferredToOrgId) {
+    logAuditEvent({
+      userId: session.userId,
+      userEmail: session.email,
+      userRole: session.role,
+      action: "MAINTENANCE_BLOCKED_NOT_OWNER",
+      resource: "Unit",
+      resourceId: parsed.data.unitId,
+      organizationId: session.organizationId,
+    });
+    throw new Error(
+      "This unit was transferred to another organization via the marketplace and can no longer receive maintenance requests from your organization.",
+    );
   }
 
   if (parsed.data.assignedToId) {
@@ -85,6 +102,7 @@ export async function createMaintenanceRequest(data: {
       throw new Error("Assigned user not found or does not belong to your organization.");
     }
   }
+
 
   const request = await db.maintenanceRequest.create({
     data: {

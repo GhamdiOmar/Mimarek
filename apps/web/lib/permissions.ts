@@ -83,6 +83,16 @@ export type Permission =
   | "help:manage_tickets"
   | "help:manage_permissions"
 
+  // Marketplace (cross-org B2B unit trading) — tenant-scoped except :moderate
+  | "marketplace:read"
+  | "marketplace:publish"
+  | "marketplace:manage_own"
+  | "marketplace:inquiry:read"
+  | "marketplace:inquiry:write"
+  | "marketplace:inquiry:convert"
+  | "marketplace:transfer:execute"
+  | "marketplace:moderate"
+
   // ── Legacy v2 permission aliases (kept for backward compat with existing action guards) ──
   | "units:read"
   | "units:write"
@@ -114,6 +124,9 @@ const ALL_PERMISSIONS: Permission[] = [
   "notifications:read",
   "billing:read", "billing:write", "billing:admin",
   "help:read", "help:create_ticket", "help:manage_tickets", "help:manage_permissions",
+  "marketplace:read", "marketplace:publish", "marketplace:manage_own",
+  "marketplace:inquiry:read", "marketplace:inquiry:write", "marketplace:inquiry:convert",
+  "marketplace:transfer:execute", "marketplace:moderate",
   // Legacy v2 aliases
   "units:read", "units:write", "units:delete",
   "reservations:read", "reservations:write",
@@ -126,6 +139,9 @@ const ALL_PERMISSIONS: Permission[] = [
 export const SYSTEM_ONLY_PERMISSIONS: Permission[] = [
   "billing:admin",
   "help:manage_tickets",
+  // Marketplace moderation/suspension is a platform-staff (REGA kill-switch) duty.
+  // Excluded from ADMIN (= ALL minus SYSTEM_ONLY) so tenants can't moderate.
+  "marketplace:moderate",
 ];
 
 /**
@@ -158,6 +174,11 @@ export const TENANT_SCOPED_PERMISSIONS: Permission[] = [
   "audit:read",
   "billing:read", "billing:write",
   "help:manage_permissions",
+  // Marketplace — tenant-scoped (system staff must NOT operate tenant trading).
+  // marketplace:moderate is intentionally EXCLUDED — it is a platform duty.
+  "marketplace:read", "marketplace:publish", "marketplace:manage_own",
+  "marketplace:inquiry:read", "marketplace:inquiry:write", "marketplace:inquiry:convert",
+  "marketplace:transfer:execute",
   // Legacy v2 aliases
   "units:read", "units:write", "units:delete",
   "reservations:read", "reservations:write",
@@ -210,6 +231,9 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     "notifications:read",
     "billing:read",
     "help:read", "help:create_ticket",
+    "marketplace:read", "marketplace:publish", "marketplace:manage_own",
+    "marketplace:inquiry:read", "marketplace:inquiry:write",
+    "marketplace:inquiry:convert", "marketplace:transfer:execute",
   ],
 
   AGENT: [
@@ -225,6 +249,8 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     "documents:read", "documents:write",
     "notifications:read",
     "help:read", "help:create_ticket",
+    "marketplace:read",
+    "marketplace:inquiry:read", "marketplace:inquiry:write",
   ],
 
   TECHNICIAN: [

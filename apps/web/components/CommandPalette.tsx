@@ -32,6 +32,9 @@ import {
   FilePlus,
   PlusCircle,
   DollarSign,
+  Store,
+  Tags,
+  ShieldAlert,
 } from "lucide-react";
 import { useLanguage } from "./LanguageProvider";
 import { navItems, sectionLabels } from "./shell/nav-items";
@@ -55,6 +58,9 @@ const navIconMap: Record<string, React.ComponentType<{ className?: string }>> = 
   TicketCheck,
   CalendarCheck,
   Settings,
+  Store,
+  Tags,
+  ShieldAlert,
 };
 
 interface QuickAction {
