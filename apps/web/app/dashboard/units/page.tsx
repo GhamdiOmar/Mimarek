@@ -62,6 +62,7 @@ import {
   getActiveContractForUnit,
 } from "../../actions/units";
 import { getMaintenanceForUnit } from "../../actions/maintenance";
+import { PublishListingDialog } from "../../../components/marketplace/PublishListingDialog";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
@@ -139,6 +140,7 @@ function AdvancedUnitMatrixPage() {
   const [detailFinancials, setDetailFinancials] = React.useState<any>(null);
   const [detailContract, setDetailContract] = React.useState<any>(null);
   const [loadingDetail, setLoadingDetail] = React.useState(false);
+  const [publishUnit, setPublishUnit] = React.useState<any>(null);
 
   const maintenanceStatusLabels: Record<
     string,
@@ -1419,6 +1421,21 @@ function AdvancedUnitMatrixPage() {
                 </div>
               )}
 
+              {detailUnit.status === "AVAILABLE" && (
+                <div className="border-t border-border pt-4">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    style={{ display: "inline-flex" }}
+                    className="gap-2 w-full"
+                    onClick={() => setPublishUnit(detailUnit)}
+                  >
+                    <Store className="h-3.5 w-3.5" />
+                    {lang === "ar" ? "نشر في السوق" : "Publish in Marketplace"}
+                  </Button>
+                </div>
+              )}
+
               {/* Maintenance Section */}
               <div className="border-t border-border pt-4">
                 <div className="flex items-center justify-between mb-3">
@@ -1674,6 +1691,12 @@ function AdvancedUnitMatrixPage() {
           <p className="text-sm text-destructive">{error}</p>
         )}
       </ResponsiveDialog>
+
+      <PublishListingDialog
+        unit={publishUnit}
+        open={!!publishUnit}
+        onOpenChange={(o) => { if (!o) setPublishUnit(null); }}
+      />
       </div>
     </>
   );

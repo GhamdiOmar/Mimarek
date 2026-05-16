@@ -49,6 +49,30 @@ export async function createMaintenanceRequest(data: {
   const session = await requirePermission("maintenance:write");
   const priority = data.priority ?? "MEDIUM";
 
+  // Marketplace guard: a unit transferred to a buyer org via the marketplace
+  // can no longer receive seller-side maintenance (ownership moved).
+  const guardUnit = await db.unit.findFirst({
+    where: { id: data.unitId, organizationId: session.organizationId },
+    select: { transferredToOrgId: true },
+  });
+  if (!guardUnit) {
+    throw new Error("Unit not found in your organization. Please verify the unit.");
+  }
+  if (guardUnit.transferredToOrgId) {
+    logAuditEvent({
+      userId: session.userId,
+      userEmail: session.email,
+      userRole: session.role,
+      action: "MAINTENANCE_BLOCKED_NOT_OWNER",
+      resource: "Unit",
+      resourceId: data.unitId,
+      organizationId: session.organizationId,
+    });
+    throw new Error(
+      "This unit was transferred to another organization via the marketplace and can no longer receive maintenance requests from your organization.",
+    );
+  }
+
   const request = await db.maintenanceRequest.create({
     data: {
       title: data.title,

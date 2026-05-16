@@ -21,6 +21,8 @@ export const navItems: NavItem[] = [
   { label: { ar: "العقارات", en: "Properties" }, icon: "Building2", href: "/dashboard/units", section: "core", permission: "properties:read", audience: "tenant" },
   { label: { ar: "الصفقات", en: "Deals" }, icon: "TrendingUp", href: "/dashboard/deals", section: "core", permission: "deals:read", audience: "tenant" },
   { label: { ar: "العقود", en: "Contracts" }, icon: "FileText", href: "/dashboard/contracts", section: "core", permission: "contracts:read", audience: "tenant" },
+  { label: { ar: "السوق", en: "Marketplace" }, icon: "Store", href: "/dashboard/marketplace", section: "core", permission: "marketplace:read", audience: "tenant" },
+  { label: { ar: "إعلاناتي", en: "My Listings" }, icon: "Tags", href: "/dashboard/marketplace/my-listings", section: "core", permission: "marketplace:manage_own", audience: "tenant", hiddenFromNav: true },
 
   // Operations — tenant only
   { label: { ar: "المدفوعات", en: "Payments" }, icon: "CreditCard", href: "/dashboard/payments", section: "operations", permission: "payments:read", audience: "tenant" },
@@ -38,6 +40,7 @@ export const navItems: NavItem[] = [
   { label: { ar: "إعدادات SEO", en: "SEO Settings" }, icon: "SearchCheck", href: "/dashboard/admin/seo", section: "system", permission: "billing:admin", audience: "platform" },
   { label: { ar: "إعدادات البريد", en: "Email Settings" }, icon: "Mail", href: "/dashboard/admin/email", section: "system", permission: "billing:admin", audience: "platform" },
   { label: { ar: "تذاكر الدعم", en: "Support Tickets" }, icon: "TicketCheck", href: "/dashboard/admin/tickets", section: "system", permission: "billing:admin", audience: "platform" },
+  { label: { ar: "إدارة السوق", en: "Marketplace Moderation" }, icon: "ShieldAlert", href: "/dashboard/admin/marketplace", section: "system", permission: "marketplace:moderate", audience: "platform" },
   { label: { ar: "الإعدادات", en: "Settings" }, icon: "Settings", href: "/dashboard/settings", section: "system", permission: "organization:read" },
 ];
 
@@ -46,6 +49,8 @@ export const breadcrumbLabels: Record<string, { ar: string; en: string }> = {
   "crm": { ar: "إدارة العملاء", en: "CRM" },
   "properties": { ar: "العقارات", en: "Properties" },
   "deals": { ar: "الصفقات", en: "Deals" },
+  "marketplace": { ar: "السوق", en: "Marketplace" },
+  "my-listings": { ar: "إعلاناتي", en: "My Listings" },
   "contracts": { ar: "العقود", en: "Contracts" },
   "payments": { ar: "المدفوعات", en: "Payments" },
   "maintenance": { ar: "الصيانة", en: "Maintenance" },
