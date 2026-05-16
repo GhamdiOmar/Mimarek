@@ -1,5 +1,28 @@
 # Changelog — Mimaric PropTech
 
+## [4.2.5] — 2026-05-16 — Off-plan module removal & Wafi reference cleanup
+
+Full removal of the off-plan sales module, project route, and all Wafi branding/content that was surfaced as dead code after the v4.2.x schema cleanup.
+
+### Removed
+
+- **7 stale E2E specs and page objects** — `dashboard.admin.spec.ts`, `analytics.pm.spec.ts`, `launch-readiness.pm.spec.ts`, `reservations.sales.spec.ts`, `reports.admin.spec.ts`, `pages/project-detail.page.ts`, `pages/reports.page.ts`. All tested removed off-plan/project-detail flows; their absence was causing 47 CI failures.
+- **Wafi trust badge** — `Hero.tsx` no longer shows the `wafiReady` badge; `HardHat` icon import removed.
+- **Wafi translations** — `wafiReady` key removed from `translations.ts` (ar + en); four strings mentioning Wafi updated to reference only Balady/MOC/ZATCA.
+- **Wafi help content** — `help-content.ts`: FAQ entry `sc-6` ("What is Wafi?"), FAQ entry `sc-9` ("How do I create a Wafi-compliant sale contract?"), and guide `guide-23` ("Create a Wafi Sale Contract") removed. Entry `sc-13` updated to remove Wafi terminology from question and answer.
+- **`/dashboard/projects` landing page option** — removed from `ALLOWED_LANDING_PAGES` in `auth.ts` and `preferences.ts` (route was deleted in v4.2.x; storing it as a preference caused silent redirect failures on login).
+- **`pricing:read` and `launch:read` permissions** — removed from the `Permission` union type and from `ALL_PERMISSIONS` and `TENANT_SCOPED_PERMISSIONS` arrays in `permissions.ts`. No server action or route guard references these permissions.
+- **Dead seed blocks** — two `try { prisma.project/building/subdivisionPlan.create ... } catch` sections removed from `seed.ts` (~450 lines). These were temporary guards added in v4.2.4; the underlying models are gone and the blocks can never succeed.
+
+### Metrics
+
+- 14 files changed: 7 deleted, 7 modified. Net −1,160 lines.
+- TypeScript clean after removal.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimaric/compare/v4.2.4...v4.2.5
+
+---
+
 ## [4.2.4] — 2026-05-16 — CI infrastructure & seed stability
 
 Fixes the GitHub Actions E2E pipeline which had never successfully completed an authenticated test run.
