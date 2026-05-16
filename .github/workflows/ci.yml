@@ -10,6 +10,21 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     env:
       DATABASE_URL: "postgresql://ci:ci@localhost:5432/ci"
       AUTH_SECRET: "ci-dummy-secret-not-for-production"
@@ -35,6 +50,12 @@ jobs:
 
       - name: Generate Prisma Client
         run: npx turbo run db:generate
+
+      - name: Push DB schema
+        run: cd packages/db && npx prisma db push --skip-generate --accept-data-loss
+
+      - name: Seed database
+        run: cd packages/db && npx tsx prisma/seed.ts
 
       - name: Run Linters
         run: npm run lint
