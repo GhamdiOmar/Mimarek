@@ -23,6 +23,7 @@ The first non-patch release since v4.2.x: a **verified-organization-only B2B mar
 - Functional cross-org E2E through the UI (two real orgs, Playwright + Chromium): seller publish (eligibility gate enforced incl. `MISSING_ADDRESS`) → buyer cross-org browse → listing detail (Maps URL exact) → buyer express interest → seller CRM customer created (`source=MARKETPLACE`, in seller org) → convert to deal (cross-org reservation + `PENDING_SETTLEMENT` transfer) → **settlement correctly refused without a SIGNED sale contract**. Zero marketplace-attributable console errors; mobile 375px no overflow; buyer-browse own-org exclusion confirmed.
 - **Screenshot evidence captured** — light/dark × AR/EN for browse, detail, my-listings + admin moderation + mobile (`apps/web/e2e/__screenshots__/marketplace/`). The earlier preview-renderer limitation was bypassed by running the suite under Playwright/Chromium.
 - **axe-core accessible-name scan** — zero violations across all marketplace surfaces and dialogs (browse, my-listings, detail, admin moderation, publish/interest/edit/suspend dialogs). Pre-existing name violations elsewhere (`/dashboard/settings`, `/dashboard/reports`, `/dashboard/maintenance/tickets`) are out of scope for this feature.
+
 ### Upgrade notes
 
 - Schema is **additive** (new models/enums + nullable columns on `Unit`/`Reservation`/`Contract`). Apply with `prisma db push` (per AGENTS §4 — no destructive migration). No backfill required; the one unique index is on a new nullable column (multiple NULLs allowed in Postgres).
