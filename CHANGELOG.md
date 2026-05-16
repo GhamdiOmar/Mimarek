@@ -1,5 +1,37 @@
 # Changelog — Mimaric PropTech
 
+## [4.3.0] — 2026-05-16 — Marketplace (verified-org B2B unit trading)
+
+The first non-patch release since v4.2.x: a **verified-organization-only B2B marketplace** that lets tenant orgs trade units across organization boundaries — full workflow from seller publication → buyer inquiry → seller CRM handoff → deal conversion → settlement-gated **atomic cross-org unit transfer** with transactional rollback. Not a public/SEO marketplace (per spec Decision 20 — kept inside verified Mimaric orgs). Additive schema only; all existing single-org flows are untouched.
+
+### Added
+
+- **Data model** — `MarketplaceListing`, `MarketplaceInquiry`, `UnitTransferTransaction` + enums (`MarketplaceListingStatus`, `MarketplaceInquiryStatus`, `UnitTransferStatus`, `MarketplaceComplianceStatus`). `Unit` gains marketplace/transfer provenance fields; `Reservation`/`Contract` gain nullable cross-org bridge fields (`marketplaceInquiryId`, `buyerOrgId`, `sellerOrgId`). Additive only — `prisma db push` applied; existing single-org flows untouched.
+- **Permissions** — `marketplace:read|publish|manage_own|inquiry:read|inquiry:write|inquiry:convert|transfer:execute` (tenant-scoped) and `marketplace:moderate` (platform-only). Registered in all four `permissions.ts` sites + role maps.
+- **Hardened cross-org read layer** (`lib/marketplace/listing-view.ts`) — the single chokepoint where the org filter is deliberately relaxed; returns explicit allow-listed view models only, never raw `Unit`/`Customer`/`Contract` rows; buyer browse excludes own-org listings.
+- **Server actions** (`app/actions/marketplace.ts`) — eligibility (machine-readable blocker codes), draft/publish/update/unpublish, browse/detail, confirm-interest (creates seller-side CRM customer with `source=MARKETPLACE`), convert-to-deal (cross-org reservation + transfer), settlement with `SIGNED` SALE-contract gate, transactional rollback + `FAILED` state + finance/admin notification, platform suspend. Unit clone on transfer bypasses the `UNITS_MAX` entitlement (system-initiated).
+- **Maintenance guard** — transferred-away units reject new seller-side maintenance (`MAINTENANCE_BLOCKED_NOT_OWNER` audit event).
+- **UI** — `/dashboard/marketplace` (buyer browse, filters, cards/table responsive), `/dashboard/marketplace/[listingId]` (detail + National Address validation + Google Maps `api=1` link + confirmation modal), `/dashboard/marketplace/my-listings` (seller listings, incoming inquiries, convert, settle), `/dashboard/admin/marketplace` (platform moderation/suspend), Publish dialog launched from `/dashboard/units`, Marketplace badge/filter on `/dashboard/crm`. Nav + Cmd-K wired. Bilingual AR/RTL-first, design tokens, audit trail on every transition.
+
+### Fixed
+
+- **My Listings was not discoverable (UI-First violation).** The seller "My Listings" route was set `hiddenFromNav` on the wrong assumption it was reachable via the marketplace page tabs (those are buyer-only: Browse / My Inquiries). Added a permission-gated **"My Listings"** action button in the marketplace page header (visible to `marketplace:manage_own`) and a **"Back to marketplace"** link on the My Listings page. Verified end-to-end in a real browser. AGENTS.md §3.1 updated with a `hiddenFromNav` discoverability rule.
+
+### Verification
+
+- Full `tsc --noEmit` green; `next build` green (all four marketplace routes compiled).
+- Functional cross-org E2E through the UI (two real orgs, Playwright + Chromium): seller publish (eligibility gate enforced incl. `MISSING_ADDRESS`) → buyer cross-org browse → listing detail (Maps URL exact) → buyer express interest → seller CRM customer created (`source=MARKETPLACE`, in seller org) → convert to deal (cross-org reservation + `PENDING_SETTLEMENT` transfer) → **settlement correctly refused without a SIGNED sale contract**. Zero marketplace-attributable console errors; mobile 375px no overflow; buyer-browse own-org exclusion confirmed.
+- **Screenshot evidence captured** — light/dark × AR/EN for browse, detail, my-listings + admin moderation + mobile (`apps/web/e2e/__screenshots__/marketplace/`). The earlier preview-renderer limitation was bypassed by running the suite under Playwright/Chromium.
+- **axe-core accessible-name scan** — zero violations across all marketplace surfaces and dialogs (browse, my-listings, detail, admin moderation, publish/interest/edit/suspend dialogs). Pre-existing name violations elsewhere (`/dashboard/settings`, `/dashboard/reports`, `/dashboard/maintenance/tickets`) are out of scope for this feature.
+### Upgrade notes
+
+- Schema is **additive** (new models/enums + nullable columns on `Unit`/`Reservation`/`Contract`). Apply with `prisma db push` (per AGENTS §4 — no destructive migration). No backfill required; the one unique index is on a new nullable column (multiple NULLs allowed in Postgres).
+- New permissions are auto-granted by role map: `ADMIN`/`MANAGER` get the full tenant marketplace set, `AGENT` gets read + inquiry, `SYSTEM_ADMIN` gets `marketplace:moderate`. No manual role migration needed.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimaric/compare/v4.2.5...v4.3.0
+
+---
+
 ## [4.2.5] — 2026-05-16 — Off-plan module removal & Wafi reference cleanup
 
 Full removal of the off-plan sales module, project route, and all Wafi branding/content that was surfaced as dead code after the v4.2.x schema cleanup.

@@ -7,7 +7,7 @@
 Automate the full property lifecycle — project management, sales, rentals, leasing, and finance — on a platform built for Vision 2030 compliance (ZATCA · Ejar · REGA · Balady · Wafi · Absher).
 
 [![CI](https://github.com/GhamdiOmar/Mimaric/actions/workflows/ci.yml/badge.svg)](https://github.com/GhamdiOmar/Mimaric/actions/workflows/ci.yml)
-![Version](https://img.shields.io/badge/version-4.0.0-7339AC)
+![Version](https://img.shields.io/badge/version-4.3.0-7339AC)
 ![Next.js](https://img.shields.io/badge/Next.js-16-black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6)
 ![Arabic](https://img.shields.io/badge/%D8%B9%D8%B1%D8%A8%D9%8A-first-00875A)
@@ -46,8 +46,9 @@ Saudi real estate runs on a fragmented stack — Excel sheets for rent rolls, Wh
 | **Payments** | Installment schedules, AR aging (0–30 / 31–60 / 61–90 / 90+), overdue/paid tone coding |
 | **Maintenance** | Tickets, preventive schedules, SLA breach tracking, technician assignment |
 | **Documents** | Blueprints, permits, legal documents — categorized vault with storage usage |
+| **Marketplace** | Verified-org-only B2B unit trading — publish → cross-org inquiry → seller CRM handoff → deal → settlement-gated atomic ownership transfer; REGA-aware compliance + platform moderation |
 | **Reports** | CSV / XLSX / PDF exports from every data-backed surface |
-| **Platform admin** | Tenant orgs, subscriptions, coupons, cross-tenant support tickets, SEO settings |
+| **Platform admin** | Tenant orgs, subscriptions, coupons, cross-tenant support tickets, SEO settings, marketplace moderation |
 
 ## Access model
 

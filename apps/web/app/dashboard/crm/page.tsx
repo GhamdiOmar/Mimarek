@@ -192,6 +192,7 @@ const SOURCE_LABELS: Record<string, { ar: string; en: string }> = {
   EXHIBITION: { ar: "معرض", en: "Exhibition" },
   COLD_CALL: { ar: "اتصال بارد", en: "Cold Call" },
   SOCIAL_MEDIA: { ar: "وسائل التواصل", en: "Social Media" },
+  MARKETPLACE: { ar: "السوق", en: "Marketplace" },
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -618,7 +619,14 @@ function CustomerDrawer({
               {statusCfg.label[lang]}
             </span>
             {customer.source && SOURCE_LABELS[customer.source] && (
-              <span className="text-xs text-muted-foreground border border-border rounded-full px-2.5 py-1">
+              <span
+                className={cn(
+                  "text-xs rounded-full px-2.5 py-1 border",
+                  customer.source === "MARKETPLACE"
+                    ? "bg-primary/10 text-primary border-primary/30"
+                    : "text-muted-foreground border-border",
+                )}
+              >
                 {(SOURCE_LABELS[customer.source] as { ar: string; en: string })[lang]}
               </span>
             )}

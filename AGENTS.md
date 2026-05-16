@@ -26,6 +26,7 @@
 ### 3.1 UI-First Principle
 - Every page, feature, CRUD function, export/import, configuration, or action MUST be accessible through the UI. When creating a new page, always add a navigation link (sidebar, topbar, or contextual button). When adding a server action, always wire it to a UI control. Never leave functionality orphaned without a user-facing path to reach it.
 - **Checklist for every new feature**: (1) Is there a nav link or button to reach it? (2) Can the user discover it without knowing the URL? (3) Are related CRUD actions exposed through the UI? (4) Are export/import functions surfaced in the page header or action menu?
+- **`hiddenFromNav: true` is a discoverability hazard (learned 2026-05-16).** Setting a route `hiddenFromNav` removes it from the sidebar/More — it is then ONLY reachable via Cmd-K (not discoverable) unless a real on-page affordance exists. If you mark a route `hiddenFromNav`, you MUST add and *verify in the running UI* a visible button/tab/link that reaches it. Incident: `/dashboard/marketplace/my-listings` was set `hiddenFromNav` on the assumption sellers would reach it via the marketplace page tabs — but those tabs were buyer-only (Browse / My Inquiries), so the seller had zero discoverable path. Rule: never rely on an assumed affordance — open the page in the browser and click the path end-to-end before considering nav wiring done.
 
 ### 3.2 Workflow Orchestration
 - Enter plan mode for ANY non-trivial task (3+ steps or architectural decisions).
@@ -1045,10 +1046,11 @@ Mimaric is a B2B SaaS. **Two distinct user universes must never share surfaces, 
 - `/dashboard/admin/tickets` — cross-tenant support tickets
 - `/dashboard/admin/seo` — marketing site SEO
 - `/dashboard/admin/coupons`, `/dashboard/admin/subscriptions` — billing/plans control
+- `/dashboard/admin/marketplace` — marketplace moderation (review/suspend listings across tenant orgs; REGA kill-switch). Gated by `marketplace:moderate` (SYSTEM_ONLY) + `admin/layout.tsx` `requireSystem()`.
 - `/dashboard/more` — shared "more" menu (audience-filtered)
 - `/dashboard/notifications` — their own notifications (shared audience)
 
-**System users MUST NOT see:** `/dashboard`, `/dashboard/units`, `/dashboard/crm`, `/dashboard/deals`, `/dashboard/contracts`, `/dashboard/payments`, `/dashboard/maintenance`, `/dashboard/leasing`, `/dashboard/finance`, `/dashboard/reports`, `/dashboard/documents`, `/dashboard/help`, `/dashboard/billing` (tenant subscription page), `/dashboard/settings` (tenant org + team settings), or any tenant-scoped data. They also MUST NOT be offered tenant create-actions in Cmd-K (`New customer`, `New deal`, `New contract`, etc.). Layer 2 middleware (`authorized` in `apps/web/auth.config.ts`) redirects system users to `/dashboard/admin` when they hit any non-allowlisted `/dashboard/**` path.
+**System users MUST NOT see:** `/dashboard`, `/dashboard/units`, `/dashboard/crm`, `/dashboard/deals`, `/dashboard/contracts`, `/dashboard/payments`, `/dashboard/maintenance`, `/dashboard/leasing`, `/dashboard/finance`, `/dashboard/reports`, `/dashboard/documents`, `/dashboard/marketplace`, `/dashboard/marketplace/[listingId]`, `/dashboard/marketplace/my-listings`, `/dashboard/help`, `/dashboard/billing` (tenant subscription page), `/dashboard/settings` (tenant org + team settings), or any tenant-scoped data. They also MUST NOT be offered tenant create-actions in Cmd-K (`New customer`, `New deal`, `New contract`, etc.). Layer 2 middleware (`authorized` in `apps/web/auth.config.ts`) redirects system users to `/dashboard/admin` when they hit any non-allowlisted `/dashboard/**` path.
 
 > **Planned follow-up:** a dedicated platform-billing surface and a system-user account/profile page are not yet built. Until they ship, `/dashboard/billing` and `/dashboard/settings` are tenant-only — the Layer 2 redirect sends system users back to `/dashboard/admin`.
 
