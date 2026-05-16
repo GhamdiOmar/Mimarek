@@ -1,5 +1,26 @@
 # Changelog — Mimaric PropTech
 
+## [4.2.3] — 2026-05-16 — Admin dashboard render fix
+
+Patch targeting three bugs that prevented `/dashboard/admin` from rendering for `SYSTEM_ADMIN` users after the v4.2.2 tenant-isolation hardening.
+
+### Fixed
+
+- **Dashboard layout infinite redirect loop** — `dashboard/layout.tsx` called `requireTenant()` which, for system users, redirects to `/dashboard/admin` — itself under the same layout — creating an infinite redirect cycle. Fixed by detecting `isSystemRole` before routing: system users go through `requireSystem()` (auth + role check only); the nested `admin/layout.tsx` remains the real access gate. Tenant users continue through `requireTenant()` as before.
+- **Missing `getMrrTrend` server action** — `/dashboard/admin/page.tsx` imported `getMrrTrend` from `actions/trends/getMrrTrend` but the file did not exist in the repo, causing Turbopack to deadlock on every request to the admin route. File created with correct 12-month invoice-bucket aggregation logic.
+- **`getMrrTrend` TS2532** — `noUncheckedIndexedAccess` made `buckets[idx]` type `number | undefined`; fixed with `(buckets[idx] ?? 0) + …` null-coalescing pattern.
+- **`customers.ts` TS2353 — `organizationId` on `Reservation`** — `updateCustomerStatus` LOST-path transaction incorrectly included `organizationId` in the `Reservation.findMany` where-clause; `Reservation` has no direct `organizationId` field (tenant isolation is enforced via `customerId → Customer.organizationId`). Field removed.
+- **`customers.ts` TS2322 — `CustomerStatus` enum cast** — Zod schema returns `string`; both `customer.update` calls now cast `validatedStatus as CustomerStatus` and import the enum from `@repo/db`.
+
+### Metrics
+
+- 3 files changed: `dashboard/layout.tsx`, `actions/customers.ts`, `actions/trends/getMrrTrend.ts` (new).
+- TypeScript clean (`tsc --noEmit` zero errors across `apps/web`).
+
+**Full diff:** https://github.com/GhamdiOmar/Mimaric/compare/v4.2.2...v4.2.3
+
+---
+
 ## [4.2.2] — 2026-05-15 — Security & Stability Hardening (QA Audit)
 
 Full-pass remediation of 22 findings from the internal QA code audit. Score raised from 5.5/10 (No-Go) to production-ready. No new features — correctness, security, and data integrity only.
