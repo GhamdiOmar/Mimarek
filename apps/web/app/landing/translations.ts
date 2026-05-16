@@ -19,7 +19,6 @@ export const t = {
     vision2030Aligned: "متوافق مع رؤية 2030",
     baladyCompliant: "حقول بلدي جاهزة",
     zatcaInvoicing: "بيانات فواتير جاهزة لـ ZATCA",
-    wafiReady: "حقول وافي جاهزة",
 
     // Logo bar
     trustedBy: "موثوق من قبل شركات التطوير العقاري في المملكة",
@@ -37,7 +36,7 @@ export const t = {
       "تتبع مشاريعك العقارية من البداية للنهاية مع حقول بيانات جاهزة لبلدي",
     projectFeature1: "تتبع الصكوك وأرقام القطع",
     projectFeature2: "مراحل البناء والتقدم",
-    projectFeature3: "حقول جاهزة للبيع على الخارطة ووافي",
+    projectFeature3: "حقول جاهزة لبلدي والتطوير العقاري",
     projectFeature4: "إحداثيات الموقع وتصنيف الأراضي",
 
     salesOffplan: "المبيعات والبيع على الخارطة",
@@ -81,7 +80,7 @@ export const t = {
       "سير عمل بلا أوراق، منصة سحابية بالكامل، وإدارة ذكية للعقارات",
     regulatoryCompliance: "الامتثال التنظيمي",
     regulatoryComplianceDesc:
-      "حقول وبيانات منظمة لوزارة التجارة، بلدي، هيئة الزكاة والضريبة والجمارك، ووافي",
+      "حقول وبيانات منظمة لوزارة التجارة، بلدي، وهيئة الزكاة والضريبة والجمارك",
     economicDiversification: "التنويع الاقتصادي",
     economicDiversificationDesc:
       "دعم نمو القطاع العقاري وتطوير البنية التحتية الرقمية",
@@ -182,7 +181,7 @@ export const t = {
       "بالتأكيد. يمكنك الترقية أو تغيير خطتك في أي وقت من إعدادات الفوترة. التغييرات تسري فوراً.",
     faq7Q: "كيف يدعم ميماريك بيانات الأنظمة السعودية؟",
     faq7A:
-      "ميماريك يوفّر حقولاً وتدفقات جاهزة لبيانات بلدي، وزارة التجارة، ZATCA، ووافي. أي تكامل مباشر يُذكر فقط عند تفعيله فعلياً.",
+      "ميماريك يوفّر حقولاً وتدفقات جاهزة لبيانات بلدي، وزارة التجارة، وZATCA. أي تكامل مباشر يُذكر فقط عند تفعيله فعلياً.",
 
     // Final CTA
     finalCtaTitle: "جاهز لتحويل إدارة عقاراتك؟",
@@ -225,7 +224,6 @@ export const t = {
     vision2030Aligned: "Vision 2030 Aligned",
     baladyCompliant: "Balady-ready fields",
     zatcaInvoicing: "ZATCA-ready invoice data",
-    wafiReady: "Wafi-ready fields",
 
     // Logo bar
     trustedBy: "Trusted by real estate developers across Saudi Arabia",
@@ -243,7 +241,7 @@ export const t = {
       "Track your real estate projects from start to finish with Balady-ready data fields",
     projectFeature1: "Deed & parcel number tracking",
     projectFeature2: "Construction stages & progress",
-    projectFeature3: "Wafi-ready off-plan fields",
+    projectFeature3: "Balady-ready development fields",
     projectFeature4: "GPS coordinates & land classification",
 
     salesOffplan: "Sales & Off-Plan",
@@ -287,7 +285,7 @@ export const t = {
       "Paperless workflows, fully cloud-based platform, and intelligent property management",
     regulatoryCompliance: "Regulatory Compliance",
     regulatoryComplianceDesc:
-      "Structured fields for MOC, Balady, ZATCA, and Wafi workflows",
+      "Structured fields for MOC, Balady, and ZATCA workflows",
     economicDiversification: "Economic Diversification",
     economicDiversificationDesc:
       "Supporting real estate sector growth and digital infrastructure development",
@@ -391,7 +389,7 @@ export const t = {
       "Absolutely. You can upgrade or change your plan anytime from billing settings. Changes take effect immediately.",
     faq7Q: "How does Mimaric support Saudi regulatory data?",
     faq7A:
-      "Mimaric provides structured fields and workflows for Balady, MOC, ZATCA, and Wafi data. Direct integrations are described only when they are live.",
+      "Mimaric provides structured fields and workflows for Balady, MOC, and ZATCA data. Direct integrations are described only when they are live.",
 
     // Final CTA
     finalCtaTitle: "Ready to transform your property management?",

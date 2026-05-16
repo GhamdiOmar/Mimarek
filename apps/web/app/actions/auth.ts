@@ -8,10 +8,10 @@ import { validatePassword } from "../../lib/password-policy";
 import { logAuditEvent } from "../../lib/audit";
 
 const ALLOWED_LANDING_PAGES = [
-  "/dashboard", "/dashboard/projects", "/dashboard/units",
+  "/dashboard", "/dashboard/units",
   "/dashboard/crm", "/dashboard/contracts",
   "/dashboard/leases", "/dashboard/finance", "/dashboard/maintenance",
-  "/dashboard/reports", "/dashboard/settings",
+  "/dashboard/settings",
 ];
 
 export async function loginAction(formData: FormData) {
