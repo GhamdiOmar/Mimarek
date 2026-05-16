@@ -9,7 +9,6 @@ type UserPreferences = {
 
 const ALLOWED_LANDING_PAGES = [
   "/dashboard",
-  "/dashboard/projects",
   "/dashboard/units",
   "/dashboard/crm",
   "/dashboard/contracts",

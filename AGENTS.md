@@ -113,7 +113,11 @@ Before `git tag`, `git push origin vX.Y.Z`, or `gh release create`, ALL of the f
 ---
 
 ## 4. Key Technical Notes
-- Use `prisma db push` not migrations (DB has drift from initial setup)
+- **Use `prisma migrate dev` / `prisma migrate deploy` — NOT `db push`.** The repo has a migration history baseline (`packages/db/prisma/migrations/`). `db push` bypasses migration tracking and creates irreversible schema drift. Never use `db push` in development or production after the v4.2.1 baseline.
+  - New schema change: `npx prisma migrate dev --name <description>` (local dev)
+  - Deploying to prod: `npx prisma migrate deploy` (applies pending migrations non-interactively)
+  - First-time local setup after clone: run `npx prisma migrate dev` which will apply the baseline migration before seeding.
+- **Schema change — `paidAmount Decimal?` on `RentInstallment`**: Added in v4.2.1 stabilization. This field tracks partial payment amounts for installments. It was previously only on `PaymentPlanInstallment`. Any new code that records rent payments must write `paidAmount` alongside `status` updates.
 - Prisma Decimal serialization: use `JSON.parse(JSON.stringify())` in server actions
 - Button component needs inline `style={{ display: "inline-flex" }}` to override Tailwind v4 preflight
 - CI needs `DATABASE_URL`, `AUTH_SECRET`, `AUTH_TRUST_HOST` env vars at job level
