@@ -52,7 +52,7 @@ jobs:
         run: npx turbo run db:generate
 
       - name: Push DB schema
-        run: cd packages/db && npx prisma db push --skip-generate --accept-data-loss
+        run: cd packages/db && npx prisma db push --accept-data-loss
 
       - name: Seed database
         run: cd packages/db && npx tsx prisma/seed.ts
