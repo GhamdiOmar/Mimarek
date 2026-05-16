@@ -206,10 +206,24 @@ export const moyasarAdapter: PaymentProvider = {
       .update(rawBody, "utf8")
       .digest("hex");
 
-    const valid = crypto.timingSafeEqual(
-      Buffer.from(signature),
-      Buffer.from(expectedSignature)
-    );
+    const sigBuf = Buffer.from(typeof signature === "string" ? signature : "");
+    const expBuf = Buffer.from(expectedSignature);
+
+    if (sigBuf.length === 0 || sigBuf.length !== expBuf.length) {
+      return {
+        valid: false,
+        eventId: "",
+        eventType: "",
+        payload: null,
+      };
+    }
+
+    let valid = false;
+    try {
+      valid = crypto.timingSafeEqual(sigBuf, expBuf);
+    } catch {
+      valid = false;
+    }
 
     const payload = JSON.parse(rawBody);
 

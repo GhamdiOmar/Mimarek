@@ -289,7 +289,7 @@ export async function generateSubscriptionInvoice(params: {
   subscriptionId: string;
   description?: string;
 }) {
-  const session = await getSessionOrThrow();
+  const session = await requirePermission("billing:write");
 
   const subscription = await db.subscription.findUnique({
     where: { id: params.subscriptionId },

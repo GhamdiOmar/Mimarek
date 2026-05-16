@@ -20,22 +20,6 @@ const FREQUENCY_MONTHS: Record<string, number> = {
   ANNUAL: 12,
 };
 
-async function generateContractNumber(
-  organizationId: string,
-  type: "SALE" | "LEASE"
-): Promise<string> {
-  const year = new Date().getFullYear();
-  const count = await db.contract.count({
-    where: {
-      type,
-      customer: { organizationId },
-      createdAt: { gte: new Date(`${year}-01-01`) },
-    },
-  });
-  const seq = String(count + 1).padStart(4, "0");
-  return `${type}-${year}-${seq}`;
-}
-
 export async function createContract(data: {
   customerId: string;
   unitId: string;
@@ -76,9 +60,6 @@ export async function createContract(data: {
     throw new Error("Unit not found or you don't have access. Please verify the unit exists in your organization.");
   }
 
-  // Generate contract number
-  const contractNumber = await generateContractNumber(session.organizationId, data.type);
-
   // Ejar validation for LEASE contracts
   if (data.type === "LEASE") {
     if (!data.startDate || !data.endDate) {
@@ -115,6 +96,15 @@ export async function createContract(data: {
     const installmentAmount = data.amount / installmentCount;
 
     contract = await db.$transaction(async (tx) => {
+      // Generate contract number atomically (count + create in same tx)
+      const year = new Date().getFullYear();
+      const count = await tx.contract.count({
+        where: { type: data.type, createdAt: { gte: new Date(`${year}-01-01`) } },
+      });
+      const seq = String(count + 1).padStart(4, "0");
+      const orgPrefix = session.organizationId.slice(0, 4).toUpperCase();
+      const contractNumber = `${orgPrefix}-${data.type}-${year}-${seq}`;
+
       // Create Lease
       const lease = await tx.lease.create({
         data: {
@@ -166,19 +156,30 @@ export async function createContract(data: {
     });
   } else {
     // SALE contract (or LEASE without dates as fallback)
-    contract = await db.contract.create({
-      data: {
-        customerId: data.customerId,
-        unitId: data.unitId,
-        type: data.type,
-        amount: data.amount,
-        fileUrl: data.fileUrl,
-        userId: session.userId,
-        status: "DRAFT",
-        contractNumber,
-        deliveryDate: data.deliveryDate ? new Date(data.deliveryDate) : undefined,
-        notes: data.notes,
-      },
+    contract = await db.$transaction(async (tx) => {
+      // Generate contract number atomically (count + create in same tx)
+      const year = new Date().getFullYear();
+      const count = await tx.contract.count({
+        where: { type: data.type, createdAt: { gte: new Date(`${year}-01-01`) } },
+      });
+      const seq = String(count + 1).padStart(4, "0");
+      const orgPrefix = session.organizationId.slice(0, 4).toUpperCase();
+      const contractNumber = `${orgPrefix}-${data.type}-${year}-${seq}`;
+
+      return tx.contract.create({
+        data: {
+          customerId: data.customerId,
+          unitId: data.unitId,
+          type: data.type,
+          amount: data.amount,
+          fileUrl: data.fileUrl,
+          userId: session.userId,
+          status: "DRAFT",
+          contractNumber,
+          deliveryDate: data.deliveryDate ? new Date(data.deliveryDate) : undefined,
+          notes: data.notes,
+        },
+      });
     });
   }
 
@@ -207,7 +208,12 @@ export async function getContract(contractId: string) {
   return JSON.parse(JSON.stringify(contract));
 }
 
-export async function getContracts(filters?: { status?: string; type?: string }) {
+export async function getContracts(filters?: {
+  status?: string;
+  type?: string;
+  page?: number;
+  pageSize?: number;
+}) {
   const session = await requirePermission("contracts:read");
 
   const where: any = {
@@ -217,6 +223,10 @@ export async function getContracts(filters?: { status?: string; type?: string })
   if (filters?.status) where.status = filters.status;
   if (filters?.type) where.type = filters.type;
 
+  const page = Math.max(1, filters?.page ?? 1);
+  const pageSize = Math.min(100, Math.max(1, filters?.pageSize ?? 50));
+  const skip = (page - 1) * pageSize;
+
   const contracts = await db.contract.findMany({
     where,
     include: {
@@ -225,6 +235,8 @@ export async function getContracts(filters?: { status?: string; type?: string })
       lease: { select: { id: true, startDate: true, endDate: true, status: true } },
     },
     orderBy: { createdAt: "desc" },
+    skip,
+    take: pageSize,
   });
   return JSON.parse(JSON.stringify(contracts));
 }

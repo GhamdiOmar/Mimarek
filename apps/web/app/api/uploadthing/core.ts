@@ -1,12 +1,13 @@
 import { createUploadthing, type FileRouter } from "uploadthing/next";
 import { auth } from "../../../auth";
-import { hasPermission } from "../../../lib/permissions";
+import { hasPermission, isSystemRole } from "../../../lib/permissions";
 
 const f = createUploadthing();
 
 /**
  * Shared auth middleware for all upload routes.
- * Validates session, checks documents:write permission, and returns org-scoped metadata.
+ * Validates session, checks documents:write permission, and enforces tenant audience
+ * (system users must not upload to tenant document storage).
  */
 async function authMiddleware() {
   const session = await auth();
@@ -17,6 +18,12 @@ async function authMiddleware() {
 
   if (!hasPermission(role, "documents:write")) {
     throw new Error("Insufficient permissions");
+  }
+
+  // Enforce tenant audience: system users have null organizationId and must not
+  // access tenant document storage even if they hold documents:write permission.
+  if (isSystemRole(role) || !organizationId) {
+    throw new Error("Forbidden: document upload requires a tenant account");
   }
 
   return {

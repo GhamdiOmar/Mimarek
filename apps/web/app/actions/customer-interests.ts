@@ -2,7 +2,9 @@
 
 import { db } from "@repo/db";
 import { revalidatePath } from "next/cache";
-import { requirePermission } from "../../lib/auth-helpers";
+import { requirePermission, getSessionWithPermissions } from "../../lib/auth-helpers";
+import { decryptCustomerData } from "../../lib/pii-crypto";
+import { maskCustomerPii } from "../../lib/pii-masking";
 import { logAuditEvent } from "../../lib/audit";
 import { createReservation } from "./reservations";
 
@@ -171,7 +173,13 @@ export async function getCustomerInterests(customerId: string) {
 
 // ─── Get all customers interested in a specific unit ──────────────────────────
 export async function getCustomerInterestsForUnit(unitId: string) {
-  const session = await requirePermission("properties:read");
+  const session = await getSessionWithPermissions();
+
+  if (!session.can("properties:read")) {
+    throw new Error("Forbidden: you do not have permission to read properties.");
+  }
+
+  const hasPii = session.can("customers:read_pii");
 
   // Verify unit belongs to org
   const unit = await db.unit.findFirst({
@@ -188,7 +196,6 @@ export async function getCustomerInterestsForUnit(unitId: string) {
           id: true,
           name: true,
           phone: true,
-          phoneHash: true,
           agentId: true,
           agent: { select: { name: true } },
         },
@@ -197,7 +204,34 @@ export async function getCustomerInterestsForUnit(unitId: string) {
     orderBy: { createdAt: "desc" },
   });
 
-  return JSON.parse(JSON.stringify(interests));
+  if (hasPii) {
+    logAuditEvent({
+      userId: session.userId,
+      userEmail: session.email,
+      userRole: session.role,
+      action: "READ_PII",
+      resource: "CustomerPropertyInterest",
+      metadata: { unitId, count: interests.length },
+      organizationId: session.organizationId,
+    });
+  }
+
+  const maskedInterests = interests.map((interest) => {
+    const decrypted = decryptCustomerData({ phone: interest.customer.phone });
+    const masked = maskCustomerPii(
+      { phone: decrypted.phone, phoneHash: undefined },
+      hasPii
+    );
+    return {
+      ...interest,
+      customer: {
+        ...interest.customer,
+        phone: masked.phone,
+      },
+    };
+  });
+
+  return JSON.parse(JSON.stringify(maskedInterests));
 }
 
 // ─── Get available units for interest linking (org-scoped) ────────────────────

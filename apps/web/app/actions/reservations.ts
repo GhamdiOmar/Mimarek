@@ -90,8 +90,12 @@ export async function createReservation(data: {
   return JSON.parse(JSON.stringify(reservation));
 }
 
-export async function getReservations() {
+export async function getReservations(filters?: { page?: number; pageSize?: number }) {
   const session = await requirePermission("reservations:read");
+
+  const page = Math.max(1, filters?.page ?? 1);
+  const pageSize = Math.min(100, Math.max(1, filters?.pageSize ?? 50));
+  const skip = (page - 1) * pageSize;
 
   const reservations = await db.reservation.findMany({
     where: {
@@ -102,6 +106,8 @@ export async function getReservations() {
       customer: true,
     },
     orderBy: { createdAt: "desc" },
+    skip,
+    take: pageSize,
   });
   return JSON.parse(JSON.stringify(reservations));
 }
@@ -120,44 +126,48 @@ export async function updateReservationStatus(
     throw new Error("Reservation not found or you don't have access. Please refresh the page and try again.");
   }
 
-  const updated = await db.reservation.update({
-    where: { id: reservationId },
-    data: { status },
-  });
+  const updated = await db.$transaction(async (tx) => {
+    const res = await tx.reservation.update({
+      where: { id: reservationId },
+      data: { status },
+    });
 
-  // If cancelled/expired, free the unit and revert customer status
-  if (status === "CANCELLED" || status === "EXPIRED") {
-    await db.unit.update({
-      where: { id: reservation.unitId },
-      data: { status: "AVAILABLE" },
-    });
-    // Revert customer to QUALIFIED if no other active reservations
-    const otherActive = await db.reservation.count({
-      where: {
-        customerId: reservation.customerId,
-        id: { not: reservationId },
-        status: { in: ["PENDING", "CONFIRMED"] },
-      },
-    });
-    if (otherActive === 0) {
-      await db.customer.update({
+    // If cancelled/expired, free the unit and revert customer status
+    if (status === "CANCELLED" || status === "EXPIRED") {
+      await tx.unit.update({
+        where: { id: reservation.unitId },
+        data: { status: "AVAILABLE" },
+      });
+      // Revert customer to QUALIFIED if no other active reservations
+      const otherActive = await tx.reservation.count({
+        where: {
+          customerId: reservation.customerId,
+          id: { not: reservationId },
+          status: { in: ["PENDING", "CONFIRMED"] },
+        },
+      });
+      if (otherActive === 0) {
+        await tx.customer.update({
+          where: { id: reservation.customerId },
+          data: { status: "QUALIFIED" },
+        });
+      }
+    }
+
+    // If confirmed, mark unit as SOLD
+    if (status === "CONFIRMED") {
+      await tx.unit.update({
+        where: { id: reservation.unitId },
+        data: { status: "SOLD" },
+      });
+      await tx.customer.update({
         where: { id: reservation.customerId },
-        data: { status: "QUALIFIED" },
+        data: { status: "CONVERTED" },
       });
     }
-  }
 
-  // If confirmed, mark unit as SOLD
-  if (status === "CONFIRMED") {
-    await db.unit.update({
-      where: { id: reservation.unitId },
-      data: { status: "SOLD" },
-    });
-    await db.customer.update({
-      where: { id: reservation.customerId },
-      data: { status: "CONVERTED" },
-    });
-  }
+    return res;
+  });
 
   logAuditEvent({
     userId: session.userId,

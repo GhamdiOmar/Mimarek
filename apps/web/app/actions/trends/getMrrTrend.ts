@@ -1,34 +1,33 @@
 "use server";
 
 import { db } from "@repo/db";
-import { startOfMonth, subMonths } from "date-fns";
 import { requirePermission } from "../../../lib/auth-helpers";
 
-/** Last 12 months of platform MRR (sum of paid invoices per month). Platform-admin only. */
 export async function getMrrTrend(): Promise<number[]> {
   await requirePermission("billing:admin");
 
   const now = new Date();
-  const start = startOfMonth(subMonths(now, 11));
+  const start = new Date(now.getFullYear(), now.getMonth() - 11, 1);
 
-  const rows = await db.invoice.findMany({
+  const invoices = await db.invoice.findMany({
     where: {
       status: "PAID",
       paidAt: { gte: start },
     },
-    select: { total: true, paidAt: true },
+    select: { paidAt: true, total: true },
   });
 
-  const totals = new Array(12).fill(0);
-  for (const r of rows) {
-    if (!r.paidAt) continue;
-    const monthsBack =
-      (now.getFullYear() - r.paidAt.getFullYear()) * 12 +
-      (now.getMonth() - r.paidAt.getMonth());
-    const idx = 11 - monthsBack;
+  const buckets = Array.from({ length: 12 }, () => 0);
+  for (const inv of invoices) {
+    if (!inv.paidAt) continue;
+    const monthsAgo =
+      (now.getFullYear() - inv.paidAt.getFullYear()) * 12 +
+      (now.getMonth() - inv.paidAt.getMonth());
+    const idx = 11 - monthsAgo;
     if (idx >= 0 && idx < 12) {
-      totals[idx] += Number(r.total);
+      buckets[idx] = (buckets[idx] ?? 0) + Number(inv.total);
     }
   }
-  return totals;
+
+  return buckets as number[];
 }

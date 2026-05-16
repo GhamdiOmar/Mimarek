@@ -99,11 +99,12 @@ test.describe('Billing Dashboard — Admin', () => {
     test('trial subscription shows trial end date on billing dashboard', async () => {
       await billing.gotoBilling();
       const main = billing.page.locator('main');
-      // Look for trial ends info
+      // Look for trial ends info — only present when subscription is in TRIALING state
       const trialEndExists = await main.getByText(/ينتهي التجربة|Trial ends/i).first()
         .isVisible().catch(() => false);
-      // If in TRIALING status, trial end should be shown
-      expect(true).toBeTruthy(); // Soft assertion — depends on test data state
+      // Billing page must at minimum have loaded (plan section visible)
+      const planVisible = await main.getByText(/الخطة|Plan/i).first().isVisible().catch(() => false);
+      expect(planVisible || trialEndExists).toBeTruthy();
     });
   });
 
@@ -273,16 +274,6 @@ test.describe('Billing Dashboard — Admin', () => {
       ).toBeVisible();
     });
 
-    test('invoices page has pagination when more than 20 invoices', async () => {
-      await billing.gotoInvoices();
-      // Pagination only shows when totalPages > 1
-      const pagination = billing.page.locator('button').filter({
-        hasText: /CaretLeft|CaretRight|‹|›/,
-      });
-      // This is a structural check — pagination buttons exist in markup if needed
-      expect(true).toBeTruthy();
-    });
-
     test('empty invoices state shows appropriate message', async () => {
       await billing.gotoInvoices();
       // Either shows invoice table or "No invoices" message
@@ -333,20 +324,8 @@ test.describe('Billing Dashboard — Admin', () => {
     test('past-due subscription shows warning banner on billing page', async () => {
       // This test requires a subscription in PAST_DUE state in test data
       await billing.gotoBilling();
-      // If subscription is PAST_DUE, banner should show
-      const bannerVisible = await billing.page
-        .getByText(/الدفع متأخر|Payment past due/i).first()
-        .isVisible().catch(() => false);
-      // Soft assertion — banner only shows for PAST_DUE status
-      expect(true).toBeTruthy();
-    });
-
-    test('past-due banner has "Update Payment" action button', async () => {
-      await billing.gotoBilling();
-      const updateBtn = billing.page.getByText(/تحديث الدفع|Update Payment/i);
-      const visible = await updateBtn.first().isVisible().catch(() => false);
-      // Only visible if subscription is PAST_DUE
-      expect(true).toBeTruthy();
+      // Billing page must load regardless of subscription status
+      await billing.expectBillingPageLoaded();
     });
   });
 
@@ -384,15 +363,14 @@ test.describe('Billing Dashboard — Admin', () => {
       const main = billing.page.locator('main');
       const hasCycle = await main.getByText(/شهري|سنوي|Monthly|Annual/i).first()
         .isVisible().catch(() => false);
-      expect(true).toBeTruthy();
+      const hasNoPlan = await main.getByText(/اختر خطة|Choose a Plan/i).first()
+        .isVisible().catch(() => false);
+      expect(hasCycle || hasNoPlan).toBeTruthy();
     });
 
     test('next billing date is displayed for active subscriptions', async () => {
       await billing.gotoBilling();
-      const main = billing.page.locator('main');
-      const hasNextBilling = await main.getByText(/الفوترة التالية|Next billing/i).first()
-        .isVisible().catch(() => false);
-      expect(true).toBeTruthy();
+      await billing.expectBillingPageLoaded();
     });
   });
 
@@ -403,11 +381,14 @@ test.describe('Billing Dashboard — Admin', () => {
   test.describe('ZATCA & Invoice Compliance', () => {
     test('invoices include SAR currency display', async () => {
       await billing.gotoInvoices();
+      await billing.expectInvoicesPageLoaded();
       const main = billing.page.locator('main');
-      // SAR should appear in the table
+      // SAR should appear in the table when invoices exist
       const sarVisible = await main.getByText(/ر\.س|SAR/i).first()
         .isVisible().catch(() => false);
-      expect(true).toBeTruthy();
+      const hasEmpty = await main.getByText(/لا توجد فواتير|No invoices/i)
+        .first().isVisible().catch(() => false);
+      expect(sarVisible || hasEmpty).toBeTruthy();
     });
 
     test('invoice totals include subtotal, VAT, and total columns', async () => {
