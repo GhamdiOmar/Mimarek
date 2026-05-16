@@ -1046,10 +1046,11 @@ Mimaric is a B2B SaaS. **Two distinct user universes must never share surfaces, 
 - `/dashboard/admin/tickets` — cross-tenant support tickets
 - `/dashboard/admin/seo` — marketing site SEO
 - `/dashboard/admin/coupons`, `/dashboard/admin/subscriptions` — billing/plans control
+- `/dashboard/admin/marketplace` — marketplace moderation (review/suspend listings across tenant orgs; REGA kill-switch). Gated by `marketplace:moderate` (SYSTEM_ONLY) + `admin/layout.tsx` `requireSystem()`.
 - `/dashboard/more` — shared "more" menu (audience-filtered)
 - `/dashboard/notifications` — their own notifications (shared audience)
 
-**System users MUST NOT see:** `/dashboard`, `/dashboard/units`, `/dashboard/crm`, `/dashboard/deals`, `/dashboard/contracts`, `/dashboard/payments`, `/dashboard/maintenance`, `/dashboard/leasing`, `/dashboard/finance`, `/dashboard/reports`, `/dashboard/documents`, `/dashboard/help`, `/dashboard/billing` (tenant subscription page), `/dashboard/settings` (tenant org + team settings), or any tenant-scoped data. They also MUST NOT be offered tenant create-actions in Cmd-K (`New customer`, `New deal`, `New contract`, etc.). Layer 2 middleware (`authorized` in `apps/web/auth.config.ts`) redirects system users to `/dashboard/admin` when they hit any non-allowlisted `/dashboard/**` path.
+**System users MUST NOT see:** `/dashboard`, `/dashboard/units`, `/dashboard/crm`, `/dashboard/deals`, `/dashboard/contracts`, `/dashboard/payments`, `/dashboard/maintenance`, `/dashboard/leasing`, `/dashboard/finance`, `/dashboard/reports`, `/dashboard/documents`, `/dashboard/marketplace`, `/dashboard/marketplace/[listingId]`, `/dashboard/marketplace/my-listings`, `/dashboard/help`, `/dashboard/billing` (tenant subscription page), `/dashboard/settings` (tenant org + team settings), or any tenant-scoped data. They also MUST NOT be offered tenant create-actions in Cmd-K (`New customer`, `New deal`, `New contract`, etc.). Layer 2 middleware (`authorized` in `apps/web/auth.config.ts`) redirects system users to `/dashboard/admin` when they hit any non-allowlisted `/dashboard/**` path.
 
 > **Planned follow-up:** a dedicated platform-billing surface and a system-user account/profile page are not yet built. Until they ship, `/dashboard/billing` and `/dashboard/settings` are tenant-only — the Layer 2 redirect sends system users back to `/dashboard/admin`.
 

@@ -203,12 +203,6 @@ export const FAQ_ITEMS: FAQItem[] = [
     category: "sales_crm",
   },
   {
-    id: "sc-6",
-    question: { ar: "ما هو نظام وافي وكيف يتوافق ميماريك معه؟", en: "What is Wafi and how does Mimaric comply with it?" },
-    answer: { ar: "وافي هو برنامج البيع على الخارطة التابع لوزارة الإسكان. عند إنشاء عقد بيع، يدعم ميماريك حقول وافي: تاريخ التسليم، رقم رخصة وافي، ومرجع حساب الضمان. عند توقيع عقد البيع، يتم تلقائياً: تحديث حالة الوحدة إلى 'مباع'، تحويل حالة العميل إلى 'مُحوّل'، وتسجيل إيداع في حساب الضمان (Escrow).", en: "Wafi is the Ministry of Housing's off-plan sales program. When creating a sale contract, Mimaric supports Wafi fields: delivery date, Wafi license reference, and escrow account reference. When a sale contract is signed, the system automatically: updates the unit status to 'Sold', converts the customer status to 'Converted', and records a deposit in the escrow account." },
-    category: "sales_crm",
-  },
-  {
     id: "sc-7",
     question: { ar: "ما هي دورة حياة العقد في ميماريك؟", en: "What is the contract lifecycle in Mimaric?" },
     answer: { ar: "يمر العقد بثلاث حالات رئيسية: مسودة ← مُرسل ← موقّع، ويمكن إلغاء العقد أو إبطاله. المسودة يمكن إرسالها أو إلغاؤها أو حذفها. المُرسل يمكن توقيعه أو إلغاؤه. الموقّع يمكن إبطاله فقط (يتطلب صلاحية Admin). عند التوقيع: عقد البيع يحوّل الوحدة إلى 'مباع' والعميل إلى 'مُحوّل'. عقد الإيجار يحوّل الوحدة إلى 'مؤجر' ويفعّل جدول الأقساط. عند الإلغاء أو الإبطال: تعود الوحدة إلى 'متاح' تلقائياً.", en: "A contract goes through three main states: Draft → Sent → Signed, and can be Cancelled or Voided. Draft contracts can be sent, cancelled, or deleted. Sent contracts can be signed or cancelled. Signed contracts can only be voided (requires Admin permission). On signing: Sale contracts set unit to 'Sold' and customer to 'Converted'. Lease contracts set unit to 'Rented' and activate the installment schedule. On cancel/void: the unit automatically returns to 'Available'." },
@@ -218,12 +212,6 @@ export const FAQ_ITEMS: FAQItem[] = [
     id: "sc-8",
     question: { ar: "كيف أنشئ عقد إيجار متوافق مع إيجار؟", en: "How do I create an Ejar-compliant lease contract?" },
     answer: { ar: "من قسم العقود، انقر 'عقد جديد' واختر نوع 'إيجار'. ستظهر حقول إيجار: تاريخ البداية والنهاية، دورية الدفع (شهري/ربع سنوي/نصف سنوي/سنوي)، مبلغ الضمان (لا يتجاوز 5%)، التجديد التلقائي، مسؤولية الصيانة، والملاحظات. عند الحفظ، يُنشأ تلقائياً: عقد إيجار مع رقم فريد، جدول أقساط حسب الدورية، وعقد إيجار مربوط بجدول الأقساط.", en: "From the Contracts section, click 'New Contract' and select 'Lease' type. Ejar fields appear: start and end dates, payment frequency (monthly/quarterly/semi-annual/annual), security deposit (max 5%), auto-renewal, maintenance responsibility, and notes. On save, the system auto-creates: a contract with a unique number, an installment schedule based on frequency, and a linked lease record with the installment schedule." },
-    category: "sales_crm",
-  },
-  {
-    id: "sc-9",
-    question: { ar: "كيف أنشئ عقد بيع متوافق مع وافي؟", en: "How do I create a Wafi-compliant sale contract?" },
-    answer: { ar: "من قسم العقود، انقر 'عقد جديد' واختر نوع 'بيع'. ستظهر حقول وافي: تاريخ التسليم، رقم رخصة وافي، والملاحظات. حساب الضمان يُربط تلقائياً من المشروع. عند توقيع العقد، يتم إيداع مبلغ العقد في حساب الضمان تلقائياً.", en: "From the Contracts section, click 'New Contract' and select 'Sale' type. Wafi fields appear: delivery date, Wafi license reference, and notes. The escrow account is auto-linked from the project. When the contract is signed, the contract amount is automatically deposited into the escrow account." },
     category: "sales_crm",
   },
   {
@@ -246,8 +234,8 @@ export const FAQ_ITEMS: FAQItem[] = [
   },
   {
     id: "sc-13",
-    question: { ar: "كيف أعرض تفاصيل عقد البيع (شروط وافي)؟", en: "How do I view sale contract details (Wafi terms)?" },
-    answer: { ar: "من صفحة تفاصيل العقد (نوع بيع)، ستجد: القسم الأول — بيانات الأطراف (البائع والمشتري)، القسم الثاني — بيانات الوحدة، القسم الثالث — القيمة المالية، والقسم الرابع — شروط البيع (تاريخ التسليم، رخصة وافي، مرجع حساب الضمان). الشريط الجانبي يعرض رقم العقد والقيمة ومراجع وافي.", en: "From the contract detail page (sale type), you'll find: Section 1 — party details (seller and buyer), Section 2 — unit details, Section 3 — financial value, and Section 4 — sale terms (delivery date, Wafi license, escrow account reference). The sidebar shows the contract number, value, and Wafi references." },
+    question: { ar: "كيف أعرض تفاصيل عقد البيع؟", en: "How do I view sale contract details?" },
+    answer: { ar: "من صفحة تفاصيل العقد (نوع بيع)، ستجد: القسم الأول — بيانات الأطراف (البائع والمشتري)، القسم الثاني — بيانات الوحدة، القسم الثالث — القيمة المالية، والقسم الرابع — شروط البيع (تاريخ التسليم والملاحظات). الشريط الجانبي يعرض رقم العقد والقيمة والحالة.", en: "From the contract detail page (sale type), you'll find: Section 1 — party details (seller and buyer), Section 2 — unit details, Section 3 — financial value, and Section 4 — sale terms (delivery date and notes). The sidebar shows the contract number, value, and status." },
     category: "sales_crm",
   },
   // Onboarding / Getting Started
@@ -411,22 +399,6 @@ export const GUIDE_ITEMS: GuideItem[] = [
       { ar: "أدخل مبلغ الضمان (اختياري — لا يتجاوز 5% من قيمة العقد حسب نظام إيجار)", en: "Enter security deposit (optional — max 5% of contract value per Ejar regulation)" },
       { ar: "حدد التجديد التلقائي (نعم/لا) ومسؤولية الصيانة (المؤجر/المستأجر)", en: "Set auto-renewal (yes/no) and maintenance responsibility (landlord/tenant)" },
       { ar: "انقر 'إنشاء' — يُنشأ العقد مع جدول أقساط تلقائي ورقم عقد فريد", en: "Click 'Create' — the contract is created with an auto-generated installment schedule and unique contract number" },
-    ],
-  },
-  {
-    id: "guide-23",
-    title: { ar: "إنشاء عقد بيع (وافي)", en: "Create a Wafi Sale Contract" },
-    description: { ar: "خطوات إنشاء عقد بيع متوافق مع نظام وافي للبيع على الخارطة", en: "Steps to create a sale contract compliant with the Wafi off-plan sales system" },
-    module: "contracts",
-    steps: [
-      { ar: "اذهب إلى قسم العقود وانقر 'عقد جديد'", en: "Go to the Contracts section and click 'New Contract'" },
-      { ar: "اختر نوع العقد: 'بيع' — ستظهر حقول وافي", en: "Select contract type: 'Sale' — Wafi-specific fields will appear" },
-      { ar: "اختر العميل (المشتري) والوحدة، وأدخل مبلغ البيع", en: "Select the customer (buyer) and unit, and enter the sale amount" },
-      { ar: "حدد تاريخ التسليم المتوقع", en: "Set the expected delivery date" },
-      { ar: "أدخل رقم رخصة وافي (اختياري)", en: "Enter the Wafi license reference (optional)" },
-      { ar: "أضف أي ملاحظات خاصة بالعقد", en: "Add any contract-specific notes" },
-      { ar: "انقر 'إنشاء' — يُنشأ العقد برقم فريد (مثل SALE-2026-0001)", en: "Click 'Create' — the contract is created with a unique number (e.g., SALE-2026-0001)" },
-      { ar: "عند توقيع العقد لاحقاً، يتم إيداع المبلغ تلقائياً في حساب الضمان", en: "When the contract is signed later, the amount is auto-deposited into the escrow account" },
     ],
   },
   {

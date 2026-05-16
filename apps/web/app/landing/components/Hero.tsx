@@ -5,7 +5,6 @@ import {
   ShieldCheck,
   Building2,
   Receipt,
-  HardHat,
 } from "lucide-react";
 import { Button } from "@repo/ui";
 import { t as translations } from "../translations";
@@ -17,7 +16,6 @@ export default function Hero({ lang }: { lang: "ar" | "en" }) {
     { icon: ShieldCheck, label: t.vision2030Aligned },
     { icon: Building2, label: t.baladyCompliant },
     { icon: Receipt, label: t.zatcaInvoicing },
-    { icon: HardHat, label: t.wafiReady },
   ];
 
   return (
