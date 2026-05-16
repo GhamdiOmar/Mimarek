@@ -6,7 +6,24 @@ import { requirePermission } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
 import { checkLimit, FEATURE_KEYS } from "../../lib/entitlements";
 
-export async function updateUnit(unitId: string, data: any) {
+type UpdateUnitInput = {
+  number?: string;
+  type?: string;
+  area?: number;
+  price?: number;
+  markupPrice?: number;
+  rentalPrice?: number;
+  floor?: number;
+  buildingName?: string;
+  addressLine?: string;
+  city?: string;
+  district?: string;
+  bedrooms?: number;
+  bathrooms?: number;
+  commercialStrategy?: string;
+};
+
+export async function updateUnit(unitId: string, data: UpdateUnitInput) {
   const session = await requirePermission("units:write");
 
   // Verify unit belongs to user's org
@@ -17,9 +34,27 @@ export async function updateUnit(unitId: string, data: any) {
     throw new Error("Unit not found or you don't have access. Please verify the unit exists in your organization.");
   }
 
+  // Map only whitelisted fields — prevents arbitrary field injection
+  // (organizationId, id, status lifecycle fields, timestamps are excluded)
+  const safeData: Record<string, unknown> = {};
+  if (data.number !== undefined) safeData.number = data.number;
+  if (data.type !== undefined) safeData.type = data.type;
+  if (data.area !== undefined) safeData.area = data.area;
+  if (data.price !== undefined) safeData.price = data.price;
+  if (data.markupPrice !== undefined) safeData.markupPrice = data.markupPrice;
+  if (data.rentalPrice !== undefined) safeData.rentalPrice = data.rentalPrice;
+  if (data.floor !== undefined) safeData.floor = data.floor;
+  if (data.buildingName !== undefined) safeData.buildingName = data.buildingName;
+  if (data.addressLine !== undefined) safeData.addressLine = data.addressLine;
+  if (data.city !== undefined) safeData.city = data.city;
+  if (data.district !== undefined) safeData.district = data.district;
+  if (data.bedrooms !== undefined) safeData.bedrooms = data.bedrooms;
+  if (data.bathrooms !== undefined) safeData.bathrooms = data.bathrooms;
+  if (data.commercialStrategy !== undefined) safeData.commercialStrategy = data.commercialStrategy;
+
   const updated = await db.unit.update({
     where: { id: unitId },
-    data,
+    data: safeData,
   });
 
   revalidatePath("/dashboard/units");
@@ -57,12 +92,21 @@ export async function massUpdateUnits(
   return JSON.parse(JSON.stringify(results));
 }
 
-export async function getUnitsWithBuildings() {
+export async function getUnitsWithBuildings(filters?: {
+  page?: number;
+  pageSize?: number;
+}) {
   const session = await requirePermission("units:read");
+
+  const page = Math.max(1, filters?.page ?? 1);
+  const pageSize = Math.min(100, Math.max(1, filters?.pageSize ?? 50));
+  const skip = (page - 1) * pageSize;
 
   const units = await db.unit.findMany({
     where: { organizationId: session.organizationId },
     orderBy: { number: "asc" },
+    skip,
+    take: pageSize,
   });
   return JSON.parse(JSON.stringify(units));
 }

@@ -127,7 +127,6 @@ export function AppTopbar({ onMenuClick }: { onMenuClick: () => void }) {
             <div className="absolute top-full mt-1 w-full bg-card rounded-lg shadow-md border border-border z-50 max-h-80 overflow-y-auto">
               {[
                 { key: "customers", label: lang === "ar" ? "العملاء" : "Customers", prefix: "/dashboard/crm" },
-                { key: "projects", label: lang === "ar" ? "المشاريع" : "Projects", prefix: "/dashboard/projects" },
                 { key: "units", label: lang === "ar" ? "الوحدات" : "Units", prefix: "/dashboard/units" },
                 { key: "contracts", label: lang === "ar" ? "العقود" : "Contracts", prefix: "/dashboard/contracts" },
               ].map(({ key, label, prefix }) => {

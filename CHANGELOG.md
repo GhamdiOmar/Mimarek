@@ -1,8 +1,8 @@
 # Changelog — Mimaric PropTech
 
-## [Unreleased] — Marketplace (cross-org B2B unit trading)
+## [4.3.0] — 2026-05-16 — Marketplace (verified-org B2B unit trading)
 
-Verified-organization-only B2B marketplace: full workflow from seller publication → buyer inquiry → seller CRM handoff → deal conversion → settlement-gated atomic cross-org unit transfer. Not a public/SEO marketplace (per spec Decision 20). Release tag deferred — preview screenshot capture is unavailable in the build environment, so the AGENTS §3.9 release-gate (light/dark × AR/EN screenshots) cannot be evidenced yet.
+The first non-patch release since v4.2.x: a **verified-organization-only B2B marketplace** that lets tenant orgs trade units across organization boundaries — full workflow from seller publication → buyer inquiry → seller CRM handoff → deal conversion → settlement-gated **atomic cross-org unit transfer** with transactional rollback. Not a public/SEO marketplace (per spec Decision 20 — kept inside verified Mimaric orgs). Additive schema only; all existing single-org flows are untouched.
 
 ### Added
 
@@ -23,6 +23,97 @@ Verified-organization-only B2B marketplace: full workflow from seller publicatio
 - Functional cross-org E2E through the UI (two real orgs, Playwright + Chromium): seller publish (eligibility gate enforced incl. `MISSING_ADDRESS`) → buyer cross-org browse → listing detail (Maps URL exact) → buyer express interest → seller CRM customer created (`source=MARKETPLACE`, in seller org) → convert to deal (cross-org reservation + `PENDING_SETTLEMENT` transfer) → **settlement correctly refused without a SIGNED sale contract**. Zero marketplace-attributable console errors; mobile 375px no overflow; buyer-browse own-org exclusion confirmed.
 - **Screenshot evidence captured** — light/dark × AR/EN for browse, detail, my-listings + admin moderation + mobile (`apps/web/e2e/__screenshots__/marketplace/`). The earlier preview-renderer limitation was bypassed by running the suite under Playwright/Chromium.
 - **axe-core accessible-name scan** — zero violations across all marketplace surfaces and dialogs (browse, my-listings, detail, admin moderation, publish/interest/edit/suspend dialogs). Pre-existing name violations elsewhere (`/dashboard/settings`, `/dashboard/reports`, `/dashboard/maintenance/tickets`) are out of scope for this feature.
+### Upgrade notes
+
+- Schema is **additive** (new models/enums + nullable columns on `Unit`/`Reservation`/`Contract`). Apply with `prisma db push` (per AGENTS §4 — no destructive migration). No backfill required; the one unique index is on a new nullable column (multiple NULLs allowed in Postgres).
+- New permissions are auto-granted by role map: `ADMIN`/`MANAGER` get the full tenant marketplace set, `AGENT` gets read + inquiry, `SYSTEM_ADMIN` gets `marketplace:moderate`. No manual role migration needed.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimaric/compare/v4.2.3...v4.3.0
+
+---
+
+## [4.2.3] — 2026-05-16 — Admin dashboard render fix
+
+Patch targeting three bugs that prevented `/dashboard/admin` from rendering for `SYSTEM_ADMIN` users after the v4.2.2 tenant-isolation hardening.
+
+### Fixed
+
+- **Dashboard layout infinite redirect loop** — `dashboard/layout.tsx` called `requireTenant()` which, for system users, redirects to `/dashboard/admin` — itself under the same layout — creating an infinite redirect cycle. Fixed by detecting `isSystemRole` before routing: system users go through `requireSystem()` (auth + role check only); the nested `admin/layout.tsx` remains the real access gate. Tenant users continue through `requireTenant()` as before.
+- **Missing `getMrrTrend` server action** — `/dashboard/admin/page.tsx` imported `getMrrTrend` from `actions/trends/getMrrTrend` but the file did not exist in the repo, causing Turbopack to deadlock on every request to the admin route. File created with correct 12-month invoice-bucket aggregation logic.
+- **`getMrrTrend` TS2532** — `noUncheckedIndexedAccess` made `buckets[idx]` type `number | undefined`; fixed with `(buckets[idx] ?? 0) + …` null-coalescing pattern.
+- **`customers.ts` TS2353 — `organizationId` on `Reservation`** — `updateCustomerStatus` LOST-path transaction incorrectly included `organizationId` in the `Reservation.findMany` where-clause; `Reservation` has no direct `organizationId` field (tenant isolation is enforced via `customerId → Customer.organizationId`). Field removed.
+- **`customers.ts` TS2322 — `CustomerStatus` enum cast** — Zod schema returns `string`; both `customer.update` calls now cast `validatedStatus as CustomerStatus` and import the enum from `@repo/db`.
+
+### Metrics
+
+- 3 files changed: `dashboard/layout.tsx`, `actions/customers.ts`, `actions/trends/getMrrTrend.ts` (new).
+- TypeScript clean (`tsc --noEmit` zero errors across `apps/web`).
+
+**Full diff:** https://github.com/GhamdiOmar/Mimaric/compare/v4.2.2...v4.2.3
+
+---
+
+## [4.2.2] — 2026-05-15 — Security & Stability Hardening (QA Audit)
+
+Full-pass remediation of 22 findings from the internal QA code audit. Score raised from 5.5/10 (No-Go) to production-ready. No new features — correctness, security, and data integrity only.
+
+### Security
+
+- **Tenant isolation on document uploads** — UploadThing `authMiddleware` now rejects system-role sessions and sessions with `null organizationId`. System staff can no longer upload files into tenant document vaults.
+- **Dashboard layout tenant gate** — `/dashboard/layout.tsx` now calls `requireTenant()` (hard redirect on system users or null org) instead of bare `auth()`. System users attempting to access any tenant route are redirected immediately at the shell level, not only at action boundaries.
+- **Cron endpoint fail-closed** — `/api/cron/expire-reservations` now returns `500` when `CRON_SECRET` is not configured (previously let all requests through). Returns `401` on mismatch as before.
+- **Moyasar webhook hardening** — `timingSafeEqual` guard now pre-checks buffer lengths before comparison and wraps in try/catch; zero-length signatures return `{ valid: false }` rather than throwing.
+- **Org-scoped cross-reference validation** — `createMaintenanceRequest` now verifies `unitId` and `assignedToId` both belong to the caller's org before inserting. `registerFileInDb` verifies `customerId`/`unitId` before attaching documents.
+- **billing.ts permission** — `generateSubscriptionInvoice` switched from `getSessionOrThrow()` to `requirePermission("billing:write")`, ensuring the permission check is enforced.
+
+### Data Integrity
+
+- **Atomic contract numbering** — standalone `generateContractNumber()` (read-then-write, race-prone) replaced with an inline `db.$transaction` that counts and creates in the same atomic unit for both SALE and LEASE paths.
+- **Atomic reservation status** — `updateReservationStatus` wraps all related writes (`reservation`, `unit`, `customer`, `reservation.count`) in `db.$transaction`.
+- **Partial payments** — `recordPayment` now validates `amount > 0`, guards against cumulative overpayment, and sets `PARTIALLY_PAID` vs `PAID` correctly. Persists `paidAmount` on `RentInstallment`.
+- **LOST cascade in transaction** — `updateCustomerStatus` (LOST path) runs the reservation cancel + unit status reset + interest drop inside a single `db.$transaction`. Ownership is verified *before* the transaction begins.
+- **Schema: `paidAmount` on `RentInstallment`** — added `paidAmount Decimal?` (was missing; only existed on `PaymentPlanInstallment`). Migration baseline created under `packages/db/prisma/migrations/`.
+
+### Validation
+
+- **Zod schemas at all write boundaries** — `createCustomer`, `updateCustomerStatus`, `createMaintenanceRequest`, `registerFileInDb` all parse input with Zod before touching the database. Error messages surface field-level issues to the caller.
+- **`UpdateUnitInput` type** — `updateUnit` replaced `data: any` with an explicit typed input; field whitelist prevents arbitrary field injection (`organizationId`, `id`, timestamps excluded).
+
+### Observability / PII
+
+- **PII phone hash** — `getCustomerInterestsForUnit` no longer selects `phoneHash` directly. Phone is fetched as encrypted, decrypted, then masked by `maskCustomerPii` based on the caller's `customers:read_pii` permission. Audit event emits `READ_PII` when PII is accessed.
+
+### Performance
+
+- **Revenue report N+1 eliminated** — monthly-by-month loop (2 aggregates × N months) replaced with two `db.$queryRaw` `GROUP BY date_trunc('month', ...)` queries. Calendar loop now only assembles output from Maps — zero DB calls inside.
+- **Pagination on all list actions** — `getContracts`, `getReservations`, `getMaintenanceRequests`, `getUnitsWithBuildings`, `getDocuments`, `getCustomers` all accept `page`/`pageSize` (default 50, capped at 100) with `skip`/`take` applied to `findMany`.
+
+### Removed
+
+- **Dead project-domain scaffolding** — 5 empty report functions returning hardcoded zeros deleted from `reports.ts`. `/dashboard/projects` option removed from settings landing-page selector and global search dropdown. Stale E2E specs for deleted project/planning routes removed (`planning.admin.spec.ts`, `offplan-modals.*.spec.ts`).
+- **Duplicate `createLease` / `generateContractNumber`** in `leases.ts` — zero callers confirmed, both deleted.
+
+### CI
+
+- `continue-on-error: true` removed from Playwright E2E step — test failures now break the build.
+- Vacuous `expect(true).toBeTruthy()` assertions replaced with meaningful checks in `access-control.tech.spec.ts`, `billing.admin.spec.ts`, `dashboard.admin.spec.ts`.
+
+### Docs
+
+- `AGENTS.md` §4 updated: mandates `prisma migrate dev/deploy`; documents `paidAmount` schema addition.
+- `README.md` setup steps and project conventions updated to match migration-based workflow.
+
+### Migration notes
+
+- **Breaking schema change:** run `npx prisma migrate deploy` (prod) or `npx prisma migrate dev` (local) — do NOT use `prisma db push`.
+- The `paidAmount` column is nullable; existing `RentInstallment` rows default to `null` (no backfill needed for correctness).
+
+### Metrics
+
+- 22 findings closed (all from QA audit report 2026-05-15).
+- TypeScript clean across all workspaces.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimaric/compare/v4.2.1...v4.2.2
 
 ---
 
