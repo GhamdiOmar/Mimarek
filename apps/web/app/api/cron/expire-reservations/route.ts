@@ -11,8 +11,13 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const secret = searchParams.get("secret");
 
-  // Basic auth — compare with env variable
-  if (process.env.CRON_SECRET && secret !== process.env.CRON_SECRET) {
+  // Basic auth — fail closed: refuse if secret is not configured
+  const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret) {
+    console.error("[Cron] CRON_SECRET is not configured — refusing to run");
+    return NextResponse.json({ error: "Cron not configured" }, { status: 500 });
+  }
+  if (secret !== cronSecret) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

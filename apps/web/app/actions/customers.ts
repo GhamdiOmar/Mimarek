@@ -1,38 +1,92 @@
 "use server";
 
-import { db } from "@repo/db";
+import { db, CustomerStatus } from "@repo/db";
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 import { requirePermission, getSessionWithPermissions } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
 import { encryptCustomerData, decryptCustomerData, decryptCustomerList } from "../../lib/pii-crypto";
 import { maskCustomerPii } from "../../lib/pii-masking";
 import { hashForSearch } from "../../lib/encryption";
 
+const UpdateCustomerStatusSchema = z.object({
+  status: z.string().min(1),
+  lostReason: z.string().optional(),
+});
+
+const CreateCustomerSchema = z.object({
+  name: z.string().min(1),
+  phone: z.string().min(1),
+  email: z.string().email().optional(),
+  source: z.string().optional(),
+  status: z.string().optional(),
+  nationalId: z.string().optional(),
+  nameArabic: z.string().optional(),
+  personType: z.string().optional(),
+  gender: z.string().optional(),
+  dateOfBirth: z.string().optional(),
+  dateOfBirthHijri: z.string().optional(),
+  nationality: z.string().optional(),
+  nationalityCode: z.string().optional(),
+  maritalStatus: z.string().optional(),
+  address: z.any().optional(),
+  documentInfo: z.any().optional(),
+  budget: z.number().positive().optional(),
+  propertyTypeInterest: z.string().optional(),
+  agentId: z.string().optional(),
+});
+
 export async function updateCustomerStatus(customerId: string, status: any, lostReason?: string) {
+  const parsed = UpdateCustomerStatusSchema.safeParse({ status, lostReason });
+  if (!parsed.success) {
+    throw new Error("Invalid input: " + parsed.error.issues.map(i => i.message).join(", "));
+  }
+  const validatedStatus = parsed.data.status;
+  const resolvedLostReason = parsed.data.lostReason;
+
   const session = await requirePermission("customers:write");
 
-  // When marking LOST: cascade cancel all active reservations + drop all active interests
-  if (status === "LOST") {
-    const activeReservations = await db.reservation.findMany({
-      where: { customerId, status: { in: ["PENDING", "CONFIRMED"] } },
-      select: { id: true, unitId: true },
+  // Verify ownership FIRST — before any side effects
+  const existing = await db.customer.findFirst({
+    where: { id: customerId, organizationId: session.organizationId },
+  });
+  if (!existing) {
+    throw new Error("Customer not found or you don't have access. Please verify the customer exists in your organization.");
+  }
+
+  // When marking LOST: cascade cancel all active reservations + drop all active interests.
+  // All side effects run inside one transaction using only verified customer data.
+  if (validatedStatus === "LOST") {
+    await db.$transaction(async (tx) => {
+      const activeReservations = await tx.reservation.findMany({
+        where: { customerId: existing.id, status: { in: ["PENDING", "CONFIRMED"] } },
+        select: { id: true, unitId: true },
+      });
+      for (const res of activeReservations) {
+        await tx.reservation.update({ where: { id: res.id }, data: { status: "CANCELLED" } });
+        await tx.unit.update({ where: { id: res.unitId }, data: { status: "AVAILABLE" } });
+      }
+      await tx.customerPropertyInterest.updateMany({
+        where: { customerId: existing.id, status: "ACTIVE" },
+        data: { status: "DROPPED" },
+      });
+      await tx.customer.update({
+        where: { id: existing.id },
+        data: { status: validatedStatus as CustomerStatus, ...(resolvedLostReason !== undefined ? { lostReason: resolvedLostReason } : {}) },
+      });
     });
-    for (const res of activeReservations) {
-      await db.reservation.update({ where: { id: res.id }, data: { status: "CANCELLED" } });
-      await db.unit.update({ where: { id: res.unitId }, data: { status: "AVAILABLE" } });
-    }
-    await db.customerPropertyInterest.updateMany({
-      where: { customerId, status: "ACTIVE" },
-      data: { status: "DROPPED" },
-    });
+
+    logAuditEvent({ userId: session.userId, userEmail: session.email, userRole: session.role, action: "UPDATE", resource: "Customer", resourceId: customerId, metadata: { field: "status", newStatus: validatedStatus }, organizationId: session.organizationId });
+    revalidatePath("/dashboard/crm");
+    return JSON.parse(JSON.stringify({ ...existing, status: validatedStatus, lostReason: resolvedLostReason }));
   }
 
   const customer = await db.customer.update({
     where: { id: customerId, organizationId: session.organizationId },
-    data: { status, ...(lostReason !== undefined ? { lostReason } : {}) },
+    data: { status: validatedStatus as CustomerStatus, ...(resolvedLostReason !== undefined ? { lostReason: resolvedLostReason } : {}) },
   });
 
-  logAuditEvent({ userId: session.userId, userEmail: session.email, userRole: session.role, action: "UPDATE", resource: "Customer", resourceId: customerId, metadata: { field: "status", newStatus: status }, organizationId: session.organizationId });
+  logAuditEvent({ userId: session.userId, userEmail: session.email, userRole: session.role, action: "UPDATE", resource: "Customer", resourceId: customerId, metadata: { field: "status", newStatus: validatedStatus }, organizationId: session.organizationId });
 
   revalidatePath("/dashboard/crm");
   return JSON.parse(JSON.stringify(customer));
@@ -59,6 +113,12 @@ export async function createCustomer(data: {
   propertyTypeInterest?: string;
   agentId?: string;
 }) {
+  const parsed = CreateCustomerSchema.safeParse(data);
+  if (!parsed.success) {
+    throw new Error("Invalid input: " + parsed.error.issues.map(i => i.message).join(", "));
+  }
+  data = parsed.data;
+
   const session = await requirePermission("customers:write");
 
   // Encrypt PII fields before saving
@@ -189,6 +249,8 @@ export async function updateCustomer(
 export async function getCustomers(filters?: {
   status?: string;
   search?: string;
+  page?: number;
+  pageSize?: number;
 }) {
   const session = await getSessionWithPermissions();
   const hasPiiAccess = session.can("customers:read_pii");
@@ -211,12 +273,18 @@ export async function getCustomers(filters?: {
     ];
   }
 
+  const page = Math.max(1, filters?.page ?? 1);
+  const pageSize = Math.min(100, Math.max(1, filters?.pageSize ?? 50));
+  const skip = (page - 1) * pageSize;
+
   const results = await db.customer.findMany({
     where,
     include: {
       agent: { select: { id: true, name: true, email: true } },
     },
     orderBy: { updatedAt: "desc" },
+    skip,
+    take: pageSize,
   });
 
   // Decrypt then mask based on permissions

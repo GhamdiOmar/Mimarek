@@ -210,6 +210,9 @@ async function main() {
   });
   console.log("Created 9 role test users (7 operational + 2 system)");
 
+  // 4. Projects/Buildings — Project model removed from schema in v4.2.x; wrapped so
+  // the seed continues to create demo users even if this section fails.
+  try {
   // 4. Projects (Balady-aligned)
   const project1 = await prisma.project.create({
     data: {
@@ -657,6 +660,9 @@ async function main() {
     });
     console.log("Created 3 maintenance requests");
   }
+  } catch (e) {
+    console.warn("⚠ Project/Building seed skipped (models removed from schema):", (e as Error).message);
+  }
 
   // ═══════════════════════════════════════════════════════════════════════════
   // DUMMY ORG — Separate tenant for E2E testing & demo
@@ -714,6 +720,8 @@ async function main() {
   });
   console.log("Created 4 Dummy Org users");
 
+  // Off-plan / subdivision data — wrapped: Project/SubdivisionPlan models removed in v4.2.x
+  try {
   // Off-plan project under Dummy Org
   const offPlanProject = await prisma.project.upsert({
     where: { id: "dummy-offplan-project-1" },
@@ -941,6 +949,9 @@ async function main() {
     },
   });
   console.log("Created decision gate");
+  } catch (e) {
+    console.warn("⚠ Off-plan/subdivision seed skipped (models removed from schema):", (e as Error).message);
+  }
 
   // ═══════════════════════════════════════════════════════════════════════════
   // BILLING — Plans, Entitlements & Subscriptions

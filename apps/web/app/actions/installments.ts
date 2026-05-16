@@ -2,8 +2,14 @@
 
 import { db } from "@repo/db";
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 import { requirePermission } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
+
+const RecordPaymentSchema = z.object({
+  paymentMethod: z.string().min(1),
+  amount: z.number().positive().optional(),
+});
 
 export async function getInstallments(filters?: {
   status?: string;
@@ -46,6 +52,12 @@ export async function recordPayment(
     amount?: number; // For partial payments
   }
 ) {
+  const parsed = RecordPaymentSchema.safeParse(data);
+  if (!parsed.success) {
+    throw new Error("Invalid input: " + parsed.error.issues.map(i => i.message).join(", "));
+  }
+  data = parsed.data;
+
   const session = await requirePermission("finance:write");
 
   // Verify installment belongs to org

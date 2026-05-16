@@ -56,35 +56,43 @@ export async function getRevenueReport(startDate: string, endDate: string) {
   const prevCombined = Number(prevRentAgg._sum.amount ?? 0) + Number(prevSalesAgg._sum.amount ?? 0);
   const changePercent = prevCombined > 0 ? Math.round(((combined - prevCombined) / prevCombined) * 100) : 0;
 
+  // Single grouped query per metric — replaces per-month loop to eliminate N+1
+  const [rentByMonth, salesByMonth] = await Promise.all([
+    db.$queryRaw<{ month: string; amount: number }[]>`
+      SELECT to_char(date_trunc('month', ri."paidAt"), 'YYYY-MM') AS month,
+             COALESCE(SUM(ri.amount), 0)::float AS amount
+      FROM "RentInstallment" ri
+      JOIN "Lease" l ON l.id = ri."leaseId"
+      JOIN "Customer" c ON c.id = l."customerId"
+      WHERE ri.status = 'PAID'
+        AND ri."paidAt" >= ${start}
+        AND ri."paidAt" <= ${end}
+        AND c."organizationId" = ${orgId}
+      GROUP BY 1
+    `,
+    db.$queryRaw<{ month: string; amount: number }[]>`
+      SELECT to_char(date_trunc('month', co."signedAt"), 'YYYY-MM') AS month,
+             COALESCE(SUM(co.amount), 0)::float AS amount
+      FROM "Contract" co
+      JOIN "Customer" c ON c.id = co."customerId"
+      WHERE co.status = 'SIGNED'
+        AND co.type = 'SALE'
+        AND co."signedAt" >= ${start}
+        AND co."signedAt" <= ${end}
+        AND c."organizationId" = ${orgId}
+      GROUP BY 1
+    `,
+  ]);
+
+  const rentMap = new Map<string, number>(rentByMonth.map((r) => [r.month, Number(r.amount)]));
+  const salesMap = new Map<string, number>(salesByMonth.map((r) => [r.month, Number(r.amount)]));
+
   const months: { month: string; rent: number; sales: number; total: number }[] = [];
   const cursor = new Date(start);
   while (cursor < end) {
-    const monthStart = new Date(cursor);
-    const monthEnd = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
-    const key = `${monthStart.getFullYear()}-${String(monthStart.getMonth() + 1).padStart(2, "0")}`;
-
-    const [mRent, mSales] = await Promise.all([
-      db.rentInstallment.aggregate({
-        where: {
-          status: "PAID",
-          paidAt: { gte: monthStart, lt: monthEnd > end ? end : monthEnd },
-          lease: { customer: { organizationId: orgId } },
-        },
-        _sum: { amount: true },
-      }),
-      db.contract.aggregate({
-        where: {
-          status: "SIGNED",
-          type: "SALE",
-          signedAt: { gte: monthStart, lt: monthEnd > end ? end : monthEnd },
-          customer: { organizationId: orgId },
-        },
-        _sum: { amount: true },
-      }),
-    ]);
-
-    const r = Number(mRent._sum.amount ?? 0);
-    const s = Number(mSales._sum.amount ?? 0);
+    const key = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, "0")}`;
+    const r = rentMap.get(key) ?? 0;
+    const s = salesMap.get(key) ?? 0;
     months.push({ month: key, rent: r, sales: s, total: r + s });
     cursor.setMonth(cursor.getMonth() + 1);
   }
@@ -284,57 +292,6 @@ export async function getMaintenanceReport(startDate: string, endDate: string) {
     avgResolutionDays,
     priorities,
   };
-}
-
-export async function getLandPortfolioReport(_startDate: string, _endDate: string) {
-  // v3.0: No land/project models. Return empty shell.
-  return {
-    totalParcels: 0,
-    totalArea: 0,
-    totalEstimatedValue: 0,
-    totalAcquisitionCost: 0,
-    unrealizedGainLoss: 0,
-    parcels: [],
-  };
-}
-
-export async function getProjectProgressReport(_startDate: string, _endDate: string) {
-  // v3.0: No project/building models. Return empty shell.
-  return JSON.parse(JSON.stringify({ projects: [] }));
-}
-
-export async function getDevelopmentPipelineReport() {
-  // v3.0: No project/inventoryItem/approvalSubmission models. Return empty shell.
-  return {
-    stages: [],
-    totalProjects: 0,
-    totalInventory: 0,
-    totalPipelineValue: 0,
-  };
-}
-
-export async function getApprovalStatusReport() {
-  // v3.0: No approvalSubmission model. Return empty shell.
-  return JSON.parse(JSON.stringify({
-    total: 0,
-    approved: 0,
-    rejected: 0,
-    pending: 0,
-    successRate: 0,
-    byType: [],
-    details: [],
-  }));
-}
-
-export async function getPricingAnalysisReport(_projectId?: string) {
-  // v3.0: No inventoryItem/pricingRule models. Return empty shell.
-  return JSON.parse(JSON.stringify({
-    totalItems: 0,
-    totalValue: 0,
-    byProductType: [],
-    byStatus: [],
-    activeRules: [],
-  }));
 }
 
 export async function getMaintenanceCostReport(startDate: string, endDate: string) {
