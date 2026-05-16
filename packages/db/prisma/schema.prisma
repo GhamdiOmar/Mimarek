@@ -12,31 +12,31 @@ datasource db {
 // ─── Organization (MOC Commercial Registration aligned) ───────────────────────
 
 model Organization {
-  id                  String               @id @default(cuid())
+  id                  String                      @id @default(cuid())
   name                String
-  nameArabic          String?              // Official entity name in Arabic
-  nameEnglish         String?              // Official entity name in English
-  tradeNameArabic     String?              // Trade name in Arabic
-  tradeNameEnglish    String?              // Trade name in English
-  crNumber            String?              @unique // Commercial Registration Number (10 digits)
-  unifiedNumber       String?              @unique // Unified entity number (10 digits)
-  vatNumber           String?              @unique // VAT number (15 digits, starts/ends with 3)
-  type                OrgType              @default(DEVELOPER)
-  entityType          EntityType?          // MOC: establishment, company, branch, etc.
-  legalForm           LegalForm?           // MOC: LLC, JSC, sole proprietorship, etc.
-  registrationStatus  RegistrationStatus?  // MOC: active, expired, suspended, etc.
-  registrationDate    DateTime?            // CR registration date
-  expiryDate          DateTime?            // CR expiry date
-  capitalAmountSar    Decimal?             // Declared capital in SAR
-  mainActivityCode    String?              // ISIC activity code
-  mainActivityNameAr  String?              // Primary activity name (Arabic)
-  contactInfo         Json?                // {mobileNumber, phoneNumber, email, websiteUrl}
-  nationalAddress     Json?                // Saudi national address object
-  managerInfo         Json?                // {managerName, managerId, managerRole}
-  createdAt           DateTime             @default(now())
-  updatedAt           DateTime             @updatedAt
+  nameArabic          String? // Official entity name in Arabic
+  nameEnglish         String? // Official entity name in English
+  tradeNameArabic     String? // Trade name in Arabic
+  tradeNameEnglish    String? // Trade name in English
+  crNumber            String?                     @unique // Commercial Registration Number (10 digits)
+  unifiedNumber       String?                     @unique // Unified entity number (10 digits)
+  vatNumber           String?                     @unique // VAT number (15 digits, starts/ends with 3)
+  type                OrgType                     @default(DEVELOPER)
+  entityType          EntityType? // MOC: establishment, company, branch, etc.
+  legalForm           LegalForm? // MOC: LLC, JSC, sole proprietorship, etc.
+  registrationStatus  RegistrationStatus? // MOC: active, expired, suspended, etc.
+  registrationDate    DateTime? // CR registration date
+  expiryDate          DateTime? // CR expiry date
+  capitalAmountSar    Decimal? // Declared capital in SAR
+  mainActivityCode    String? // ISIC activity code
+  mainActivityNameAr  String? // Primary activity name (Arabic)
+  contactInfo         Json? // {mobileNumber, phoneNumber, email, websiteUrl}
+  nationalAddress     Json? // Saudi national address object
+  managerInfo         Json? // {managerName, managerId, managerRole}
+  createdAt           DateTime                    @default(now())
+  updatedAt           DateTime                    @updatedAt
   users               User[]
-  units               Unit[]              @relation("UnitOrganization")
+  units               Unit[]                      @relation("UnitOrganization")
   customers           Customer[]
   documents           Document[]
   maintenanceRequests MaintenanceRequest[]
@@ -44,14 +44,21 @@ model Organization {
   permissionRequests  PermissionRequest[]
   supportTickets      SupportTicket[]
   invitations         Invitation[]
-  joinRequests        JoinRequest[]    @relation("OrgJoinRequests")
+  joinRequests        JoinRequest[]               @relation("OrgJoinRequests")
 
   // ── Commercialization relations ──
-  subscriptions         Subscription[]
-  entitlementOverrides  EntitlementOverride[]
-  paymentMethods        PaymentMethod[]
-  invoices              Invoice[]
-  couponRedemptions     CouponRedemption[]
+  subscriptions        Subscription[]
+  entitlementOverrides EntitlementOverride[]
+  paymentMethods       PaymentMethod[]
+  invoices             Invoice[]
+  couponRedemptions    CouponRedemption[]
+
+  // ── Marketplace relations ──
+  marketplaceSellerListings  MarketplaceListing[]      @relation("MarketplaceSellerListings")
+  marketplaceBuyerInquiries  MarketplaceInquiry[]      @relation("MarketplaceBuyerInquiries")
+  marketplaceSellerInquiries MarketplaceInquiry[]      @relation("MarketplaceSellerInquiries")
+  marketplaceSellerTransfers UnitTransferTransaction[] @relation("MarketplaceSellerTransfers")
+  marketplaceBuyerTransfers  UnitTransferTransaction[] @relation("MarketplaceBuyerTransfers")
 }
 
 enum OrgType {
@@ -96,34 +103,34 @@ enum RegistrationStatus {
 // ─── User ─────────────────────────────────────────────────────────────────────
 
 model User {
-  id                    String               @id @default(cuid())
-  email                 String               @unique
-  name                  String?
-  password              String
-  role                  UserRole             @default(USER)
-  organizationId        String?
-  organization          Organization?        @relation(fields: [organizationId], references: [id])
-  accountType           String?              // "individual" | "company"
-  onboardingCompleted   Boolean              @default(false)
-  invitedBy             String?              // userId of the person who invited this user
-  invitedVia            String?              // "registration" | "invitation" | "direct" | "join_request"
-  customers             Customer[]           @relation("AssignedCustomers")
-  assignedMaintenance   MaintenanceRequest[] @relation("AssignedMaintenance")
-  preferences           Json?
-  resetTokens           PasswordResetToken[]
-  notifications         Notification[]
-  permissionRequests    PermissionRequest[]  @relation("PermissionRequests")
-  reviewedRequests      PermissionRequest[]  @relation("ReviewedRequests")
-  supportTickets        SupportTicket[]      @relation("SupportTickets")
-  assignedTickets       SupportTicket[]      @relation("AssignedTickets")
-  ticketMessages        TicketMessage[]      @relation("TicketMessages")
-  sentInvitations       Invitation[]         @relation("SentInvitations")
-  receivedInvitation    Invitation?          @relation("ReceivedInvitation")
-  joinRequests          JoinRequest[]        @relation("UserJoinRequests")
-  reviewedJoinRequests  JoinRequest[]        @relation("JoinReviewers")
-  customerActivities  CustomerActivity[]   @relation("ActivityCreator")
-  createdAt             DateTime             @default(now())
-  updatedAt             DateTime             @updatedAt
+  id                   String               @id @default(cuid())
+  email                String               @unique
+  name                 String?
+  password             String
+  role                 UserRole             @default(USER)
+  organizationId       String?
+  organization         Organization?        @relation(fields: [organizationId], references: [id])
+  accountType          String? // "individual" | "company"
+  onboardingCompleted  Boolean              @default(false)
+  invitedBy            String? // userId of the person who invited this user
+  invitedVia           String? // "registration" | "invitation" | "direct" | "join_request"
+  customers            Customer[]           @relation("AssignedCustomers")
+  assignedMaintenance  MaintenanceRequest[] @relation("AssignedMaintenance")
+  preferences          Json?
+  resetTokens          PasswordResetToken[]
+  notifications        Notification[]
+  permissionRequests   PermissionRequest[]  @relation("PermissionRequests")
+  reviewedRequests     PermissionRequest[]  @relation("ReviewedRequests")
+  supportTickets       SupportTicket[]      @relation("SupportTickets")
+  assignedTickets      SupportTicket[]      @relation("AssignedTickets")
+  ticketMessages       TicketMessage[]      @relation("TicketMessages")
+  sentInvitations      Invitation[]         @relation("SentInvitations")
+  receivedInvitation   Invitation?          @relation("ReceivedInvitation")
+  joinRequests         JoinRequest[]        @relation("UserJoinRequests")
+  reviewedJoinRequests JoinRequest[]        @relation("JoinReviewers")
+  customerActivities   CustomerActivity[]   @relation("ActivityCreator")
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
 
   @@index([organizationId])
 }
@@ -143,79 +150,92 @@ enum UserRole {
 // ─── Unit ─────────────────────────────────────────────────────────────────────
 
 model Unit {
-  id         String     @id @default(cuid())
-  number     String
-  type       UnitType
-  status     UnitStatus @default(AVAILABLE)
-  organizationId  String
-  organization    Organization  @relation("UnitOrganization", fields: [organizationId], references: [id])
-  area         Float?        // sqm
-  price        Decimal?      // Base/cost price
-  markupPrice  Decimal?      // Selling price (for sale/reservation)
-  rentalPrice  Decimal?      // Rental price (for lease contracts)
-  floor        Int?          // Floor number
-  buildingName    String?
-  addressLine     String?
-  city            String?
-  district        String?
-  bedrooms     Int?          // Number of bedrooms
-  bathrooms    Int?          // Number of bathrooms
-  commercialStrategy CommercialStrategy? // FR-08/21: SELL, LEASE, HOLD, etc.
-  reservations        Reservation[]
-  documents           Document[]
-  contracts           Contract[]
-  leases              Lease[]
-  maintenanceRequests MaintenanceRequest[]
-  preventivePlans     PreventiveMaintenancePlan[]
-  customerInterests   CustomerPropertyInterest[]
-  createdAt           DateTime      @default(now())
-  updatedAt           DateTime      @updatedAt
+  id                          String                      @id @default(cuid())
+  number                      String
+  type                        UnitType
+  status                      UnitStatus                  @default(AVAILABLE)
+  organizationId              String
+  organization                Organization                @relation("UnitOrganization", fields: [organizationId], references: [id])
+  area                        Float? // sqm
+  price                       Decimal? // Base/cost price
+  markupPrice                 Decimal? // Selling price (for sale/reservation)
+  rentalPrice                 Decimal? // Rental price (for lease contracts)
+  floor                       Int? // Floor number
+  buildingName                String?
+  addressLine                 String?
+  city                        String?
+  district                    String?
+  bedrooms                    Int? // Number of bedrooms
+  bathrooms                   Int? // Number of bathrooms
+  commercialStrategy          CommercialStrategy? // FR-08/21: SELL, LEASE, HOLD, etc.
+  reservations                Reservation[]
+  documents                   Document[]
+  contracts                   Contract[]
+  leases                      Lease[]
+  maintenanceRequests         MaintenanceRequest[]
+  preventivePlans             PreventiveMaintenancePlan[]
+  customerInterests           CustomerPropertyInterest[]
+  // ── Marketplace (cross-org trading) ──
+  marketplaceStatus           MarketplaceListingStatus?
+  currentMarketplaceListingId String?
+  marketplaceListings         MarketplaceListing[]        @relation("UnitMarketplaceListings")
+  transferredFromUnitId       String?
+  transferredFromUnit         Unit?                       @relation("UnitTransferProvenance", fields: [transferredFromUnitId], references: [id])
+  transferredToUnits          Unit[]                      @relation("UnitTransferProvenance")
+  transferredFromOrgId        String?
+  transferredToOrgId          String?
+  soldTransferredAt           DateTime?
+  ownershipLockedReason       String?
+  createdAt                   DateTime                    @default(now())
+  updatedAt                   DateTime                    @updatedAt
 
   @@index([organizationId])
+  @@index([transferredFromUnitId])
 }
 
 // ─── Customer (Absher individual data aligned) ────────────────────────────────
 
 model Customer {
-  id             String        @id @default(cuid())
-  name           String
-  nameArabic     String?       // Full name in Arabic
-  email          String?
-  phone          String
-  nationalId     String?       // Saudi ID / Iqama (10 digits, starts with 1 or 2)
-  personType     PersonType?   // saudi_citizen, resident, gcc_citizen, etc.
-  gender         Gender?
-  dateOfBirth    DateTime?     // Gregorian DOB
-  dateOfBirthHijri String?    // Hijri date as text (e.g. 1410-10-19)
-  nationality    String?       // e.g. "Saudi Arabian"
-  nationalityCode String?     // ISO code e.g. "SA"
-  maritalStatus  String?       // single, married, divorced, widowed
-  address        Json?         // National address {region, city, district, streetName, buildingNumber, postalCode, additionalNumber, shortAddress}
-  documentInfo   Json?         // ID document {documentType, documentNumber, issueDate, expiryDate, issuingAuthority}
-  nationalIdHash String?       // SHA-256 hash for exact search on encrypted nationalId
-  phoneHash      String?       // SHA-256 hash for exact search on encrypted phone
-  emailHash      String?       // SHA-256 hash for exact search on encrypted email
+  id                   String                     @id @default(cuid())
+  name                 String
+  nameArabic           String? // Full name in Arabic
+  email                String?
+  phone                String
+  nationalId           String? // Saudi ID / Iqama (10 digits, starts with 1 or 2)
+  personType           PersonType? // saudi_citizen, resident, gcc_citizen, etc.
+  gender               Gender?
+  dateOfBirth          DateTime? // Gregorian DOB
+  dateOfBirthHijri     String? // Hijri date as text (e.g. 1410-10-19)
+  nationality          String? // e.g. "Saudi Arabian"
+  nationalityCode      String? // ISO code e.g. "SA"
+  maritalStatus        String? // single, married, divorced, widowed
+  address              Json? // National address {region, city, district, streetName, buildingNumber, postalCode, additionalNumber, shortAddress}
+  documentInfo         Json? // ID document {documentType, documentNumber, issueDate, expiryDate, issuingAuthority}
+  nationalIdHash       String? // SHA-256 hash for exact search on encrypted nationalId
+  phoneHash            String? // SHA-256 hash for exact search on encrypted phone
+  emailHash            String? // SHA-256 hash for exact search on encrypted email
   // RED: Buyer profile enhancements
-  preferredLanguage    String?  @default("ar")
-  authorizedSignatory  String?   // For corporate buyers
-  companyDocuments     Json?     // For corporate buyers
-  status               CustomerStatus @default(NEW)
+  preferredLanguage    String?                    @default("ar")
+  authorizedSignatory  String? // For corporate buyers
+  companyDocuments     Json? // For corporate buyers
+  status               CustomerStatus             @default(NEW)
   source               String?
-  budget               Decimal?       // Customer's budget in SAR
-  propertyTypeInterest String?        // e.g. "APARTMENT", "VILLA", "OFFICE"
-  lostReason           String?        // Reason for LOST status
-  organizationId String
-  organization   Organization  @relation(fields: [organizationId], references: [id])
-  agentId        String?
-  agent          User?         @relation("AssignedCustomers", fields: [agentId], references: [id])
-  reservations   Reservation[]
-  contracts      Contract[]
-  leases         Lease[]
-  documents      Document[]
-  activities        CustomerActivity[]
-  propertyInterests CustomerPropertyInterest[]
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  budget               Decimal? // Customer's budget in SAR
+  propertyTypeInterest String? // e.g. "APARTMENT", "VILLA", "OFFICE"
+  lostReason           String? // Reason for LOST status
+  organizationId       String
+  organization         Organization               @relation(fields: [organizationId], references: [id])
+  agentId              String?
+  agent                User?                      @relation("AssignedCustomers", fields: [agentId], references: [id])
+  reservations         Reservation[]
+  contracts            Contract[]
+  leases               Lease[]
+  documents            Document[]
+  activities           CustomerActivity[]
+  propertyInterests    CustomerPropertyInterest[]
+  marketplaceInquiries MarketplaceInquiry[]       @relation("MarketplaceInquiryCustomer")
+  createdAt            DateTime                   @default(now())
+  updatedAt            DateTime                   @updatedAt
 
   @@index([organizationId])
   @@index([agentId])
@@ -252,22 +272,27 @@ enum CustomerStatus {
 // ─── Reservation ──────────────────────────────────────────────────────────────
 
 model Reservation {
-  id              String            @id @default(cuid())
-  customerId      String
-  customer        Customer          @relation(fields: [customerId], references: [id])
-  unitId          String
-  unit            Unit              @relation(fields: [unitId], references: [id])
-  userId          String?           // The agent/user who created the reservation
-  status          ReservationStatus @default(PENDING)
-  expiresAt       DateTime
-  amount          Decimal?
+  id                   String                 @id @default(cuid())
+  customerId           String
+  customer             Customer               @relation(fields: [customerId], references: [id])
+  unitId               String
+  unit                 Unit                   @relation(fields: [unitId], references: [id])
+  userId               String? // The agent/user who created the reservation
+  status               ReservationStatus      @default(PENDING)
+  expiresAt            DateTime
+  amount               Decimal?
   // RED: Enhanced reservation fields
-  depositRequired  Boolean  @default(false)
-  depositAmount    Decimal?
-  depositPaidAt    DateTime?
-  extensions       ReservationExtension[]
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
+  depositRequired      Boolean                @default(false)
+  depositAmount        Decimal?
+  depositPaidAt        DateTime?
+  extensions           ReservationExtension[]
+  // ── Marketplace cross-org bridge (null for normal single-org deals) ──
+  marketplaceInquiryId String?                @unique
+  marketplaceInquiry   MarketplaceInquiry?    @relation(fields: [marketplaceInquiryId], references: [id])
+  buyerOrgId           String?
+  sellerOrgId          String?
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
 
   @@index([customerId])
   @@index([unitId])
@@ -276,16 +301,16 @@ model Reservation {
 
 // RED: Reservation extension requests
 model ReservationExtension {
-  id              String   @id @default(cuid())
-  reservationId   String
-  reservation     Reservation @relation(fields: [reservationId], references: [id])
-  requestedBy     String
-  approvedBy      String?
-  newExpiresAt    DateTime
-  reason          String?
-  status          ExtensionStatus @default(PENDING_EXTENSION)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id            String          @id @default(cuid())
+  reservationId String
+  reservation   Reservation     @relation(fields: [reservationId], references: [id])
+  requestedBy   String
+  approvedBy    String?
+  newExpiresAt  DateTime
+  reason        String?
+  status        ExtensionStatus @default(PENDING_EXTENSION)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
 
   @@index([reservationId])
 }
@@ -311,7 +336,7 @@ model Contract {
   customer   Customer       @relation(fields: [customerId], references: [id])
   unitId     String
   unit       Unit           @relation(fields: [unitId], references: [id])
-  userId     String?        // The agent/user who created the contract
+  userId     String? // The agent/user who created the contract
   status     ContractStatus @default(DRAFT)
   type       ContractType   @default(SALE)
   fileUrl    String?
@@ -321,37 +346,41 @@ model Contract {
   updatedAt  DateTime       @updatedAt
 
   // Contract identification
-  contractNumber            String?         @unique
+  contractNumber String? @unique
 
   // Lease link (type=LEASE only)
-  leaseId                   String?         @unique
-  lease                     Lease?          @relation(fields: [leaseId], references: [id])
+  leaseId String? @unique
+  lease   Lease?  @relation(fields: [leaseId], references: [id])
 
   // Ejar fields (type=LEASE)
   paymentFrequency          RecurrenceType?
   securityDeposit           Decimal?
   autoRenewal               Boolean?
-  maintenanceResponsibility String?         // "LANDLORD" or "TENANT"
+  maintenanceResponsibility String? // "LANDLORD" or "TENANT"
   noticePeriodDays          Int?
 
   // Sale fields (type=SALE)
-  deliveryDate              DateTime?
+  deliveryDate DateTime?
 
   // Shared
-  termsAndConditions        String?
-  notes                     String?
+  termsAndConditions   String?
+  notes                String?
   // RED: Amount breakdown
-  grossAmount               Decimal?
-  discountAmount            Decimal?
-  netAmount                 Decimal?
+  grossAmount          Decimal?
+  discountAmount       Decimal?
+  netAmount            Decimal?
   // RED: Template & signatures
-  templateId                String?
-  templateVersion           Int?
-  buyerSignedAt             DateTime?
-  buyerSignatureUrl         String?
-  pdfPreviewUrl             String?
+  templateId           String?
+  templateVersion      Int?
+  buyerSignedAt        DateTime?
+  buyerSignatureUrl    String?
+  pdfPreviewUrl        String?
   // RED: Relations
-  paymentPlan               PaymentPlan?
+  paymentPlan          PaymentPlan?
+  // ── Marketplace cross-org bridge (null for normal single-org contracts) ──
+  marketplaceInquiryId String?
+  buyerOrgId           String?
+  sellerOrgId          String?
 
   @@index([customerId])
   @@index([unitId])
@@ -374,17 +403,17 @@ enum ContractType {
 
 // RED: Payment Plans (linked 1:1 to Contract)
 model PaymentPlan {
-  id             String   @id @default(cuid())
-  contractId     String   @unique
-  contract       Contract @relation(fields: [contractId], references: [id])
+  id             String                   @id @default(cuid())
+  contractId     String                   @unique
+  contract       Contract                 @relation(fields: [contractId], references: [id])
   name           String?
   totalAmount    Decimal
   downPayment    Decimal?
-  status         PaymentPlanStatus @default(DRAFT_PLAN)
+  status         PaymentPlanStatus        @default(DRAFT_PLAN)
   installments   PaymentPlanInstallment[]
   organizationId String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
 }
 
 enum PaymentPlanStatus {
@@ -395,9 +424,9 @@ enum PaymentPlanStatus {
 }
 
 model PaymentPlanInstallment {
-  id                String   @id @default(cuid())
+  id                String            @id @default(cuid())
   paymentPlanId     String
-  paymentPlan       PaymentPlan @relation(fields: [paymentPlanId], references: [id])
+  paymentPlan       PaymentPlan       @relation(fields: [paymentPlanId], references: [id])
   installmentNumber Int
   amount            Decimal
   dueDate           DateTime
@@ -406,8 +435,8 @@ model PaymentPlanInstallment {
   paidAmount        Decimal?
   paymentMethod     String?
   referenceNumber   String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
 
   @@index([paymentPlanId])
 }
@@ -421,16 +450,16 @@ enum InstallmentStatus {
 
 // RED: Contract Templates
 model ContractTemplate {
-  id             String   @id @default(cuid())
+  id             String       @id @default(cuid())
   name           String
   nameArabic     String?
   type           ContractType
-  version        Int      @default(1)
-  content        String   // HTML template with {{vars}}
-  isActive       Boolean  @default(true)
+  version        Int          @default(1)
+  content        String // HTML template with {{vars}}
+  isActive       Boolean      @default(true)
   organizationId String
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
   @@index([organizationId])
 }
@@ -450,28 +479,28 @@ enum UnitStatus {
   SOLD
   RENTED
   MAINTENANCE
-  SUSPENDED        // RED: temporarily blocked from transactions
-  WITHDRAWN        // RED: permanently removed from inventory
-  HANDED_OVER      // RED: handover to buyer completed
+  SUSPENDED // RED: temporarily blocked from transactions
+  WITHDRAWN // RED: permanently removed from inventory
+  HANDED_OVER // RED: handover to buyer completed
 }
 
 // ─── Lease ────────────────────────────────────────────────────────────────────
 
 model Lease {
-  id             String          @id @default(cuid())
+  id             String            @id @default(cuid())
   unitId         String
-  unit           Unit            @relation(fields: [unitId], references: [id])
+  unit           Unit              @relation(fields: [unitId], references: [id])
   customerId     String
-  customer       Customer        @relation(fields: [customerId], references: [id])
+  customer       Customer          @relation(fields: [customerId], references: [id])
   startDate      DateTime
   endDate        DateTime
   totalAmount    Decimal
-  status         LeaseStatus     @default(DRAFT)
+  status         LeaseStatus       @default(DRAFT)
   installments   RentInstallment[]
-  ejarContractId String?         // For Ejar integration
-  contract       Contract?       // Linked contract (reverse relation)
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  ejarContractId String? // For Ejar integration
+  contract       Contract? // Linked contract (reverse relation)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
 
   @@index([unitId])
   @@index([customerId])
@@ -488,16 +517,16 @@ enum LeaseStatus {
 // ─── Rent Installment ─────────────────────────────────────────────────────────
 
 model RentInstallment {
-  id          String            @id @default(cuid())
-  leaseId     String
-  lease       Lease             @relation(fields: [leaseId], references: [id])
-  dueDate     DateTime
-  amount      Decimal
-  status      PaymentStatus     @default(UNPAID)
-  paidAt      DateTime?
+  id            String        @id @default(cuid())
+  leaseId       String
+  lease         Lease         @relation(fields: [leaseId], references: [id])
+  dueDate       DateTime
+  amount        Decimal
+  status        PaymentStatus @default(UNPAID)
+  paidAt        DateTime?
   paymentMethod String?
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 
   @@index([leaseId])
 }
@@ -512,23 +541,23 @@ enum PaymentStatus {
 // ─── Document ─────────────────────────────────────────────────────────────────
 
 model Document {
-  id             String       @id @default(cuid())
+  id             String            @id @default(cuid())
   name           String
   url            String
-  type           String       // file extension or mime type
-  category       DocCategory  @default(GENERAL)
-  size           Int?         // in bytes
+  type           String // file extension or mime type
+  category       DocCategory       @default(GENERAL)
+  size           Int? // in bytes
   customerId     String?
-  customer       Customer?    @relation(fields: [customerId], references: [id])
+  customer       Customer?         @relation(fields: [customerId], references: [id])
   unitId         String?
-  unit           Unit?        @relation(fields: [unitId], references: [id])
+  unit           Unit?             @relation(fields: [unitId], references: [id])
   organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id])
+  organization   Organization      @relation(fields: [organizationId], references: [id])
   userId         String?
-  version        Int          @default(1)
+  version        Int               @default(1)
   versions       DocumentVersion[]
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
 
   @@index([customerId])
   @@index([unitId])
@@ -546,41 +575,41 @@ enum DocCategory {
 // ─── Maintenance Request ──────────────────────────────────────────────────────
 
 model MaintenanceRequest {
-  id             String               @id @default(cuid())
-  title          String
-  description    String?
-  type           String?              // Legacy field (electrical, plumbing, etc.)
-  category       MaintenanceCategory  @default(GENERAL)
-  status         MaintenanceStatus    @default(OPEN)
-  priority       MaintenancePriority  @default(MEDIUM)
-  unitId         String
-  unit           Unit                 @relation(fields: [unitId], references: [id])
-  assignedToId   String?
-  assignedTo     User?                @relation("AssignedMaintenance", fields: [assignedToId], references: [id])
+  id           String              @id @default(cuid())
+  title        String
+  description  String?
+  type         String? // Legacy field (electrical, plumbing, etc.)
+  category     MaintenanceCategory @default(GENERAL)
+  status       MaintenanceStatus   @default(OPEN)
+  priority     MaintenancePriority @default(MEDIUM)
+  unitId       String
+  unit         Unit                @relation(fields: [unitId], references: [id])
+  assignedToId String?
+  assignedTo   User?               @relation("AssignedMaintenance", fields: [assignedToId], references: [id])
 
   // Scheduling & deadlines
-  scheduledDate  DateTime?
-  dueDate        DateTime?
-  completedAt    DateTime?
+  scheduledDate DateTime?
+  dueDate       DateTime?
+  completedAt   DateTime?
 
   // Cost tracking
-  estimatedCost  Decimal?
-  actualCost     Decimal?
-  laborHours     Float?
+  estimatedCost Decimal?
+  actualCost    Decimal?
+  laborHours    Float?
 
   // Work order notes
-  notes          String?
+  notes String?
 
   // Preventive maintenance link
-  isPreventive       Boolean           @default(false)
-  preventivePlanId   String?
-  preventivePlan     PreventiveMaintenancePlan? @relation(fields: [preventivePlanId], references: [id])
+  isPreventive     Boolean                    @default(false)
+  preventivePlanId String?
+  preventivePlan   PreventiveMaintenancePlan? @relation(fields: [preventivePlanId], references: [id])
 
   organizationId String
-  organization   Organization         @relation(fields: [organizationId], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id])
   resolvedAt     DateTime?
-  createdAt      DateTime             @default(now())
-  updatedAt      DateTime             @updatedAt
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
   @@index([organizationId])
   @@index([unitId])
@@ -594,42 +623,42 @@ model MaintenanceRequest {
 // ─── Preventive Maintenance Plan ──────────────────────────────────────────────
 
 model PreventiveMaintenancePlan {
-  id                 String              @id @default(cuid())
-  title              String
-  description        String?
-  category           MaintenanceCategory @default(GENERAL)
-  priority           MaintenancePriority @default(MEDIUM)
+  id          String              @id @default(cuid())
+  title       String
+  description String?
+  category    MaintenanceCategory @default(GENERAL)
+  priority    MaintenancePriority @default(MEDIUM)
 
   // Scope
-  unitId             String?
-  unit               Unit?               @relation(fields: [unitId], references: [id])
+  unitId String?
+  unit   Unit?   @relation(fields: [unitId], references: [id])
 
   // Recurrence
   recurrenceType     RecurrenceType
-  recurrenceInterval Int                 @default(1)
+  recurrenceInterval Int            @default(1)
   startDate          DateTime
   endDate            DateTime?
   nextRunDate        DateTime
 
   // Cost estimation
-  estimatedCost      Decimal?
-  estimatedHours     Float?
+  estimatedCost  Decimal?
+  estimatedHours Float?
 
   // Assignment
-  assignToId         String?
+  assignToId String?
 
   // Status
-  isActive           Boolean             @default(true)
+  isActive Boolean @default(true)
 
   // Organization
-  organizationId     String
-  organization       Organization        @relation(fields: [organizationId], references: [id])
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
 
   // Generated work orders
-  workOrders         MaintenanceRequest[]
+  workOrders MaintenanceRequest[]
 
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([organizationId])
   @@index([nextRunDate])
@@ -697,12 +726,12 @@ model AuditLog {
   userId         String
   userEmail      String
   userRole       String
-  action         String   // CREATE, READ, UPDATE, DELETE, READ_PII, EXPORT, LOGIN, LOGOUT
-  resource       String   // Customer, Contract, Unit, etc.
+  action         String // CREATE, READ, UPDATE, DELETE, READ_PII, EXPORT, LOGIN, LOGOUT
+  resource       String // Customer, Contract, Unit, etc.
   resourceId     String?
   metadata       Json?
-  changeSnapshot Json?    // RED: {before: {...}, after: {...}} for UPDATE, full payload for CREATE
-  fieldChanges   Json?    // RED: [{field, oldValue, newValue}, ...] auto-computed diff
+  changeSnapshot Json? // RED: {before: {...}, after: {...}} for UPDATE, full payload for CREATE
+  fieldChanges   Json? // RED: [{field, oldValue, newValue}, ...] auto-computed diff
   ipAddress      String?
   organizationId String?
   createdAt      DateTime @default(now())
@@ -728,7 +757,7 @@ model Notification {
   id             String   @id @default(cuid())
   userId         String
   user           User     @relation(fields: [userId], references: [id])
-  type           String   // PAYMENT_DUE, PAYMENT_OVERDUE, LEASE_EXPIRY, MAINTENANCE_UPDATE
+  type           String // PAYMENT_DUE, PAYMENT_OVERDUE, LEASE_EXPIRY, MAINTENANCE_UPDATE
   title          String
   titleEn        String?
   message        String
@@ -745,19 +774,19 @@ model Notification {
 // ─── Permission Request (Help Dashboard) ────────────────────────────────────
 
 model PermissionRequest {
-  id                    String        @id @default(cuid())
-  userId                String
-  user                  User          @relation("PermissionRequests", fields: [userId], references: [id])
-  requestedRole         UserRole?
-  reason                String
-  status                RequestStatus @default(PENDING)
-  reviewedBy            String?
-  reviewer              User?         @relation("ReviewedRequests", fields: [reviewedBy], references: [id])
-  reviewNote            String?
-  organizationId        String
-  organization          Organization  @relation(fields: [organizationId], references: [id])
-  createdAt             DateTime      @default(now())
-  updatedAt             DateTime      @updatedAt
+  id             String        @id @default(cuid())
+  userId         String
+  user           User          @relation("PermissionRequests", fields: [userId], references: [id])
+  requestedRole  UserRole?
+  reason         String
+  status         RequestStatus @default(PENDING)
+  reviewedBy     String?
+  reviewer       User?         @relation("ReviewedRequests", fields: [reviewedBy], references: [id])
+  reviewNote     String?
+  organizationId String
+  organization   Organization  @relation(fields: [organizationId], references: [id])
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 
   @@index([organizationId])
   @@index([userId])
@@ -773,22 +802,22 @@ enum RequestStatus {
 // ─── Support Ticket (Help Dashboard) ────────────────────────────────────────
 
 model SupportTicket {
-  id              String         @id @default(cuid())
-  ticketNumber    String         @unique
-  userId          String
-  user            User           @relation("SupportTickets", fields: [userId], references: [id])
-  subject         String
-  description     String
-  category        TicketCategory
-  priority        TicketPriority @default(MEDIUM)
-  status          TicketStatus   @default(OPEN)
-  assignedTo      String?
-  assignee        User?          @relation("AssignedTickets", fields: [assignedTo], references: [id])
-  organizationId  String
-  organization    Organization   @relation(fields: [organizationId], references: [id])
-  messages        TicketMessage[]
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  id             String          @id @default(cuid())
+  ticketNumber   String          @unique
+  userId         String
+  user           User            @relation("SupportTickets", fields: [userId], references: [id])
+  subject        String
+  description    String
+  category       TicketCategory
+  priority       TicketPriority  @default(MEDIUM)
+  status         TicketStatus    @default(OPEN)
+  assignedTo     String?
+  assignee       User?           @relation("AssignedTickets", fields: [assignedTo], references: [id])
+  organizationId String
+  organization   Organization    @relation(fields: [organizationId], references: [id])
+  messages       TicketMessage[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
 
   @@index([organizationId])
   @@index([userId])
@@ -835,20 +864,20 @@ enum TicketStatus {
 // ─── Invitation (Token-based team invitations) ────────────────────────────────
 
 model Invitation {
-  id              String           @id @default(cuid())
-  email           String
-  token           String           @unique
-  role            UserRole         @default(USER)
-  organizationId  String
-  organization    Organization     @relation(fields: [organizationId], references: [id])
-  invitedById     String
-  invitedBy       User             @relation("SentInvitations", fields: [invitedById], references: [id])
-  acceptedById    String?          @unique
-  acceptedBy      User?            @relation("ReceivedInvitation", fields: [acceptedById], references: [id])
-  status          InvitationStatus @default(PENDING_INVITE)
-  expiresAt       DateTime
-  acceptedAt      DateTime?
-  createdAt       DateTime         @default(now())
+  id             String           @id @default(cuid())
+  email          String
+  token          String           @unique
+  role           UserRole         @default(USER)
+  organizationId String
+  organization   Organization     @relation(fields: [organizationId], references: [id])
+  invitedById    String
+  invitedBy      User             @relation("SentInvitations", fields: [invitedById], references: [id])
+  acceptedById   String?          @unique
+  acceptedBy     User?            @relation("ReceivedInvitation", fields: [acceptedById], references: [id])
+  status         InvitationStatus @default(PENDING_INVITE)
+  expiresAt      DateTime
+  acceptedAt     DateTime?
+  createdAt      DateTime         @default(now())
 
   @@unique([email, organizationId])
   @@index([token])
@@ -865,21 +894,21 @@ enum InvitationStatus {
 // ─── Join Request (CR-based org discovery) ─────────────────────────────────────
 
 model JoinRequest {
-  id              String            @id @default(cuid())
-  userId          String
-  user            User              @relation("UserJoinRequests", fields: [userId], references: [id])
-  targetOrgId     String
-  targetOrg       Organization      @relation("OrgJoinRequests", fields: [targetOrgId], references: [id])
-  crNumber        String            // CR number used for lookup
-  reason          String?           // Optional message from requester
-  status          JoinRequestStatus @default(PENDING_JOIN)
-  reviewedById    String?
-  reviewedBy      User?             @relation("JoinReviewers", fields: [reviewedById], references: [id])
-  reviewNote      String?
-  reviewedAt      DateTime?
-  expiresAt       DateTime          // createdAt + 14 days
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
+  id           String            @id @default(cuid())
+  userId       String
+  user         User              @relation("UserJoinRequests", fields: [userId], references: [id])
+  targetOrgId  String
+  targetOrg    Organization      @relation("OrgJoinRequests", fields: [targetOrgId], references: [id])
+  crNumber     String // CR number used for lookup
+  reason       String? // Optional message from requester
+  status       JoinRequestStatus @default(PENDING_JOIN)
+  reviewedById String?
+  reviewedBy   User?             @relation("JoinReviewers", fields: [reviewedById], references: [id])
+  reviewNote   String?
+  reviewedAt   DateTime?
+  expiresAt    DateTime // createdAt + 14 days
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
 
   @@unique([userId, targetOrgId, status])
   @@index([userId])
@@ -934,9 +963,9 @@ enum BillingCycle {
 }
 
 enum EntitlementType {
-  BOOLEAN    // Feature on/off (e.g., cmms.access)
-  LIMIT      // Numeric cap (e.g., projects.max = 25)
-  METERED    // Usage-based tracking (future)
+  BOOLEAN // Feature on/off (e.g., cmms.access)
+  LIMIT // Numeric cap (e.g., projects.max = 25)
+  METERED // Usage-based tracking (future)
 }
 
 enum InvoiceStatus {
@@ -968,34 +997,34 @@ enum TransactionStatus {
 }
 
 enum CouponType {
-  PERCENTAGE    // e.g., 20% off
-  FIXED_AMOUNT  // e.g., 100 SAR off
+  PERCENTAGE // e.g., 20% off
+  FIXED_AMOUNT // e.g., 100 SAR off
 }
 
 // ─── Plan (commercial package definition) ────────────────────────────────────
 
 model Plan {
-  id               String            @id @default(cuid())
-  slug             String            @unique  // "starter", "professional", "enterprise"
-  nameEn           String                     // Display name (English)
-  nameAr           String                     // Display name (Arabic)
-  descriptionEn    String?
-  descriptionAr    String?
-  priceMonthly     Decimal           @default(0) // SAR per month
-  priceAnnual      Decimal           @default(0) // SAR per year (discounted)
-  currency         String            @default("SAR")
-  trialDays        Int               @default(14)
-  isPublic         Boolean           @default(true)  // Visible on pricing page
-  isDefault        Boolean           @default(false) // Assigned to new orgs
-  sortOrder        Int               @default(0)
-  features         Json?             // Marketing feature list for pricing page
-  metadata         Json?             // Additional config (e.g., SLA tier, support channel)
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
+  id            String   @id @default(cuid())
+  slug          String   @unique // "starter", "professional", "enterprise"
+  nameEn        String // Display name (English)
+  nameAr        String // Display name (Arabic)
+  descriptionEn String?
+  descriptionAr String?
+  priceMonthly  Decimal  @default(0) // SAR per month
+  priceAnnual   Decimal  @default(0) // SAR per year (discounted)
+  currency      String   @default("SAR")
+  trialDays     Int      @default(14)
+  isPublic      Boolean  @default(true) // Visible on pricing page
+  isDefault     Boolean  @default(false) // Assigned to new orgs
+  sortOrder     Int      @default(0)
+  features      Json? // Marketing feature list for pricing page
+  metadata      Json? // Additional config (e.g., SLA tier, support channel)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  entitlements     PlanEntitlement[]
-  subscriptions    Subscription[]
-  coupons          Coupon[]          @relation("CouponPlans")
+  entitlements  PlanEntitlement[]
+  subscriptions Subscription[]
+  coupons       Coupon[]          @relation("CouponPlans")
 
   @@index([isPublic, sortOrder])
 }
@@ -1003,13 +1032,13 @@ model Plan {
 // ─── Plan Entitlement (feature/limit per plan) ──────────────────────────────
 
 model PlanEntitlement {
-  id          String          @id @default(cuid())
-  planId      String
-  plan        Plan            @relation(fields: [planId], references: [id], onDelete: Cascade)
-  featureKey  String          // e.g., "projects.max", "cmms.access", "reports.export"
-  type        EntitlementType
-  value       String          // "true"/"false" for BOOLEAN, numeric string for LIMIT/METERED
-  metadata    Json?           // Additional context (e.g., description, display label)
+  id         String          @id @default(cuid())
+  planId     String
+  plan       Plan            @relation(fields: [planId], references: [id], onDelete: Cascade)
+  featureKey String // e.g., "projects.max", "cmms.access", "reports.export"
+  type       EntitlementType
+  value      String // "true"/"false" for BOOLEAN, numeric string for LIMIT/METERED
+  metadata   Json? // Additional context (e.g., description, display label)
 
   @@unique([planId, featureKey])
   @@index([featureKey])
@@ -1018,28 +1047,28 @@ model PlanEntitlement {
 // ─── Subscription (org enrollment in a plan) ────────────────────────────────
 
 model Subscription {
-  id                  String             @id @default(cuid())
-  organizationId      String
-  organization        Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  planId              String
-  plan                Plan               @relation(fields: [planId], references: [id])
-  status              SubscriptionStatus @default(TRIALING)
-  billingCycle        BillingCycle       @default(MONTHLY)
-  currentPeriodStart  DateTime
-  currentPeriodEnd    DateTime
-  trialEndsAt         DateTime?
-  canceledAt          DateTime?
-  cancelReason        String?
-  pausedAt            DateTime?
-  resumesAt           DateTime?
-  nextBillingDate     DateTime?
-  priceAtRenewal      Decimal?           // Locked-in price for next renewal
-  metadata            Json?
-  createdAt           DateTime           @default(now())
-  updatedAt           DateTime           @updatedAt
+  id                 String             @id @default(cuid())
+  organizationId     String
+  organization       Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  planId             String
+  plan               Plan               @relation(fields: [planId], references: [id])
+  status             SubscriptionStatus @default(TRIALING)
+  billingCycle       BillingCycle       @default(MONTHLY)
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  trialEndsAt        DateTime?
+  canceledAt         DateTime?
+  cancelReason       String?
+  pausedAt           DateTime?
+  resumesAt          DateTime?
+  nextBillingDate    DateTime?
+  priceAtRenewal     Decimal? // Locked-in price for next renewal
+  metadata           Json?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
 
-  events              SubscriptionEvent[]
-  invoices            Invoice[]
+  events   SubscriptionEvent[]
+  invoices Invoice[]
 
   @@index([organizationId])
   @@index([status])
@@ -1049,15 +1078,15 @@ model Subscription {
 // ─── Subscription Event (audit trail for status transitions) ────────────────
 
 model SubscriptionEvent {
-  id              String       @id @default(cuid())
-  subscriptionId  String
-  subscription    Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
-  fromStatus      SubscriptionStatus?
-  toStatus        SubscriptionStatus
-  triggeredBy     String       // "system", "webhook", "admin:<userId>", "user:<userId>"
-  reason          String?
-  metadata        Json?        // Additional context (e.g., gateway response, dunning attempt #)
-  createdAt       DateTime     @default(now())
+  id             String              @id @default(cuid())
+  subscriptionId String
+  subscription   Subscription        @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  fromStatus     SubscriptionStatus?
+  toStatus       SubscriptionStatus
+  triggeredBy    String // "system", "webhook", "admin:<userId>", "user:<userId>"
+  reason         String?
+  metadata       Json? // Additional context (e.g., gateway response, dunning attempt #)
+  createdAt      DateTime            @default(now())
 
   @@index([subscriptionId])
   @@index([createdAt])
@@ -1066,17 +1095,17 @@ model SubscriptionEvent {
 // ─── Entitlement Override (per-org exceptions for enterprise/custom deals) ──
 
 model EntitlementOverride {
-  id              String          @id @default(cuid())
-  organizationId  String
-  organization    Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  featureKey      String
-  type            EntitlementType
-  value           String
-  reason          String?         // Why this override exists (e.g., "Enterprise contract #123")
-  grantedBy       String?         // userId of admin who granted
-  expiresAt       DateTime?       // Null = permanent
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  id             String          @id @default(cuid())
+  organizationId String
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  featureKey     String
+  type           EntitlementType
+  value          String
+  reason         String? // Why this override exists (e.g., "Enterprise contract #123")
+  grantedBy      String? // userId of admin who granted
+  expiresAt      DateTime? // Null = permanent
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
 
   @@unique([organizationId, featureKey])
   @@index([organizationId])
@@ -1085,42 +1114,42 @@ model EntitlementOverride {
 // ─── Invoice ────────────────────────────────────────────────────────────────
 
 model Invoice {
-  id               String        @id @default(cuid())
-  invoiceNumber    String        @unique  // Sequential per ZATCA (e.g., INV-2026-00001)
-  uuid             String        @unique @default(uuid()) // UUID v4 per ZATCA
-  organizationId   String
-  organization     Organization  @relation(fields: [organizationId], references: [id])
-  subscriptionId   String?
-  subscription     Subscription? @relation(fields: [subscriptionId], references: [id])
-  status           InvoiceStatus @default(DRAFT)
-  billingCycle     BillingCycle?
-  subtotal         Decimal       // Before VAT
-  vatRate          Decimal       @default(0.15) // 15% Saudi VAT
-  vatAmount        Decimal
-  discountAmount   Decimal       @default(0)
-  total            Decimal       // subtotal + vatAmount - discountAmount
-  currency         String        @default("SAR")
-  issuedAt         DateTime?
-  dueDate          DateTime?
-  paidAt           DateTime?
-  notes            String?
+  id             String        @id @default(cuid())
+  invoiceNumber  String        @unique // Sequential per ZATCA (e.g., INV-2026-00001)
+  uuid           String        @unique @default(uuid()) // UUID v4 per ZATCA
+  organizationId String
+  organization   Organization  @relation(fields: [organizationId], references: [id])
+  subscriptionId String?
+  subscription   Subscription? @relation(fields: [subscriptionId], references: [id])
+  status         InvoiceStatus @default(DRAFT)
+  billingCycle   BillingCycle?
+  subtotal       Decimal // Before VAT
+  vatRate        Decimal       @default(0.15) // 15% Saudi VAT
+  vatAmount      Decimal
+  discountAmount Decimal       @default(0)
+  total          Decimal // subtotal + vatAmount - discountAmount
+  currency       String        @default("SAR")
+  issuedAt       DateTime?
+  dueDate        DateTime?
+  paidAt         DateTime?
+  notes          String?
 
   // ZATCA e-invoicing fields
-  zatcaStatus      ZatcaStatus   @default(NOT_APPLICABLE)
-  zatcaHash        String?       // Previous invoice hash (for chaining)
-  zatcaQrCode      String?       // Base64 encoded QR
-  xmlContent       String?       // Signed ZATCA XML
+  zatcaStatus      ZatcaStatus @default(NOT_APPLICABLE)
+  zatcaHash        String? // Previous invoice hash (for chaining)
+  zatcaQrCode      String? // Base64 encoded QR
+  xmlContent       String? // Signed ZATCA XML
   zatcaSubmittedAt DateTime?
   zatcaClearedAt   DateTime?
 
-  couponId         String?
-  coupon           Coupon?       @relation(fields: [couponId], references: [id])
+  couponId String?
+  coupon   Coupon? @relation(fields: [couponId], references: [id])
 
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  lineItems        InvoiceLineItem[]
-  transactions     PaymentTransaction[]
+  lineItems    InvoiceLineItem[]
+  transactions PaymentTransaction[]
 
   @@index([organizationId])
   @@index([status])
@@ -1131,17 +1160,17 @@ model Invoice {
 // ─── Invoice Line Item ──────────────────────────────────────────────────────
 
 model InvoiceLineItem {
-  id            String   @id @default(cuid())
+  id            String  @id @default(cuid())
   invoiceId     String
-  invoice       Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  invoice       Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
   description   String
   descriptionAr String?
-  quantity      Int      @default(1)
+  quantity      Int     @default(1)
   unitPrice     Decimal
-  vatRate       Decimal  @default(0.15)
+  vatRate       Decimal @default(0.15)
   vatAmount     Decimal
-  total         Decimal  // quantity * unitPrice + vatAmount
-  sortOrder     Int      @default(0)
+  total         Decimal // quantity * unitPrice + vatAmount
+  sortOrder     Int     @default(0)
 
   @@index([invoiceId])
 }
@@ -1149,20 +1178,20 @@ model InvoiceLineItem {
 // ─── Payment Transaction ────────────────────────────────────────────────────
 
 model PaymentTransaction {
-  id              String        @id @default(cuid())
+  id              String            @id @default(cuid())
   invoiceId       String
-  invoice         Invoice       @relation(fields: [invoiceId], references: [id])
+  invoice         Invoice           @relation(fields: [invoiceId], references: [id])
   paymentMethodId String?
-  paymentMethod   PaymentMethod? @relation(fields: [paymentMethodId], references: [id])
-  gateway         String        // "moyasar", "hyperpay", "paytabs"
-  gatewayRef      String?       // Gateway-specific transaction ID
+  paymentMethod   PaymentMethod?    @relation(fields: [paymentMethodId], references: [id])
+  gateway         String // "moyasar", "hyperpay", "paytabs"
+  gatewayRef      String? // Gateway-specific transaction ID
   amount          Decimal
-  currency        String        @default("SAR")
+  currency        String            @default("SAR")
   status          TransactionStatus @default(PENDING)
   failureReason   String?
   refundedAmount  Decimal?
-  metadata        Json?         // Raw gateway response
-  initiatedAt     DateTime      @default(now())
+  metadata        Json? // Raw gateway response
+  initiatedAt     DateTime          @default(now())
   completedAt     DateTime?
 
   @@index([invoiceId])
@@ -1173,21 +1202,21 @@ model PaymentTransaction {
 // ─── Payment Method (tokenized card per org) ────────────────────────────────
 
 model PaymentMethod {
-  id              String               @id @default(cuid())
-  organizationId  String
-  organization    Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  gateway         String               // "moyasar", "hyperpay"
-  tokenId         String               // Gateway token reference
-  brand           String?              // "mada", "visa", "mastercard", "applepay"
-  lastFourDigits  String?
-  expiryMonth     Int?
-  expiryYear      Int?
-  holderName      String?
-  isDefault       Boolean              @default(false)
-  createdAt       DateTime             @default(now())
-  updatedAt       DateTime             @updatedAt
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  gateway        String // "moyasar", "hyperpay"
+  tokenId        String // Gateway token reference
+  brand          String? // "mada", "visa", "mastercard", "applepay"
+  lastFourDigits String?
+  expiryMonth    Int?
+  expiryYear     Int?
+  holderName     String?
+  isDefault      Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
-  transactions    PaymentTransaction[]
+  transactions PaymentTransaction[]
 
   @@index([organizationId])
 }
@@ -1195,29 +1224,29 @@ model PaymentMethod {
 // ─── Gateway Config (system-level gateway credentials) ──────────────────────
 
 model GatewayConfig {
-  id             String   @id @default(cuid())
-  gateway        String   @unique // "moyasar", "hyperpay", "paytabs"
-  displayName    String
-  isEnabled      Boolean  @default(false)
-  isPrimary      Boolean  @default(false)
-  supportedBrands Json?   // ["mada", "visa", "mastercard", "applepay"]
-  config         Json?    // Non-secret config (e.g., mode: "test"/"live")
+  id              String   @id @default(cuid())
+  gateway         String   @unique // "moyasar", "hyperpay", "paytabs"
+  displayName     String
+  isEnabled       Boolean  @default(false)
+  isPrimary       Boolean  @default(false)
+  supportedBrands Json? // ["mada", "visa", "mastercard", "applepay"]
+  config          Json? // Non-secret config (e.g., mode: "test"/"live")
   // Secret keys stored in env vars, NOT here
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
 // ─── Webhook Event (idempotency log) ────────────────────────────────────────
 
 model WebhookEvent {
-  id           String   @id @default(cuid())
-  gateway      String   // "moyasar", "hyperpay", "paytabs"
-  eventId      String   // Gateway event ID (for idempotency)
-  eventType    String   // e.g., "payment.succeeded", "payment.failed"
-  payload      Json     // Raw webhook payload
-  processedAt  DateTime?
-  error        String?  // Processing error message if failed
-  createdAt    DateTime @default(now())
+  id          String    @id @default(cuid())
+  gateway     String // "moyasar", "hyperpay", "paytabs"
+  eventId     String // Gateway event ID (for idempotency)
+  eventType   String // e.g., "payment.succeeded", "payment.failed"
+  payload     Json // Raw webhook payload
+  processedAt DateTime?
+  error       String? // Processing error message if failed
+  createdAt   DateTime  @default(now())
 
   @@unique([gateway, eventId])
   @@index([gateway, eventType])
@@ -1227,27 +1256,27 @@ model WebhookEvent {
 // ─── Coupon (code-based discount) ───────────────────────────────────────────
 
 model Coupon {
-  id              String           @id @default(cuid())
-  code            String           @unique
-  descriptionEn   String?
-  descriptionAr   String?
-  type            CouponType
-  value           Decimal          // Percentage (0-100) or fixed SAR amount
-  currency        String           @default("SAR")
-  maxRedemptions  Int?             // Null = unlimited
-  currentUses     Int              @default(0)
-  validFrom       DateTime         @default(now())
-  validUntil      DateTime?
-  isActive        Boolean          @default(true)
-  minPurchaseAmount Decimal?       // Minimum invoice amount
-  applicableCycles  Json?          // ["MONTHLY", "ANNUAL"] or null = all
-  metadata        Json?
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  id                String     @id @default(cuid())
+  code              String     @unique
+  descriptionEn     String?
+  descriptionAr     String?
+  type              CouponType
+  value             Decimal // Percentage (0-100) or fixed SAR amount
+  currency          String     @default("SAR")
+  maxRedemptions    Int? // Null = unlimited
+  currentUses       Int        @default(0)
+  validFrom         DateTime   @default(now())
+  validUntil        DateTime?
+  isActive          Boolean    @default(true)
+  minPurchaseAmount Decimal? // Minimum invoice amount
+  applicableCycles  Json? // ["MONTHLY", "ANNUAL"] or null = all
+  metadata          Json?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
 
-  plans           Plan[]           @relation("CouponPlans")
-  redemptions     CouponRedemption[]
-  invoices        Invoice[]
+  plans       Plan[]             @relation("CouponPlans")
+  redemptions CouponRedemption[]
+  invoices    Invoice[]
 
   @@index([code])
   @@index([isActive, validFrom, validUntil])
@@ -1261,7 +1290,7 @@ model CouponRedemption {
   coupon          Coupon       @relation(fields: [couponId], references: [id])
   organizationId  String
   organization    Organization @relation(fields: [organizationId], references: [id])
-  discountApplied Decimal      // Actual SAR discount given
+  discountApplied Decimal // Actual SAR discount given
   redeemedAt      DateTime     @default(now())
 
   @@index([couponId])
@@ -1271,14 +1300,14 @@ model CouponRedemption {
 // ─── Customer Activity Timeline (CRM) ─────────────────────────────────────────
 
 model CustomerActivity {
-  id           String       @id @default(cuid())
-  customerId   String
-  customer     Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  type         ActivityType
-  note         String
-  createdById  String
-  createdBy    User         @relation("ActivityCreator", fields: [createdById], references: [id])
-  createdAt    DateTime     @default(now())
+  id          String       @id @default(cuid())
+  customerId  String
+  customer    Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  type        ActivityType
+  note        String
+  createdById String
+  createdBy   User         @relation("ActivityCreator", fields: [createdById], references: [id])
+  createdAt   DateTime     @default(now())
 
   @@index([customerId])
   @@index([createdById])
@@ -1316,9 +1345,9 @@ enum PropertyIntent {
 }
 
 enum InterestStatus {
-  ACTIVE      // Customer is currently interested
-  CONVERTED   // Converted to a Deal (reservation created)
-  DROPPED     // Customer no longer interested
+  ACTIVE // Customer is currently interested
+  CONVERTED // Converted to a Deal (reservation created)
+  DROPPED // Customer no longer interested
 }
 
 // ─── System SEO & Brand Configuration (singleton: id = "system") ─────────────
@@ -1327,11 +1356,11 @@ model SystemConfig {
   id String @id @default("system")
 
   // SEO Metadata
-  siteTitle          String?
-  siteTitleTemplate  String?
-  siteDescriptionAr  String?
-  siteDescriptionEn  String?
-  canonicalUrl       String?
+  siteTitle         String?
+  siteTitleTemplate String?
+  siteDescriptionAr String?
+  siteDescriptionEn String?
+  canonicalUrl      String?
 
   // Open Graph
   ogTitle       String?
@@ -1371,22 +1400,149 @@ model SystemConfig {
   schemaOrgInstagram String?
 
   // Transactional Email (Hostinger SMTP)
-  emailProvider          String?   @default("HOSTINGER_SMTP")
-  emailEnabled           Boolean   @default(false)
-  emailFromName          String?
-  emailFromAddress       String?
-  emailReplyTo           String?
-  smtpHost               String?   @default("smtp.hostinger.com")
-  smtpPort               Int?      @default(465)
-  smtpSecure             Boolean   @default(true)
-  smtpUsername           String?
-  smtpPasswordEncrypted  String?   @db.Text
-  smtpPasswordLast4      String?
-  emailTestRecipient     String?
-  emailLastTestAt        DateTime?
-  emailLastTestStatus    String?
-  emailLastTestMessage   String?   @db.Text
+  emailProvider         String?   @default("HOSTINGER_SMTP")
+  emailEnabled          Boolean   @default(false)
+  emailFromName         String?
+  emailFromAddress      String?
+  emailReplyTo          String?
+  smtpHost              String?   @default("smtp.hostinger.com")
+  smtpPort              Int?      @default(465)
+  smtpSecure            Boolean   @default(true)
+  smtpUsername          String?
+  smtpPasswordEncrypted String?   @db.Text
+  smtpPasswordLast4     String?
+  emailTestRecipient    String?
+  emailLastTestAt       DateTime?
+  emailLastTestStatus   String?
+  emailLastTestMessage  String?   @db.Text
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// ─── Marketplace — cross-org B2B unit trading ───────────────────────────────
+
+enum MarketplaceListingStatus {
+  DRAFT
+  PUBLISHED
+  UNDER_CONTRACT
+  SOLD_TRANSFERRED
+  UNPUBLISHED
+  EXPIRED
+  REJECTED
+  SUSPENDED
+}
+
+enum MarketplaceInquiryStatus {
+  OPEN
+  CONVERTED_TO_DEAL
+  WITHDRAWN
+  DECLINED
+  CLOSED_WON
+  CLOSED_LOST
+}
+
+enum UnitTransferStatus {
+  PENDING_SETTLEMENT
+  READY
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum MarketplaceComplianceStatus {
+  NOT_REQUIRED
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+}
+
+model MarketplaceListing {
+  id                String                      @id @default(cuid())
+  listingNumber     String                      @unique
+  unitId            String
+  unit              Unit                        @relation("UnitMarketplaceListings", fields: [unitId], references: [id])
+  sellerOrgId       String
+  sellerOrg         Organization                @relation("MarketplaceSellerListings", fields: [sellerOrgId], references: [id])
+  status            MarketplaceListingStatus    @default(DRAFT)
+  complianceStatus  MarketplaceComplianceStatus @default(NOT_REQUIRED)
+  adLicenseNumber   String?
+  sellerOrgSnapshot Json?
+  // Curated public view fields — never expose raw Unit across orgs
+  title             String?
+  description       String?
+  price             Decimal?
+  area              Float?
+  city              String?
+  district          String?
+  propertyType      UnitType?
+  bedrooms          Int?
+  bathrooms         Int?
+  buildingAge       Int?
+  shortAddress      String?
+  viewCount         Int                         @default(0)
+  interestCount     Int                         @default(0)
+  publishedAt       DateTime?
+  expiresAt         DateTime?
+  unpublishedReason String?
+  suspendedReason   String?
+  rejectedReason    String?
+  inquiries         MarketplaceInquiry[]
+  transfers         UnitTransferTransaction[]
+  createdAt         DateTime                    @default(now())
+  updatedAt         DateTime                    @updatedAt
+
+  @@index([sellerOrgId])
+  @@index([status])
+  @@index([unitId])
+}
+
+model MarketplaceInquiry {
+  id                  String                   @id @default(cuid())
+  listingId           String
+  listing             MarketplaceListing       @relation(fields: [listingId], references: [id])
+  buyerOrgId          String
+  buyerOrg            Organization             @relation("MarketplaceBuyerInquiries", fields: [buyerOrgId], references: [id])
+  sellerOrgId         String
+  sellerOrg           Organization             @relation("MarketplaceSellerInquiries", fields: [sellerOrgId], references: [id])
+  sellerCrmCustomerId String?
+  sellerCrmCustomer   Customer?                @relation("MarketplaceInquiryCustomer", fields: [sellerCrmCustomerId], references: [id])
+  status              MarketplaceInquiryStatus @default(OPEN)
+  message             String?
+  buyerOrgSnapshot    Json?
+  reservation         Reservation?
+  transfer            UnitTransferTransaction?
+  createdAt           DateTime                 @default(now())
+  updatedAt           DateTime                 @updatedAt
+
+  @@unique([listingId, buyerOrgId])
+  @@index([buyerOrgId])
+  @@index([sellerOrgId])
+  @@index([listingId])
+}
+
+model UnitTransferTransaction {
+  id            String             @id @default(cuid())
+  inquiryId     String             @unique
+  inquiry       MarketplaceInquiry @relation(fields: [inquiryId], references: [id])
+  listingId     String
+  listing       MarketplaceListing @relation(fields: [listingId], references: [id])
+  reservationId String?
+  contractId    String?
+  sellerOrgId   String
+  sellerOrg     Organization       @relation("MarketplaceSellerTransfers", fields: [sellerOrgId], references: [id])
+  buyerOrgId    String
+  buyerOrg      Organization       @relation("MarketplaceBuyerTransfers", fields: [buyerOrgId], references: [id])
+  sellerUnitId  String
+  buyerUnitId   String?
+  status        UnitTransferStatus @default(PENDING_SETTLEMENT)
+  failureReason String?
+  settledAt     DateTime?
+  completedAt   DateTime?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  @@index([sellerOrgId])
+  @@index([buyerOrgId])
+  @@index([status])
 }

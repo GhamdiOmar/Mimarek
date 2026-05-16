@@ -1,5 +1,26 @@
 # Changelog — Mimaric PropTech
 
+## [Unreleased] — Marketplace (cross-org B2B unit trading)
+
+Verified-organization-only B2B marketplace: full workflow from seller publication → buyer inquiry → seller CRM handoff → deal conversion → settlement-gated atomic cross-org unit transfer. Not a public/SEO marketplace (per spec Decision 20). Release tag deferred — preview screenshot capture is unavailable in the build environment, so the AGENTS §3.9 release-gate (light/dark × AR/EN screenshots) cannot be evidenced yet.
+
+### Added
+
+- **Data model** — `MarketplaceListing`, `MarketplaceInquiry`, `UnitTransferTransaction` + enums (`MarketplaceListingStatus`, `MarketplaceInquiryStatus`, `UnitTransferStatus`, `MarketplaceComplianceStatus`). `Unit` gains marketplace/transfer provenance fields; `Reservation`/`Contract` gain nullable cross-org bridge fields (`marketplaceInquiryId`, `buyerOrgId`, `sellerOrgId`). Additive only — `prisma db push` applied; existing single-org flows untouched.
+- **Permissions** — `marketplace:read|publish|manage_own|inquiry:read|inquiry:write|inquiry:convert|transfer:execute` (tenant-scoped) and `marketplace:moderate` (platform-only). Registered in all four `permissions.ts` sites + role maps.
+- **Hardened cross-org read layer** (`lib/marketplace/listing-view.ts`) — the single chokepoint where the org filter is deliberately relaxed; returns explicit allow-listed view models only, never raw `Unit`/`Customer`/`Contract` rows; buyer browse excludes own-org listings.
+- **Server actions** (`app/actions/marketplace.ts`) — eligibility (machine-readable blocker codes), draft/publish/update/unpublish, browse/detail, confirm-interest (creates seller-side CRM customer with `source=MARKETPLACE`), convert-to-deal (cross-org reservation + transfer), settlement with `SIGNED` SALE-contract gate, transactional rollback + `FAILED` state + finance/admin notification, platform suspend. Unit clone on transfer bypasses the `UNITS_MAX` entitlement (system-initiated).
+- **Maintenance guard** — transferred-away units reject new seller-side maintenance (`MAINTENANCE_BLOCKED_NOT_OWNER` audit event).
+- **UI** — `/dashboard/marketplace` (buyer browse, filters, cards/table responsive), `/dashboard/marketplace/[listingId]` (detail + National Address validation + Google Maps `api=1` link + confirmation modal), `/dashboard/marketplace/my-listings` (seller listings, incoming inquiries, convert, settle), `/dashboard/admin/marketplace` (platform moderation/suspend), Publish dialog launched from `/dashboard/units`, Marketplace badge/filter on `/dashboard/crm`. Nav + Cmd-K wired. Bilingual AR/RTL-first, design tokens, audit trail on every transition.
+
+### Verification
+
+- Full `tsc --noEmit` green; `next build` green (all four marketplace routes compiled).
+- Functional cross-org E2E through the UI (two real orgs): seller publish (eligibility gate enforced incl. `MISSING_ADDRESS`) → buyer cross-org browse → listing detail (Maps URL exact) → buyer express interest → seller CRM customer created (`source=MARKETPLACE`, in seller org) → convert to deal (cross-org reservation + `PENDING_SETTLEMENT` transfer) → **settlement correctly refused without a SIGNED sale contract**. Zero console errors; mobile 375px no overflow; buyer-browse own-org exclusion confirmed.
+- **Not evidenced (release-gate blocker):** light/dark × AR/EN screenshots — preview screenshot renderer times out in this environment. Tag/push withheld pending user decision per AGENTS §3.9.
+
+---
+
 ## [4.2.1] — 2026-05-09 — Portal a11y, Admin Email SMTP fix, Route hygiene
 
 Patch release targeting three issues deferred from v4.2.0.
