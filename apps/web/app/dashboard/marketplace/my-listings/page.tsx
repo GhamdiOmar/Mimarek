@@ -283,6 +283,12 @@ export default function MyListingsPage() {
 
   return (
     <div className="space-y-8 p-4 md:p-6" dir={lang === "ar" ? "rtl" : "ltr"}>
+      <Link
+        href="/dashboard/marketplace"
+        className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
+      >
+        {lang === "ar" ? "→ العودة إلى السوق" : "← Back to marketplace"}
+      </Link>
       <PageIntro
         title={lang === "ar" ? "إعلاناتي في السوق" : "My Marketplace Listings"}
         description={

@@ -3,7 +3,10 @@
 # Playwright
 **/e2e/.auth/
 **/test-results/
+**/test-results-*/
 **/playwright-report/
+**/playwright-report-*/
+**/e2e/__screenshots__/
 
 # Verification artifacts (local screenshots + run logs)
 verification-screenshots/

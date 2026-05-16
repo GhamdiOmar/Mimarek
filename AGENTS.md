@@ -26,6 +26,7 @@
 ### 3.1 UI-First Principle
 - Every page, feature, CRUD function, export/import, configuration, or action MUST be accessible through the UI. When creating a new page, always add a navigation link (sidebar, topbar, or contextual button). When adding a server action, always wire it to a UI control. Never leave functionality orphaned without a user-facing path to reach it.
 - **Checklist for every new feature**: (1) Is there a nav link or button to reach it? (2) Can the user discover it without knowing the URL? (3) Are related CRUD actions exposed through the UI? (4) Are export/import functions surfaced in the page header or action menu?
+- **`hiddenFromNav: true` is a discoverability hazard (learned 2026-05-16).** Setting a route `hiddenFromNav` removes it from the sidebar/More — it is then ONLY reachable via Cmd-K (not discoverable) unless a real on-page affordance exists. If you mark a route `hiddenFromNav`, you MUST add and *verify in the running UI* a visible button/tab/link that reaches it. Incident: `/dashboard/marketplace/my-listings` was set `hiddenFromNav` on the assumption sellers would reach it via the marketplace page tabs — but those tabs were buyer-only (Browse / My Inquiries), so the seller had zero discoverable path. Rule: never rely on an assumed affordance — open the page in the browser and click the path end-to-end before considering nav wiring done.
 
 ### 3.2 Workflow Orchestration
 - Enter plan mode for ANY non-trivial task (3+ steps or architectural decisions).
