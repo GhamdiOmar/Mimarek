@@ -96,7 +96,8 @@ function ProcessBlockerBanner({
       onClick={onDismiss}
       aria-label={isArabic ? "إغلاق" : "Dismiss"}
       className={cn(
-        "ms-2 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors",
+        // §6.6.2 / §6.14.3: ≥44×44 touch target on mobile; dense (28px) ≥md desktop
+        "ms-2 inline-flex h-11 w-11 md:h-7 md:w-7 shrink-0 items-center justify-center rounded-md transition-colors",
         "hover:bg-foreground/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--primary))]",
       )}
     >
@@ -109,7 +110,8 @@ function ProcessBlockerBanner({
       <Link
         href={b.actionHref}
         className={cn(
-          "inline-flex h-8 shrink-0 items-center rounded-md px-3 text-xs font-semibold transition-colors",
+          // §6.6.2 / §6.14.3: ≥44px touch target on mobile; dense 32px (`sm`) ≥md desktop
+          "inline-flex h-11 md:h-8 shrink-0 items-center rounded-md px-3 text-xs font-semibold transition-colors",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--primary))]",
           tone.action,
         )}
