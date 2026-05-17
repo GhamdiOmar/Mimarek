@@ -1,5 +1,26 @@
 # Changelog — Mimaric PropTech
 
+## [4.5.0] — 2026-05-17 — Deal/Opportunity entity (CRM pipeline)
+
+Phase 2 of the journey-first transformation. `CustomerPropertyInterest` is promoted to a first-class **`Deal`** model (table preserved via `@@map` — non-destructive `db push`, no data migration). `Customer.status` becomes a derived cache recomputed from the customer's deals; tenancy lifecycle (`ACTIVE_TENANT`/`PAST_TENANT`) still wins.
+
+### Added
+- **`Deal` model** — `stage` (`DealStage`: NEW/QUALIFIED/VIEWING/NEGOTIATION/RESERVED/WON/LOST), `value`, `probability`, `expectedCloseDate`, `lostReason`, `updatedAt`; `@@index([stage])`; `@@unique([customerId,unitId])` dropped (a customer may pursue a unit across multiple deals over time). Table mapped to `CustomerPropertyInterest` — zero data migration.
+- **`syncCustomerPipelineStatus`** — recomputes `Customer.status` from the most-advanced ACTIVE deal (deterministic tie-break); tenancy statuses are never overridden.
+- **`updateDealStage` / `syncDealStageForUnit`** — pipeline transitions now flow through `Deal.stage`; CRM Kanban drag, "mark lost", and the customer drawer are wired to deal stage (board structure unchanged; reuses the existing stage config).
+
+### Changed
+- Reservation/contract pipeline `Customer.status` writes rerouted through the Deal entity; tenancy writes (lease → ACTIVE_TENANT, lease-archive → PAST_TENANT) and the manual override path left as direct writes.
+
+### Known follow-ups (non-blocking)
+- `marketplace.ts` cross-org conversion still writes `Customer.status` directly (inside a safety-critical atomic cross-org transaction; out of Phase 2 scope — tracked for a dedicated change).
+- Confirm-after-convert can create a second `WON` deal row (consistent with the intentionally-removed unique constraint; customer status still resolves correctly via the deterministic sync).
+
+### Verification
+- `prisma generate` clean; `tsc --noEmit` green 3/3 (`@repo/ui`/`@repo/web`/`@repo/portal`); grep shows zero stale `db.customerPropertyInterest` refs. Schema application (`db push --accept-data-loss`) + full Playwright suite verified by CI.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimaric/compare/v4.4.0...v4.5.0
+
 ## [4.4.0] — 2026-05-17 — Terminology honesty (Deals→Reservations) + shared journey layer
 
 Phases 1 & 3 of the journey-first transformation. **No schema/model/permission/behavioral change.**
