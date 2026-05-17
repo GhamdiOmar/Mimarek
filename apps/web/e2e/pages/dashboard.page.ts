@@ -19,14 +19,6 @@ export class DashboardPage {
     await expect(main.getByText(labelAr, { exact: true }).first()).toBeVisible();
   }
 
-  async expectOffPlanSection() {
-    const main = this.page.locator('main');
-    await expect(main.getByText('مشاريع البيع على الخارطة')).toBeVisible();
-    await expect(main.getByText('إجمالي المخزون')).toBeVisible();
-    await expect(main.getByText('معدل التحويل')).toBeVisible();
-    await expect(main.getByText('قيمة المبيعات')).toBeVisible();
-  }
-
   async expectKPIValue(labelAr: string, expectedValue: string | RegExp) {
     const main = this.page.locator('main');
     const card = main.locator('div').filter({ hasText: labelAr }).first();

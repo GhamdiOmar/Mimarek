@@ -189,7 +189,7 @@ export const FAQ_ITEMS: FAQItem[] = [
     answer: { ar: "من قسم المدفوعات، تظهر لوحة بأربعة مؤشرات: إجمالي المستحق، المحصّل، المتأخر، والمعلق. الجدول يعرض كل قسط مع اسم المستأجر ورقم الوحدة والمبلغ وتاريخ الاستحقاق والحالة. انقر 'تسجيل دفعة' على أي قسط غير مدفوع لتسجيل التحصيل. النظام يحدّث الأقساط المتأخرة تلقائياً.", en: "From the Payments section, a dashboard shows four KPIs: Total Due, Collected, Overdue, and Pending. The table lists each installment with tenant name, unit number, amount, due date, and status. Click 'Record Payment' on any unpaid installment to record collection. The system automatically marks overdue installments." },
     category: "finance",
   },
-  // Sales Contracts & Ejar/Wafi Compliance
+  // Sales Contracts & Ejar Compliance
   {
     id: "sc-4",
     question: { ar: "كيف أتابع عقود المبيعات؟", en: "How do I track sales contracts?" },
@@ -268,7 +268,7 @@ export const GUIDE_ITEMS: GuideItem[] = [
     module: "properties",
     steps: [
       { ar: "اذهب إلى قسم العقارات من القائمة الجانبية — ستظهر شبكة بطاقات بجميع الوحدات مع حالتها", en: "Go to the Properties section from the sidebar — a card grid shows all units with their status" },
-      { ar: "استخدم الفلاتر: البحث برقم الوحدة، تصفية حسب المشروع، تصفية حسب الحالة", en: "Use filters: search by unit number, filter by project, filter by status" },
+      { ar: "استخدم الفلاتر: البحث برقم الوحدة، تصفية حسب الحالة", en: "Use filters: search by unit number, filter by status" },
       { ar: "انقر 'إضافة وحدة' وأدخل الرقم، النوع، المبنى، المساحة، وأسعار التكلفة والبيع والإيجار", en: "Click 'Add Unit' and enter number, type, building, area, and cost/selling/rental prices" },
       { ar: "يمكنك تعديل عدة وحدات معاً باستخدام التحديد المتعدد وشريط الإجراءات", en: "You can bulk-edit units using multi-select and the action bar" },
       { ar: "انقر زر التفاصيل للوحدة لعرض: المعلومات الأساسية، الملخص المالي، العقد المرتبط، وطلبات الصيانة", en: "Click the detail button to view: basic info, financial summary, linked contract, and maintenance requests" },
@@ -411,7 +411,7 @@ export const GUIDE_ITEMS: GuideItem[] = [
       { ar: "العقد 'مسودة': يمكنك النقر على 'إرسال' أو 'إلغاء' أو 'حذف' (يحتاج صلاحية حذف)", en: "For 'Draft': click 'Send', 'Cancel', or 'Delete' (delete requires delete permission)" },
       { ar: "العقد 'مُرسل': يمكنك النقر على 'توقيع' أو 'إلغاء'", en: "For 'Sent': click 'Sign' or 'Cancel'" },
       { ar: "العقد 'موقّع': يمكنك النقر على 'إبطال' فقط (يعكس جميع التأثيرات)", en: "For 'Signed': only 'Void' is available (reverses all effects)" },
-      { ar: "عند توقيع عقد بيع: الوحدة ← مباع، العميل ← مُحوّل، إيداع في الضمان", en: "When signing a sale contract: unit → Sold, customer → Converted, escrow deposit" },
+      { ar: "عند توقيع عقد بيع: الوحدة ← مباع، العميل ← مُحوّل", en: "When signing a sale contract: unit → Sold, customer → Converted" },
       { ar: "عند توقيع عقد إيجار: الوحدة ← مؤجر، العميل ← مستأجر نشط، الإيجار ← نشط", en: "When signing a lease contract: unit → Rented, customer → Active Tenant, lease → Active" },
       { ar: "عند الإلغاء أو الإبطال: الوحدة ← متاح، العميل ← مؤهل (إن لم يكن له عقود أخرى)", en: "On cancel/void: unit → Available, customer → Qualified (if no other active contracts)" },
     ],

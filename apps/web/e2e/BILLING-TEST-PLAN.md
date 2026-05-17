@@ -66,12 +66,10 @@ npx playwright test billing.admin.spec.ts
 
 | # | Test Case | UI Action | Expected Result | Status |
 |---|-----------|-----------|-----------------|--------|
-| 4.1 | Project limit enforced | Create projects up to plan limit (Starter: 3) | 4th project creation blocked with error | ✅ UI (via project creation form) |
 | 4.2 | User limit enforced | Invite users up to plan limit (Starter: 5) | 6th invite blocked with error | ✅ UI (via team invitation) |
 | 4.3 | Unit limit enforced | Create units up to plan limit (Starter: 50) | 51st unit blocked with error | ✅ UI (via unit creation form) |
 | 4.4 | CMMS access gated | Navigate to CMMS on Starter plan | Access denied / upgrade prompt | 🔧 Needs upgrade prompt UI (currently just server-side block) |
-| 4.5 | Off-plan access gated | Navigate to Off-Plan on Starter plan | Access denied / upgrade prompt | 🔧 Needs upgrade prompt UI |
-| 4.6 | Usage meter display (80%) | Reach 80% of project limit | 🔧 Dashboard shows usage meter at 80% | 🔧 Needs usage meters on dashboard sidebar |
+| 4.6 | Usage meter display (80%) | Reach 80% of unit limit | 🔧 Dashboard shows usage meter at 80% | 🔧 Needs usage meters on dashboard sidebar |
 | 4.7 | Usage meter display (100%) | Reach 100% of limit | 🔧 Dashboard shows red "Limit reached" | 🔧 Needs usage meters on dashboard sidebar |
 
 ### TC-05: Access Restriction (No Payment / Canceled)

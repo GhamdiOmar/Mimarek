@@ -49,11 +49,9 @@ async function main() {
       sortOrder: 0,
       entitlements: {
         create: [
-          { featureKey: "projects.max", type: "LIMIT", value: "3" },
           { featureKey: "users.max", type: "LIMIT", value: "5" },
           { featureKey: "units.max", type: "LIMIT", value: "50" },
           { featureKey: "cmms.access", type: "BOOLEAN", value: "false" },
-          { featureKey: "offplan.access", type: "BOOLEAN", value: "false" },
           { featureKey: "reports.export", type: "BOOLEAN", value: "false" },
           { featureKey: "pii.encryption", type: "BOOLEAN", value: "false" },
           { featureKey: "audit.access", type: "BOOLEAN", value: "false" },
@@ -87,11 +85,9 @@ async function main() {
       sortOrder: 1,
       entitlements: {
         create: [
-          { featureKey: "projects.max", type: "LIMIT", value: "25" },
           { featureKey: "users.max", type: "LIMIT", value: "25" },
           { featureKey: "units.max", type: "LIMIT", value: "500" },
           { featureKey: "cmms.access", type: "BOOLEAN", value: "true" },
-          { featureKey: "offplan.access", type: "BOOLEAN", value: "true" },
           { featureKey: "reports.export", type: "BOOLEAN", value: "true" },
           { featureKey: "pii.encryption", type: "BOOLEAN", value: "true" },
           { featureKey: "audit.access", type: "BOOLEAN", value: "true" },
@@ -125,11 +121,9 @@ async function main() {
       sortOrder: 2,
       entitlements: {
         create: [
-          { featureKey: "projects.max", type: "LIMIT", value: "unlimited" },
           { featureKey: "users.max", type: "LIMIT", value: "unlimited" },
           { featureKey: "units.max", type: "LIMIT", value: "unlimited" },
           { featureKey: "cmms.access", type: "BOOLEAN", value: "true" },
-          { featureKey: "offplan.access", type: "BOOLEAN", value: "true" },
           { featureKey: "reports.export", type: "BOOLEAN", value: "true" },
           { featureKey: "pii.encryption", type: "BOOLEAN", value: "true" },
           { featureKey: "audit.access", type: "BOOLEAN", value: "true" },

@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Image from "next/image";
 import {
-  Building2,
   Store,
   Home,
   Wrench,
@@ -26,22 +25,10 @@ export default function Features({ lang }: { lang: "ar" | "en" }) {
 
   const tabs: FeatureTab[] = [
     {
-      id: "projects",
-      icon: Building2,
-      title: t.projectManagement,
-      desc: t.projectManagementDesc,
-      features: [
-        t.projectFeature1,
-        t.projectFeature2,
-        t.projectFeature3,
-        t.projectFeature4,
-      ],
-    },
-    {
       id: "sales",
       icon: Store,
-      title: t.salesOffplan,
-      desc: t.salesOffplanDesc,
+      title: t.salesCrm,
+      desc: t.salesCrmDesc,
       features: [
         t.salesFeature1,
         t.salesFeature2,
@@ -160,7 +147,7 @@ export default function Features({ lang }: { lang: "ar" | "en" }) {
                 width={1200}
                 height={800}
                 className="h-auto w-full"
-                priority={activeTab.id === "projects"}
+                priority={activeTab.id === "sales"}
               />
             </div>
           </div>

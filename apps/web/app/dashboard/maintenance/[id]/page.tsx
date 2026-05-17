@@ -654,8 +654,7 @@ export default function MaintenanceDetailPage() {
             )}
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            {cat[lang]} • {request.unit?.number} — {request.unit?.building?.name}
-            {request.unit?.building?.project?.name && ` (${request.unit.building.project.name})`}
+            {cat[lang]} • {request.unit?.number}
           </p>
         </div>
       </div>

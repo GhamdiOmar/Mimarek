@@ -4,10 +4,10 @@
 
 **Saudi-first PropTech SaaS for real estate developers.**
 
-Automate the full property lifecycle — project management, sales, rentals, leasing, and finance — on a platform built for Vision 2030 compliance (ZATCA · Ejar · REGA · Balady · Wafi · Absher).
+Automate the full property lifecycle — sales, CRM, rentals, leasing, finance, and maintenance — on a platform built for Vision 2030 compliance (ZATCA · Ejar · REGA · Balady · Absher).
 
 [![CI](https://github.com/GhamdiOmar/Mimaric/actions/workflows/ci.yml/badge.svg)](https://github.com/GhamdiOmar/Mimaric/actions/workflows/ci.yml)
-![Version](https://img.shields.io/badge/version-4.3.0-7339AC)
+![Version](https://img.shields.io/badge/version-4.3.1-7339AC)
 ![Next.js](https://img.shields.io/badge/Next.js-16-black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6)
 ![Arabic](https://img.shields.io/badge/%D8%B9%D8%B1%D8%A8%D9%8A-first-00875A)
@@ -21,13 +21,13 @@ Automate the full property lifecycle — project management, sales, rentals, lea
 Saudi real estate runs on a fragmented stack — Excel sheets for rent rolls, WhatsApp threads for tours, paper contracts for Ejar, and separate tools for ZATCA e-invoicing. Mimaric is one platform that replaces all of them, and it speaks Arabic first.
 
 - **One workspace per developer** — properties, units, customers, deals, contracts, payments, maintenance tickets, and documents, all tenant-isolated by `organizationId`.
-- **Saudi-native data model** — customer records aligned with Absher (nationalId, personType, Hijri DOB), organizations aligned with MOC (CR, entityType, legalForm), projects aligned with Balady (parcelNumber, deedNumber, coordinates).
+- **Saudi-native data model** — customer records aligned with Absher (nationalId, personType, Hijri DOB), organizations aligned with MOC (CR, entityType, legalForm).
 - **Bilingual by design** — every screen, every email, every error message ships in Arabic (RTL) and English (LTR) with native-speaker-reviewed copy.
 - **Role-based dashboards** — the CFO doesn't see the same thing as the leasing agent. Five dashboards ship out of the box (Org Owner, Platform Admin, Leasing, Finance, Maintenance), each with one North Star KPI and tiered supporting metrics.
 
 ## Who it's for
 
-- **Real estate developers** — track off-plan sales, WAFI escrow, project milestones, and construction-to-handover.
+- **Real estate developers** — manage unit sales, reservations, and the contract lifecycle from lead to handover.
 - **Property managers** — run rent rolls, AR aging, lease renewals, and maintenance tickets across entire portfolios.
 - **Brokerage / leasing teams** — pipeline, tours, applications, commission tracking, stage-tinted CRM Kanban.
 - **Finance teams** — ZATCA e-invoicing, collections, late-fee automation, Hijri/Gregorian dual-calendar reports.
@@ -38,7 +38,6 @@ Saudi real estate runs on a fragmented stack — Excel sheets for rent rolls, Wh
 
 | Area | What ships |
 |---|---|
-| **Projects** | Parcel/deed records, site plans, phases, milestones, WAFI escrow tracking |
 | **Properties & Units** | Multi-building portfolio, status flows (available → reserved → sold/rented → maintenance), density-togglable card view |
 | **CRM** | Lead pipeline, stage-tinted Kanban, tour scheduling, quick-actions (call · WhatsApp · email), drag-to-stage |
 | **Deals** | Offer → negotiation → reservation → closing, per-stage pipeline value |
@@ -207,7 +206,7 @@ Tracked in [CHANGELOG.md](CHANGELOG.md). Recent + upcoming:
 
 - **v4.0.0** (shipped 2026-04-18) — Design System v2 + Access Model Hardening. [Release notes](https://github.com/GhamdiOmar/Mimaric/releases/tag/v4.0.0).
 - **v4.1** (planned) — react-hook-form + zod migration, DB-backed TanStack saved views, full Balady district cascade.
-- **v4.2** (planned) — WAFI escrow integration, ZATCA e-invoice submission, SAMA-compliant Moyasar payment gateway.
+- **v4.2** (planned) — ZATCA e-invoice submission, SAMA-compliant Moyasar payment gateway.
 
 ---
 

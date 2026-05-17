@@ -12,7 +12,7 @@ export const t = {
     // Hero
     heroTitle: "المنصة السعودية لإدارة العقارات والمرافق",
     heroSubtitle:
-      "أدِر مشاريعك، مبيعاتك، إيجاراتك، وصيانتك — في منصة واحدة مبنية لبيانات السوق السعودي",
+      "أدِر عقاراتك، مبيعاتك، إيجاراتك، وصيانتك — في منصة واحدة مبنية لبيانات السوق السعودي",
     watchDemo: "شاهد العرض",
 
     // Trust badges
@@ -22,7 +22,7 @@ export const t = {
 
     // Logo bar
     trustedBy: "موثوق من قبل شركات التطوير العقاري في المملكة",
-    projectsManaged: "مشروع مُدار",
+    propertiesManaged: "عقار مُدار",
     unitsTracked: "وحدة مُتابَعة",
     sarProcessed: "ر.س مُعالَجة",
 
@@ -31,18 +31,10 @@ export const t = {
     featuresSubtitle:
       "منصة متكاملة مصممة خصيصاً للسوق العقاري السعودي",
 
-    projectManagement: "إدارة المشاريع",
-    projectManagementDesc:
-      "تتبع مشاريعك العقارية من البداية للنهاية مع حقول بيانات جاهزة لبلدي",
-    projectFeature1: "تتبع الصكوك وأرقام القطع",
-    projectFeature2: "مراحل البناء والتقدم",
-    projectFeature3: "حقول جاهزة لبلدي والتطوير العقاري",
-    projectFeature4: "إحداثيات الموقع وتصنيف الأراضي",
-
-    salesOffplan: "المبيعات والبيع على الخارطة",
-    salesOffplanDesc:
-      "أدِر رحلة المشتري بالكامل من الحجز إلى التسليم مع تحقق داخلي من بيانات الهوية",
-    salesFeature1: "موجات الإطلاق والحجوزات",
+    salesCrm: "المبيعات وإدارة العملاء (CRM)",
+    salesCrmDesc:
+      "أدِر رحلة العميل بالكامل من العميل المحتمل إلى الحجز إلى توقيع العقد مع تحقق داخلي من بيانات الهوية",
+    salesFeature1: "إدارة الحجوزات وحجز الوحدات",
     salesFeature2: "خط سير المبيعات المتكامل",
     salesFeature3: "التحقق من صيغة الهوية السعودية",
     salesFeature4: "العقود الرقمية والدفعات",
@@ -90,8 +82,8 @@ export const t = {
     howItWorksSubtitle: "ثلاث خطوات بسيطة لتحويل إدارة عقاراتك",
     step1Title: "سجّل حسابك",
     step1Desc: "أنشئ منظمتك وأضف بيانات السجل التجاري في دقائق",
-    step2Title: "أعدّ مشاريعك",
-    step2Desc: "أضف مشاريعك ووحداتك وفريق العمل",
+    step2Title: "هيّئ النظام",
+    step2Desc: "أضف وحداتك العقارية وفريق العمل",
     step3Title: "أدِر كل شيء",
     step3Desc: "تابع المبيعات والإيجارات والصيانة من لوحة تحكم واحدة",
 
@@ -108,7 +100,7 @@ export const t = {
 
     // Testimonials
     testimonial1:
-      "ميماريك غيّر طريقة إدارتنا للمشاريع. كل شيء في مكان واحد.",
+      "ميماريك غيّر طريقة إدارتنا للعقارات. كل شيء في مكان واحد.",
     testimonial1Author: "م. خالد العتيبي",
     testimonial1Role: "مدير التطوير — شركة الأفق العقارية",
     testimonial2:
@@ -142,12 +134,10 @@ export const t = {
     enterprise: "المؤسسات",
     enterpriseDesc: "وصول كامل للمنصة مع دعم متميز",
 
-    projects: "مشاريع",
     users: "مستخدمين",
     units: "وحدات",
     unlimited: "غير محدود",
     cmmsAccess: "نظام الصيانة (CMMS)",
-    offplanAccess: "إدارة البيع على الخارطة",
     reportsExport: "تصدير التقارير",
     piiEncryption: "تشفير البيانات الشخصية",
     auditAccess: "سجل المراجعة",
@@ -163,10 +153,10 @@ export const t = {
     faqTitle: "الأسئلة الشائعة",
     faq1Q: "ما هو ميماريك؟",
     faq1A:
-      "ميماريك هو منصة سعودية متكاملة لإدارة العقارات والمرافق. يغطي إدارة المشاريع، المبيعات، الإيجارات، الصيانة، والفوترة — كل ذلك في منصة واحدة مع حقول بيانات مناسبة للسوق السعودي.",
+      "ميماريك هو منصة سعودية متكاملة لإدارة العقارات والمرافق. يغطي المبيعات وإدارة العملاء، الإيجارات، الصيانة، والفوترة — كل ذلك في منصة واحدة مع حقول بيانات مناسبة للسوق السعودي.",
     faq2Q: "هل يوجد اشتراك مجاني؟",
     faq2A:
-      "نعم! خطة المبتدئ مجانية بالكامل وتشمل حتى 3 مشاريع، 5 مستخدمين، و50 وحدة. يمكنك الترقية في أي وقت.",
+      "نعم! خطة المبتدئ مجانية بالكامل وتشمل حتى 5 مستخدمين و50 وحدة. يمكنك الترقية في أي وقت.",
     faq3Q: "كيف تعمل التجربة المجانية لمدة 14 يوم؟",
     faq3A:
       "عند الاشتراك في الخطة الاحترافية أو المؤسسات، تحصل على 14 يوم تجربة مجانية كاملة. لا يُطلب منك إدخال بيانات الدفع حتى انتهاء التجربة.",
@@ -217,7 +207,7 @@ export const t = {
     // Hero
     heroTitle: "The Saudi Platform for Property & Facility Management",
     heroSubtitle:
-      "Manage projects, sales, rentals, and maintenance — all in one platform structured for Saudi real estate data",
+      "Manage sales, rentals, and maintenance — all in one platform structured for Saudi real estate data",
     watchDemo: "Watch Demo",
 
     // Trust badges
@@ -227,7 +217,7 @@ export const t = {
 
     // Logo bar
     trustedBy: "Trusted by real estate developers across Saudi Arabia",
-    projectsManaged: "Projects Managed",
+    propertiesManaged: "Properties Managed",
     unitsTracked: "Units Tracked",
     sarProcessed: "SAR Processed",
 
@@ -236,18 +226,10 @@ export const t = {
     featuresSubtitle:
       "A complete platform built specifically for the Saudi real estate market",
 
-    projectManagement: "Project Management",
-    projectManagementDesc:
-      "Track your real estate projects from start to finish with Balady-ready data fields",
-    projectFeature1: "Deed & parcel number tracking",
-    projectFeature2: "Construction stages & progress",
-    projectFeature3: "Balady-ready development fields",
-    projectFeature4: "GPS coordinates & land classification",
-
-    salesOffplan: "Sales & Off-Plan",
-    salesOffplanDesc:
-      "Manage the complete buyer journey from reservation to handover with Saudi ID validation",
-    salesFeature1: "Launch waves & reservations",
+    salesCrm: "Sales & CRM",
+    salesCrmDesc:
+      "Manage the complete customer journey from lead to reservation to signed contract with Saudi ID validation",
+    salesFeature1: "Reservations & unit holds",
     salesFeature2: "Integrated sales pipeline",
     salesFeature3: "Saudi ID validation",
     salesFeature4: "Digital contracts & payments",
@@ -298,7 +280,7 @@ export const t = {
     step1Desc:
       "Create your organization and add your commercial registration in minutes",
     step2Title: "Configure",
-    step2Desc: "Add your projects, units, and team members",
+    step2Desc: "Add your units and team members",
     step3Title: "Manage Everything",
     step3Desc:
       "Track sales, rentals, and maintenance from a single dashboard",
@@ -308,7 +290,7 @@ export const t = {
     statVat: "15%",
     statVatLabel: "VAT — ZATCA-ready invoice data",
     statCompliance: "100%",
-    statComplianceLabel: "Balady-ready project fields",
+    statComplianceLabel: "Balady-ready property fields",
     statTrial: "14",
     statTrialLabel: "Day free trial",
     statPlans: "3",
@@ -316,7 +298,7 @@ export const t = {
 
     // Testimonials
     testimonial1:
-      "Mimaric transformed how we manage projects. Everything in one place.",
+      "Mimaric transformed how we manage properties. Everything in one place.",
     testimonial1Author: "Eng. Khaled Al-Otaibi",
     testimonial1Role: "Development Director — Al-Ofoq Real Estate",
     testimonial2:
@@ -350,12 +332,10 @@ export const t = {
     enterprise: "Enterprise",
     enterpriseDesc: "Full platform access with premium support",
 
-    projects: "Projects",
     users: "Users",
     units: "Units",
     unlimited: "Unlimited",
     cmmsAccess: "Maintenance (CMMS)",
-    offplanAccess: "Off-plan sales management",
     reportsExport: "Report exports",
     piiEncryption: "PII data encryption",
     auditAccess: "Audit log",
@@ -371,10 +351,10 @@ export const t = {
     faqTitle: "Frequently Asked Questions",
     faq1Q: "What is Mimaric?",
     faq1A:
-      "Mimaric is a comprehensive Saudi platform for property and facility management. It covers project management, sales, rentals, maintenance, and billing — all in one platform with data fields built for the Saudi market.",
+      "Mimaric is a comprehensive Saudi platform for property and facility management. It covers sales & CRM, rentals, maintenance, and billing — all in one platform with data fields built for the Saudi market.",
     faq2Q: "Is there a free plan?",
     faq2A:
-      "Yes! The Starter plan is completely free and includes up to 3 projects, 5 users, and 50 units. You can upgrade anytime.",
+      "Yes! The Starter plan is completely free and includes up to 5 users and 50 units. You can upgrade anytime.",
     faq3Q: "How does the 14-day free trial work?",
     faq3A:
       "When you subscribe to Professional or Enterprise, you get a full 14-day free trial. No payment information required until the trial ends.",

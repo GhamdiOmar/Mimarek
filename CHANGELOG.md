@@ -1,5 +1,30 @@
 # Changelog — Mimaric PropTech
 
+## [4.3.1] — 2026-05-17 — Dead-scope purge (Projects / Off-plan / Wafi)
+
+Phase 0 of the journey-first transformation plan: a complete purge of all dead **Projects / Off-plan / Wafi / escrow** residue left behind after the v4.2.5 module removal. No functional product change — it removes vestigial entitlements, marketing/SEO claims for non-existent features, dead code branches, and orphaned scripts so the product, public site, and docs no longer reference capabilities Mimaric does not have.
+
+### Removed
+
+- **Entitlements** — `projects.max` and `offplan.access` deleted from `seed.ts`, `e2e/seed/billing-seed.ts`, `lib/entitlements.ts` (`PROJECTS_MAX`/`OFFPLAN_ACCESS`), `lib/billing-notifications.ts`, and the billing plans UI label map. `units.max` already covers the only live limit.
+- **Landing site** — the "Project Management" feature pillar and the off-plan pricing feature/limit rows removed; "Sales & Off-Plan" reframed as "Sales & CRM"; hero, steps, testimonial, FAQ, and stats copy de-projected (bilingual AR/EN). Dead `screenshots/projects.png` deleted.
+- **SEO** — `projects`/`Wafi` removed from live `<head>` metadata (`[locale]/layout.tsx`) and JSON-LD (`SchemaMarkup.tsx`).
+- **Dead code** — unused `getProjectStatusDistribution` + `getDashboardLandStats`/`getDashboardOffPlanStats` aliases (`actions/dashboard.ts`); the dead `project` entity map in `StatusBadge`; `"Project"` audit-log resource filter; cosmetic `building.project` dead branches in three maintenance pages.
+- **Orphaned scripts** — broken `scripts/e2e-seed.ts` and `prisma/v3-migrate.ts` (referenced dropped `Project`/`Escrow` tables); dead `expectOffPlanSection` e2e page-object; off-plan rows in `BILLING-TEST-PLAN.md`.
+- **Docs** — stale Projects/Wafi/escrow references synced out of `AGENTS.md` (§5, §6.1, §6.9.2, §6.9.5) and `README.md`.
+
+### Verification
+
+- `tsc --noEmit` green across `@repo/ui`, `@repo/web`, `@repo/portal` (3/3). Repo-wide grep confirms zero *live* Projects/Off-plan/Wafi references — only frozen history (`CHANGELOG.md`, `.release-verification/`) retains them intentionally. Full production `next build` + Playwright suite validated in CI on the PR (the worktree has no DB/env; CI carries `DATABASE_URL`/`AUTH_SECRET` per AGENTS §4).
+
+### Upgrade notes
+
+- No action required. Pure dead-code / marketing-copy removal — no schema change, no API change, no behavioral change. The vestigial `projects.max` / `offplan.access` plan entitlements are gone (`units.max` already governed the only live limit; a re-seed reflects this automatically).
+
+**Full diff:** https://github.com/GhamdiOmar/Mimaric/compare/v4.3.0...v4.3.1
+
+---
+
 ## [4.3.0] — 2026-05-16 — Marketplace (verified-org B2B unit trading)
 
 The first non-patch release since v4.2.x: a **verified-organization-only B2B marketplace** that lets tenant orgs trade units across organization boundaries — full workflow from seller publication → buyer inquiry → seller CRM handoff → deal conversion → settlement-gated **atomic cross-org unit transfer** with transactional rollback. Not a public/SEO marketplace (per spec Decision 20 — kept inside verified Mimaric orgs). Additive schema only; all existing single-org flows are untouched.

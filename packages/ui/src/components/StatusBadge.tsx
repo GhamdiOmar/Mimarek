@@ -2,25 +2,9 @@ import * as React from "react";
 import { Badge } from "./Badge";
 import type { BadgeProps } from "./Badge";
 
-type EntityType = "project" | "contract" | "unit" | "lease" | "maintenance" | "customer" | "invoice" | "reservation";
+type EntityType = "contract" | "unit" | "lease" | "maintenance" | "customer" | "invoice" | "reservation";
 
 const statusColorMap: Record<EntityType, Record<string, NonNullable<BadgeProps["variant"]>>> = {
-  project: {
-    LAND_IDENTIFIED: "info",
-    FEASIBILITY_IN_PROGRESS: "pending",
-    FEASIBILITY_APPROVED: "success",
-    PLANNING_IN_PROGRESS: "info",
-    DESIGN_APPROVED: "success",
-    PERMITS_OBTAINED: "success",
-    OFF_PLAN_LAUNCHED: "info",
-    UNDER_CONSTRUCTION: "warning",
-    CONSTRUCTION_COMPLETE: "success",
-    READY_FOR_HANDOVER: "info",
-    HANDED_OVER: "success",
-    OPERATIONAL: "available",
-    ON_HOLD: "draft",
-    CANCELLED: "error",
-  },
   contract: {
     DRAFT: "draft",
     SENT: "info",

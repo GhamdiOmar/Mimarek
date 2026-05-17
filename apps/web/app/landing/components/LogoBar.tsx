@@ -7,7 +7,7 @@ export default function LogoBar({ lang }: { lang: "ar" | "en" }) {
   const t = translations[lang];
 
   const stats = [
-    { value: "500+", label: t.projectsManaged, icon: Building2 },
+    { value: "500+", label: t.propertiesManaged, icon: Building2 },
     { value: "10,000+", label: t.unitsTracked, icon: Home },
     { value: "50M+", label: t.sarProcessed, icon: CircleDollarSign },
   ];

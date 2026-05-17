@@ -129,7 +129,6 @@ Before `git tag`, `git push origin vX.Y.Z`, or `gh release create`, ALL of the f
 ## 5. Saudi Government Schema Alignment
 - Customer model aligned with Absher (nationalId, personType, gender, DOB, address, documentInfo)
 - Organization model aligned with MOC (entityType, legalForm, registrationStatus, etc.)
-- Project model aligned with Balady (parcelNumber, deedNumber, landUse, coordinates, etc.)
 
 ---
 
@@ -139,7 +138,7 @@ This section supersedes any other design document in the repo. If `packages/ui/s
 
 ### 6.1 Brand Identity
 
-**Positioning:** Mimaric is a **Saudi-first PropTech SaaS** for real estate developers. Automates property lifecycle — project management, sales, rentals, leasing, finance — compliant with Vision 2030 infrastructure (ZATCA, Ejar, REGA, Wafi).
+**Positioning:** Mimaric is a **Saudi-first PropTech SaaS** for real estate developers. Automates the property lifecycle — sales, CRM, rentals, leasing, finance, maintenance — compliant with Vision 2030 infrastructure (ZATCA, Ejar, REGA).
 
 **Personality:** Trusted & professional · Modern & Saudi · Precise & intelligent · Arabic-first, English-capable.
 
@@ -527,7 +526,7 @@ Every dashboard MUST have:
 | Role | Route | North Star |
 |---|---|---|
 | Platform Admin | `/dashboard/admin` | Active orgs growth |
-| Org Owner / Developer | `/dashboard` | NOI or project pipeline value |
+| Org Owner / Developer | `/dashboard` | NOI or collections rate |
 | Leasing / Sales | `/dashboard/leasing` | Leases signed MTD |
 | Finance / Accounting | `/dashboard/finance` | % rent collected on-time |
 | Maintenance | `/dashboard/maintenance` | Open tickets / SLA % |
@@ -561,13 +560,10 @@ No one-dashboard-fits-all. Users see only their role's metrics by default.
 
 #### 6.9.5 Property-Management-Specific Metrics (Mimaric canon)
 
-**Developer / Org Owner dashboard:**
-- Off-plan sales (SAR) MTD
+**Org Owner dashboard:**
 - Units sold / reserved (count + % of portfolio)
 - Collections this month (% of target)
 - Open maintenance tickets
-- Project milestones on/off track
-- WAFI escrow balance
 
 **Leasing dashboard:**
 - Leases signed MTD

@@ -1017,7 +1017,7 @@ export default function MaintenancePage() {
                 <option value="">{lang === "ar" ? "اختر الوحدة" : "Select Unit"}</option>
                 {units.map((u: any) => (
                   <option key={u.id} value={u.id}>
-                    {u.number} — {u.building?.name} ({u.building?.project?.name})
+                    {u.number}
                   </option>
                 ))}
               </select>

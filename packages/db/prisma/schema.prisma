@@ -965,7 +965,7 @@ enum BillingCycle {
 
 enum EntitlementType {
   BOOLEAN // Feature on/off (e.g., cmms.access)
-  LIMIT // Numeric cap (e.g., projects.max = 25)
+  LIMIT // Numeric cap (e.g., units.max = 500)
   METERED // Usage-based tracking (future)
 }
 
@@ -1036,7 +1036,7 @@ model PlanEntitlement {
   id         String          @id @default(cuid())
   planId     String
   plan       Plan            @relation(fields: [planId], references: [id], onDelete: Cascade)
-  featureKey String // e.g., "projects.max", "cmms.access", "reports.export"
+  featureKey String // e.g., "units.max", "cmms.access", "reports.export"
   type       EntitlementType
   value      String // "true"/"false" for BOOLEAN, numeric string for LIMIT/METERED
   metadata   Json? // Additional context (e.g., description, display label)
