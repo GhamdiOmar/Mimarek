@@ -280,12 +280,12 @@ export default function DashboardPage() {
               href="/dashboard/units"
             />
             <MobileKPICard
-              label={lang === "ar" ? "الصفقات النشطة" : "Active Deals"}
+              label={lang === "ar" ? "الحجوزات النشطة" : "Active Reservations"}
               value={loading ? "—" : formatNumber(stats?.activeDeals ?? 0)}
               icon={Handshake}
               tone="blue"
               sparkline={trends.pipeline.slice(-12)}
-              href="/dashboard/deals"
+              href="/dashboard/reservations"
             />
             <MobileKPICard
               label={lang === "ar" ? "العقود الموقعة" : "Signed Contracts"}
@@ -327,7 +327,7 @@ export default function DashboardPage() {
                     icon={Handshake}
                     iconTone="blue"
                     title={
-                      lang === "ar" ? "حجوزات بانتظار التأكيد" : "Deals pending approval"
+                      lang === "ar" ? "حجوزات بانتظار التأكيد" : "Reservations pending approval"
                     }
                     subtitle={
                       lang === "ar"
@@ -339,7 +339,7 @@ export default function DashboardPage() {
                         {formatNumber(pendingDeals)}
                       </span>
                     }
-                    href="/dashboard/deals"
+                    href="/dashboard/reservations"
                   />
                 )}
 
@@ -548,7 +548,7 @@ export default function DashboardPage() {
         />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <KPICard
-            label={lang === "ar" ? "الصفقات النشطة" : "Active Deals"}
+            label={lang === "ar" ? "الحجوزات النشطة" : "Active Reservations"}
             value={loading ? "—" : formatNumber(stats?.activeDeals ?? 0)}
             subtitle={
               lang === "ar"
@@ -558,7 +558,7 @@ export default function DashboardPage() {
             icon={<Handshake className="h-[18px] w-[18px]" />}
             accent="info"
             trend={trends.pipeline.slice(-12)}
-            href="/dashboard/deals"
+            href="/dashboard/reservations"
             lastUpdated={lastLoaded}
             locale={lang}
             loading={loading}
@@ -627,7 +627,7 @@ export default function DashboardPage() {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
               <Handshake className="h-4 w-4 text-muted-foreground" />
-              {lang === "ar" ? "آخر الصفقات" : "Recent Deals"}
+              {lang === "ar" ? "آخر الحجوزات" : "Recent Reservations"}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -642,7 +642,7 @@ export default function DashboardPage() {
                 compact
                 variant="first-time"
                 icon={<Handshake className="h-8 w-8" />}
-                title={lang === "ar" ? "لا توجد صفقات بعد" : "No deals yet"}
+                title={lang === "ar" ? "لا توجد حجوزات بعد" : "No reservations yet"}
                 description={
                   lang === "ar"
                     ? "ستظهر آخر الحجوزات هنا بمجرد إنشائها."
@@ -652,10 +652,10 @@ export default function DashboardPage() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => router.push("/dashboard/deals")}
+                    onClick={() => router.push("/dashboard/reservations")}
                     style={{ display: "inline-flex" }}
                   >
-                    {lang === "ar" ? "فتح الصفقات" : "Open deals"}
+                    {lang === "ar" ? "فتح الحجوزات" : "Open reservations"}
                   </Button>
                 }
               />

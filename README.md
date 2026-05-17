@@ -7,7 +7,7 @@
 Automate the full property lifecycle — sales, CRM, rentals, leasing, finance, and maintenance — on a platform built for Vision 2030 compliance (ZATCA · Ejar · REGA · Balady · Absher).
 
 [![CI](https://github.com/GhamdiOmar/Mimaric/actions/workflows/ci.yml/badge.svg)](https://github.com/GhamdiOmar/Mimaric/actions/workflows/ci.yml)
-![Version](https://img.shields.io/badge/version-4.3.1-7339AC)
+![Version](https://img.shields.io/badge/version-4.4.0-7339AC)
 ![Next.js](https://img.shields.io/badge/Next.js-16-black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6)
 ![Arabic](https://img.shields.io/badge/%D8%B9%D8%B1%D8%A8%D9%8A-first-00875A)

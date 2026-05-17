@@ -304,7 +304,7 @@ function CustomerDrawer({
 
   function handleConvertToDeal() {
     const params = new URLSearchParams({ customerId: customer.id, customerName: customer.name });
-    window.location.href = `/dashboard/deals?${params.toString()}`;
+    window.location.href = `/dashboard/reservations?${params.toString()}`;
   }
 
   // ── Feature A: Edit submit ──
@@ -470,9 +470,9 @@ function CustomerDrawer({
         expiresAt: new Date(convertExpiry),
       });
       setShowConvertDealModal(false);
-      showToast(lang === "ar" ? "تم إنشاء الصفقة بنجاح" : "Deal created successfully");
+      showToast(lang === "ar" ? "تم إنشاء الحجز بنجاح" : "Reservation created successfully");
       setTimeout(() => {
-        window.location.href = "/dashboard/deals";
+        window.location.href = "/dashboard/reservations";
       }, 1200);
     } catch (err: any) {
       const msg = err?.message ?? "";
@@ -481,8 +481,8 @@ function CustomerDrawer({
         isFriendly && msg
           ? msg
           : lang === "ar"
-            ? "تعذّر إنشاء الصفقة. يرجى المحاولة مجدداً."
-            : "Failed to create deal. Please try again."
+            ? "تعذّر إنشاء الحجز. يرجى المحاولة مجدداً."
+            : "Failed to create reservation. Please try again."
       );
     } finally {
       setSavingConvert(false);
@@ -651,7 +651,7 @@ function CustomerDrawer({
                 onClick={handleConvertToDeal}
               >
                 <DirectionalIcon icon={ArrowRight} className="h-3.5 w-3.5" />
-                {lang === "ar" ? "تحويل لصفقة" : "Convert to Deal"}
+                {lang === "ar" ? "تحويل لحجز" : "Convert to Reservation"}
               </Button>
             </div>
           </div>
@@ -895,7 +895,7 @@ function CustomerDrawer({
                             style={{ display: "inline-flex" }}
                           >
                             <DirectionalIcon icon={ArrowRight} className="h-3 w-3" />
-                            {lang === "ar" ? "تحويل لصفقة" : "Convert to Deal"}
+                            {lang === "ar" ? "تحويل لحجز" : "Convert to Reservation"}
                           </button>
                           <button
                             onClick={() => {
@@ -920,17 +920,17 @@ function CustomerDrawer({
           {/* ── Feature C: Deals & Contracts ── */}
           <div className="space-y-3">
             <h3 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-              {lang === "ar" ? "الصفقات والعقود / Deals & Contracts" : "Deals & Contracts / الصفقات والعقود"}
+              {lang === "ar" ? "الحجوزات والعقود / Reservations & Contracts" : "Reservations & Contracts / الحجوزات والعقود"}
             </h3>
 
             {assignments.length === 0 ? (
               <EmptyState
                 compact
-                title={lang === "ar" ? "لا توجد صفقات أو عقود نشطة" : "No active deals or contracts"}
+                title={lang === "ar" ? "لا توجد حجوزات أو عقود نشطة" : "No active reservations or contracts"}
                 description={
                   lang === "ar"
-                    ? "عند إنشاء صفقة أو عقد ستظهر هنا."
-                    : "Deals and contracts for this contact will show up here."
+                    ? "عند إنشاء حجز أو عقد ستظهر هنا."
+                    : "Reservations and contracts for this contact will show up here."
                 }
               />
             ) : (
@@ -938,7 +938,7 @@ function CustomerDrawer({
                 {assignments.map((item: any, idx: number) => {
                   const isReservation = item.type === "reservation";
                   const isLease = item.type === "lease";
-                  const href = isReservation ? "/dashboard/deals" : "/dashboard/contracts";
+                  const href = isReservation ? "/dashboard/reservations" : "/dashboard/contracts";
                   const typeLabel = isReservation
                     ? lang === "ar" ? "حجز" : "Reservation"
                     : isLease
@@ -1342,7 +1342,7 @@ function CustomerDrawer({
       <ResponsiveDialog
         open={showConvertDealModal}
         onOpenChange={(open) => { if (!open) setShowConvertDealModal(false); }}
-        title={lang === "ar" ? "تحويل لصفقة / Convert to Deal" : "Convert to Deal / تحويل لصفقة"}
+        title={lang === "ar" ? "تحويل لحجز / Convert to Reservation" : "Convert to Reservation / تحويل لحجز"}
         footer={
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <Button
@@ -1361,7 +1361,7 @@ function CustomerDrawer({
               disabled={!convertAmount || !convertExpiry || savingConvert}
             >
               {savingConvert && <Loader2 className="h-4 w-4 animate-spin" />}
-              {lang === "ar" ? "إنشاء الصفقة" : "Create Deal"}
+              {lang === "ar" ? "إنشاء الحجز" : "Create Reservation"}
             </Button>
           </div>
         }

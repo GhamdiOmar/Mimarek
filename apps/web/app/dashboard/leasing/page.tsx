@@ -99,7 +99,7 @@ export default function LeasingDashboardPage() {
   );
 
   const chartConfig: ChartConfig = {
-    count: { label: lang === "ar" ? "عدد الصفقات" : "Deal count" },
+    count: { label: lang === "ar" ? "عدد الحجوزات" : "Reservation count" },
   };
 
   const fmt = (n: number) => n.toLocaleString("en-US");
@@ -175,7 +175,7 @@ export default function LeasingDashboardPage() {
               stats && stats.pendingApplications > 0 ? "warning" : "primary"
             }
             comparisonPeriod={lang === "ar" ? "تحتاج مراجعة" : "awaiting review"}
-            href="/dashboard/deals"
+            href="/dashboard/reservations"
             lastUpdated={lastLoaded}
             locale={lang}
             loading={loading}
@@ -223,8 +223,8 @@ export default function LeasingDashboardPage() {
                 title={lang === "ar" ? "لا توجد بيانات بعد" : "No pipeline data yet"}
                 description={
                   lang === "ar"
-                    ? "ستظهر صفقات التأجير هنا عند إنشائها."
-                    : "Leasing deals will appear here once created."
+                    ? "ستظهر حجوزات التأجير هنا عند إنشائها."
+                    : "Leasing reservations will appear here once created."
                 }
               />
             ) : (
@@ -290,8 +290,8 @@ export default function LeasingDashboardPage() {
                 title={lang === "ar" ? "لا توجد بيانات بعد" : "No pipeline data yet"}
                 description={
                   lang === "ar"
-                    ? "ستظهر قيم المسار هنا عند إضافة صفقات."
-                    : "Pipeline values will appear here once deals are added."
+                    ? "ستظهر قيم المسار هنا عند إضافة حجوزات."
+                    : "Pipeline values will appear here once reservations are added."
                 }
               />
             ) : (

@@ -83,8 +83,8 @@ const quickActions: QuickAction[] = [
   },
   {
     id: "new-deal",
-    label: { ar: "صفقة جديدة", en: "New deal" },
-    href: "/dashboard/deals?new=1",
+    label: { ar: "حجز جديد", en: "New reservation" },
+    href: "/dashboard/reservations?new=1",
     icon: PlusCircle,
     permission: "deals:write",
     audience: "tenant",
