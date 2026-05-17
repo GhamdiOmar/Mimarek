@@ -114,10 +114,10 @@ Before `git tag`, `git push origin vX.Y.Z`, or `gh release create`, ALL of the f
 ---
 
 ## 4. Key Technical Notes
-- **Use `prisma migrate dev` / `prisma migrate deploy` — NOT `db push`.** The repo has a migration history baseline (`packages/db/prisma/migrations/`). `db push` bypasses migration tracking and creates irreversible schema drift. Never use `db push` in development or production after the v4.2.1 baseline.
-  - New schema change: `npx prisma migrate dev --name <description>` (local dev)
-  - Deploying to prod: `npx prisma migrate deploy` (applies pending migrations non-interactively)
-  - First-time local setup after clone: run `npx prisma migrate dev` which will apply the baseline migration before seeding.
+- **Schema changes use `prisma db push` — NOT `prisma migrate` (corrected 2026-05-17; the prior "migration baseline" claim was stale).** This repo has **no migration history**: `packages/db/prisma/migrations/` does not exist (the lone `rls_setup.sql` file was removed in v4.3.1). CI applies the schema with `npx prisma db push --accept-data-loss` (`.github/workflows/ci.yml`).
+  - Schema change procedure: edit `schema.prisma` → `npx turbo run db:generate` → `cd packages/db && npx prisma db push` locally; CI re-pushes on the PR.
+  - Model rename that must preserve data: keep the table via `@@map("OldName")` so `db push` emits only additive/idempotent DDL (no data migration).
+  - Do NOT introduce `prisma migrate dev/deploy` without also converting CI off `db push` in the same change.
 - **Schema change — `paidAmount Decimal?` on `RentInstallment`**: Added in v4.2.1 stabilization. This field tracks partial payment amounts for installments. It was previously only on `PaymentPlanInstallment`. Any new code that records rent payments must write `paidAmount` alongside `status` updates.
 - Prisma Decimal serialization: use `JSON.parse(JSON.stringify())` in server actions
 - Button component needs inline `style={{ display: "inline-flex" }}` to override Tailwind v4 preflight
@@ -1047,7 +1047,7 @@ Mimaric is a B2B SaaS. **Two distinct user universes must never share surfaces, 
 - `/dashboard/more` — shared "more" menu (audience-filtered)
 - `/dashboard/notifications` — their own notifications (shared audience)
 
-**System users MUST NOT see:** `/dashboard`, `/dashboard/units`, `/dashboard/crm`, `/dashboard/deals`, `/dashboard/contracts`, `/dashboard/payments`, `/dashboard/maintenance`, `/dashboard/leasing`, `/dashboard/finance`, `/dashboard/reports`, `/dashboard/documents`, `/dashboard/marketplace`, `/dashboard/marketplace/[listingId]`, `/dashboard/marketplace/my-listings`, `/dashboard/help`, `/dashboard/billing` (tenant subscription page), `/dashboard/settings` (tenant org + team settings), or any tenant-scoped data. They also MUST NOT be offered tenant create-actions in Cmd-K (`New customer`, `New deal`, `New contract`, etc.). Layer 2 middleware (`authorized` in `apps/web/auth.config.ts`) redirects system users to `/dashboard/admin` when they hit any non-allowlisted `/dashboard/**` path.
+**System users MUST NOT see:** `/dashboard`, `/dashboard/units`, `/dashboard/crm`, `/dashboard/reservations`, `/dashboard/contracts`, `/dashboard/payments`, `/dashboard/maintenance`, `/dashboard/leasing`, `/dashboard/finance`, `/dashboard/reports`, `/dashboard/documents`, `/dashboard/marketplace`, `/dashboard/marketplace/[listingId]`, `/dashboard/marketplace/my-listings`, `/dashboard/help`, `/dashboard/billing` (tenant subscription page), `/dashboard/settings` (tenant org + team settings), or any tenant-scoped data. They also MUST NOT be offered tenant create-actions in Cmd-K (`New customer`, `New deal`, `New contract`, etc.). Layer 2 middleware (`authorized` in `apps/web/auth.config.ts`) redirects system users to `/dashboard/admin` when they hit any non-allowlisted `/dashboard/**` path.
 
 > **Planned follow-up:** a dedicated platform-billing surface and a system-user account/profile page are not yet built. Until they ship, `/dashboard/billing` and `/dashboard/settings` are tenant-only — the Layer 2 redirect sends system users back to `/dashboard/admin`.
 

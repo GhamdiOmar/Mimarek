@@ -1392,7 +1392,7 @@ function AdvancedUnitMatrixPage() {
               {detailUnit.status === "AVAILABLE" && (
                 <div className="border-t border-border pt-4 flex items-center gap-3">
                   <Link
-                    href={`/dashboard/deals?unitId=${detailUnit.id}`}
+                    href={`/dashboard/reservations?unitId=${detailUnit.id}`}
                     className="flex-1"
                   >
                     <Button
@@ -1406,7 +1406,7 @@ function AdvancedUnitMatrixPage() {
                     </Button>
                   </Link>
                   <Link
-                    href={`/dashboard/deals?unitId=${detailUnit.id}`}
+                    href={`/dashboard/reservations?unitId=${detailUnit.id}`}
                     className="flex-1"
                   >
                     <Button

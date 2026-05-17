@@ -654,7 +654,7 @@ export async function convertMarketplaceInquiryToDeal(inquiryId: string) {
     organizationId: session.organizationId,
   });
   revalidatePath("/dashboard/marketplace/my-listings");
-  revalidatePath("/dashboard/deals");
+  revalidatePath("/dashboard/reservations");
   return SERIALIZE(result);
 }
 

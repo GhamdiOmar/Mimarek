@@ -35,7 +35,7 @@ export const FAQ_ITEMS: FAQItem[] = [
   {
     id: "gs-1",
     question: { ar: "كيف أبدأ استخدام ميماريك؟", en: "How do I get started with Mimaric?" },
-    answer: { ar: "بعد تسجيل الدخول، ستصل إلى لوحة التحكم الرئيسية. يمكنك البدء بإضافة عملاء من قسم CRM، ثم إضافة العقارات والوحدات من قسم العقارات، وإنشاء الصفقات والعقود.", en: "After logging in, you'll reach the main dashboard. Start by adding customers from the CRM section, then add properties and units from the Properties section, and create deals and contracts." },
+    answer: { ar: "بعد تسجيل الدخول، ستصل إلى لوحة التحكم الرئيسية. يمكنك البدء بإضافة عملاء من قسم CRM، ثم إضافة العقارات والوحدات من قسم العقارات، وإنشاء الحجوزات والعقود.", en: "After logging in, you'll reach the main dashboard. Start by adding customers from the CRM section, then add properties and units from the Properties section, and create reservations and contracts." },
     category: "getting_started",
   },
   {
@@ -65,8 +65,8 @@ export const FAQ_ITEMS: FAQItem[] = [
   },
   {
     id: "sc-3",
-    question: { ar: "كيف أنشئ صفقة لعميل؟", en: "How do I create a deal for a customer?" },
-    answer: { ar: "من قسم الصفقات، انقر 'صفقة جديدة'. اختر العميل، ثم اختر العقار والوحدة المناسبة. أكمل خطوات المعالج لتأكيد الحجز — ستتحدث حالة الوحدة تلقائياً إلى 'محجوز'.", en: "From the Deals section, click 'New Deal'. Select the customer, then choose the property and unit. Complete the wizard steps to confirm the reservation — the unit status will automatically update to 'Reserved'." },
+    question: { ar: "كيف أنشئ حجزاً لعميل؟", en: "How do I create a reservation for a customer?" },
+    answer: { ar: "من قسم الحجوزات، انقر 'حجز جديد'. اختر العميل، ثم اختر العقار والوحدة المناسبة. أكمل خطوات المعالج لتأكيد الحجز — ستتحدث حالة الوحدة تلقائياً إلى 'محجوز'.", en: "From the Reservations section, click 'New Reservation'. Select the customer, then choose the property and unit. Complete the wizard steps to confirm the reservation — the unit status will automatically update to 'Reserved'." },
     category: "sales_crm",
   },
   // Property Management

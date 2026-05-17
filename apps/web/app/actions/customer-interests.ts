@@ -132,7 +132,7 @@ export async function convertInterestToDeal(
   });
 
   revalidatePath("/dashboard/crm");
-  revalidatePath("/dashboard/deals");
+  revalidatePath("/dashboard/reservations");
   revalidatePath("/dashboard/units");
   return JSON.parse(JSON.stringify(reservation));
 }

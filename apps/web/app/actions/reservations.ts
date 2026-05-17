@@ -86,7 +86,7 @@ export async function createReservation(data: {
     organizationId: session.organizationId,
   });
 
-  revalidatePath("/dashboard/deals");
+  revalidatePath("/dashboard/reservations");
   return JSON.parse(JSON.stringify(reservation));
 }
 
@@ -181,7 +181,7 @@ export async function updateReservationStatus(
     organizationId: session.organizationId,
   });
 
-  revalidatePath("/dashboard/deals");
+  revalidatePath("/dashboard/reservations");
   return JSON.parse(JSON.stringify(updated));
 }
 
@@ -253,7 +253,7 @@ export async function approveReservationExtension(extensionId: string) {
     organizationId: session.organizationId,
   });
 
-  revalidatePath("/dashboard/deals");
+  revalidatePath("/dashboard/reservations");
   return { success: true };
 }
 

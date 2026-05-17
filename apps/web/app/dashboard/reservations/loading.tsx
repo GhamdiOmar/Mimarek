@@ -1,6 +1,6 @@
 import { Skeleton } from "@repo/ui";
 
-export default function DealsLoading() {
+export default function ReservationsLoading() {
   return (
     <div className="space-y-6 p-6">
       {/* header row */}

@@ -4,7 +4,7 @@ import * as React from "react";
 import { AlertTriangle, RefreshCw } from "lucide-react";
 import { Button } from "@repo/ui";
 
-export default function DealsError({
+export default function ReservationsError({
   error,
   reset,
 }: {

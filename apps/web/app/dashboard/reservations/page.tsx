@@ -90,7 +90,7 @@ const STATUS_LABELS: Record<string, { ar: string; en: string }> = {
   CANCELLED: { ar: "ملغي", en: "Cancelled" },
 };
 
-export default function DealsPage() {
+export default function ReservationsPage() {
   const { lang, dir } = useLanguage();
   const { can } = usePermissions();
   const searchParams = useSearchParams();
@@ -136,7 +136,7 @@ export default function DealsPage() {
     getReservations()
       .then((data) => setDeals(data as Reservation[]))
       .catch(() => {
-        const msg = lang === "ar" ? "تعذّر تحميل الصفقات" : "Failed to load deals";
+        const msg = lang === "ar" ? "تعذّر تحميل الحجوزات" : "Failed to load reservations";
         setLoadError(msg);
         toast.error(msg);
       })
@@ -237,12 +237,12 @@ export default function DealsPage() {
         amount: parseFloat(form.amount),
         expiresAt: new Date(form.expiresAt),
       });
-      toast.success(lang === "ar" ? "تم إنشاء الصفقة بنجاح" : "Deal created successfully");
+      toast.success(lang === "ar" ? "تم إنشاء الحجز بنجاح" : "Reservation created successfully");
       setCreateOpen(false);
       setForm({ customerId: "", customerName: "", unitId: "", unitNumber: "", amount: "", expiresAt: "", notes: "" });
       loadDeals();
     } catch (err: any) {
-      toast.error(err.message || (lang === "ar" ? "حدث خطأ أثناء الإنشاء" : "Failed to create deal"));
+      toast.error(err.message || (lang === "ar" ? "حدث خطأ أثناء الإنشاء" : "Failed to create reservation"));
     } finally {
       setSubmitting(false);
     }
@@ -251,10 +251,10 @@ export default function DealsPage() {
   async function handleConfirmDeal(dealId: string) {
     try {
       await updateReservationStatus(dealId, "CONFIRMED");
-      toast.success(lang === "ar" ? "تم تأكيد الصفقة" : "Deal confirmed");
+      toast.success(lang === "ar" ? "تم تأكيد الحجز" : "Reservation confirmed");
       loadDeals();
     } catch (err: any) {
-      toast.error(err.message || (lang === "ar" ? "حدث خطأ أثناء التأكيد" : "Failed to confirm deal"));
+      toast.error(err.message || (lang === "ar" ? "حدث خطأ أثناء التأكيد" : "Failed to confirm reservation"));
     }
   }
 
@@ -263,11 +263,11 @@ export default function DealsPage() {
     setCancelling(true);
     try {
       await updateReservationStatus(cancelDeal.id, "CANCELLED");
-      toast.success(lang === "ar" ? "تم إلغاء الصفقة" : "Deal cancelled");
+      toast.success(lang === "ar" ? "تم إلغاء الحجز" : "Reservation cancelled");
       setCancelDeal(null);
       loadDeals();
     } catch (err: any) {
-      toast.error(err.message || (lang === "ar" ? "حدث خطأ أثناء الإلغاء" : "Failed to cancel deal"));
+      toast.error(err.message || (lang === "ar" ? "حدث خطأ أثناء الإلغاء" : "Failed to cancel reservation"));
     } finally {
       setCancelling(false);
     }
@@ -430,22 +430,22 @@ export default function DealsPage() {
             <EmptyState
               variant="first-time"
               icon={<Handshake className="h-12 w-12" aria-hidden="true" />}
-              title={lang === "ar" ? "لا توجد صفقات بعد" : "No deals yet"}
+              title={lang === "ar" ? "لا توجد حجوزات بعد" : "No reservations yet"}
               description={
                 lang === "ar"
-                  ? "أطلق عربون الحجز وتابع الصفقة حتى التحويل إلى عقد."
-                  : "Reserve a unit and follow the deal through to contract."
+                  ? "أطلق عربون الحجز وتابع الحجز حتى التحويل إلى عقد."
+                  : "Reserve a unit and follow the reservation through to contract."
               }
               action={
                 canWriteDeals ? (
                   <Button size="sm" onClick={openCreate} style={{ display: "inline-flex" }}>
                     <Plus className="h-4 w-4 me-1.5" />
-                    {lang === "ar" ? "إنشاء صفقة" : "Create deal"}
+                    {lang === "ar" ? "إنشاء حجز" : "Create reservation"}
                   </Button>
                 ) : undefined
               }
               helpHref="/dashboard/help#deals"
-              helpLabel={lang === "ar" ? "تعرّف على الصفقات" : "Learn about deals"}
+              helpLabel={lang === "ar" ? "تعرّف على الحجوزات" : "Learn about reservations"}
             />
           ) : (
             <EmptyState
@@ -581,11 +581,11 @@ export default function DealsPage() {
     <div className="hidden md:block">
     <div dir={dir} className="p-6 space-y-6">
       <PageIntro
-        title={lang === "ar" ? "الصفقات" : "Deals"}
+        title={lang === "ar" ? "الحجوزات" : "Reservations"}
         description={
           lang === "ar"
-            ? "إدارة الصفقات النشطة وحجوزات العقارات"
-            : "Manage your active deals and property reservations"
+            ? "إدارة الحجوزات النشطة وحجوزات العقارات"
+            : "Manage your active property reservations"
         }
         actions={
           can("deals:write") ? (
@@ -595,7 +595,7 @@ export default function DealsPage() {
               className="gap-2"
             >
               <Plus className="w-4 h-4" />
-              {lang === "ar" ? "إنشاء صفقة" : "Create Deal"}
+              {lang === "ar" ? "إنشاء حجز" : "Create Reservation"}
             </Button>
           ) : undefined
         }
@@ -604,7 +604,7 @@ export default function DealsPage() {
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard
-          label={lang === "ar" ? "إجمالي الصفقات" : "Total Deals"}
+          label={lang === "ar" ? "إجمالي الحجوزات" : "Total Reservations"}
           value={String(total)}
           loading={loading}
         />
@@ -674,11 +674,11 @@ export default function DealsPage() {
             <EmptyState
               variant="first-time"
               icon={<Handshake className="h-12 w-12" aria-hidden="true" />}
-              title={lang === "ar" ? "لا توجد صفقات بعد" : "No deals yet"}
+              title={lang === "ar" ? "لا توجد حجوزات بعد" : "No reservations yet"}
               description={
                 lang === "ar"
-                  ? "أطلق عربون الحجز وتابع الصفقة حتى التحويل إلى عقد."
-                  : "Reserve a unit and follow the deal through to contract."
+                  ? "أطلق عربون الحجز وتابع الحجز حتى التحويل إلى عقد."
+                  : "Reserve a unit and follow the reservation through to contract."
               }
               action={
                 canWriteDeals ? (
@@ -688,18 +688,18 @@ export default function DealsPage() {
                     className="gap-2"
                   >
                     <Plus className="h-[18px] w-[18px]" />
-                    {lang === "ar" ? "إنشاء صفقة" : "Create deal"}
+                    {lang === "ar" ? "إنشاء حجز" : "Create reservation"}
                   </Button>
                 ) : undefined
               }
               helpHref="/dashboard/help#deals"
-              helpLabel={lang === "ar" ? "تعرّف على الصفقات" : "Learn about deals"}
+              helpLabel={lang === "ar" ? "تعرّف على الحجوزات" : "Learn about reservations"}
             />
           ) : (
             <EmptyState
               variant="filtered"
               icon={<Search className="h-12 w-12" aria-hidden="true" />}
-              title={lang === "ar" ? "لا توجد نتائج مطابقة" : "No matching deals"}
+              title={lang === "ar" ? "لا توجد نتائج مطابقة" : "No matching reservations"}
               description={
                 lang === "ar"
                   ? "جرّب تعديل الفلاتر أو البحث بكلمات أخرى."
@@ -726,7 +726,7 @@ export default function DealsPage() {
               <TableRow>
                 <TableHead>{lang === "ar" ? "العميل" : "Client"}</TableHead>
                 <TableHead>{lang === "ar" ? "العقار" : "Property"}</TableHead>
-                <TableHead>{lang === "ar" ? "قيمة الصفقة" : "Deal Value"}</TableHead>
+                <TableHead>{lang === "ar" ? "قيمة الحجز" : "Reservation Value"}</TableHead>
                 <TableHead>{lang === "ar" ? "العربون" : "Deposit"}</TableHead>
                 <TableHead>{lang === "ar" ? "الحالة" : "Status"}</TableHead>
                 <TableHead>{lang === "ar" ? "تاريخ الانتهاء" : "Expiry Date"}</TableHead>
@@ -769,8 +769,8 @@ export default function DealsPage() {
                         <button
                           onClick={() => handleConfirmDeal(deal.id)}
                           className="text-muted-foreground hover:text-success transition-colors"
-                          title={lang === "ar" ? "تأكيد الصفقة" : "Confirm Deal"}
-                          aria-label={lang === "ar" ? "تأكيد الصفقة" : "Confirm Deal"}
+                          title={lang === "ar" ? "تأكيد الحجز" : "Confirm Reservation"}
+                          aria-label={lang === "ar" ? "تأكيد الحجز" : "Confirm Reservation"}
                         >
                           <CheckCircle className="w-4 h-4" />
                         </button>
@@ -789,8 +789,8 @@ export default function DealsPage() {
                           <button
                             onClick={() => setCancelDeal(deal)}
                             className="text-muted-foreground hover:text-destructive transition-colors"
-                            title={lang === "ar" ? "إلغاء الصفقة" : "Cancel Deal"}
-                            aria-label={lang === "ar" ? "إلغاء الصفقة" : "Cancel Deal"}
+                            title={lang === "ar" ? "إلغاء الحجز" : "Cancel Reservation"}
+                            aria-label={lang === "ar" ? "إلغاء الحجز" : "Cancel Reservation"}
                           >
                             <Ban className="w-4 h-4" />
                           </button>
@@ -808,7 +808,7 @@ export default function DealsPage() {
       <ResponsiveDialog
         open={createOpen}
         onOpenChange={setCreateOpen}
-        title={lang === "ar" ? "إنشاء صفقة جديدة" : "Create New Deal"}
+        title={lang === "ar" ? "إنشاء حجز جديد" : "Create New Reservation"}
         contentClassName="sm:max-w-[640px]"
         footer={
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
@@ -827,7 +827,7 @@ export default function DealsPage() {
               className="gap-2"
             >
               {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
-              {lang === "ar" ? "إنشاء الصفقة" : "Create Deal"}
+              {lang === "ar" ? "إنشاء الحجز" : "Create Reservation"}
             </Button>
           </div>
         }
@@ -909,7 +909,7 @@ export default function DealsPage() {
             {/* Amount */}
             <div className="space-y-1">
               <label className="text-sm font-medium text-foreground">
-                {lang === "ar" ? "قيمة الصفقة (ريال)" : "Deal Amount (SAR)"} *
+                {lang === "ar" ? "قيمة الحجز (ريال)" : "Reservation Amount (SAR)"} *
               </label>
               <Input
                 type="number"
@@ -953,7 +953,7 @@ export default function DealsPage() {
       <ResponsiveDialog
         open={!!detailDeal}
         onOpenChange={(open) => !open && setDetailDeal(null)}
-        title={lang === "ar" ? "تفاصيل الصفقة" : "Deal Details"}
+        title={lang === "ar" ? "تفاصيل الحجز" : "Reservation Details"}
         footer={
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <Button
@@ -978,7 +978,7 @@ export default function DealsPage() {
                   <p className="font-medium">{detailDeal.unit.number}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground text-xs">{lang === "ar" ? "قيمة الصفقة" : "Deal Value"}</p>
+                  <p className="text-muted-foreground text-xs">{lang === "ar" ? "قيمة الحجز" : "Reservation Value"}</p>
                   <p className="font-medium">{SAR(detailDeal.amount)}</p>
                 </div>
                 <div>
@@ -1036,15 +1036,15 @@ export default function DealsPage() {
               className="gap-2"
             >
               {cancelling && <Loader2 className="w-4 h-4 animate-spin" />}
-              {lang === "ar" ? "إلغاء الصفقة" : "Cancel Deal"}
+              {lang === "ar" ? "إلغاء الحجز" : "Cancel Reservation"}
             </Button>
           </div>
         }
       >
         <p className="text-sm text-muted-foreground py-2">
           {lang === "ar"
-            ? `هل أنت متأكد من إلغاء الصفقة الخاصة بـ ${cancelDeal?.customer.name}؟ سيتم تحرير الوحدة وإتاحتها مجدداً.`
-            : `Are you sure you want to cancel the deal for ${cancelDeal?.customer.name}? The unit will be released and made available again.`}
+            ? `هل أنت متأكد من إلغاء الحجز الخاص بـ ${cancelDeal?.customer.name}؟ سيتم تحرير الوحدة وإتاحتها مجدداً.`
+            : `Are you sure you want to cancel the reservation for ${cancelDeal?.customer.name}? The unit will be released and made available again.`}
         </p>
       </ResponsiveDialog>
     </div>

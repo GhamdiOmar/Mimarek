@@ -35,7 +35,7 @@ const SURFACES_SYSTEM = [
 const SURFACES_TENANT = [
   { name: "dashboard", url: "/dashboard", waitFor: "main" },
   { name: "crm", url: "/dashboard/crm", waitFor: "main" },
-  { name: "deals", url: "/dashboard/deals", waitFor: "main" },
+  { name: "reservations", url: "/dashboard/reservations", waitFor: "main" },
   { name: "contracts", url: "/dashboard/contracts", waitFor: "main" },
   { name: "payments", url: "/dashboard/payments", waitFor: "main" },
   { name: "units", url: "/dashboard/units", waitFor: "main" },
