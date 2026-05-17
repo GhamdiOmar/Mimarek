@@ -83,7 +83,7 @@ export interface NextBestAction {
 
 /**
  * A pointer to a related record in another part of the product. `kind`
- * mirrors the real domain entities so consumers can group/iconize.
+ * mirrors the real domain entities so consumers can group and assign icons.
  */
 export interface RelatedRecordSummary {
   kind:
