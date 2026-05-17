@@ -174,7 +174,7 @@ model Unit {
   leases                      Lease[]
   maintenanceRequests         MaintenanceRequest[]
   preventivePlans             PreventiveMaintenancePlan[]
-  customerInterests           CustomerPropertyInterest[]
+  customerInterests           Deal[]
   // ── Marketplace (cross-org trading) ──
   marketplaceStatus           MarketplaceListingStatus?
   currentMarketplaceListingId String?
@@ -232,7 +232,7 @@ model Customer {
   leases               Lease[]
   documents            Document[]
   activities           CustomerActivity[]
-  propertyInterests    CustomerPropertyInterest[]
+  propertyInterests    Deal[]
   marketplaceInquiries MarketplaceInquiry[]       @relation("MarketplaceInquiryCustomer")
   createdAt            DateTime                   @default(now())
   updatedAt            DateTime                   @updatedAt
@@ -1323,21 +1323,38 @@ enum ActivityType {
   WHATSAPP
 }
 
-// ─── Customer Property Interest (CRM → Properties linking) ────────────────────
+// ─── Deal (CRM pipeline entity — table preserved as CustomerPropertyInterest) ──
 
-model CustomerPropertyInterest {
-  id         String         @id @default(cuid())
-  customerId String
-  customer   Customer       @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  unitId     String
-  unit       Unit           @relation(fields: [unitId], references: [id])
-  intent     PropertyIntent
-  status     InterestStatus @default(ACTIVE)
-  createdAt  DateTime       @default(now())
+model Deal {
+  id                String         @id @default(cuid())
+  customerId        String
+  customer          Customer       @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  unitId            String
+  unit              Unit           @relation(fields: [unitId], references: [id])
+  intent            PropertyIntent
+  status            InterestStatus @default(ACTIVE)
+  stage             DealStage      @default(NEW)
+  value             Decimal?
+  probability       Int?
+  expectedCloseDate DateTime?
+  lostReason        String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
 
-  @@unique([customerId, unitId])
   @@index([customerId])
   @@index([unitId])
+  @@index([stage])
+  @@map("CustomerPropertyInterest")
+}
+
+enum DealStage {
+  NEW
+  QUALIFIED
+  VIEWING
+  NEGOTIATION
+  RESERVED
+  WON
+  LOST
 }
 
 enum PropertyIntent {

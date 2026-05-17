@@ -66,9 +66,12 @@ export async function updateCustomerStatus(customerId: string, status: any, lost
         await tx.reservation.update({ where: { id: res.id }, data: { status: "CANCELLED" } });
         await tx.unit.update({ where: { id: res.unitId }, data: { status: "AVAILABLE" } });
       }
-      await tx.customerPropertyInterest.updateMany({
+      // Manual LOST is an explicit override — cascade-lose every active deal so
+      // the derived pipeline (Deal.stage is the writer of record — R3) stays
+      // coherent and can't later resurrect a non-LOST status.
+      await tx.deal.updateMany({
         where: { customerId: existing.id, status: "ACTIVE" },
-        data: { status: "DROPPED" },
+        data: { status: "DROPPED", stage: "LOST" },
       });
       await tx.customer.update({
         where: { id: existing.id },

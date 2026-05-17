@@ -4,6 +4,7 @@ import { db } from "@repo/db";
 import { revalidatePath } from "next/cache";
 import { requirePermission } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
+import { syncDealStageForUnit } from "./customer-interests";
 
 const VALID_TRANSITIONS: Record<string, string[]> = {
   DRAFT: ["SENT", "SIGNED", "CANCELLED"],
@@ -279,11 +280,9 @@ export async function updateContractStatus(
       where: { id: contract.unitId },
       data: { status: "SOLD" },
     });
-    await db.customer.update({
-      where: { id: contract.customerId },
-      data: { status: "CONVERTED" },
-    });
-
+    // Pipeline win — owned by the Deal entity now (R3). Set the relevant deal
+    // to WON and recompute Customer.status instead of writing it directly.
+    await syncDealStageForUnit(contract.customerId, contract.unitId, "WON");
   }
 
   // LEASE contract signed → unit RENTED, lease ACTIVE
@@ -292,6 +291,8 @@ export async function updateContractStatus(
       where: { id: contract.unitId },
       data: { status: "RENTED" },
     });
+    // Tenancy lifecycle — KEEP as a direct Customer.status write (this is the
+    // writer of record for tenancy, not the pipeline; § 4 / R3).
     await db.customer.update({
       where: { id: contract.customerId },
       data: { status: "ACTIVE_TENANT" },
@@ -331,10 +332,9 @@ export async function updateContractStatus(
       },
     });
     if (otherActive === 0) {
-      await db.customer.update({
-        where: { id: contract.customerId },
-        data: { status: "QUALIFIED" },
-      });
+      // Pipeline revert — derived from the Deal entity now (R3). Set the
+      // relevant deal back to QUALIFIED and recompute Customer.status.
+      await syncDealStageForUnit(contract.customerId, contract.unitId, "QUALIFIED");
     }
 
   }

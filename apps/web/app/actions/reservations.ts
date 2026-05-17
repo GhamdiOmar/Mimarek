@@ -4,6 +4,7 @@ import { db } from "@repo/db";
 import { revalidatePath } from "next/cache";
 import { requirePermission } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
+import { syncDealStageForUnit } from "./customer-interests";
 
 export async function createReservation(data: {
   customerId: string;
@@ -66,14 +67,13 @@ export async function createReservation(data: {
       data: { status: "RESERVED" },
     });
 
-    // Update customer status
-    await tx.customer.update({
-      where: { id: data.customerId },
-      data: { status: "RESERVED" },
-    });
-
     return res;
   });
+
+  // Pipeline state is owned by the Deal entity now (R3). Advance the relevant
+  // deal to RESERVED and let Customer.status be recomputed from it instead of
+  // writing Customer.status directly.
+  await syncDealStageForUnit(data.customerId, data.unitId, "RESERVED");
 
   logAuditEvent({
     userId: session.userId,
@@ -126,6 +126,8 @@ export async function updateReservationStatus(
     throw new Error("Reservation not found or you don't have access. Please refresh the page and try again.");
   }
 
+  let revertToQualified = false;
+
   const updated = await db.$transaction(async (tx) => {
     const res = await tx.reservation.update({
       where: { id: reservationId },
@@ -138,7 +140,7 @@ export async function updateReservationStatus(
         where: { id: reservation.unitId },
         data: { status: "AVAILABLE" },
       });
-      // Revert customer to QUALIFIED if no other active reservations
+      // Revert pipeline to QUALIFIED only if no other active reservations
       const otherActive = await tx.reservation.count({
         where: {
           customerId: reservation.customerId,
@@ -147,10 +149,7 @@ export async function updateReservationStatus(
         },
       });
       if (otherActive === 0) {
-        await tx.customer.update({
-          where: { id: reservation.customerId },
-          data: { status: "QUALIFIED" },
-        });
+        revertToQualified = true;
       }
     }
 
@@ -160,14 +159,18 @@ export async function updateReservationStatus(
         where: { id: reservation.unitId },
         data: { status: "SOLD" },
       });
-      await tx.customer.update({
-        where: { id: reservation.customerId },
-        data: { status: "CONVERTED" },
-      });
     }
 
     return res;
   });
+
+  // Pipeline status is derived from the Deal entity now (R3) — set the relevant
+  // deal stage and recompute Customer.status instead of writing it directly.
+  if (status === "CONFIRMED") {
+    await syncDealStageForUnit(reservation.customerId, reservation.unitId, "WON");
+  } else if (revertToQualified) {
+    await syncDealStageForUnit(reservation.customerId, reservation.unitId, "QUALIFIED");
+  }
 
   logAuditEvent({
     userId: session.userId,
@@ -284,17 +287,22 @@ export async function autoExpireReservations() {
   });
 
   for (const res of expired) {
+    let revertToQualified = false;
     await db.$transaction(async (tx) => {
       await tx.reservation.update({ where: { id: res.id }, data: { status: "EXPIRED" } });
       await tx.unit.update({ where: { id: res.unitId }, data: { status: "AVAILABLE" } });
-      // Revert customer if no other active reservations
+      // Revert pipeline if no other active reservations
       const otherActive = await tx.reservation.count({
         where: { customerId: res.customerId, id: { not: res.id }, status: { in: ["PENDING", "CONFIRMED"] } },
       });
       if (otherActive === 0) {
-        await tx.customer.update({ where: { id: res.customerId }, data: { status: "QUALIFIED" } });
+        revertToQualified = true;
       }
     });
+    // Pipeline status is derived from the Deal entity now (R3).
+    if (revertToQualified) {
+      await syncDealStageForUnit(res.customerId, res.unitId, "QUALIFIED");
+    }
   }
 
   return { expired: expired.length };

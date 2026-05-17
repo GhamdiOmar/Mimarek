@@ -62,7 +62,6 @@ import {
   getCustomers,
   createCustomer,
   deleteCustomer,
-  updateCustomerStatus,
   updateCustomer,
   getCustomerUnitAssignments,
 } from "../../actions/customers";
@@ -75,6 +74,7 @@ import {
   dropCustomerInterest,
   convertInterestToDeal,
   getAvailableUnitsForInterest,
+  setCustomerPipelineStage,
 } from "../../actions/customer-interests";
 import { maskPhone, maskEmail } from "@/lib/pii-masking";
 
@@ -125,6 +125,18 @@ const STAGE_HUES: Record<string, string> = {
   RESERVED: "hsl(158 50% 45%)", // green
   CONVERTED: "hsl(158 55% 35%)", // deep green
   LOST: "hsl(0 65% 55%)", // red
+};
+
+// Deal.stage → bilingual label (drawer interest badges). Mirrors the DealStage
+// enum in @repo/db.
+const DEAL_STAGE_LABELS: Record<string, { ar: string; en: string }> = {
+  NEW: { ar: "جديد", en: "New" },
+  QUALIFIED: { ar: "مؤهل", en: "Qualified" },
+  VIEWING: { ar: "معاينة", en: "Viewing" },
+  NEGOTIATION: { ar: "تفاوض", en: "Negotiation" },
+  RESERVED: { ar: "محجوز", en: "Reserved" },
+  WON: { ar: "مكسوب", en: "Won" },
+  LOST: { ar: "خسارة", en: "Lost" },
 };
 
 // Legacy statuses not shown in kanban but valid for filter/display
@@ -882,6 +894,14 @@ function CustomerDrawer({
                                   ? lang === "ar" ? "محوّل" : "Converted"
                                   : lang === "ar" ? "مُسقط" : "Dropped"}
                             </span>
+                            {interest.stage && (
+                              <span
+                                className="text-[10px] font-semibold px-2 py-0.5 rounded-full border bg-primary/10 text-primary border-primary/30"
+                                title={lang === "ar" ? "مرحلة الصفقة" : "Deal stage"}
+                              >
+                                {DEAL_STAGE_LABELS[interest.stage]?.[lang] ?? interest.stage}
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -1933,7 +1953,10 @@ export default function CRMPage() {
       c.map((cust) => (cust.id === draggingId ? { ...cust, status } : cust))
     );
     try {
-      await updateCustomerStatus(draggingId, status);
+      // Pipeline is owned by the Deal entity now (R3). This advances the
+      // customer's primary active deal's stage then derives Customer.status;
+      // leads with no linked deal fall back to the manual status setter.
+      await setCustomerPipelineStage(draggingId, status);
     } catch {
       setCustomers(prev);
       setError(
@@ -1958,7 +1981,10 @@ export default function CRMPage() {
       )
     );
     try {
-      await updateCustomerStatus(lostTarget.id, "LOST", lostReason);
+      // Marking lost flows through the Deal entity (sets the primary deal's
+      // stage=LOST + lostReason); leads with no linked deal fall back to the
+      // manual LOST setter (which also cascades the LOST state).
+      await setCustomerPipelineStage(lostTarget.id, "LOST", lostReason);
       setShowLostModal(false);
       setLostTarget(null);
     } catch {
