@@ -256,9 +256,18 @@ async function main() {
   // 3. Get Test Organization
   // ═══════════════════════════════════════════════════════════════════════════
 
-  const org = await prisma.organization.findFirst({
-    orderBy: { createdAt: "asc" },
+  // The admin E2E suite authenticates as dummy@demo.sa (see e2e/auth.admin.setup.ts).
+  // Billing fixtures MUST land on THAT user's organization, not merely the oldest
+  // org — otherwise the admin sees an empty billing dashboard and every
+  // billing.admin.spec.ts test fails.
+  const adminUser = await prisma.user.findUnique({
+    where: { email: "dummy@demo.sa" },
   });
+  const org = adminUser?.organizationId
+    ? await prisma.organization.findUnique({
+        where: { id: adminUser.organizationId },
+      })
+    : await prisma.organization.findFirst({ orderBy: { createdAt: "asc" } });
 
   if (!org) {
     console.log("\n⚠️  No organization found. Skipping subscription, invoice, and payment method seeding.");
