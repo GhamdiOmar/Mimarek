@@ -35,12 +35,18 @@ import {
   EmptyState,
   Skeleton,
   DirectionalIcon,
+  LifecycleRail,
+  NextActionPanel,
+  ProcessBlockerBanner,
+  RelatedContextPanel,
 } from "@repo/ui";
 import {
   getMaintenanceRequest,
   updateMaintenanceRequest,
   getAssignableUsers,
 } from "../../../actions/maintenance";
+import { getJourneySummary } from "../../../actions/journey";
+import type { JourneySummary } from "@repo/types";
 import { formatDualDate } from "../../../../lib/hijri";
 
 const categoryLabels: Record<string, { ar: string; en: string }> = {
@@ -100,6 +106,8 @@ export default function MaintenanceDetailPage() {
   const [costErrors, setCostErrors] = React.useState<Record<string, string>>({});
   const [mobileStatusSheet, setMobileStatusSheet] = React.useState(false);
   const [mobileAssignSheet, setMobileAssignSheet] = React.useState(false);
+  const [journey, setJourney] = React.useState<JourneySummary | null>(null);
+  const [relatedOpen, setRelatedOpen] = React.useState(false);
 
   React.useEffect(() => {
     load();
@@ -108,12 +116,14 @@ export default function MaintenanceDetailPage() {
   async function load() {
     setLoading(true);
     try {
-      const [data, usersData] = await Promise.all([
+      const [data, usersData, journeyData] = await Promise.all([
         getMaintenanceRequest(id as string),
         getAssignableUsers(),
+        getJourneySummary("maintenance", id as string).catch(() => null),
       ]);
       setRequest(data);
       setUsers(usersData);
+      setJourney(journeyData);
       setActualCost(data.actualCost?.toString() ?? "");
       setLaborHours(data.laborHours?.toString() ?? "");
       setNotes(data.notes ?? "");
@@ -311,6 +321,58 @@ export default function MaintenanceDetailPage() {
     });
   }
 
+  const journeySection = journey && (
+    <div className="bg-card rounded-md shadow-card border border-border p-5 space-y-4">
+      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+        {lang === "ar" ? "مسار طلب الصيانة" : "Maintenance request journey"}
+      </p>
+
+      {journey.blockers.length > 0 && (
+        <ProcessBlockerBanner blockers={journey.blockers} lang={lang} />
+      )}
+
+      <LifecycleRail
+        stages={journey.stages}
+        lang={lang}
+        ariaLabel={
+          lang === "ar"
+            ? "مراحل دورة حياة طلب الصيانة"
+            : "Maintenance request lifecycle stages"
+        }
+      />
+
+      {journey.nextActions.length > 0 && (
+        <NextActionPanel actions={journey.nextActions} lang={lang} />
+      )}
+
+      {journey.related.length > 0 && (
+        <>
+          <Button
+            variant="outline"
+            size="sm"
+            style={{ display: "inline-flex" }}
+            className="gap-2 text-xs"
+            onClick={() => setRelatedOpen(true)}
+          >
+            {lang === "ar"
+              ? `السجلات المرتبطة (${journey.related.length})`
+              : `Related records (${journey.related.length})`}
+          </Button>
+          <RelatedContextPanel
+            open={relatedOpen}
+            onOpenChange={setRelatedOpen}
+            records={journey.related}
+            lang={lang}
+            title={{
+              ar: "السجلات المرتبطة بالصيانة",
+              en: "Maintenance related records",
+            }}
+          />
+        </>
+      )}
+    </div>
+  );
+
   return (
     <>
     {/* ─── Mobile (< md) ─────────────────────────────────────────────── */}
@@ -370,6 +432,9 @@ export default function MaintenanceDetailPage() {
             )}
           </div>
         </div>
+
+        {/* Maintenance Journey — mobile */}
+        {journeySection}
 
         {/* Timeline — top section */}
         <section className="space-y-2">
@@ -692,6 +757,9 @@ export default function MaintenanceDetailPage() {
           </div>
         );
       })()}
+
+      {/* ── Maintenance Journey ─────────────────────────────────── */}
+      {journeySection}
 
       {/* Info Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
