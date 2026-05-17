@@ -111,6 +111,22 @@ Before `git tag`, `git push origin vX.Y.Z`, or `gh release create`, ALL of the f
 
 **Violating this rule is worse than missing a feature.** A tagged release the team can't trust is a compounding liability. If in doubt, ship the feature branch as a preview deployment for review and defer the tag.
 
+### 3.9.1 Approved Release-Gating Model (Omar, 2026-05-17)
+
+**Context:** The journey-first transformation ships one tagged release per phase. The only available database is production Supabase — a local preview would require a destructive `db push` to prod, so the §3.9 preview walk cannot be run per-phase. v4.3.1–v4.6.0 shipped CI-gated *before* this was surfaced and codified; this subsection makes the SoT honest rather than letting process and documentation silently diverge.
+
+**The approved model — supersedes nothing in §3.9; it scopes *when* the full walk is mandatory:**
+
+1. **Per-phase release (`vX.Y.Z` within the transformation): CI is the gate.** Acceptable ONLY because CI runs the *full* path, not a partial one. Before tag/merge, the PR's CI run MUST be genuinely green AND MUST include: production `next build` · full Playwright suite · ephemeral-Postgres `prisma db push --accept-data-loss` + seed · lint · typecheck · cspell · GitGuardian. Read the actual run logs (§3.8), not the badge. A CI run that skipped build or Playwright does NOT satisfy this.
+2. **Disclosure is mandatory.** Every CI-gated release's notes MUST state, in the Verification section, that the UI was **not** preview-verified and the §3.9 walk is deferred to the milestone. No silent substitution — ever.
+3. **Milestone tag: the full §3.9 walk is mandatory and non-deferrable.** Before the designated milestone release (end of the journey-first transformation, or any release explicitly marked a milestone), ALL six §3.9 steps run against a disposable/local DB and the screenshots + console output are posted in chat before the tag command. If preview tooling still cannot run at milestone time → STOP and surface, exactly as §3.9 states. The CI-substitution does NOT extend to the milestone.
+
+**Hard boundaries on this exception:**
+- Applies ONLY to per-phase releases of the journey-first transformation. Any other release, or any change outside the transformation, follows §3.9 in full.
+- Does NOT relax §3.4 (verification before *done*) for non-release work — code must still be §3.8-verified and typecheck-green.
+- Does NOT permit tagging on a partial/failed CI run, or on typecheck-green alone (that was the original v4.1.0 incident — still forbidden).
+- The moment a safe preview DB becomes available, this exception lapses and §3.9 applies per-phase again.
+
 ---
 
 ## 4. Key Technical Notes
