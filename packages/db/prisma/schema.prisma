@@ -1351,7 +1351,7 @@ model Deal {
   expectedCloseDate DateTime?
   lostReason        String?
   createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
+  updatedAt         DateTime       @updatedAt @default(now())
 
   @@index([customerId])
   @@index([unitId])
