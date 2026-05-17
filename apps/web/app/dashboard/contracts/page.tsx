@@ -50,6 +50,7 @@ import { getCustomers } from "../../actions/customers";
 import { getUnitsWithBuildings } from "../../actions/units";
 import { getReservationById } from "../../actions/reservations";
 import { getJourneySummary } from "../../actions/journey";
+import { getMissingRequiredDocs } from "../../actions/document-requirements";
 import type { JourneySummary } from "@repo/types";
 import {
   LifecycleRail,
@@ -150,11 +151,15 @@ export default function ContractsPage() {
   const [journeyLoading, setJourneyLoading] = React.useState(false);
   const [journeyRelatedOpen, setJourneyRelatedOpen] = React.useState(false);
 
-  // Fetch journey when detail drawer opens
+  // Missing required docs for the open contract
+  const [missingDocs, setMissingDocs] = React.useState<string[]>([]);
+
+  // Fetch journey + missing docs when detail drawer opens
   React.useEffect(() => {
     if (!detailContract) {
       setJourney(null);
       setJourneyRelatedOpen(false);
+      setMissingDocs([]);
       return;
     }
     setJourneyLoading(true);
@@ -162,6 +167,10 @@ export default function ContractsPage() {
       .then((data) => setJourney(data))
       .catch(() => setJourney(null))
       .finally(() => setJourneyLoading(false));
+
+    getMissingRequiredDocs(detailContract.id)
+      .then((cats) => setMissingDocs(cats))
+      .catch(() => setMissingDocs([]));
   }, [detailContract?.id]);
 
   function loadContracts() {
@@ -948,6 +957,37 @@ export default function ContractsPage() {
                 </div>
               )}
             </div>
+
+            {/* ── Missing Required Docs Banner ── */}
+            {missingDocs.length > 0 && (
+              <ProcessBlockerBanner
+                lang={lang}
+                blockers={missingDocs.map((cat) => {
+                  const catLabels: Record<string, { ar: string; en: string }> = {
+                    LEGAL:    { ar: "مستند قانوني", en: "Legal document" },
+                    CONTRACT: { ar: "نسخة العقد",   en: "Signed contract copy" },
+                    FINANCE:  { ar: "مستند مالي",   en: "Finance document" },
+                    MARKETING:{ ar: "مستند تسويقي", en: "Marketing document" },
+                    GENERAL:  { ar: "مستند عام",    en: "General document" },
+                  };
+                  const label = catLabels[cat] ?? { ar: cat, en: cat };
+                  return {
+                    id: `missing-doc-${cat}`,
+                    severity: "warning" as const,
+                    title: {
+                      ar: `مستند مطلوب: ${label.ar}`,
+                      en: `Required document: ${label.en}`,
+                    },
+                    detail: {
+                      ar: `يجب رفع مستند من فئة "${label.ar}" لاستكمال هذه المرحلة.`,
+                      en: `A document of category "${label.en}" must be uploaded to complete this stage.`,
+                    },
+                    actionLabel: { ar: "رفع مستند", en: "Upload document" },
+                    actionHref: "/dashboard/documents",
+                  };
+                })}
+              />
+            )}
 
             {/* ── Journey Section ── */}
             {journeyLoading && (

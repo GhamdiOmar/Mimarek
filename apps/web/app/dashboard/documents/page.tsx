@@ -62,13 +62,12 @@ export default function DocumentVaultPage() {
   }, [lang]);
 
   const mobileCategories: { id: string; label: { ar: string; en: string } }[] = [
-    { id: "all", label: { ar: "الكل", en: "All" } },
-    { id: "BLUEPRINT", label: { ar: "مخططات", en: "Blueprints" } },
-    { id: "LEGAL", label: { ar: "قانوني", en: "Legal" } },
-    { id: "STRUCTURAL", label: { ar: "إنشائي", en: "Structural" } },
-    { id: "COMMERCIAL", label: { ar: "تجاري", en: "Commercial" } },
-    { id: "MARKETING", label: { ar: "تسويق", en: "Marketing" } },
-    { id: "GENERAL", label: { ar: "عام", en: "General" } },
+    { id: "all",       label: { ar: "الكل",    en: "All" } },
+    { id: "GENERAL",   label: { ar: "عام",      en: "General" } },
+    { id: "LEGAL",     label: { ar: "قانوني",   en: "Legal" } },
+    { id: "CONTRACT",  label: { ar: "عقد",      en: "Contract" } },
+    { id: "FINANCE",   label: { ar: "مالي",     en: "Finance" } },
+    { id: "MARKETING", label: { ar: "تسويق",    en: "Marketing" } },
   ];
 
   const mobileFiltered = React.useMemo(() => {
@@ -390,13 +389,12 @@ export default function DocumentVaultPage() {
               <h2 className="text-xs font-bold uppercase tracking-widest text-primary mb-4 font-latin">{lang === "ar" ? "التصنيفات" : "Categories"}</h2>
               <div className="space-y-1">
                  {[
-                   { id: "all", label: { ar: "جميع الوثائق", en: "All Documents" } },
-                   { id: "BLUEPRINT", label: { ar: "مخططات", en: "Blueprints" } },
-                   { id: "LEGAL", label: { ar: "تصاريح قانونية", en: "Legal Permits" } },
-                   { id: "STRUCTURAL", label: { ar: "مخططات إنشائية", en: "Structural Plans" } },
-                   { id: "COMMERCIAL", label: { ar: "تجاري", en: "Commercial" } },
-                   { id: "MARKETING", label: { ar: "تسويق", en: "Marketing" } },
-                   { id: "GENERAL", label: { ar: "عام", en: "General" } },
+                   { id: "all",       label: { ar: "جميع الوثائق", en: "All Documents" } },
+                   { id: "GENERAL",   label: { ar: "عام",           en: "General" } },
+                   { id: "LEGAL",     label: { ar: "قانوني",        en: "Legal" } },
+                   { id: "CONTRACT",  label: { ar: "عقد",           en: "Contract" } },
+                   { id: "FINANCE",   label: { ar: "مالي",          en: "Finance" } },
+                   { id: "MARKETING", label: { ar: "تسويق",         en: "Marketing" } },
                  ].map((cat) => (
                     <button
                       key={cat.id}

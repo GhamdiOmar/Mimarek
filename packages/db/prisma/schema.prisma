@@ -382,6 +382,9 @@ model Contract {
   buyerOrgId           String?
   sellerOrgId          String?
 
+  // Documents linked to this contract
+  documents            Document[]
+
   @@index([customerId])
   @@index([unitId])
   @@index([userId])
@@ -558,6 +561,8 @@ model Document {
   customer       Customer?         @relation(fields: [customerId], references: [id])
   unitId         String?
   unit           Unit?             @relation(fields: [unitId], references: [id])
+  contractId     String?
+  contract       Contract?         @relation(fields: [contractId], references: [id])
   organizationId String
   organization   Organization      @relation(fields: [organizationId], references: [id])
   userId         String?
@@ -568,6 +573,7 @@ model Document {
 
   @@index([customerId])
   @@index([unitId])
+  @@index([contractId])
   @@index([organizationId])
 }
 

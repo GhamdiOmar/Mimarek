@@ -120,6 +120,34 @@ const REPORTS: ReportDef[] = [
   },
 ];
 
+interface ReportGroup {
+  id: string;
+  heading: string;
+  headingEn: string;
+  question: string;
+  questionEn: string;
+  reportIds: string[];
+}
+
+const REPORT_GROUPS: ReportGroup[] = [
+  {
+    id: "financial",
+    heading: "الأداء المالي",
+    headingEn: "Financial Performance",
+    question: "كيف يؤدّي المحفظة مالياً؟",
+    questionEn: "How is the portfolio performing financially?",
+    reportIds: ["revenue", "collection", "maintenance-costs"],
+  },
+  {
+    id: "operations",
+    heading: "التشغيل والاستخدام",
+    headingEn: "Operations & Utilization",
+    question: "كيف تُشغَّل المحفظة وتُصان؟",
+    questionEn: "How is the portfolio being utilized & serviced?",
+    reportIds: ["occupancy", "maintenance"],
+  },
+];
+
 export default function ReportsPage() {
   const { lang } = useLanguage();
   const defaults = getDefaultDateRange();
@@ -139,6 +167,26 @@ export default function ReportsPage() {
         r.descEn.toLowerCase().includes(q)
     );
   }, [mobileSearch]);
+
+  /** Build grouped structure for mobile, preserving search filter. */
+  const mobileGroups = React.useMemo(() => {
+    return REPORT_GROUPS.map((group) => ({
+      ...group,
+      reports: group.reportIds
+        .map((id) => mobileFiltered.find((r) => r.id === id))
+        .filter((r): r is ReportDef => r !== undefined),
+    })).filter((g) => g.reports.length > 0);
+  }, [mobileFiltered]);
+
+  /** Build grouped structure for desktop (no search filter needed). */
+  const desktopGroups = React.useMemo(() => {
+    return REPORT_GROUPS.map((group) => ({
+      ...group,
+      reports: group.reportIds
+        .map((id) => REPORTS.find((r) => r.id === id))
+        .filter((r): r is ReportDef => r !== undefined),
+    }));
+  }, []);
 
   const dateRange = `${startDate} → ${endDate}`;
 
@@ -429,49 +477,65 @@ export default function ReportsPage() {
         </div>
       </div>
 
-      <div className="flex-1 px-4 pb-24 pt-3 space-y-3">
-        {mobileFiltered.map((report) => {
-          const Icon = report.icon;
-          const name = lang === "ar" ? report.name : report.nameEn;
-          const desc = lang === "ar" ? report.desc : report.descEn;
-          const busy =
-            loadingId === `${report.id}-pdf` || loadingId === `${report.id}-excel`;
-          return (
-            <button
-              key={report.id}
-              type="button"
-              onClick={() => handlePDF(report.id)}
-              disabled={loadingId !== null}
-              className={cn(
-                "flex w-full items-center gap-3 rounded-2xl border border-border bg-card p-4 text-start",
-                "transition-colors hover:border-foreground/20 active:scale-[0.99] disabled:opacity-60",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--primary))]"
-              )}
-            >
-              <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 p-3 text-primary">
-                {busy ? (
-                  <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
-                ) : (
-                  <Icon className="h-5 w-5" aria-hidden="true" />
-                )}
-              </span>
-              <div className="min-w-0 flex-1">
-                <div className="truncate text-sm font-semibold text-foreground">
-                  {name}
-                </div>
-                <div className="line-clamp-2 text-xs text-muted-foreground mt-0.5">
-                  {desc}
-                </div>
-              </div>
-              <ChevronRight
-                className="h-5 w-5 shrink-0 text-muted-foreground rtl:scale-x-[-1]"
-                aria-hidden="true"
-              />
-            </button>
-          );
-        })}
+      <div className="flex-1 px-4 pb-24 pt-3 space-y-6">
+        {mobileGroups.map((group) => (
+          <div key={group.id}>
+            {/* Group heading — shown even during search as long as group has results */}
+            <div className="mb-2 pb-2 border-b border-border">
+              <p className="text-xs font-bold text-foreground">
+                {lang === "ar" ? group.heading : group.headingEn}
+              </p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">
+                {lang === "ar" ? group.question : group.questionEn}
+              </p>
+            </div>
 
-        {mobileFiltered.length === 0 && (
+            <div className="space-y-3">
+              {group.reports.map((report) => {
+                const Icon = report.icon;
+                const name = lang === "ar" ? report.name : report.nameEn;
+                const desc = lang === "ar" ? report.desc : report.descEn;
+                const busy =
+                  loadingId === `${report.id}-pdf` || loadingId === `${report.id}-excel`;
+                return (
+                  <button
+                    key={report.id}
+                    type="button"
+                    onClick={() => handlePDF(report.id)}
+                    disabled={loadingId !== null}
+                    className={cn(
+                      "flex w-full items-center gap-3 rounded-2xl border border-border bg-card p-4 text-start",
+                      "transition-colors hover:border-foreground/20 active:scale-[0.99] disabled:opacity-60",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--primary))]"
+                    )}
+                  >
+                    <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 p-3 text-primary">
+                      {busy ? (
+                        <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
+                      ) : (
+                        <Icon className="h-5 w-5" aria-hidden="true" />
+                      )}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-semibold text-foreground">
+                        {name}
+                      </div>
+                      <div className="line-clamp-2 text-xs text-muted-foreground mt-0.5">
+                        {desc}
+                      </div>
+                    </div>
+                    <ChevronRight
+                      className="h-5 w-5 shrink-0 text-muted-foreground rtl:scale-x-[-1]"
+                      aria-hidden="true"
+                    />
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+
+        {mobileGroups.length === 0 && (
           <EmptyState
             icon={<Search className="h-12 w-12" />}
             title={lang === "ar" ? "لا توجد نتائج" : "No results"}
@@ -494,7 +558,7 @@ export default function ReportsPage() {
       </div>
     </div>
 
-    {/* ─── Desktop (≥ md) ─ unchanged ───────────────────────────────── */}
+    {/* ─── Desktop (≥ md) ────────────────────────────────────────────── */}
     <div className="hidden md:block">
     <div className="space-y-8 animate-in fade-in duration-500">
       <PageIntro
@@ -503,61 +567,80 @@ export default function ReportsPage() {
         actions={datePickerActions}
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {REPORTS.map((report) => {
-          const Icon = report.icon;
-          return (
-            <Card
-              key={report.id}
-              className="hover:shadow-lg hover:border-primary/20 transition-all group"
-            >
-              <CardHeader className="flex-row items-start justify-between space-y-0 pb-3">
-                <div className="h-10 w-10 rounded-md bg-primary/10 flex items-center justify-center text-primary">
-                  <Icon className="h-5 w-5" />
-                </div>
-                <Badge variant="draft" className="text-[10px] font-bold">
-                  {report.type}
-                </Badge>
-              </CardHeader>
-              <CardContent className="pb-0">
-                <h3 className="text-sm font-bold text-foreground">{report.name}</h3>
-                <p className="text-[10px] text-muted-foreground mt-1">{report.desc}</p>
-              </CardContent>
-              <CardFooter className="justify-end gap-2 border-t border-border mt-4">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  style={{ display: "inline-flex" }}
-                  className="gap-2 text-xs hover:bg-secondary/10 hover:border-secondary/50 hover:text-secondary hover:shadow-sm hover:-translate-y-0.5 transition-all"
-                  onClick={() => handleExcel(report.id)}
-                  disabled={loadingId !== null}
-                >
-                  {loadingId === report.id + "-excel" ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <Sheet className="h-3.5 w-3.5" />
-                  )}
-                  Excel
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  style={{ display: "inline-flex" }}
-                  className="gap-2 text-xs hover:bg-destructive/10 hover:border-destructive/50 hover:text-destructive hover:shadow-sm hover:-translate-y-0.5 transition-all"
-                  onClick={() => handlePDF(report.id)}
-                  disabled={loadingId !== null}
-                >
-                  {loadingId === report.id + "-pdf" ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <Download className="h-3.5 w-3.5" />
-                  )}
-                  PDF
-                </Button>
-              </CardFooter>
-            </Card>
-          );
-        })}
+      <div className="space-y-10">
+        {desktopGroups.map((group) => (
+          <section key={group.id} aria-labelledby={`group-heading-${group.id}`}>
+            {/* Section header */}
+            <div className="mb-5 pb-3 border-b border-border">
+              <h2
+                id={`group-heading-${group.id}`}
+                className="text-base font-bold text-foreground"
+              >
+                {lang === "ar" ? group.heading : group.headingEn}
+              </h2>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                {lang === "ar" ? group.question : group.questionEn}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {group.reports.map((report) => {
+                const Icon = report.icon;
+                return (
+                  <Card
+                    key={report.id}
+                    className="hover:shadow-lg hover:border-primary/20 transition-all group"
+                  >
+                    <CardHeader className="flex-row items-start justify-between space-y-0 pb-3">
+                      <div className="h-10 w-10 rounded-md bg-primary/10 flex items-center justify-center text-primary">
+                        <Icon className="h-5 w-5" />
+                      </div>
+                      <Badge variant="draft" className="text-[10px] font-bold">
+                        {report.type}
+                      </Badge>
+                    </CardHeader>
+                    <CardContent className="pb-0">
+                      <h3 className="text-sm font-bold text-foreground">{report.name}</h3>
+                      <p className="text-[10px] text-muted-foreground mt-1">{report.desc}</p>
+                    </CardContent>
+                    <CardFooter className="justify-end gap-2 border-t border-border mt-4">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        style={{ display: "inline-flex" }}
+                        className="gap-2 text-xs hover:bg-secondary/10 hover:border-secondary/50 hover:text-secondary hover:shadow-sm hover:-translate-y-0.5 transition-all"
+                        onClick={() => handleExcel(report.id)}
+                        disabled={loadingId !== null}
+                      >
+                        {loadingId === report.id + "-excel" ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Sheet className="h-3.5 w-3.5" />
+                        )}
+                        Excel
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        style={{ display: "inline-flex" }}
+                        className="gap-2 text-xs hover:bg-destructive/10 hover:border-destructive/50 hover:text-destructive hover:shadow-sm hover:-translate-y-0.5 transition-all"
+                        onClick={() => handlePDF(report.id)}
+                        disabled={loadingId !== null}
+                      >
+                        {loadingId === report.id + "-pdf" ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Download className="h-3.5 w-3.5" />
+                        )}
+                        PDF
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                );
+              })}
+            </div>
+          </section>
+        ))}
       </div>
     </div>
     </div>

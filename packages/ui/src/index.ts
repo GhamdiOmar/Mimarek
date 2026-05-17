@@ -31,6 +31,7 @@ export * from "./components/LifecycleRail";
 export * from "./components/NextActionPanel";
 export * from "./components/ProcessBlockerBanner";
 export * from "./components/RelatedContextPanel";
+export * from "./components/RoleTaskQueue";
 
 /* ─── Saudi Input Primitives ──────────────────────────────── */
 export * from "./components/saudi";

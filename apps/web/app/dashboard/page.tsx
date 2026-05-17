@@ -29,6 +29,7 @@ import {
   DateRangePicker,
   LastUpdatedAgo,
   EmptyState,
+  RoleTaskQueue,
 } from "@repo/ui";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "../../components/LanguageProvider";
@@ -44,6 +45,10 @@ import { getOccupancyTrend } from "../actions/trends/getOccupancyTrend";
 import { getPipelineTrend } from "../actions/trends/getPipelineTrend";
 import { getCollectionsTrend } from "../actions/trends/getCollectionsTrend";
 import { getTicketsTrend } from "../actions/trends/getTicketsTrend";
+import {
+  getRoleTaskQueue,
+  type RoleTaskQueueResult,
+} from "../actions/role-task-queue";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -165,6 +170,7 @@ export default function DashboardPage() {
   const [deals, setDeals] = React.useState<Deal[]>([]);
   const [payments, setPayments] = React.useState<Installment[]>([]);
   const [maintenance, setMaintenance] = React.useState<MaintenanceSummaryItem[]>([]);
+  const [taskQueue, setTaskQueue] = React.useState<RoleTaskQueueResult | null>(null);
   const [trends, setTrends] = React.useState<{
     units: number[];
     pipeline: number[];
@@ -179,7 +185,7 @@ export default function DashboardPage() {
     setLoading(true);
     setError(null);
     try {
-      const [s, d, p, m, tu, tp, tc, tt] = await Promise.all([
+      const [s, d, p, m, tu, tp, tc, tt, q] = await Promise.all([
         getDashboardV3Stats(),
         getDashboardRecentDeals(),
         getDashboardUpcomingPayments(),
@@ -188,11 +194,13 @@ export default function DashboardPage() {
         getPipelineTrend(),
         getCollectionsTrend(),
         getTicketsTrend(),
+        getRoleTaskQueue(),
       ]);
       setStats(s);
       setDeals(d);
       setPayments(p);
       setMaintenance(m);
+      setTaskQueue(q);
       setTrends({ units: tu, pipeline: tp, collections: tc, tickets: tt });
       setLastLoaded(new Date());
     } catch {
@@ -619,6 +627,13 @@ export default function DashboardPage() {
           />
         </div>
       </div>
+
+      {/* Task Queue */}
+      <RoleTaskQueue
+        items={taskQueue?.owner ?? []}
+        lang={lang}
+        heading={{ ar: "المهام العاجلة", en: "Pending Actions" }}
+      />
 
       {/* Activity Widgets */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
