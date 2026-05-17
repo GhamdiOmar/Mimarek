@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@repo/db";
-import { startOfMonth, subMonths } from "date-fns";
+import { startOfMonth } from "date-fns";
 import { requirePermission } from "../../lib/auth-helpers";
 
 export type FinanceStats = {
@@ -14,6 +14,13 @@ export type FinanceStats = {
   overdueCount: number;
 };
 
+/** effectivePaid — canonical formula per spec §4 */
+function effectivePaid(r: { status: string; amount: any; paidAmount: any }): number {
+  return r.status === "PAID"
+    ? Number(r.paidAmount ?? r.amount)
+    : Number(r.paidAmount ?? 0);
+}
+
 /** Finance dashboard KPIs — rent roll + AR aging. */
 export async function getFinanceStats(): Promise<FinanceStats> {
   const session = await requirePermission("dashboard:read");
@@ -25,20 +32,22 @@ export async function getFinanceStats(): Promise<FinanceStats> {
 
   const [mtdInstallments, unpaidInstallments, unpaidCount, overdueCount] =
     await Promise.all([
+      // All MTD rows (no status filter) — effectivePaid handles the math
       db.rentInstallment.findMany({
         where: {
           lease: { customer: { organizationId: orgId } },
           dueDate: { gte: mtdStart, lt: mtdEnd },
         },
-        select: { amount: true, status: true },
+        select: { amount: true, paidAmount: true, status: true },
       }),
+      // AR rows: only unpaid/partial/overdue contribute to AR
       db.rentInstallment.findMany({
         where: {
           lease: { customer: { organizationId: orgId } },
           status: { in: ["UNPAID", "PARTIALLY_PAID", "OVERDUE"] },
           dueDate: { lt: now },
         },
-        select: { amount: true, dueDate: true },
+        select: { amount: true, paidAmount: true, dueDate: true },
       }),
       db.rentInstallment.count({
         where: {
@@ -57,10 +66,9 @@ export async function getFinanceStats(): Promise<FinanceStats> {
   const expectedMTD = Math.round(
     mtdInstallments.reduce((s, r) => s + Number(r.amount), 0),
   );
+  // Σ effectivePaid over ALL MTD rows — no status filter
   const collectedMTD = Math.round(
-    mtdInstallments
-      .filter((r) => r.status === "PAID")
-      .reduce((s, r) => s + Number(r.amount), 0),
+    mtdInstallments.reduce((s, r) => s + effectivePaid(r), 0),
   );
   const collectionRatePct =
     expectedMTD === 0 ? 0 : Math.round((collectedMTD / expectedMTD) * 100);
@@ -75,7 +83,8 @@ export async function getFinanceStats(): Promise<FinanceStats> {
     const daysOverdue = Math.floor(
       (now.getTime() - r.dueDate.getTime()) / (24 * 60 * 60 * 1000),
     );
-    const amt = Number(r.amount);
+    // AR remaining per row
+    const amt = Number(r.amount) - Number(r.paidAmount ?? 0);
     if (daysOverdue <= 30) buckets[0]!.amount += amt;
     else if (daysOverdue <= 60) buckets[1]!.amount += amt;
     else if (daysOverdue <= 90) buckets[2]!.amount += amt;

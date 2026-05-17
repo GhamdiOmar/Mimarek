@@ -435,10 +435,12 @@ model PaymentPlanInstallment {
   paidAmount        Decimal?
   paymentMethod     String?
   referenceNumber   String?
+  paymentReference  String?
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
 
   @@index([paymentPlanId])
+  @@unique([paymentPlanId, paymentReference])
 }
 
 enum InstallmentStatus {
@@ -517,19 +519,23 @@ enum LeaseStatus {
 // ─── Rent Installment ─────────────────────────────────────────────────────────
 
 model RentInstallment {
-  id          String            @id @default(cuid())
-  leaseId     String
-  lease       Lease             @relation(fields: [leaseId], references: [id])
-  dueDate     DateTime
-  amount      Decimal
-  status      PaymentStatus     @default(UNPAID)
-  paidAt      DateTime?
-  paidAmount  Decimal?
-  paymentMethod String?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  id               String        @id @default(cuid())
+  leaseId          String
+  lease            Lease         @relation(fields: [leaseId], references: [id])
+  dueDate          DateTime
+  amount           Decimal
+  status           PaymentStatus @default(UNPAID)
+  paidAt           DateTime?
+  paidAmount       Decimal?
+  paymentMethod    String?
+  referenceNumber  String?
+  paymentReference String?
+  notes            String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
 
   @@index([leaseId])
+  @@unique([leaseId, paymentReference])
 }
 
 enum PaymentStatus {

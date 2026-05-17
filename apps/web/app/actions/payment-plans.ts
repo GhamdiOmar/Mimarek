@@ -1,6 +1,7 @@
 "use server";
 
 import { db } from "@repo/db";
+import { z } from "zod";
 import { requirePermission } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
 import { revalidatePath } from "next/cache";
@@ -81,65 +82,207 @@ export async function getPaymentPlan(contractId: string) {
   return JSON.parse(JSON.stringify(plan));
 }
 
+const RecordInstallmentPaymentSchema = z.object({
+  amount: z.number().positive(),
+  paymentMethod: z.string().min(1).optional(),
+  referenceNumber: z.string().trim().max(120).optional(),
+  paymentReference: z.string().trim().min(1).max(120),
+  paymentDate: z.string().min(1).optional(),
+});
+
 export async function recordInstallmentPayment(
   installmentId: string,
-  data: { amount: number; paymentMethod?: string; referenceNumber?: string }
+  data: {
+    amount: number;
+    paymentMethod?: string;
+    referenceNumber?: string;
+    paymentReference: string;
+    paymentDate?: string;
+  }
 ) {
+  const parsed = RecordInstallmentPaymentSchema.safeParse(data);
+  if (!parsed.success) {
+    throw new Error(
+      "تعذّر تسجيل الدفعة: تحقق من المبلغ وطريقة الدفع. / Could not record payment: please check the amount and payment method."
+    );
+  }
+  const safeData = parsed.data;
+
   const session = await requirePermission("finance:write");
 
-  const installment = await db.paymentPlanInstallment.findFirst({
-    where: { id: installmentId },
-    include: { paymentPlan: true },
-  });
-  if (!installment) throw new Error("Payment installment not found. Please refresh the page and try again.");
+  // Resolve paidAt date
+  let paidAtDate: Date;
+  if (safeData.paymentDate) {
+    paidAtDate = new Date(safeData.paymentDate);
+    if (isNaN(paidAtDate.getTime())) {
+      throw new Error(
+        "تاريخ الدفع غير صالح. / The payment date is invalid."
+      );
+    }
+  } else {
+    paidAtDate = new Date();
+  }
 
-  // Verify org access
-  const plan = await db.paymentPlan.findFirst({
-    where: { id: installment.paymentPlanId, organizationId: session.organizationId },
-  });
-  if (!plan) throw new Error("Payment plan not found. Please verify the contract has an associated payment plan.");
+  type LockedRow = {
+    id: string;
+    amount: string;
+    paidAmount: string | null;
+    status: string;
+    paymentPlanId: string;
+    organizationId: string | null;
+  };
 
-  const newPaidAmount = Number(installment.paidAmount ?? 0) + data.amount;
-  const installmentAmount = Number(installment.amount);
-  const newStatus = newPaidAmount >= installmentAmount ? "PAID" : "PARTIALLY_PAID";
+  let txResult: {
+    row: any;
+    replayed: boolean;
+    before: { status: string; paidAmount: number } | null;
+    after: { status: string; paidAmount: number } | null;
+    planId: string;
+  };
 
-  const updated = await db.paymentPlanInstallment.update({
-    where: { id: installmentId },
-    data: {
-      paidAmount: newPaidAmount,
-      paidAt: newStatus === "PAID" ? new Date() : undefined,
-      status: newStatus as any,
-      paymentMethod: data.paymentMethod,
-      referenceNumber: data.referenceNumber,
-    },
-  });
+  try {
+    txResult = await db.$transaction(async (tx) => {
+      // (1) Idempotency short-circuit
+      const prior = await tx.paymentPlanInstallment.findFirst({
+        where: { id: installmentId, paymentReference: safeData.paymentReference },
+        include: { paymentPlan: true },
+      });
+      if (prior) {
+        const orgId = prior.paymentPlan.organizationId;
+        if (orgId !== session.organizationId) {
+          throw new Error(
+            "القسط غير موجود أو ليس لديك صلاحية الوصول إليه. / Installment not found or you do not have access to it."
+          );
+        }
+        return {
+          row: prior,
+          replayed: true,
+          before: null,
+          after: null,
+          planId: prior.paymentPlanId,
+        };
+      }
 
-  logAuditEvent({
-    userId: session.userId,
-    userEmail: session.email,
-    userRole: session.role,
-    action: "UPDATE",
-    resource: "PaymentPlanInstallment",
-    resourceId: installmentId,
-    before: { paidAmount: Number(installment.paidAmount ?? 0), status: installment.status },
-    after: { paidAmount: newPaidAmount, status: newStatus },
-    metadata: { paymentAmount: data.amount },
-    organizationId: session.organizationId,
-  });
+      // (2) Lock row with FOR UPDATE
+      const locked = await tx.$queryRaw<LockedRow[]>`
+        SELECT ppi.id,
+               ppi.amount::text AS amount,
+               ppi."paidAmount"::text AS "paidAmount",
+               ppi.status::text AS status,
+               ppi."paymentPlanId" AS "paymentPlanId",
+               pp."organizationId" AS "organizationId"
+        FROM "PaymentPlanInstallment" ppi
+        JOIN "PaymentPlan" pp ON pp.id = ppi."paymentPlanId"
+        WHERE ppi.id = ${installmentId}
+        FOR UPDATE OF ppi
+      `;
 
-  // Check if all installments are paid → complete the plan
-  const allInstallments = await db.paymentPlanInstallment.findMany({
-    where: { paymentPlanId: plan.id },
-  });
-  const allPaid = allInstallments.every((i) => i.status === "PAID" || (i.id === installmentId && newStatus === "PAID"));
-  if (allPaid) {
-    await db.paymentPlan.update({
-      where: { id: plan.id },
-      data: { status: "COMPLETED_PLAN" },
+      const row = locked[0];
+      if (!row || row.organizationId !== session.organizationId) {
+        throw new Error(
+          "القسط غير موجود أو ليس لديك صلاحية الوصول إليه. / Installment not found or you do not have access to it."
+        );
+      }
+
+      // (3) Already fully paid guard
+      if (row.status === "PAID") {
+        throw new Error(
+          "تم تسديد هذا القسط بالكامل مسبقاً. / This installment is already fully paid."
+        );
+      }
+
+      // (4) Accumulate
+      const installmentAmount = Number(row.amount);
+      const priorPaid = Number(row.paidAmount ?? 0);
+      const newPaidAmount = priorPaid + safeData.amount;
+
+      // (5) Overpay guard
+      if (newPaidAmount > installmentAmount + 0.005) {
+        const remaining = (installmentAmount - priorPaid).toFixed(2);
+        throw new Error(
+          `المبلغ يتجاوز المتبقّي المستحق (${remaining} ريال). / Amount exceeds the remaining balance due (${remaining} SAR).`
+        );
+      }
+
+      // (6) Determine new status
+      const newStatus =
+        newPaidAmount >= installmentAmount - 0.005 ? "PAID" : "PARTIALLY_PAID";
+
+      // (7) Write — paidAmount + paidAt ALWAYS written with status (partial too)
+      const updated = await tx.paymentPlanInstallment.update({
+        where: { id: installmentId },
+        data: {
+          paidAmount: newPaidAmount,
+          paidAt: paidAtDate,
+          status: newStatus as any,
+          paymentMethod: safeData.paymentMethod,
+          referenceNumber: safeData.referenceNumber,
+          paymentReference: safeData.paymentReference,
+        },
+      });
+
+      // (8) Plan-completion rollup — inside the same transaction
+      const allInstallments = await tx.paymentPlanInstallment.findMany({
+        where: { paymentPlanId: row.paymentPlanId },
+        select: { id: true, status: true },
+      });
+      const allPaid = allInstallments.every(
+        (i) =>
+          (i.id === installmentId && newStatus === "PAID") ||
+          (i.id !== installmentId && i.status === "PAID")
+      );
+      if (allPaid) {
+        await tx.paymentPlan.update({
+          where: { id: row.paymentPlanId },
+          data: { status: "COMPLETED_PLAN" },
+        });
+      }
+
+      return {
+        row: updated,
+        replayed: false,
+        before: { status: row.status, paidAmount: priorPaid },
+        after: { status: newStatus, paidAmount: newPaidAmount },
+        planId: row.paymentPlanId,
+      };
+    });
+  } catch (e: any) {
+    // P2002 race: two concurrent writes with the same paymentReference
+    if (e?.code === "P2002") {
+      const existing = await db.paymentPlanInstallment.findFirst({
+        where: {
+          id: installmentId,
+          paymentReference: safeData.paymentReference,
+          paymentPlan: { organizationId: session.organizationId },
+        },
+      });
+      if (existing) {
+        return JSON.parse(JSON.stringify(existing));
+      }
+    }
+    throw e;
+  }
+
+  // Audit only on non-replayed writes
+  if (!txResult.replayed) {
+    logAuditEvent({
+      userId: session.userId,
+      userEmail: session.email,
+      userRole: session.role,
+      action: "UPDATE",
+      resource: "PaymentPlanInstallment",
+      resourceId: installmentId,
+      before: txResult.before ?? undefined,
+      after: txResult.after ?? undefined,
+      metadata: {
+        paymentAmount: safeData.amount,
+        paymentReference: safeData.paymentReference,
+      },
+      organizationId: session.organizationId,
     });
   }
 
-  return JSON.parse(JSON.stringify(updated));
+  return JSON.parse(JSON.stringify(txResult.row));
 }
 
 export async function getPaymentPlanSummary(contractId: string) {
