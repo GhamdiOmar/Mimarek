@@ -1,5 +1,29 @@
 # Changelog — Mimaric PropTech
 
+## [4.7.0] — 2026-05-17 — Payment money-correctness + executable dashboards
+
+Phase 5. Headlined by a **fix to a live, pre-existing data-integrity defect**: rent payment recording could not represent a partial payment at all, which silently corrupted every collection-rate, AR-aging, revenue, and rent-collection figure in the product. Also lands the RoleTaskQueue, Documents required-by-stage, and a Reports regroup. Schema changes are additive (`prisma db push` safe).
+
+### Fixed (data-integrity — was corrupting money figures)
+- **`recordPayment` (`installments.ts`) violated AGENTS §4 and could not record partials.** It hardcoded `status: "PAID"`, never wrote `paidAmount`, and discarded the submitted amount — so any partial payment became "fully paid" with no record of how much, and every finance/AR metric (which read scheduled `amount` filtered by binary `status`) was wrong whenever a tenant paid partially. Rewritten: interactive `$transaction` + `SELECT … FOR UPDATE` row lock, accumulate-not-overwrite, **`paidAmount` always written atomically with `status`**, overpay rejection, already-paid guard, caller-supplied payment date, DB-unique idempotency key (`@@unique([leaseId, paymentReference])`) with replay-safe `P2002` handling.
+- **`recordInstallmentPayment` (`payment-plans.ts`)** had no input validation, no transaction, no idempotency, no overpay guard — same hardening applied; plan-completion rollup moved inside the transaction.
+- **All five corrupted metric surfaces corrected** — `dashboard-finance.ts`, `finance.ts` (incl. `getUnitRevenueBreakdown`), `reports.ts` (`getRentCollectionReport` + `getRevenueReport`), `trends/getCollectionsTrend.ts`, `trends/getRevenueTrend.ts`. Canonical `effectivePaid` rule (legacy `PAID`/`paidAmount=NULL` rows treated as fully paid for scheduled amount — non-destructive, no in-place backfill of historical money rows); AR computed as remaining (`amount − paidAmount`); revenue keyed on `paidAt` not `updatedAt`. `markOverdueInstallments` now also ages past-due `PARTIALLY_PAID`. Collected/revenue sums `effectivePaid` over **all** in-scope rows (no status filter) so a partial that later ages to `OVERDUE` does not lose its received cash.
+
+### Added
+- **`<RoleTaskQueue>`** (`@repo/ui`) — severity-sorted actionable buckets, RTL, six states, no `dark:`. Fed by `getRoleTaskQueue` (existing dashboard stats + two minimal org-scoped counts: contracts awaiting signature, leads to follow up). Mounted as a visible card on the Org Owner, Leasing, Finance, and Maintenance dashboards.
+- **Documents required-by-stage** — additive `Document.contractId` relation; new `getMissingRequiredDocs` (org-scoped) surfacing missing per-stage documents as a `<ProcessBlockerBanner>` in the contract detail drawer.
+
+### Changed
+- **Reports regrouped by business question** (Financial Performance / Operations & Utilization) — presentational only; every report, link, and export preserved on desktop and mobile.
+- **Fixed a pre-existing `DocCategory` enum/UI mismatch** — the documents page filtered by `BLUEPRINT/STRUCTURAL/COMMERCIAL`, none of which are `DocCategory` values, so those filters silently returned nothing. UI aligned to the real enum.
+
+### Verification & disclosure
+- Forced `tsc --noEmit` (cache-bypass) green for `@repo/ui` + `@repo/web`. The money write-paths were **read line-by-line by the lead** and the AGENTS §4 invariant (every payment status write co-writes `paidAmount`) confirmed in both functions. A new CI step (`apps/web/e2e/seed/payment-correctness-test.ts`) exercises the deterministic correctness matrix (partial, partial→complete, overpay reject, idempotent replay, already-paid, markOverdue on PARTIALLY_PAID, mixed-status incl. legacy-NULL metrics, `@@unique` guard) against CI's ephemeral Postgres.
+- **§3.9 preview-walk deferred (per the codified AGENTS §3.9.1 model):** this per-phase release is CI-gated — production build + full Playwright + ephemeral-Postgres `db push` + lint/typecheck/cspell — and was **not** preview-verified with screenshots; the full §3.9 walk runs at the milestone tag.
+- **Honest limitation:** the CI correctness test mirrors the action logic against the real DB/schema (Server Actions can't run outside a Next runtime); it validates the algorithm + DB constraints + metrics, not the literal server-action wrapper. The real wrappers were lead-verified by code read. Follow-ups: extract the pure money logic into a shared non-`"use server"` module so the test exercises it directly; an append-only `RentPayment` ledger (the long-term-correct model) is deliberately deferred to keep this release's blast radius bounded.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimaric/compare/v4.6.0...v4.7.0
+
 ## [4.6.0] — 2026-05-17 — Journey adoption across core screens
 
 Phase 4 of the journey-first transformation. The Phase-3 journey library (`LifecycleRail` / `NextActionPanel` / `ProcessBlockerBanner` / `RelatedContextPanel`) goes from library-only to live on the working screens, fed by one shared, org-guarded data layer. Additive only — no schema, model, permission, or business-logic change.
