@@ -1,5 +1,24 @@
 # Changelog — Mimaric PropTech
 
+## [4.4.0] — 2026-05-17 — Terminology honesty (Deals→Reservations) + shared journey layer
+
+Phases 1 & 3 of the journey-first transformation. **No schema/model/permission/behavioral change.**
+
+### Changed
+- **Deals → Reservations** — `/dashboard/deals` was the `Reservation` model mislabeled "Deals" in English (Arabic already shipped "الحجوزات"). Renamed end-to-end: route dir moved with permanent `/dashboard/deals[/*]` → `/dashboard/reservations` redirects; nav + breadcrumb, Cmd-K quick action, 5 `revalidatePath` sites, all links/router pushes, `scripts/verify-ui.mjs`, and AR/EN UI copy. `deals:*` permission keys intentionally preserved (track the `Reservation` model, not the URL). `AGENTS.md`/`CLAUDE.md` §8.2 access list updated.
+
+### Added
+- **`@repo/types` journey layer** — `ProcessStage`, `ProcessBlocker`, `NextBestAction`, `JourneySummary`, `RelatedRecordSummary`, `RoleTaskQueueItem`; stage vocabulary mirrors the real `contracts.ts`/`maintenance.ts` state machines.
+- **Four `@repo/ui` journey components** — `LifecycleRail`, `NextActionPanel`, `ProcessBlockerBanner`, `RelatedContextPanel`. Compose existing primitives; design-system compliant (one-primary CTA, §6.11.2 banner taxonomy, 480px drawer, six data states, logical RTL props, no `dark:` utilities). Library only — page adoption lands in Phase 4.
+
+### Docs
+- `AGENTS.md` §4 corrected — the repo has **no migration history**; CI applies schema via `prisma db push --accept-data-loss` (the prior "migration baseline" claim was stale). Added the git-worktree env/deps rule. `CLAUDE.md` (project-root SoT) synced to the same v4.3.1 + Phase-1 reality.
+
+### Verification
+- CI fully green (run `25994427697`): `build-and-test (20.x)` pass in 5m50s — typecheck + lint + cspell + production build + full **Playwright** suite (incl. the repaired `billing.admin`); GitGuardian pass. `tsc --noEmit` 3/3 locally; repo grep shows zero stale `/dashboard/deals` (only redirect sources) or `الصفقات`.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimaric/compare/v4.3.1...v4.4.0
+
 ## [4.3.1] — 2026-05-17 — Dead-scope purge (Projects / Off-plan / Wafi)
 
 Phase 0 of the journey-first transformation plan: a complete purge of all dead **Projects / Off-plan / Wafi / escrow** residue left behind after the v4.2.5 module removal. No functional product change — it removes vestigial entitlements, marketing/SEO claims for non-existent features, dead code branches, and orphaned scripts so the product, public site, and docs no longer reference capabilities Mimaric does not have.
