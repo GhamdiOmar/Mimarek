@@ -103,7 +103,6 @@ export async function notifyInvoiceIssued(orgId: string, invoiceNumber: string, 
 
 export async function notifyUsageLimit80(orgId: string, featureKey: string, current: number, limit: number) {
   const featureNames: Record<string, { ar: string; en: string }> = {
-    "projects.max": { ar: "المشاريع", en: "Projects" },
     "users.max": { ar: "المستخدمين", en: "Users" },
     "units.max": { ar: "الوحدات", en: "Units" },
   };
@@ -122,7 +121,6 @@ export async function notifyUsageLimit80(orgId: string, featureKey: string, curr
 
 export async function notifyUsageLimit100(orgId: string, featureKey: string, limit: number) {
   const featureNames: Record<string, { ar: string; en: string }> = {
-    "projects.max": { ar: "المشاريع", en: "Projects" },
     "users.max": { ar: "المستخدمين", en: "Users" },
     "units.max": { ar: "الوحدات", en: "Units" },
   };

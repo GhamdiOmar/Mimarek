@@ -53,7 +53,7 @@ test.describe('Billing Dashboard — Admin', () => {
     await billing.gotoBilling();
     await billing.expectCurrentPlanVisible();
     // The plan name should be visible
-    const main = billing.page.locator('main');
+    const main = billing.page.locator('#main-content .hidden.md\\:block');
     // Check for plan name, billing cycle, price info
     await expect(main.getByText(/الخطة|Plan/i).first()).toBeVisible();
     await expect(main.getByText(/دورة الفوترة|Billing Cycle/i).first()).toBeVisible();
@@ -80,7 +80,7 @@ test.describe('Billing Dashboard — Admin', () => {
     test('plans page shows "Start Free Trial" button for paid plans', async () => {
       await billing.gotoPlans();
       await billing.expectPlansPageLoaded();
-      const main = billing.page.locator('main');
+      const main = billing.page.locator('#main-content .hidden.md\\:block');
       await expect(
         main.getByText(/ابدأ تجربة مجانية|Start Free Trial/i).first()
       ).toBeVisible();
@@ -98,7 +98,7 @@ test.describe('Billing Dashboard — Admin', () => {
 
     test('trial subscription shows trial end date on billing dashboard', async () => {
       await billing.gotoBilling();
-      const main = billing.page.locator('main');
+      const main = billing.page.locator('#main-content .hidden.md\\:block');
       // Look for trial ends info — only present when subscription is in TRIALING state
       const trialEndExists = await main.getByText(/ينتهي التجربة|Trial ends/i).first()
         .isVisible().catch(() => false);
@@ -128,30 +128,30 @@ test.describe('Billing Dashboard — Admin', () => {
       await billing.selectMonthlyBilling();
       // "Save 20%" badge should still exist on Annual toggle
       await expect(
-        billing.page.getByText(/وفر 20%|Save 20%/i).first()
+        billing.page.locator('#main-content .hidden.md\\:block').getByText(/وفر 20%|Save 20%/i).first()
       ).toBeVisible();
 
       // Switch to annual
       await billing.selectAnnualBilling();
       // "Billed annually" text should appear
       await expect(
-        billing.page.getByText(/يُفوتر سنوياً|Billed annually/i).first()
+        billing.page.locator('#main-content .hidden.md\\:block').getByText(/يُفوتر سنوياً|Billed annually/i).first()
       ).toBeVisible();
     });
 
     test('"Most Popular" badge shown on Professional plan', async () => {
       await billing.gotoPlans();
       await expect(
-        billing.page.getByText(/الأكثر شيوعاً|Most Popular/i).first()
+        billing.page.locator('#main-content .hidden.md\\:block').getByText(/الأكثر شيوعاً|Most Popular/i).first()
       ).toBeVisible();
     });
 
     test('plan cards show feature entitlements with check/x icons', async () => {
       await billing.gotoPlans();
-      const main = billing.page.locator('main');
+      const main = billing.page.locator('#main-content .hidden.md\\:block');
       // Check for feature labels
       await expect(
-        main.getByText(/مشاريع|Projects/i).first()
+        main.getByText(/وحدات|Units/i).first()
       ).toBeVisible();
       await expect(
         main.getByText(/مستخدمين|Users/i).first()
@@ -160,7 +160,7 @@ test.describe('Billing Dashboard — Admin', () => {
 
     test('free plan shows "Get Started" instead of "Start Free Trial"', async () => {
       await billing.gotoPlans();
-      const main = billing.page.locator('main');
+      const main = billing.page.locator('#main-content .hidden.md\\:block');
       await expect(
         main.getByText(/ابدأ الآن|Get Started/i).first()
       ).toBeVisible();
@@ -267,7 +267,7 @@ test.describe('Billing Dashboard — Admin', () => {
 
     test('invoices show correct status badges (PAID, ISSUED, OVERDUE)', async () => {
       await billing.gotoInvoices();
-      const main = billing.page.locator('main');
+      const main = billing.page.locator('#main-content .hidden.md\\:block');
       // At minimum, the status column header should exist
       await expect(
         main.getByText(/الحالة|Status/i).first()
@@ -278,7 +278,7 @@ test.describe('Billing Dashboard — Admin', () => {
       await billing.gotoInvoices();
       // Either shows invoice table or "No invoices" message
       const hasTable = await billing.page.locator('table').isVisible().catch(() => false);
-      const hasEmpty = await billing.page.getByText(/لا توجد فواتير|No invoices/i)
+      const hasEmpty = await billing.page.locator('#main-content .hidden.md\\:block').getByText(/لا توجد فواتير|No invoices/i)
         .first().isVisible().catch(() => false);
       expect(hasTable || hasEmpty).toBeTruthy();
     });
@@ -296,7 +296,7 @@ test.describe('Billing Dashboard — Admin', () => {
 
     test('payment method shows card brand and last 4 digits', async () => {
       await billing.gotoBilling();
-      const main = billing.page.locator('main');
+      const main = billing.page.locator('#main-content .hidden.md\\:block');
       // Look for card pattern: BRAND •••• XXXX
       const cardPattern = main.locator('p').filter({ hasText: /••••/ });
       const count = await cardPattern.count();
@@ -307,7 +307,7 @@ test.describe('Billing Dashboard — Admin', () => {
 
     test('default payment method shows "Default" badge', async () => {
       await billing.gotoBilling();
-      const main = billing.page.locator('main');
+      const main = billing.page.locator('#main-content .hidden.md\\:block');
       const defaultBadge = main.getByText(/افتراضي|Default/i);
       const count = await defaultBadge.count();
       if (count > 0) {
@@ -343,7 +343,7 @@ test.describe('Billing Dashboard — Admin', () => {
 
     test('no active subscription shows "Choose a Plan" CTA', async () => {
       await billing.gotoBilling();
-      const main = billing.page.locator('main');
+      const main = billing.page.locator('#main-content .hidden.md\\:block');
       // Either shows current plan details OR "no subscription" with CTA
       const hasPlan = await main.getByText(/الخطة|Plan/i).first()
         .isVisible().catch(() => false);
@@ -360,7 +360,7 @@ test.describe('Billing Dashboard — Admin', () => {
   test.describe('Billing Cycle', () => {
     test('subscription shows billing cycle (Monthly/Annual)', async () => {
       await billing.gotoBilling();
-      const main = billing.page.locator('main');
+      const main = billing.page.locator('#main-content .hidden.md\\:block');
       const hasCycle = await main.getByText(/شهري|سنوي|Monthly|Annual/i).first()
         .isVisible().catch(() => false);
       const hasNoPlan = await main.getByText(/اختر خطة|Choose a Plan/i).first()
@@ -382,7 +382,7 @@ test.describe('Billing Dashboard — Admin', () => {
     test('invoices include SAR currency display', async () => {
       await billing.gotoInvoices();
       await billing.expectInvoicesPageLoaded();
-      const main = billing.page.locator('main');
+      const main = billing.page.locator('#main-content .hidden.md\\:block');
       // SAR should appear in the table when invoices exist
       const sarVisible = await main.getByText(/ر\.س|SAR/i).first()
         .isVisible().catch(() => false);
@@ -393,7 +393,7 @@ test.describe('Billing Dashboard — Admin', () => {
 
     test('invoice totals include subtotal, VAT, and total columns', async () => {
       await billing.gotoInvoices();
-      const main = billing.page.locator('main');
+      const main = billing.page.locator('#main-content .hidden.md\\:block');
       // Check for column headers
       await expect(
         main.getByText(/المجموع الفرعي|Subtotal/i).first()

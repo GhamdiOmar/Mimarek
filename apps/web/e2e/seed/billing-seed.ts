@@ -49,11 +49,9 @@ async function main() {
       sortOrder: 0,
       entitlements: {
         create: [
-          { featureKey: "projects.max", type: "LIMIT", value: "3" },
           { featureKey: "users.max", type: "LIMIT", value: "5" },
           { featureKey: "units.max", type: "LIMIT", value: "50" },
           { featureKey: "cmms.access", type: "BOOLEAN", value: "false" },
-          { featureKey: "offplan.access", type: "BOOLEAN", value: "false" },
           { featureKey: "reports.export", type: "BOOLEAN", value: "false" },
           { featureKey: "pii.encryption", type: "BOOLEAN", value: "false" },
           { featureKey: "audit.access", type: "BOOLEAN", value: "false" },
@@ -87,11 +85,9 @@ async function main() {
       sortOrder: 1,
       entitlements: {
         create: [
-          { featureKey: "projects.max", type: "LIMIT", value: "25" },
           { featureKey: "users.max", type: "LIMIT", value: "25" },
           { featureKey: "units.max", type: "LIMIT", value: "500" },
           { featureKey: "cmms.access", type: "BOOLEAN", value: "true" },
-          { featureKey: "offplan.access", type: "BOOLEAN", value: "true" },
           { featureKey: "reports.export", type: "BOOLEAN", value: "true" },
           { featureKey: "pii.encryption", type: "BOOLEAN", value: "true" },
           { featureKey: "audit.access", type: "BOOLEAN", value: "true" },
@@ -125,11 +121,9 @@ async function main() {
       sortOrder: 2,
       entitlements: {
         create: [
-          { featureKey: "projects.max", type: "LIMIT", value: "unlimited" },
           { featureKey: "users.max", type: "LIMIT", value: "unlimited" },
           { featureKey: "units.max", type: "LIMIT", value: "unlimited" },
           { featureKey: "cmms.access", type: "BOOLEAN", value: "true" },
-          { featureKey: "offplan.access", type: "BOOLEAN", value: "true" },
           { featureKey: "reports.export", type: "BOOLEAN", value: "true" },
           { featureKey: "pii.encryption", type: "BOOLEAN", value: "true" },
           { featureKey: "audit.access", type: "BOOLEAN", value: "true" },
@@ -262,9 +256,18 @@ async function main() {
   // 3. Get Test Organization
   // ═══════════════════════════════════════════════════════════════════════════
 
-  const org = await prisma.organization.findFirst({
-    orderBy: { createdAt: "asc" },
+  // The admin E2E suite authenticates as dummy@demo.sa (see e2e/auth.admin.setup.ts).
+  // Billing fixtures MUST land on THAT user's organization, not merely the oldest
+  // org — otherwise the admin sees an empty billing dashboard and every
+  // billing.admin.spec.ts test fails.
+  const adminUser = await prisma.user.findUnique({
+    where: { email: "dummy@demo.sa" },
   });
+  const org = adminUser?.organizationId
+    ? await prisma.organization.findUnique({
+        where: { id: adminUser.organizationId },
+      })
+    : await prisma.organization.findFirst({ orderBy: { createdAt: "asc" } });
 
   if (!org) {
     console.log("\n⚠️  No organization found. Skipping subscription, invoice, and payment method seeding.");

@@ -9,13 +9,11 @@ import { unstable_cache, revalidateTag } from "next/cache";
  */
 export const FEATURE_KEYS = {
   // Numeric limits
-  PROJECTS_MAX: "projects.max",
   USERS_MAX: "users.max",
   UNITS_MAX: "units.max",
 
   // Boolean features
   CMMS_ACCESS: "cmms.access",
-  OFFPLAN_ACCESS: "offplan.access",
   PLANNING_ACCESS: "planning.access",
   REPORTS_EXPORT: "reports.export",
   PII_ENCRYPTION: "pii.encryption",

@@ -20,7 +20,7 @@ type Plan = {
   desc: string;
   monthlyPrice: number;
   annualPrice: number;
-  limits: { projects: string; users: string; units: string };
+  limits: { users: string; units: string };
   features: { key: string; label: string; included: boolean }[];
   supportLevel: string;
   highlighted: boolean;
@@ -40,10 +40,9 @@ export default function Pricing({ lang }: { lang: "ar" | "en" }) {
       desc: t.starterDesc,
       monthlyPrice: 0,
       annualPrice: 0,
-      limits: { projects: "3", users: "5", units: "50" },
+      limits: { users: "5", units: "50" },
       features: [
         { key: "cmms", label: t.cmmsAccess, included: false },
-        { key: "offplan", label: t.offplanAccess, included: false },
         { key: "reports", label: t.reportsExport, included: false },
         { key: "pii", label: t.piiEncryption, included: false },
         { key: "audit", label: t.auditAccess, included: false },
@@ -62,10 +61,9 @@ export default function Pricing({ lang }: { lang: "ar" | "en" }) {
       desc: t.professionalDesc,
       monthlyPrice: 499,
       annualPrice: 4790,
-      limits: { projects: "25", users: "25", units: "500" },
+      limits: { users: "25", units: "500" },
       features: [
         { key: "cmms", label: t.cmmsAccess, included: true },
-        { key: "offplan", label: t.offplanAccess, included: true },
         { key: "reports", label: t.reportsExport, included: true },
         { key: "pii", label: t.piiEncryption, included: true },
         { key: "audit", label: t.auditAccess, included: true },
@@ -85,13 +83,11 @@ export default function Pricing({ lang }: { lang: "ar" | "en" }) {
       monthlyPrice: 1499,
       annualPrice: 14390,
       limits: {
-        projects: t.unlimited,
         users: t.unlimited,
         units: t.unlimited,
       },
       features: [
         { key: "cmms", label: t.cmmsAccess, included: true },
-        { key: "offplan", label: t.offplanAccess, included: true },
         { key: "reports", label: t.reportsExport, included: true },
         { key: "pii", label: t.piiEncryption, included: true },
         { key: "audit", label: t.auditAccess, included: true },
@@ -245,10 +241,6 @@ export default function Pricing({ lang }: { lang: "ar" | "en" }) {
 
                 {/* Limits */}
                 <div className="mt-5 space-y-1.5 border-t border-border pt-5">
-                  <p className="text-sm text-foreground/80">
-                    <span className="font-semibold">{plan.limits.projects}</span>{" "}
-                    {t.projects}
-                  </p>
                   <p className="text-sm text-foreground/80">
                     <span className="font-semibold">{plan.limits.users}</span>{" "}
                     {t.users}

@@ -134,7 +134,7 @@ const labels = {
 };
 
 const ACTIONS = ["CREATE", "READ", "UPDATE", "DELETE", "READ_PII", "EXPORT", "LOGIN", "LOGOUT", "PASSWORD_CHANGE", "PASSWORD_RESET"];
-const RESOURCES = ["Customer", "Contract", "Lease", "Reservation", "RentInstallment", "Unit", "Project", "User", "Organization", "Document", "MaintenanceRequest", "Auth"];
+const RESOURCES = ["Customer", "Contract", "Lease", "Reservation", "RentInstallment", "Unit", "User", "Organization", "Document", "MaintenanceRequest", "Auth"];
 
 export default function AuditLogPage() {
   const { lang } = useLanguage();

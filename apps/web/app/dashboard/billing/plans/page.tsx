@@ -602,11 +602,9 @@ export default function PlansPage() {
 
 function formatEntitlement(ent: any, lang: "ar" | "en"): string {
   const labels: Record<string, { ar: string; en: string }> = {
-    "projects.max": { ar: "مشاريع", en: "Projects" },
     "users.max": { ar: "مستخدمين", en: "Users" },
     "units.max": { ar: "وحدات", en: "Units" },
     "cmms.access": { ar: "نظام إدارة الصيانة", en: "CMMS Maintenance System" },
-    "offplan.access": { ar: "نظام البيع على الخارطة", en: "Off-Plan Development" },
     "reports.export": { ar: "تصدير التقارير", en: "Export Reports" },
     "pii.encryption": { ar: "تشفير البيانات الشخصية", en: "PII Encryption" },
     "audit.access": { ar: "سجل المراجعة", en: "Audit Log" },

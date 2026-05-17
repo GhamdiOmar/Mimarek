@@ -127,23 +127,6 @@ export async function getRevenueTimeline() {
   return months;
 }
 
-export async function getProjectStatusDistribution() {
-  // v3.0: No project model. Return unit status distribution instead.
-  const session = await requirePermission("dashboard:read");
-  const orgId = session.organizationId;
-
-  const grouped = await db.unit.groupBy({
-    by: ["status"],
-    where: { organizationId: orgId },
-    _count: true,
-  });
-
-  return grouped.map((g) => ({
-    status: g.status as string,
-    count: g._count as number,
-  }));
-}
-
 export async function getDashboardV3Stats() {
   const session = await requirePermission("dashboard:read");
   const orgId = session.organizationId;
@@ -274,6 +257,3 @@ export async function getDashboardMaintenanceSummary() {
   return grouped.map((g) => ({ status: g.status as string, count: g._count as number }));
 }
 
-// Legacy aliases kept for any pages that still import these
-export const getDashboardLandStats = getDashboardV3Stats;
-export const getDashboardOffPlanStats = getDashboardV3Stats;

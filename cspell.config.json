@@ -25,7 +25,6 @@
     "packages/db/prisma/seed.ts",
     "packages/db/prisma/seed-demo.ts",
     "docs/demo-deck/**",
-    "packages/db/prisma/v3-migrate.ts",
     "cspell.config.json",
     "Individual data Absher.json",
     " Individual data Absher.json",
@@ -42,7 +41,6 @@
     "Ejar",
     "ZATCA",
     "REGA",
-    "Wafi",
     "Balady",
     "Absher",
     "MOC",
@@ -138,7 +136,10 @@
     "enumtypid",
     "pkey",
     "fkey",
-    "togglable"
+    "togglable",
+    "RRRA",
+    "unpublishing",
+    "mylistings"
   ],
   "ignoreRegExpList": [
     "[\\u0600-\\u06FF\\u0750-\\u077F\\uFB50-\\uFDFF\\uFE70-\\uFEFF]+",

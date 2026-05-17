@@ -13,8 +13,8 @@ export async function generateMetadata({
       ? "ميماريك | منصة إدارة العقارات السعودية"
       : "Mimaric | Saudi PropTech Platform for Property Management",
     description: isAr
-      ? "منصة PropTech السعودية لمطوري العقارات — إدارة المشاريع والمبيعات والإيجارات متوافقة مع بلدي وزاتكا ووافي ورؤية 2030."
-      : "The Saudi PropTech platform for real estate developers — manage projects, sales, and rentals compliant with Balady, ZATCA, Wafi, and Vision 2030.",
+      ? "منصة PropTech السعودية لإدارة العقارات — المبيعات والإيجارات والصيانة متوافقة مع بلدي وزاتكا ورؤية 2030."
+      : "The Saudi PropTech platform for property management — sales, rentals, and maintenance compliant with Balady, ZATCA, and Vision 2030.",
     alternates: {
       canonical: `https://mimaric.app/${locale}`,
       languages: {
@@ -28,8 +28,8 @@ export async function generateMetadata({
         ? "ميماريك | منصة إدارة العقارات السعودية"
         : "Mimaric | Saudi PropTech Platform",
       description: isAr
-        ? "منصة PropTech السعودية — إدارة المشاريع والمبيعات والإيجارات في مكان واحد."
-        : "The Saudi PropTech platform — manage projects, sales, and rentals in one place.",
+        ? "منصة PropTech السعودية — المبيعات والإيجارات والصيانة في مكان واحد."
+        : "The Saudi PropTech platform — manage sales, rentals, and maintenance in one place.",
       locale: isAr ? "ar_SA" : "en_US",
       alternateLocale: isAr ? ["en_US"] : ["ar_SA"],
       type: "website",

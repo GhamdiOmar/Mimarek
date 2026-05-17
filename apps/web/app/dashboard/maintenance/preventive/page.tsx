@@ -626,10 +626,9 @@ export default function PreventiveMaintenancePage() {
                   )}
                 </div>
 
-                {(plan.unit || plan.building) && (
+                {(plan.unit || plan.assignTo) && (
                   <div className="mt-3 pt-3 border-t border-border text-[10px] text-muted-foreground">
-                    {plan.unit && <span>{plan.unit.number} — {plan.unit.building?.name}</span>}
-                    {plan.building && !plan.unit && <span>{plan.building.name}</span>}
+                    {plan.unit && <span>{plan.unit.number}</span>}
                     {plan.assignTo && <span className="me-2">• {plan.assignTo.name}</span>}
                   </div>
                 )}
