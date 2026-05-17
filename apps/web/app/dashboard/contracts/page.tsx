@@ -12,6 +12,7 @@ import {
   AlertTriangle,
   Home,
   Key,
+  Eye,
 } from "lucide-react";
 import {
   Button,
@@ -48,6 +49,14 @@ import { getContracts, createContract, updateContractStatus } from "../../action
 import { getCustomers } from "../../actions/customers";
 import { getUnitsWithBuildings } from "../../actions/units";
 import { getReservationById } from "../../actions/reservations";
+import { getJourneySummary } from "../../actions/journey";
+import type { JourneySummary } from "@repo/types";
+import {
+  LifecycleRail,
+  NextActionPanel,
+  ProcessBlockerBanner,
+  RelatedContextPanel,
+} from "@repo/ui";
 import { toast } from "sonner";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -134,6 +143,26 @@ export default function ContractsPage() {
     paymentFrequency: "MONTHLY",
     notes: "",
   });
+
+  // Contract detail drawer + journey
+  const [detailContract, setDetailContract] = React.useState<Contract | null>(null);
+  const [journey, setJourney] = React.useState<JourneySummary | null>(null);
+  const [journeyLoading, setJourneyLoading] = React.useState(false);
+  const [journeyRelatedOpen, setJourneyRelatedOpen] = React.useState(false);
+
+  // Fetch journey when detail drawer opens
+  React.useEffect(() => {
+    if (!detailContract) {
+      setJourney(null);
+      setJourneyRelatedOpen(false);
+      return;
+    }
+    setJourneyLoading(true);
+    getJourneySummary("contract", detailContract.id)
+      .then((data) => setJourney(data))
+      .catch(() => setJourney(null))
+      .finally(() => setJourneyLoading(false));
+  }, [detailContract?.id]);
 
   function loadContracts() {
     setLoading(true);
@@ -503,6 +532,7 @@ export default function ContractsPage() {
                     }
                   />
                 }
+                onClick={() => setDetailContract(c)}
               />
             ))}
           </div>
@@ -765,6 +795,14 @@ export default function ContractsPage() {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => setDetailContract(c)}
+                        className="text-muted-foreground hover:text-foreground transition-colors"
+                        title={lang === "ar" ? "عرض التفاصيل" : "View details"}
+                        aria-label={lang === "ar" ? "عرض التفاصيل" : "View details"}
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
                       {(c.status === "DRAFT" || c.status === "SENT") && (
                         <button
                           onClick={() => handleSignContract(c.id)}
@@ -824,6 +862,14 @@ export default function ContractsPage() {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => setDetailContract(c)}
+                        className="text-muted-foreground hover:text-foreground transition-colors"
+                        title={lang === "ar" ? "عرض التفاصيل" : "View details"}
+                        aria-label={lang === "ar" ? "عرض التفاصيل" : "View details"}
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
                       {(c.status === "DRAFT" || c.status === "SENT") && (
                         <button
                           onClick={() => handleSignContract(c.id)}
@@ -840,6 +886,114 @@ export default function ContractsPage() {
           </Table>
         )}
       </Card>
+
+      {/* Contract Detail Modal */}
+      <ResponsiveDialog
+        open={!!detailContract}
+        onOpenChange={(open) => {
+          if (!open) setDetailContract(null);
+        }}
+        title={lang === "ar" ? "تفاصيل العقد" : "Contract Details"}
+        footer={
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button
+              variant="outline"
+              onClick={() => setDetailContract(null)}
+              style={{ display: "inline-flex" }}
+            >
+              {lang === "ar" ? "إغلاق" : "Close"}
+            </Button>
+          </div>
+        }
+      >
+        {detailContract && (
+          <div className="space-y-3 py-2 text-sm">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <p className="text-muted-foreground text-xs">{lang === "ar" ? "رقم العقد" : "Contract #"}</p>
+                <p className="font-medium font-mono">{detailContract.contractNumber ?? "—"}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground text-xs">{lang === "ar" ? "النوع" : "Type"}</p>
+                <p className="font-medium">
+                  {detailContract.type === "SALE"
+                    ? lang === "ar" ? "بيع" : "Sale"
+                    : lang === "ar" ? "إيجار" : "Lease"}
+                </p>
+              </div>
+              <div>
+                <p className="text-muted-foreground text-xs">{lang === "ar" ? "العميل" : "Client"}</p>
+                <p className="font-medium">{detailContract.customer.name}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground text-xs">{lang === "ar" ? "الوحدة" : "Unit"}</p>
+                <p className="font-medium">{detailContract.unit.number}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground text-xs">{lang === "ar" ? "المبلغ" : "Amount"}</p>
+                <p className="font-medium">{SAR(Number(detailContract.amount))}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground text-xs">{lang === "ar" ? "الحالة" : "Status"}</p>
+                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${CONTRACT_STATUS_COLORS[detailContract.status]}`}>
+                  {lang === "ar" ? (CONTRACT_STATUS_LABELS[detailContract.status]?.ar ?? detailContract.status) : (CONTRACT_STATUS_LABELS[detailContract.status]?.en ?? detailContract.status)}
+                </span>
+              </div>
+              {detailContract.signedAt && (
+                <div className="col-span-2">
+                  <p className="text-muted-foreground text-xs">{lang === "ar" ? "تاريخ التوقيع" : "Signed Date"}</p>
+                  <p className="font-medium">
+                    {new Date(detailContract.signedAt).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-SA")}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* ── Journey Section ── */}
+            {journeyLoading && (
+              <div className="flex items-center gap-2 py-2 text-xs text-muted-foreground">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                {lang === "ar" ? "جارٍ تحميل المسار..." : "Loading journey..."}
+              </div>
+            )}
+            {!journeyLoading && journey && (
+              <div className="space-y-3 border-t border-border pt-3">
+                <h4 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                  {lang === "ar" ? "المسار" : "Journey"}
+                </h4>
+                {journey.blockers.length > 0 && (
+                  <ProcessBlockerBanner blockers={journey.blockers} lang={lang} />
+                )}
+                <LifecycleRail
+                  stages={journey.stages}
+                  lang={lang}
+                  ariaLabel={lang === "ar" ? "مراحل العقد" : "Contract lifecycle"}
+                />
+                <NextActionPanel actions={journey.nextActions} lang={lang} />
+                {journey.related.length > 0 && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setJourneyRelatedOpen(true)}
+                      className="text-xs font-medium text-primary hover:underline underline-offset-2"
+                    >
+                      {lang === "ar"
+                        ? `السجلات المرتبطة (${journey.related.length})`
+                        : `Related records (${journey.related.length})`}
+                    </button>
+                    <RelatedContextPanel
+                      open={journeyRelatedOpen}
+                      onOpenChange={setJourneyRelatedOpen}
+                      records={journey.related}
+                      lang={lang}
+                    />
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </ResponsiveDialog>
 
       {/* New Sale Contract Modal */}
       <ResponsiveDialog

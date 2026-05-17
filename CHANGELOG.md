@@ -1,5 +1,29 @@
 # Changelog — Mimaric PropTech
 
+## [4.6.0] — 2026-05-17 — Journey adoption across core screens
+
+Phase 4 of the journey-first transformation. The Phase-3 journey library (`LifecycleRail` / `NextActionPanel` / `ProcessBlockerBanner` / `RelatedContextPanel`) goes from library-only to live on the working screens, fed by one shared, org-guarded data layer. Additive only — no schema, model, permission, or business-logic change.
+
+### Added
+- **`getJourneySummary` server action** (`app/actions/journey.ts`) — single org-scoped entry point returning a typed `JourneySummary` (`stages`/`blockers`/`nextActions`/`related`) for `contract` · `reservation` · `customer` · `unit` · `maintenance`. Stage vocabulary and blocker logic derive from the **real** state machines (`contracts.ts` VALID_TRANSITIONS, `maintenance.ts` SLA/transitions, `customer-interests.ts` `DEAL_STAGE_ORDER`, reservation lifecycle) — no invented vocabulary. Auth mirrors every other read action (`requirePermission` + per-query org filter); `Decimal` serialized per project convention.
+- **Journey sections** mounted on five surfaces, each reached through an already-visible control (UI-First — no orphan routes):
+  - **CRM** — customer journey in the existing `CustomerDrawer`.
+  - **Reservations** — reservation journey in the existing detail dialog.
+  - **Contracts** — new detail drawer (the list previously had no per-contract detail surface) reachable via a row "view" button on desktop and card tap on mobile.
+  - **Units** — the unit detail modal becomes an **operational cockpit**: lifecycle rail, SLA/maintenance blockers, next action, and a related panel surfacing interested customers, the active reservation, the latest contract, and open tickets.
+  - **Maintenance** — request detail renders the journey in **both** the mobile and desktop trees (shared element — field technicians get parity).
+
+### Changed
+- Contracts list gains a detail drawer + visible row/card affordance (previously no per-record detail surface existed).
+
+### Deferred (intentional, not a gap)
+- **Finance journey adoption is moved to Phase 5.** The finance surface is a portfolio AR/collections dashboard (KPIs, aging, trends) with no per-record drilldown — its meaningful "journey" is the role task queue / delinquency workflow that Phase 5 owns. A single-contract lifecycle rail on a charts dashboard would have been invisible dead code, so the speculative wiring was removed rather than shipped dark.
+
+### Verification
+- Forced `tsc --noEmit` (cache-bypass) green for `@repo/ui` + `@repo/web`. Cross-link `href`s are centralized in `journey.ts` and target real `/dashboard/*` routes (no per-screen hand-built links to drift). Zero `dark:` utilities introduced; logical RTL props; one-primary-CTA preserved by `NextActionPanel`. Production build + full Playwright suite verified by CI.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimaric/compare/v4.5.0...v4.6.0
+
 ## [4.5.0] — 2026-05-17 — Deal/Opportunity entity (CRM pipeline)
 
 Phase 2 of the journey-first transformation. `CustomerPropertyInterest` is promoted to a first-class **`Deal`** model (table preserved via `@@map` — non-destructive `db push`, no data migration). `Customer.status` becomes a derived cache recomputed from the customer's deals; tenancy lifecycle (`ACTIVE_TENANT`/`PAST_TENANT`) still wins.

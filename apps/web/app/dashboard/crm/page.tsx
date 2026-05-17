@@ -65,6 +65,14 @@ import {
   updateCustomer,
   getCustomerUnitAssignments,
 } from "../../actions/customers";
+import { getJourneySummary } from "../../actions/journey";
+import type { JourneySummary } from "@repo/types";
+import {
+  LifecycleRail,
+  NextActionPanel,
+  ProcessBlockerBanner,
+  RelatedContextPanel,
+} from "@repo/ui";
 import { getTeamMembers } from "../../actions/team";
 import { usePermissions } from "../../../hooks/usePermissions";
 import CustomerActivityTimeline from "../../../components/CustomerActivityTimeline";
@@ -292,9 +300,23 @@ function CustomerDrawer({
 
   const [drawerToast, setDrawerToast] = React.useState<string | null>(null);
 
+  // Journey state
+  const [journey, setJourney] = React.useState<JourneySummary | null>(null);
+  const [journeyLoading, setJourneyLoading] = React.useState(false);
+  const [journeyRelatedOpen, setJourneyRelatedOpen] = React.useState(false);
+
   // Load interests when drawer opens
   React.useEffect(() => {
     loadInterests(customer.id);
+  }, [customer.id]);
+
+  // Load journey when drawer opens
+  React.useEffect(() => {
+    setJourneyLoading(true);
+    getJourneySummary("customer", customer.id)
+      .then((data) => setJourney(data))
+      .catch(() => setJourney(null))
+      .finally(() => setJourneyLoading(false));
   }, [customer.id]);
 
   async function loadInterests(customerId: string) {
@@ -1005,6 +1027,51 @@ function CustomerDrawer({
                     </div>
                   );
                 })}
+              </div>
+            )}
+          </div>
+
+          {/* ── Journey Section ── */}
+          <div className="space-y-3">
+            <h3 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              {lang === "ar" ? "المسار" : "Journey"}
+            </h3>
+            {journeyLoading && (
+              <div className="flex items-center gap-2 py-2 text-xs text-muted-foreground">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                {lang === "ar" ? "جارٍ تحميل المسار..." : "Loading journey..."}
+              </div>
+            )}
+            {!journeyLoading && journey && (
+              <div className="space-y-3">
+                {journey.blockers.length > 0 && (
+                  <ProcessBlockerBanner blockers={journey.blockers} lang={lang} />
+                )}
+                <LifecycleRail
+                  stages={journey.stages}
+                  lang={lang}
+                  ariaLabel={lang === "ar" ? "مراحل العميل" : "Customer lifecycle"}
+                />
+                <NextActionPanel actions={journey.nextActions} lang={lang} />
+                {journey.related.length > 0 && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setJourneyRelatedOpen(true)}
+                      className="text-xs font-medium text-primary hover:underline underline-offset-2"
+                    >
+                      {lang === "ar"
+                        ? `السجلات المرتبطة (${journey.related.length})`
+                        : `Related records (${journey.related.length})`}
+                    </button>
+                    <RelatedContextPanel
+                      open={journeyRelatedOpen}
+                      onOpenChange={setJourneyRelatedOpen}
+                      records={journey.related}
+                      lang={lang}
+                    />
+                  </>
+                )}
               </div>
             )}
           </div>

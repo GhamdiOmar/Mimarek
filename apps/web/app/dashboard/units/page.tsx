@@ -51,6 +51,10 @@ import {
   FAB,
   formatSAR,
   EmptyState,
+  LifecycleRail,
+  NextActionPanel,
+  ProcessBlockerBanner,
+  RelatedContextPanel,
 } from "@repo/ui";
 import { cn } from "@repo/ui/lib/utils";
 import {
@@ -61,6 +65,8 @@ import {
   getUnitFinancialSummary,
   getActiveContractForUnit,
 } from "../../actions/units";
+import { getJourneySummary } from "../../actions/journey";
+import type { JourneySummary } from "@repo/types";
 import { getMaintenanceForUnit } from "../../actions/maintenance";
 import { PublishListingDialog } from "../../../components/marketplace/PublishListingDialog";
 import Link from "next/link";
@@ -141,6 +147,8 @@ function AdvancedUnitMatrixPage() {
   const [detailContract, setDetailContract] = React.useState<any>(null);
   const [loadingDetail, setLoadingDetail] = React.useState(false);
   const [publishUnit, setPublishUnit] = React.useState<any>(null);
+  const [unitJourney, setUnitJourney] = React.useState<JourneySummary | null>(null);
+  const [relatedOpen, setRelatedOpen] = React.useState(false);
 
   const maintenanceStatusLabels: Record<
     string,
@@ -158,16 +166,20 @@ function AdvancedUnitMatrixPage() {
     setDetailUnit(unit);
     setDetailFinancials(null);
     setDetailContract(null);
+    setUnitJourney(null);
+    setRelatedOpen(false);
     setLoadingDetail(true);
     try {
-      const [maint, fin, contract] = await Promise.all([
+      const [maint, fin, contract, journey] = await Promise.all([
         getMaintenanceForUnit(unit.id),
         getUnitFinancialSummary(unit.id).catch(() => null),
         getActiveContractForUnit(unit.id).catch(() => null),
+        getJourneySummary("unit", unit.id).catch(() => null),
       ]);
       setDetailMaintenance(maint);
       setDetailFinancials(fin);
       setDetailContract(contract);
+      setUnitJourney(journey);
     } catch (e) {
       console.error(e);
       setDetailMaintenance([]);
@@ -1174,7 +1186,75 @@ function AdvancedUnitMatrixPage() {
       >
         {detailUnit && (
           <div className="space-y-5">
-            {/* Unit Info */}
+            {/* ── Unit Cockpit: Journey Layer ─────────────────────────── */}
+            {loadingDetail && !unitJourney && (
+              <div className="flex items-center gap-2 py-2 text-xs text-muted-foreground">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                {lang === "ar" ? "جارٍ تحميل حالة الوحدة…" : "Loading unit status…"}
+              </div>
+            )}
+            {unitJourney && (
+              <div className="space-y-3 border-b border-border pb-4">
+                {/* Section heading */}
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                  {lang === "ar" ? "مسار الوحدة" : "Unit Journey"}
+                </p>
+
+                {/* Blockers */}
+                {unitJourney.blockers.length > 0 && (
+                  <ProcessBlockerBanner
+                    blockers={unitJourney.blockers}
+                    lang={lang}
+                  />
+                )}
+
+                {/* Lifecycle rail */}
+                <LifecycleRail
+                  stages={unitJourney.stages}
+                  lang={lang}
+                  ariaLabel={
+                    lang === "ar" ? "مراحل دورة حياة الوحدة" : "Unit lifecycle stages"
+                  }
+                />
+
+                {/* Next action */}
+                {unitJourney.nextActions.length > 0 && (
+                  <NextActionPanel
+                    actions={unitJourney.nextActions}
+                    lang={lang}
+                  />
+                )}
+
+                {/* Related records trigger */}
+                {unitJourney.related.length > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    style={{ display: "inline-flex" }}
+                    className="gap-2 w-full text-xs"
+                    onClick={() => setRelatedOpen(true)}
+                  >
+                    {lang === "ar"
+                      ? `السجلات المرتبطة (${unitJourney.related.length})`
+                      : `Related records (${unitJourney.related.length})`}
+                  </Button>
+                )}
+
+                {/* Related context panel (drawer) */}
+                <RelatedContextPanel
+                  open={relatedOpen}
+                  onOpenChange={setRelatedOpen}
+                  records={unitJourney.related}
+                  lang={lang}
+                  title={{
+                    ar: "السجلات المرتبطة بالوحدة",
+                    en: "Unit related records",
+                  }}
+                />
+              </div>
+            )}
+
+        {/* Unit Info */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <span className="text-[10px] font-bold uppercase text-muted-foreground">

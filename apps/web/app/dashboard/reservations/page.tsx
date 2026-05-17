@@ -51,6 +51,14 @@ import {
 } from "../../actions/reservations";
 import { getCustomers } from "../../actions/customers";
 import { getUnitsWithBuildings } from "../../actions/units";
+import { getJourneySummary } from "../../actions/journey";
+import type { JourneySummary } from "@repo/types";
+import {
+  LifecycleRail,
+  NextActionPanel,
+  ProcessBlockerBanner,
+  RelatedContextPanel,
+} from "@repo/ui";
 import { toast } from "sonner";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -126,6 +134,11 @@ export default function ReservationsPage() {
   // Details popover
   const [detailDeal, setDetailDeal] = React.useState<Reservation | null>(null);
 
+  // Journey panel
+  const [journey, setJourney] = React.useState<JourneySummary | null>(null);
+  const [journeyLoading, setJourneyLoading] = React.useState(false);
+  const [journeyRelatedOpen, setJourneyRelatedOpen] = React.useState(false);
+
   // Cancel confirm
   const [cancelDeal, setCancelDeal] = React.useState<Reservation | null>(null);
   const [cancelling, setCancelling] = React.useState(false);
@@ -146,6 +159,20 @@ export default function ReservationsPage() {
   React.useEffect(() => {
     loadDeals();
   }, []);
+
+  // Fetch journey when detail drawer opens
+  React.useEffect(() => {
+    if (!detailDeal) {
+      setJourney(null);
+      setJourneyRelatedOpen(false);
+      return;
+    }
+    setJourneyLoading(true);
+    getJourneySummary("reservation", detailDeal.id)
+      .then((data) => setJourney(data))
+      .catch(() => setJourney(null))
+      .finally(() => setJourneyLoading(false));
+  }, [detailDeal?.id]);
 
   // Filtered deals
   const filtered = React.useMemo(() => {
@@ -1010,6 +1037,49 @@ export default function ReservationsPage() {
                   </p>
                 </div>
               </div>
+
+              {/* ── Journey Section ── */}
+              {journeyLoading && (
+                <div className="flex items-center gap-2 py-2 text-xs text-muted-foreground">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                  {lang === "ar" ? "جارٍ تحميل المسار..." : "Loading journey..."}
+                </div>
+              )}
+              {!journeyLoading && journey && (
+                <div className="space-y-3 border-t border-border pt-3">
+                  <h4 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                    {lang === "ar" ? "المسار" : "Journey"}
+                  </h4>
+                  {journey.blockers.length > 0 && (
+                    <ProcessBlockerBanner blockers={journey.blockers} lang={lang} />
+                  )}
+                  <LifecycleRail
+                    stages={journey.stages}
+                    lang={lang}
+                    ariaLabel={lang === "ar" ? "مراحل الحجز" : "Reservation lifecycle"}
+                  />
+                  <NextActionPanel actions={journey.nextActions} lang={lang} />
+                  {journey.related.length > 0 && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setJourneyRelatedOpen(true)}
+                        className="text-xs font-medium text-primary hover:underline underline-offset-2"
+                      >
+                        {lang === "ar"
+                          ? `السجلات المرتبطة (${journey.related.length})`
+                          : `Related records (${journey.related.length})`}
+                      </button>
+                      <RelatedContextPanel
+                        open={journeyRelatedOpen}
+                        onOpenChange={setJourneyRelatedOpen}
+                        records={journey.related}
+                        lang={lang}
+                      />
+                    </>
+                  )}
+                </div>
+              )}
           </div>
         )}
       </ResponsiveDialog>
