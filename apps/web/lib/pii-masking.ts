@@ -1,21 +1,38 @@
 /**
+ * PII Masking — unified convention (AGENTS §6.15.3)
+ *
+ * TOKEN: exactly `***` (three asterisks) everywhere — no 4-star, no 6-star variants.
+ *
+ * maskNationalId / maskPhone  →  `***` + last-4 digits   e.g. ***6789
+ * maskEmail                   →  first-char + `***` + @ + domain   e.g. u***@example.com
+ *                                (local-part ≤ 1 char)  →  `***@` + domain
+ * maskCustomerPii             →  dateOfBirthHijri → `***`; all other fields unchanged.
+ *
+ * RTL / LTR rendering:
+ *   Every UI site that renders a masked phone / nationalId / email MUST render the
+ *   value inside an element with `dir="ltr"` (or the project's `.number-ltr` class,
+ *   defined in packages/ui/src/globals.css) so masked tokens never visually reverse
+ *   in Arabic RTL context (AGENTS §6.15.3 hard rule).
+ */
+
+/**
  * Mask a Saudi National ID / Iqama number.
- * "1023456789" → "******6789"
+ * "1023456789" → "***6789"
  */
 export function maskNationalId(value: string | null | undefined): string {
   if (!value) return "";
-  if (value.length <= 4) return "****";
-  return "******" + value.slice(-4);
+  if (value.length <= 4) return "***";
+  return "***" + value.slice(-4);
 }
 
 /**
  * Mask a phone number.
- * "0501234567" → "******4567"
+ * "0501234567" → "***4567"
  */
 export function maskPhone(value: string | null | undefined): string {
   if (!value) return "";
-  if (value.length <= 4) return "****";
-  return "******" + value.slice(-4);
+  if (value.length <= 4) return "***";
+  return "***" + value.slice(-4);
 }
 
 /**
@@ -46,6 +63,6 @@ export function maskCustomerPii<T extends Record<string, any>>(
     address: customer.address ? { masked: true } : customer.address,
     documentInfo: customer.documentInfo ? { masked: true } : customer.documentInfo,
     dateOfBirth: customer.dateOfBirth ? null : customer.dateOfBirth,
-    dateOfBirthHijri: customer.dateOfBirthHijri ? "****" : customer.dateOfBirthHijri,
+    dateOfBirthHijri: customer.dateOfBirthHijri ? "***" : customer.dateOfBirthHijri,
   };
 }
