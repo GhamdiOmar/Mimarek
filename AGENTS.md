@@ -123,6 +123,7 @@ Before `git tag`, `git push origin vX.Y.Z`, or `gh release create`, ALL of the f
 - Button component needs inline `style={{ display: "inline-flex" }}` to override Tailwind v4 preflight
 - CI needs `DATABASE_URL`, `AUTH_SECRET`, `AUTH_TRUST_HOST` env vars at job level
 - Turbo needs `globalEnv` declaration for env vars to pass through to build tasks
+- **Git worktree / branch / PR setup (env + deps) — learned 2026-05-17.** A git worktree does NOT inherit the gitignored env or its own `node_modules`. When a worktree/branch/PR task needs a DB or a full `build`/`preview`: (1) load env from the **main project root** `C:\Users\Ghamd\Desktop\Projects\Mimaric\.env.local` into the build/preview *process env* (parse + export it) — do NOT copy it into the worktree or commit it (`.env*` is gitignored; never print or push the secrets); (2) run `npm install` in the worktree first — worktrees start with no/partial `node_modules`, so a declared dependency (e.g. `nodemailer`) can be missing and break `next build` even though `tsc --noEmit` still passes.
 
 ---
 

@@ -11,7 +11,7 @@ Phase 0 of the journey-first transformation plan: a complete purge of all dead *
 - **SEO** — `projects`/`Wafi` removed from live `<head>` metadata (`[locale]/layout.tsx`) and JSON-LD (`SchemaMarkup.tsx`).
 - **Dead code** — unused `getProjectStatusDistribution` + `getDashboardLandStats`/`getDashboardOffPlanStats` aliases (`actions/dashboard.ts`); the dead `project` entity map in `StatusBadge`; `"Project"` audit-log resource filter; cosmetic `building.project` dead branches in three maintenance pages.
 - **Orphaned scripts** — broken `scripts/e2e-seed.ts` and `prisma/v3-migrate.ts` (referenced dropped `Project`/`Escrow` tables); dead `expectOffPlanSection` e2e page-object; off-plan rows in `BILLING-TEST-PLAN.md`.
-- **Docs** — stale Projects/Wafi/escrow references synced out of `AGENTS.md` (§5, §6.1, §6.9.2, §6.9.5) and `README.md`.
+- **Docs** — stale Projects/Wafi/escrow references synced out of `AGENTS.md` (§5, §6.1, §6.9.2, §6.9.5) and `README.md`; `AGENTS.md` §4 also gains a git-worktree env/deps setup rule (load `.env.local` from the main project root into the build process env; `npm install` per worktree).
 
 ### Verification
 
