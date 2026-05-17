@@ -110,11 +110,14 @@ export class BillingPage {
   }
 
   async selectMonthlyBilling() {
-    await this.content.getByText(/^شهري$|^Monthly$/i).first().click();
+    // Billing-cycle toggle is a <button>; match by accessible name (substring)
+    await this.content.getByRole('button', { name: /شهري|Monthly/i }).first().click();
   }
 
   async selectAnnualBilling() {
-    await this.content.getByText(/^سنوي$|^Annual$/i).first().click();
+    // Annual toggle <button> also contains the "Save 20%" badge span, so its
+    // text is not exactly "سنوي" — match the button's accessible name instead.
+    await this.content.getByRole('button', { name: /سنوي|Annual/i }).first().click();
   }
 
   async clickSubscribePlan(index: number) {
