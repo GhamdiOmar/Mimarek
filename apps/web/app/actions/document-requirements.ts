@@ -15,7 +15,10 @@ import type { DocCategory, ContractStatus } from "@repo/db";
 //   CANCELLED → no required docs (workflow is terminal)
 //   VOID      → no required docs (workflow is terminal)
 //
-export const REQUIRED_DOCS_BY_STATUS: Record<ContractStatus, DocCategory[]> = {
+// NOTE: module-private — a "use server" file may only EXPORT async functions
+// (Next.js Server Actions constraint). Exporting this const broke the contracts
+// page's server-action bundle ("can only export async functions, found object").
+const REQUIRED_DOCS_BY_STATUS: Record<ContractStatus, DocCategory[]> = {
   DRAFT:     [],
   SENT:      ["LEGAL"],
   SIGNED:    ["CONTRACT"],
