@@ -13,15 +13,24 @@ export async function getRevenueReport(startDate: string, endDate: string) {
   const prevStart = new Date(start.getTime() - duration);
   const prevEnd = new Date(start);
 
-  const [rentAgg, salesAgg, prevRentAgg, prevSalesAgg] = await Promise.all([
-    db.rentInstallment.aggregate({
-      where: {
-        status: "PAID",
-        paidAt: { gte: start, lte: end },
-        lease: { customer: { organizationId: orgId } },
-      },
-      _sum: { amount: true },
-    }),
+  // Use effectivePaid SQL expression: keyed on paidAt (not updatedAt)
+  // effectivePaid = CASE WHEN status='PAID' THEN COALESCE(paidAmount,amount) ELSE COALESCE(paidAmount,0) END
+  // Aggregation over all rows (no status='PAID' filter) where paidAt is in range
+  const [rentAggRows, salesAgg, prevRentAggRows, prevSalesAgg] = await Promise.all([
+    db.$queryRaw<{ total: string }[]>`
+      SELECT COALESCE(SUM(
+        CASE WHEN ri.status = 'PAID'
+             THEN COALESCE(ri."paidAmount", ri.amount)
+             ELSE COALESCE(ri."paidAmount", 0)
+        END
+      ), 0)::text AS total
+      FROM "RentInstallment" ri
+      JOIN "Lease" l ON l.id = ri."leaseId"
+      JOIN "Customer" c ON c.id = l."customerId"
+      WHERE ri."paidAt" >= ${start}
+        AND ri."paidAt" <= ${end}
+        AND c."organizationId" = ${orgId}
+    `,
     db.contract.aggregate({
       where: {
         status: "SIGNED",
@@ -31,14 +40,20 @@ export async function getRevenueReport(startDate: string, endDate: string) {
       },
       _sum: { amount: true },
     }),
-    db.rentInstallment.aggregate({
-      where: {
-        status: "PAID",
-        paidAt: { gte: prevStart, lt: prevEnd },
-        lease: { customer: { organizationId: orgId } },
-      },
-      _sum: { amount: true },
-    }),
+    db.$queryRaw<{ total: string }[]>`
+      SELECT COALESCE(SUM(
+        CASE WHEN ri.status = 'PAID'
+             THEN COALESCE(ri."paidAmount", ri.amount)
+             ELSE COALESCE(ri."paidAmount", 0)
+        END
+      ), 0)::text AS total
+      FROM "RentInstallment" ri
+      JOIN "Lease" l ON l.id = ri."leaseId"
+      JOIN "Customer" c ON c.id = l."customerId"
+      WHERE ri."paidAt" >= ${prevStart}
+        AND ri."paidAt" < ${prevEnd}
+        AND c."organizationId" = ${orgId}
+    `,
     db.contract.aggregate({
       where: {
         status: "SIGNED",
@@ -50,22 +65,27 @@ export async function getRevenueReport(startDate: string, endDate: string) {
     }),
   ]);
 
-  const rentTotal = Number(rentAgg._sum.amount ?? 0);
+  const rentTotal = Number(rentAggRows[0]?.total ?? 0);
   const salesTotal = Number(salesAgg._sum.amount ?? 0);
   const combined = rentTotal + salesTotal;
-  const prevCombined = Number(prevRentAgg._sum.amount ?? 0) + Number(prevSalesAgg._sum.amount ?? 0);
+  const prevCombined = Number(prevRentAggRows[0]?.total ?? 0) + Number(prevSalesAgg._sum.amount ?? 0);
   const changePercent = prevCombined > 0 ? Math.round(((combined - prevCombined) / prevCombined) * 100) : 0;
 
   // Single grouped query per metric — replaces per-month loop to eliminate N+1
+  // effectivePaid bucketed by paidAt month, all rows with paidAt in range
   const [rentByMonth, salesByMonth] = await Promise.all([
     db.$queryRaw<{ month: string; amount: number }[]>`
       SELECT to_char(date_trunc('month', ri."paidAt"), 'YYYY-MM') AS month,
-             COALESCE(SUM(ri.amount), 0)::float AS amount
+             COALESCE(SUM(
+               CASE WHEN ri.status = 'PAID'
+                    THEN COALESCE(ri."paidAmount", ri.amount)
+                    ELSE COALESCE(ri."paidAmount", 0)
+               END
+             ), 0)::float AS amount
       FROM "RentInstallment" ri
       JOIN "Lease" l ON l.id = ri."leaseId"
       JOIN "Customer" c ON c.id = l."customerId"
-      WHERE ri.status = 'PAID'
-        AND ri."paidAt" >= ${start}
+      WHERE ri."paidAt" >= ${start}
         AND ri."paidAt" <= ${end}
         AND c."organizationId" = ${orgId}
       GROUP BY 1
@@ -97,18 +117,27 @@ export async function getRevenueReport(startDate: string, endDate: string) {
     cursor.setMonth(cursor.getMonth() + 1);
   }
 
-  // Top 5 leases by rent collected
-  const topUnits = await db.rentInstallment.groupBy({
-    by: ["leaseId"],
-    where: {
-      status: "PAID",
-      paidAt: { gte: start, lte: end },
-      lease: { customer: { organizationId: orgId } },
-    },
-    _sum: { amount: true },
-    orderBy: { _sum: { amount: "desc" } },
-    take: 5,
-  });
+  // Top 5 leases by rent collected (effectivePaid, keyed on paidAt)
+  const topUnitsRaw = await db.$queryRaw<{ leaseId: string; revenue: string }[]>`
+    SELECT ri."leaseId",
+           SUM(
+             CASE WHEN ri.status = 'PAID'
+                  THEN COALESCE(ri."paidAmount", ri.amount)
+                  ELSE COALESCE(ri."paidAmount", 0)
+             END
+           )::text AS revenue
+    FROM "RentInstallment" ri
+    JOIN "Lease" l ON l.id = ri."leaseId"
+    JOIN "Customer" c ON c.id = l."customerId"
+    WHERE ri."paidAt" >= ${start}
+      AND ri."paidAt" <= ${end}
+      AND c."organizationId" = ${orgId}
+    GROUP BY ri."leaseId"
+    ORDER BY 2::numeric DESC
+    LIMIT 5
+  `;
+  // keep original topUnits shape for the code below
+  const topUnits = topUnitsRaw.map((r) => ({ leaseId: r.leaseId, _sum: { amount: Number(r.revenue) } }));
 
   const leaseIds = topUnits.map((t) => t.leaseId);
   const leases = leaseIds.length > 0 ? await db.lease.findMany({
@@ -195,20 +224,32 @@ export async function getRentCollectionReport(startDate: string, endDate: string
   });
 
   const totalDue = installments.reduce((s, i) => s + Number(i.amount), 0);
-  const paid = installments.filter((i) => i.status === "PAID");
-  const totalCollected = paid.reduce((s, i) => s + Number(i.amount), 0);
+  // Σ effectivePaid over ALL rows — no status filter (OVERDUE partials count)
+  const totalCollected = installments.reduce((s, i) => {
+    const ep = i.status === "PAID"
+      ? Number(i.paidAmount ?? i.amount)
+      : Number(i.paidAmount ?? 0);
+    return s + ep;
+  }, 0);
   const collectionRate = totalDue > 0 ? Math.round((totalCollected / totalDue) * 100) : 0;
 
-  const overdue = installments.filter((i) => i.status === "OVERDUE" || (i.status === "UNPAID" && i.dueDate < now));
-  const overdueAmount = overdue.reduce((s, i) => s + Number(i.amount), 0);
+  // Overdue: status=OVERDUE OR (UNPAID|PARTIALLY_PAID and past due)
+  const overdue = installments.filter(
+    (i) =>
+      i.status === "OVERDUE" ||
+      ((i.status === "UNPAID" || i.status === "PARTIALLY_PAID") && i.dueDate < now)
+  );
+  // Aging uses AR remaining per row
+  const overdueAmount = overdue.reduce((s, i) => s + (Number(i.amount) - Number(i.paidAmount ?? 0)), 0);
 
   let aging0to30 = 0, aging31to60 = 0, aging61to90 = 0, aging90plus = 0;
   overdue.forEach((i) => {
     const days = Math.floor((now.getTime() - i.dueDate.getTime()) / (1000 * 60 * 60 * 24));
-    if (days <= 30) aging0to30 += Number(i.amount);
-    else if (days <= 60) aging31to60 += Number(i.amount);
-    else if (days <= 90) aging61to90 += Number(i.amount);
-    else aging90plus += Number(i.amount);
+    const remaining = Number(i.amount) - Number(i.paidAmount ?? 0);
+    if (days <= 30) aging0to30 += remaining;
+    else if (days <= 60) aging31to60 += remaining;
+    else if (days <= 90) aging61to90 += remaining;
+    else aging90plus += remaining;
   });
   const aging = { "0-30": aging0to30, "31-60": aging31to60, "61-90": aging61to90, "90+": aging90plus };
 
@@ -224,7 +265,11 @@ export async function getRentCollectionReport(startDate: string, endDate: string
       status: "متأخر",
     };
     existing.due += Number(i.amount);
-    if (i.status === "PAID") existing.paid += Number(i.amount);
+    // effectivePaid per row
+    existing.paid +=
+      i.status === "PAID"
+        ? Number(i.paidAmount ?? i.amount)
+        : Number(i.paidAmount ?? 0);
     customerMap.set(key, existing);
   });
   const customers = Array.from(customerMap.values()).map((c) => ({

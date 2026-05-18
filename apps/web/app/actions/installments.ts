@@ -1,6 +1,7 @@
 "use server";
 
 import { db } from "@repo/db";
+import { Prisma } from "@repo/db";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requirePermission } from "../../lib/auth-helpers";
@@ -8,7 +9,11 @@ import { logAuditEvent } from "../../lib/audit";
 
 const RecordPaymentSchema = z.object({
   paymentMethod: z.string().min(1),
-  amount: z.number().positive().optional(),
+  amount: z.number().positive(),
+  paymentDate: z.string().min(1).optional(),
+  referenceNumber: z.string().trim().max(120).optional(),
+  notes: z.string().trim().max(1000).optional(),
+  paymentReference: z.string().trim().min(1).max(120),
 });
 
 export async function getInstallments(filters?: {
@@ -49,40 +54,176 @@ export async function recordPayment(
   installmentId: string,
   data: {
     paymentMethod: string;
-    amount?: number; // For partial payments
+    amount: number;
+    paymentDate?: string;
+    referenceNumber?: string;
+    notes?: string;
+    paymentReference: string;
   }
 ) {
   const parsed = RecordPaymentSchema.safeParse(data);
   if (!parsed.success) {
-    throw new Error("Invalid input: " + parsed.error.issues.map(i => i.message).join(", "));
+    throw new Error(
+      "تعذّر تسجيل الدفعة: تحقق من المبلغ وطريقة الدفع. / Could not record payment: please check the amount and payment method."
+    );
   }
-  data = parsed.data;
+  const safeData = parsed.data;
 
   const session = await requirePermission("finance:write");
 
-  // Verify installment belongs to org
-  const installment = await db.rentInstallment.findFirst({
-    where: { id: installmentId },
-    include: { lease: { include: { customer: true } } },
-  });
-  if (!installment || installment.lease.customer.organizationId !== session.organizationId) {
-    throw new Error("Payment installment not found. Please refresh the page and try again.");
+  // Resolve paidAt date
+  let paidAtDate: Date;
+  if (safeData.paymentDate) {
+    paidAtDate = new Date(safeData.paymentDate);
+    if (isNaN(paidAtDate.getTime())) {
+      throw new Error(
+        "تاريخ الدفع غير صالح. / The payment date is invalid."
+      );
+    }
+  } else {
+    paidAtDate = new Date();
   }
 
-  const updated = await db.rentInstallment.update({
-    where: { id: installmentId },
-    data: {
-      status: "PAID",
-      paidAt: new Date(),
-      paymentMethod: data.paymentMethod,
-    },
-  });
+  type LockedRow = {
+    id: string;
+    amount: string;
+    paidAmount: string | null;
+    status: string;
+    organizationId: string;
+  };
 
-  logAuditEvent({ userId: session.userId, userEmail: session.email, userRole: session.role, action: "UPDATE", resource: "RentInstallment", resourceId: installmentId, metadata: { action: "recordPayment", paymentMethod: data.paymentMethod }, organizationId: session.organizationId });
+  let txResult: {
+    row: any;
+    replayed: boolean;
+    before: { status: string; paidAmount: number } | null;
+    after: { status: string; paidAmount: number } | null;
+  };
+
+  try {
+    txResult = await db.$transaction(async (tx) => {
+      // (1) Idempotency short-circuit
+      const prior = await tx.rentInstallment.findFirst({
+        where: { id: installmentId, paymentReference: safeData.paymentReference },
+        include: { lease: { include: { customer: true } } },
+      });
+      if (prior) {
+        if (prior.lease.customer.organizationId !== session.organizationId) {
+          throw new Error(
+            "القسط غير موجود أو ليس لديك صلاحية الوصول إليه. / Installment not found or you do not have access to it."
+          );
+        }
+        return { row: prior, replayed: true, before: null, after: null };
+      }
+
+      // (2) Lock row with FOR UPDATE
+      const locked = await tx.$queryRaw<LockedRow[]>`
+        SELECT ri.id,
+               ri.amount::text AS amount,
+               ri."paidAmount"::text AS "paidAmount",
+               ri.status::text AS status,
+               c."organizationId" AS "organizationId"
+        FROM "RentInstallment" ri
+        JOIN "Lease" l ON l.id = ri."leaseId"
+        JOIN "Customer" c ON c.id = l."customerId"
+        WHERE ri.id = ${installmentId}
+        FOR UPDATE OF ri
+      `;
+
+      const row = locked[0];
+      if (!row || row.organizationId !== session.organizationId) {
+        throw new Error(
+          "القسط غير موجود أو ليس لديك صلاحية الوصول إليه. / Installment not found or you do not have access to it."
+        );
+      }
+
+      // (3) Already fully paid guard
+      if (row.status === "PAID") {
+        throw new Error(
+          "تم تسديد هذا القسط بالكامل مسبقاً. / This installment is already fully paid."
+        );
+      }
+
+      // (4) Accumulate
+      const installmentAmount = Number(row.amount);
+      const priorPaid = Number(row.paidAmount ?? 0);
+      const newPaidAmount = priorPaid + safeData.amount;
+
+      // (5) Overpay guard
+      if (newPaidAmount > installmentAmount + 0.005) {
+        const remaining = (installmentAmount - priorPaid).toFixed(2);
+        throw new Error(
+          `المبلغ يتجاوز المتبقّي المستحق (${remaining} ريال). / Amount exceeds the remaining balance due (${remaining} SAR).`
+        );
+      }
+
+      // (6) Determine new status
+      const newStatus =
+        newPaidAmount >= installmentAmount - 0.005 ? "PAID" : "PARTIALLY_PAID";
+
+      // (7) Write — paidAmount ALWAYS written with status
+      const updated = await tx.rentInstallment.update({
+        where: { id: installmentId },
+        data: {
+          status: newStatus as any,
+          paidAmount: newPaidAmount,
+          paidAt: paidAtDate,
+          paymentMethod: safeData.paymentMethod,
+          referenceNumber: safeData.referenceNumber,
+          notes: safeData.notes,
+          paymentReference: safeData.paymentReference,
+        },
+      });
+
+      return {
+        row: updated,
+        replayed: false,
+        before: { status: row.status, paidAmount: priorPaid },
+        after: { status: newStatus, paidAmount: newPaidAmount },
+      };
+    });
+  } catch (e: any) {
+    // P2002 race: two concurrent writes with the same paymentReference
+    if (e?.code === "P2002") {
+      const existing = await db.rentInstallment.findFirst({
+        where: {
+          id: installmentId,
+          paymentReference: safeData.paymentReference,
+          lease: { customer: { organizationId: session.organizationId } },
+        },
+      });
+      if (existing) {
+        revalidatePath("/dashboard/payments");
+        revalidatePath("/dashboard/finance");
+        return JSON.parse(JSON.stringify(existing));
+      }
+    }
+    throw e;
+  }
+
+  // Audit only on non-replayed writes
+  if (!txResult.replayed) {
+    logAuditEvent({
+      userId: session.userId,
+      userEmail: session.email,
+      userRole: session.role,
+      action: "UPDATE",
+      resource: "RentInstallment",
+      resourceId: installmentId,
+      before: txResult.before ?? undefined,
+      after: txResult.after ?? undefined,
+      metadata: {
+        action: "recordPayment",
+        paymentMethod: safeData.paymentMethod,
+        amount: safeData.amount,
+        paymentReference: safeData.paymentReference,
+      },
+      organizationId: session.organizationId,
+    });
+  }
 
   revalidatePath("/dashboard/payments");
   revalidatePath("/dashboard/finance");
-  return JSON.parse(JSON.stringify(updated));
+  return JSON.parse(JSON.stringify(txResult.row));
 }
 
 export async function markOverdueInstallments() {
@@ -90,7 +231,7 @@ export async function markOverdueInstallments() {
 
   const result = await db.rentInstallment.updateMany({
     where: {
-      status: "UNPAID",
+      status: { in: ["UNPAID", "PARTIALLY_PAID"] },
       dueDate: { lt: new Date() },
       lease: { customer: { organizationId: session.organizationId } },
     },

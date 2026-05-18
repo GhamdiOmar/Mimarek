@@ -19,6 +19,7 @@ import {
   LastUpdatedAgo,
   ChartContainer,
   EmptyState,
+  RoleTaskQueue,
   type ChartConfig,
 } from "@repo/ui";
 import {
@@ -39,6 +40,10 @@ import {
   type MaintenanceStats,
 } from "../../actions/dashboard-maintenance";
 import { getTicketsTrend } from "../../actions/trends/getTicketsTrend";
+import {
+  getRoleTaskQueue,
+  type RoleTaskQueueResult,
+} from "../../actions/role-task-queue";
 
 const CATEGORY_LABELS: Record<string, { ar: string; en: string }> = {
   GENERAL:    { ar: "عام",       en: "General" },
@@ -63,6 +68,7 @@ export default function MaintenanceOverviewPage() {
   const { lang } = useLanguage();
   const [stats, setStats] = React.useState<MaintenanceStats | null>(null);
   const [ticketsTrend, setTicketsTrend] = React.useState<number[]>([]);
+  const [taskQueue, setTaskQueue] = React.useState<RoleTaskQueueResult | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [lastLoaded, setLastLoaded] = React.useState<Date>(new Date());
@@ -71,9 +77,10 @@ export default function MaintenanceOverviewPage() {
     setLoading(true);
     setError(null);
     try {
-      const [s, t] = await Promise.all([getMaintenanceStats(), getTicketsTrend()]);
+      const [s, t, q] = await Promise.all([getMaintenanceStats(), getTicketsTrend(), getRoleTaskQueue()]);
       setStats(s);
       setTicketsTrend(t);
+      setTaskQueue(q);
       setLastLoaded(new Date());
     } catch {
       setError(
@@ -240,6 +247,13 @@ export default function MaintenanceOverviewPage() {
           />
         </div>
       </div>
+
+      {/* Task Queue */}
+      <RoleTaskQueue
+        items={taskQueue?.maintenance ?? []}
+        lang={lang}
+        heading={{ ar: "المهام العاجلة", en: "Pending Actions" }}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>

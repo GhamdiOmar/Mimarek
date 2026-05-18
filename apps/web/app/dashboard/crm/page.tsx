@@ -745,7 +745,7 @@ function CustomerDrawer({
               {customer.phone && (
                 <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/20 border border-border/50">
                   <Phone className="h-4 w-4 text-muted-foreground shrink-0" aria-hidden />
-                  <span className="text-sm font-medium text-foreground">
+                  <span className="text-sm font-medium text-foreground" dir="ltr">
                     {showPii ? customer.phone : maskPhone(customer.phone)}
                   </span>
                 </div>
@@ -753,7 +753,7 @@ function CustomerDrawer({
               {customer.email && (
                 <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/20 border border-border/50">
                   <Mail className="h-4 w-4 text-muted-foreground shrink-0" aria-hidden />
-                  <span className="text-sm font-medium text-foreground truncate">
+                  <span className="text-sm font-medium text-foreground truncate" dir="ltr">
                     {showPii ? customer.email : maskEmail(customer.email)}
                   </span>
                 </div>
@@ -1576,7 +1576,7 @@ function KanbanCard({
         {customer.phone && (
           <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
             <Phone className="h-3 w-3 shrink-0" />
-            <span className="truncate font-mono">
+            <span className="truncate font-mono" dir="ltr">
               {showPii ? customer.phone : maskPhone(customer.phone)}
             </span>
           </div>
@@ -1888,7 +1888,7 @@ export default function CRMPage() {
         header: lang === "ar" ? "الهاتف" : "Phone",
         cell: ({ row }) =>
           row.original.phone ? (
-            <span className="inline-flex items-center gap-1.5 font-mono text-sm text-muted-foreground">
+            <span className="inline-flex items-center gap-1.5 font-mono text-sm text-muted-foreground" dir="ltr">
               <Phone className="h-3.5 w-3.5 text-muted-foreground shrink-0" aria-hidden />
               {showPii ? row.original.phone : maskPhone(row.original.phone)}
             </span>
@@ -2304,10 +2304,12 @@ export default function CRMPage() {
             ? PROPERTY_TYPES.find((pt) => pt.key === c.propertyTypeInterest)
                 ?.label[lang] ?? c.propertyTypeInterest
             : null;
-          const activity =
-            phoneDisplay && interest
-              ? `${phoneDisplay} · ${interest}`
-              : phoneDisplay || interest || null;
+          const activity: React.ReactNode =
+            phoneDisplay && interest ? (
+              <><span dir="ltr">{phoneDisplay}</span>{" · "}{interest}</>
+            ) : phoneDisplay ? (
+              <span dir="ltr">{phoneDisplay}</span>
+            ) : interest || null;
           return (
             <CustomerCard
               key={c.id}
@@ -2436,7 +2438,7 @@ export default function CRMPage() {
                         {c.phone ? (
                           <div className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
                             <Phone className="h-3 w-3" aria-hidden="true" />
-                            <span className="truncate">
+                            <span className="truncate" dir="ltr">
                               {showPii ? c.phone : maskPhone(c.phone)}
                             </span>
                           </div>
@@ -2921,7 +2923,7 @@ export default function CRMPage() {
                 </div>
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                   {c.phone ? (
-                    <span className="inline-flex items-center gap-1.5 font-mono">
+                    <span className="inline-flex items-center gap-1.5 font-mono" dir="ltr">
                       <Phone className="h-3.5 w-3.5 text-muted-foreground shrink-0" aria-hidden />
                       {showPii ? c.phone : maskPhone(c.phone)}
                     </span>

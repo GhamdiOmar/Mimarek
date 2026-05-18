@@ -60,6 +60,9 @@ jobs:
       - name: Seed billing E2E test data
         run: cd apps/web && npx tsx e2e/seed/billing-seed.ts
 
+      - name: Run payment money-correctness tests
+        run: cd apps/web && npx tsx e2e/seed/payment-correctness-test.ts
+
       - name: Run Linters
         run: npm run lint
 

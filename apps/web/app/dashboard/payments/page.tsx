@@ -184,6 +184,9 @@ export default function PaymentsPage() {
     notes: "",
   });
   const [submitting, setSubmitting] = React.useState(false);
+  // Modal-scoped idempotency key: minted once per modal open so double-submit
+  // replays safely on the server (same key → server short-circuits, no double-write).
+  const paymentReferenceRef = React.useRef<string>("");
 
   function loadData() {
     setLoading(true);
@@ -247,6 +250,9 @@ export default function PaymentsPage() {
     .reduce((sum, e) => sum + e.amount, 0);
 
   function openPayModal(entry: PaymentEntry) {
+    // Mint a fresh idempotency key each time a new modal opens.
+    // Double-click on the same open modal reuses the same key → server replay.
+    paymentReferenceRef.current = crypto.randomUUID();
     setPaymentTarget(entry);
     setPayForm({
       amount: String(entry.amount),
@@ -269,6 +275,10 @@ export default function PaymentsPage() {
         await recordPayment(paymentTarget.id, {
           paymentMethod: payForm.paymentMethod,
           amount: parseFloat(payForm.amount),
+          paymentDate: payForm.paymentDate,
+          referenceNumber: payForm.referenceNumber || undefined,
+          notes: payForm.notes || undefined,
+          paymentReference: paymentReferenceRef.current,
         });
       }
       toast.success(lang === "ar" ? "تم تسجيل الدفعة بنجاح" : "Payment recorded successfully");

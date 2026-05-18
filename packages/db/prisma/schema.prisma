@@ -382,6 +382,9 @@ model Contract {
   buyerOrgId           String?
   sellerOrgId          String?
 
+  // Documents linked to this contract
+  documents            Document[]
+
   @@index([customerId])
   @@index([unitId])
   @@index([userId])
@@ -435,10 +438,12 @@ model PaymentPlanInstallment {
   paidAmount        Decimal?
   paymentMethod     String?
   referenceNumber   String?
+  paymentReference  String?
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
 
   @@index([paymentPlanId])
+  @@unique([paymentPlanId, paymentReference])
 }
 
 enum InstallmentStatus {
@@ -517,19 +522,23 @@ enum LeaseStatus {
 // ─── Rent Installment ─────────────────────────────────────────────────────────
 
 model RentInstallment {
-  id          String            @id @default(cuid())
-  leaseId     String
-  lease       Lease             @relation(fields: [leaseId], references: [id])
-  dueDate     DateTime
-  amount      Decimal
-  status      PaymentStatus     @default(UNPAID)
-  paidAt      DateTime?
-  paidAmount  Decimal?
-  paymentMethod String?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  id               String        @id @default(cuid())
+  leaseId          String
+  lease            Lease         @relation(fields: [leaseId], references: [id])
+  dueDate          DateTime
+  amount           Decimal
+  status           PaymentStatus @default(UNPAID)
+  paidAt           DateTime?
+  paidAmount       Decimal?
+  paymentMethod    String?
+  referenceNumber  String?
+  paymentReference String?
+  notes            String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
 
   @@index([leaseId])
+  @@unique([leaseId, paymentReference])
 }
 
 enum PaymentStatus {
@@ -552,6 +561,8 @@ model Document {
   customer       Customer?         @relation(fields: [customerId], references: [id])
   unitId         String?
   unit           Unit?             @relation(fields: [unitId], references: [id])
+  contractId     String?
+  contract       Contract?         @relation(fields: [contractId], references: [id])
   organizationId String
   organization   Organization      @relation(fields: [organizationId], references: [id])
   userId         String?
@@ -562,6 +573,7 @@ model Document {
 
   @@index([customerId])
   @@index([unitId])
+  @@index([contractId])
   @@index([organizationId])
 }
 
@@ -1339,7 +1351,7 @@ model Deal {
   expectedCloseDate DateTime?
   lostReason        String?
   createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
+  updatedAt         DateTime       @updatedAt @default(now())
 
   @@index([customerId])
   @@index([unitId])

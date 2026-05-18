@@ -1,5 +1,35 @@
 # Changelog — Mimaric PropTech
 
+## [4.7.0] — 2026-05-17 — Payment money-correctness + executable dashboards
+
+Phase 5. Headlined by a **fix to a live, pre-existing data-integrity defect**: rent payment recording could not represent a partial payment at all, which silently corrupted every collection-rate, AR-aging, revenue, and rent-collection figure in the product. Also lands the RoleTaskQueue, Documents required-by-stage, and a Reports regroup. Schema changes are additive (`prisma db push` safe).
+
+### Fixed (data-integrity — was corrupting money figures)
+- **`recordPayment` (`installments.ts`) violated AGENTS §4 and could not record partials.** It hardcoded `status: "PAID"`, never wrote `paidAmount`, and discarded the submitted amount — so any partial payment became "fully paid" with no record of how much, and every finance/AR metric (which read scheduled `amount` filtered by binary `status`) was wrong whenever a tenant paid partially. Rewritten: interactive `$transaction` + `SELECT … FOR UPDATE` row lock, accumulate-not-overwrite, **`paidAmount` always written atomically with `status`**, overpay rejection, already-paid guard, caller-supplied payment date, DB-unique idempotency key (`@@unique([leaseId, paymentReference])`) with replay-safe `P2002` handling.
+- **`recordInstallmentPayment` (`payment-plans.ts`)** had no input validation, no transaction, no idempotency, no overpay guard — same hardening applied; plan-completion rollup moved inside the transaction.
+- **All five corrupted metric surfaces corrected** — `dashboard-finance.ts`, `finance.ts` (incl. `getUnitRevenueBreakdown`), `reports.ts` (`getRentCollectionReport` + `getRevenueReport`), `trends/getCollectionsTrend.ts`, `trends/getRevenueTrend.ts`. Canonical `effectivePaid` rule (legacy `PAID`/`paidAmount=NULL` rows treated as fully paid for scheduled amount — non-destructive, no in-place backfill of historical money rows); AR computed as remaining (`amount − paidAmount`); revenue keyed on `paidAt` not `updatedAt`. `markOverdueInstallments` now also ages past-due `PARTIALLY_PAID`. Collected/revenue sums `effectivePaid` over **all** in-scope rows (no status filter) so a partial that later ages to `OVERDUE` does not lose its received cash.
+
+### Fixed (production-deploy & regressions — caught by real-DB UI verification, not CI)
+- **`Deal.updatedAt` was not production-deployable.** v4.5.0 added `updatedAt @updatedAt` (a `NOT NULL` column with no SQL default) to the `CustomerPropertyInterest` table. `prisma db push` cannot add such a column to a table that already has rows — it only worked in CI because ephemeral DBs start empty. Production had 5 rows and the push aborted. Added `@default(now())` (backfills existing rows; `@updatedAt` still app-manages writes). Verified on prod: 5 rows backfilled, 0 NULL, no data loss.
+- **`document-requirements.ts` broke the Contracts page.** A `"use server"` file may only export async functions; it also exported a `const` object → "can only export async functions, found object", which collapsed the contracts page's server-action bundle ("Failed to load contracts"). `tsc` and the Playwright suite did not catch it. Made the constant module-private.
+
+### Added
+- **`<RoleTaskQueue>`** (`@repo/ui`) — severity-sorted actionable buckets, RTL, six states, no `dark:`. Fed by `getRoleTaskQueue` (existing dashboard stats + two minimal org-scoped counts: contracts awaiting signature, leads to follow up). Mounted as a visible card on the Org Owner, Leasing, Finance, and Maintenance dashboards.
+- **Documents required-by-stage** — additive `Document.contractId` relation; new `getMissingRequiredDocs` (org-scoped) surfacing missing per-stage documents as a `<ProcessBlockerBanner>` in the contract detail drawer.
+
+### Changed
+- **Reports regrouped by business question** (Financial Performance / Operations & Utilization) — presentational only; every report, link, and export preserved on desktop and mobile.
+- **Fixed a pre-existing `DocCategory` enum/UI mismatch** — the documents page filtered by `BLUEPRINT/STRUCTURAL/COMMERCIAL`, none of which are `DocCategory` values, so those filters silently returned nothing. UI aligned to the real enum.
+- **Unified PII masking** — `maskNationalId`/`maskPhone` used a 6-asterisk token while `maskEmail` used 3, and masked numeric PII was not LTR-wrapped so it visually reversed in Arabic RTL (showed `2222*******` instead of `***2222`). One `***` token across nationalId/phone/email/hijri-DOB via `lib/pii-masking.ts` (convention documented in-file), every CRM PII render site wrapped `dir="ltr"`. Security/reveal policy unchanged.
+
+### Verification (full §3.9 preview walk performed — against the real production database)
+- Forced `tsc --noEmit` (cache-bypass) green for `@repo/ui` + `@repo/web`. Money write-paths **read line-by-line** and the AGENTS §4 invariant (every payment status write co-writes `paidAmount`) confirmed in both functions. CI step `apps/web/e2e/seed/payment-correctness-test.ts` exercises the deterministic correctness matrix on CI's ephemeral Postgres; PR #14 CI green (build + Playwright + ephemeral `db push`).
+- **§3.9 preview walk was completed** (not deferred): the additive schema was applied to the production Supabase (plain `db push` self-aborted twice on real blockers — both surfaced and fixed; data integrity verified by before/after row counts), then the app was driven in-browser against real production data. Verified: RoleTaskQueue (real derived tasks), Documents required-by-stage `ProcessBlockerBanner` on a signed contract, Reports regroup, unified PII masking on CRM, money metrics, login, §8/§9.3 tenant↔system access separation (Layer-2 redirect), light/dark × AR-RTL/EN-LTR.
+- **The walk caught two defects CI did not** (the `Deal.updatedAt` prod-deploy block and the `document-requirements` "use server" regression — both fixed above). Concrete reaffirmation of §3.9: CI ≠ working UI.
+- **Honest limitation:** the CI correctness test mirrors the action logic against the real DB/schema (Server Actions can't run outside a Next runtime). Follow-ups (tracked): extract the pure money logic into a shared non-`"use server"` module for direct testing; an append-only `RentPayment` ledger is deliberately deferred; reports-page section headers show EN in the AR view (page-level `lang`-source quirk, cosmetic).
+
+**Full diff:** https://github.com/GhamdiOmar/Mimaric/compare/v4.6.0...v4.7.0
+
 ## [4.6.0] — 2026-05-17 — Journey adoption across core screens
 
 Phase 4 of the journey-first transformation. The Phase-3 journey library (`LifecycleRail` / `NextActionPanel` / `ProcessBlockerBanner` / `RelatedContextPanel`) goes from library-only to live on the working screens, fed by one shared, org-guarded data layer. Additive only — no schema, model, permission, or business-logic change.

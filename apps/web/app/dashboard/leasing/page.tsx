@@ -21,6 +21,7 @@ import {
   LastUpdatedAgo,
   ChartContainer,
   EmptyState,
+  RoleTaskQueue,
   type ChartConfig,
 } from "@repo/ui";
 import {
@@ -39,6 +40,10 @@ import {
   type LeasingStats,
 } from "../../actions/dashboard-leasing";
 import { getPipelineTrend } from "../../actions/trends/getPipelineTrend";
+import {
+  getRoleTaskQueue,
+  type RoleTaskQueueResult,
+} from "../../actions/role-task-queue";
 
 const STAGE_LABELS: Record<string, { ar: string; en: string }> = {
   PENDING:   { ar: "معلقة",    en: "Pending" },
@@ -60,6 +65,7 @@ export default function LeasingDashboardPage() {
   const { lang } = useLanguage();
   const [stats, setStats] = React.useState<LeasingStats | null>(null);
   const [pipelineTrend, setPipelineTrend] = React.useState<number[]>([]);
+  const [taskQueue, setTaskQueue] = React.useState<RoleTaskQueueResult | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [lastLoaded, setLastLoaded] = React.useState<Date>(new Date());
@@ -68,9 +74,10 @@ export default function LeasingDashboardPage() {
     setLoading(true);
     setError(null);
     try {
-      const [s, t] = await Promise.all([getLeasingStats(), getPipelineTrend()]);
+      const [s, t, q] = await Promise.all([getLeasingStats(), getPipelineTrend(), getRoleTaskQueue()]);
       setStats(s);
       setPipelineTrend(t);
+      setTaskQueue(q);
       setLastLoaded(new Date());
     } catch {
       setError(
@@ -204,6 +211,13 @@ export default function LeasingDashboardPage() {
           />
         </div>
       </div>
+
+      {/* Task Queue */}
+      <RoleTaskQueue
+        items={taskQueue?.leasing ?? []}
+        lang={lang}
+        heading={{ ar: "المهام العاجلة", en: "Pending Actions" }}
+      />
 
       {/* Pipeline funnel + stage breakdown */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

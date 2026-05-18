@@ -20,6 +20,7 @@ import {
   LastUpdatedAgo,
   ChartContainer,
   EmptyState,
+  RoleTaskQueue,
   type ChartConfig,
 } from "@repo/ui";
 import {
@@ -41,12 +42,17 @@ import {
 } from "../../actions/dashboard-finance";
 import { getCollectionsTrend } from "../../actions/trends/getCollectionsTrend";
 import { getRevenueTrend } from "../../actions/trends/getRevenueTrend";
+import {
+  getRoleTaskQueue,
+  type RoleTaskQueueResult,
+} from "../../actions/role-task-queue";
 
 export default function FinanceDashboardPage() {
   const { lang } = useLanguage();
   const [stats, setStats] = React.useState<FinanceStats | null>(null);
   const [collectionsTrend, setCollectionsTrend] = React.useState<number[]>([]);
   const [revenueTrend, setRevenueTrend] = React.useState<number[]>([]);
+  const [taskQueue, setTaskQueue] = React.useState<RoleTaskQueueResult | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [lastLoaded, setLastLoaded] = React.useState<Date>(new Date());
@@ -55,14 +61,16 @@ export default function FinanceDashboardPage() {
     setLoading(true);
     setError(null);
     try {
-      const [s, c, r] = await Promise.all([
+      const [s, c, r, q] = await Promise.all([
         getFinanceStats(),
         getCollectionsTrend(),
         getRevenueTrend(),
+        getRoleTaskQueue(),
       ]);
       setStats(s);
       setCollectionsTrend(c);
       setRevenueTrend(r);
+      setTaskQueue(q);
       setLastLoaded(new Date());
     } catch {
       setError(
@@ -244,6 +252,13 @@ export default function FinanceDashboardPage() {
           />
         </div>
       </div>
+
+      {/* Task Queue */}
+      <RoleTaskQueue
+        items={taskQueue?.finance ?? []}
+        lang={lang}
+        heading={{ ar: "المهام العاجلة", en: "Pending Actions" }}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>

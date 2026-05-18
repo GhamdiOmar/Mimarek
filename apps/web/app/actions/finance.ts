@@ -3,16 +3,23 @@
 import { db } from "@repo/db";
 import { requirePermission } from "../../lib/auth-helpers";
 
+/** effectivePaid — canonical formula per spec §4 */
+function effectivePaid(r: { status: string; amount: any; paidAmount: any }): number {
+  return r.status === "PAID"
+    ? Number(r.paidAmount ?? r.amount)
+    : Number(r.paidAmount ?? 0);
+}
+
 export async function getFinanceStats() {
   const session = await requirePermission("finance:read");
   const orgId = session.organizationId;
 
-  // Get all installments for this org
+  // Get all installments for this org — paidAmount needed for effectivePaid
   const installments = await db.rentInstallment.findMany({
     where: {
       lease: { customer: { organizationId: orgId } },
     },
-    select: { amount: true, status: true, paidAt: true, dueDate: true },
+    select: { amount: true, status: true, paidAmount: true, paidAt: true, dueDate: true },
   });
 
   // Get contract amounts (sale revenue)
@@ -24,24 +31,28 @@ export async function getFinanceStats() {
     select: { amount: true, signedAt: true },
   });
 
-  const totalRentRevenue = installments
-    .filter((i) => i.status === "PAID")
-    .reduce((sum, i) => sum + Number(i.amount), 0);
+  // Σ effectivePaid over ALL rows (no status filter) — OVERDUE partials contribute
+  const totalRentRevenue = installments.reduce((sum, i) => sum + effectivePaid(i), 0);
 
   const totalSaleRevenue = contracts.reduce((sum, c) => sum + Number(c.amount), 0);
   const totalRevenue = totalRentRevenue + totalSaleRevenue;
 
+  // AR: Σ remaining over UNPAID/OVERDUE/PARTIALLY_PAID
   const pendingInvoices = installments
-    .filter((i) => i.status === "UNPAID" || i.status === "OVERDUE")
-    .reduce((sum, i) => sum + Number(i.amount), 0);
+    .filter((i) => i.status === "UNPAID" || i.status === "OVERDUE" || i.status === "PARTIALLY_PAID")
+    .reduce((sum, i) => sum + (Number(i.amount) - Number(i.paidAmount ?? 0)), 0);
 
   const overdueAmount = installments
     .filter((i) => i.status === "OVERDUE")
-    .reduce((sum, i) => sum + Number(i.amount), 0);
+    .reduce((sum, i) => sum + (Number(i.amount) - Number(i.paidAmount ?? 0)), 0);
 
   const paidCount = installments.filter((i) => i.status === "PAID").length;
   const totalCount = installments.length;
-  const collectionRate = totalCount > 0 ? Math.round((paidCount / totalCount) * 100) : 0;
+  // collection rate = collected / (collected + pending)
+  const collectionRate =
+    totalRentRevenue + pendingInvoices > 0
+      ? Math.round((totalRentRevenue / (totalRentRevenue + pendingInvoices)) * 100)
+      : 0;
 
   return {
     totalRevenue,
@@ -85,7 +96,10 @@ export async function getUnitRevenueBreakdown() {
     include: {
       leases: {
         where: { status: "ACTIVE" },
-        include: { installments: { where: { status: "PAID" }, select: { amount: true } } },
+        include: {
+          // No status filter on installments — effectivePaid handles it
+          installments: { select: { amount: true, paidAmount: true, status: true } },
+        },
       },
       maintenanceRequests: {
         select: { actualCost: true, estimatedCost: true },
@@ -96,7 +110,7 @@ export async function getUnitRevenueBreakdown() {
   return JSON.parse(JSON.stringify(
     units.map(u => {
       const rentIncome = u.leases.reduce((s, l) =>
-        s + l.installments.reduce((is, i) => is + Number(i.amount), 0), 0);
+        s + l.installments.reduce((is, i) => is + effectivePaid(i), 0), 0);
       const maintenanceCost = u.maintenanceRequests.reduce((s, m) =>
         s + Number(m.actualCost ?? m.estimatedCost ?? 0), 0);
       return {
@@ -110,4 +124,3 @@ export async function getUnitRevenueBreakdown() {
     }).filter(u => u.rentIncome > 0 || u.maintenanceCost > 0)
   ));
 }
-
