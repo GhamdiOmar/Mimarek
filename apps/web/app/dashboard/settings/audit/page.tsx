@@ -237,22 +237,19 @@ export default function AuditLogPage() {
               const isActive = actionFilter === a;
               const label = a || t.all;
               return (
-                <button
+                <Button
                   key={a || "all"}
                   type="button"
+                  variant={isActive ? "primary" : "subtle"}
+                  size="sm"
                   onClick={() => {
                     setActionFilter(a);
                     setPage(1);
                   }}
-                  className={cn(
-                    "shrink-0 rounded-full px-3 h-9 text-xs font-medium transition-colors min-w-[44px]",
-                    isActive
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground hover:bg-muted/70",
-                  )}
+                  className="shrink-0 rounded-full px-3 h-9 text-xs min-w-[44px]"
                 >
                   {label}
-                </button>
+                </Button>
               );
             })}
           </div>

@@ -24,6 +24,8 @@ import {
   Skeleton,
   EmptyState,
   DirectionalIcon,
+  IconButton,
+  ActionLink,
 } from "@repo/ui";
 import Link from "next/link";
 import { useLanguage } from "../../../components/LanguageProvider";
@@ -193,13 +195,13 @@ export default function BillingDashboardPage() {
           {error && (
             <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
               <p className="text-sm text-destructive">{error}</p>
-              <button
-                onClick={() => setError(null)}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-md text-destructive hover:bg-destructive/10"
+              <IconButton
+                icon={X}
                 aria-label={lang === "ar" ? "إغلاق" : "Dismiss"}
-              >
-                <X className="h-4 w-4" />
-              </button>
+                variant="ghost"
+                onClick={() => setError(null)}
+                className="text-destructive hover:bg-destructive/10 h-8 w-8"
+              />
             </div>
           )}
 
@@ -287,13 +289,14 @@ export default function BillingDashboardPage() {
                 {t.recentInvoices}
               </h2>
               {invoices.length > 0 && (
-                <Link
-                  href="/dashboard/billing/invoices"
-                  className="text-xs text-primary hover:underline flex items-center gap-1"
+                <ActionLink
+                  asChild
+                  trailingIcon={ChevronRight}
+                  directional
+                  className="text-xs"
                 >
-                  {t.viewAll}
-                  <DirectionalIcon icon={ChevronRight} className="w-3 h-3" />
-                </Link>
+                  <Link href="/dashboard/billing/invoices">{t.viewAll}</Link>
+                </ActionLink>
               )}
             </div>
             {invoices.length === 0 ? (
@@ -401,9 +404,13 @@ export default function BillingDashboardPage() {
           {error && (
             <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-destructive/10 border border-destructive/30">
               <p className="text-sm text-destructive">{error}</p>
-              <button onClick={() => setError(null)} className="text-destructive/70 hover:text-destructive" aria-label={lang === "ar" ? "إغلاق" : "Dismiss"}>
-                <X className="h-4 w-4" />
-              </button>
+              <IconButton
+                icon={X}
+                aria-label={lang === "ar" ? "إغلاق" : "Dismiss"}
+                variant="ghost"
+                onClick={() => setError(null)}
+                className="text-destructive/70 hover:text-destructive"
+              />
             </div>
           )}
 
@@ -525,9 +532,14 @@ export default function BillingDashboardPage() {
                   <Receipt className="w-5 h-5 text-primary" />
                   <CardTitle className="text-lg">{t.recentInvoices}</CardTitle>
                 </div>
-                <Link href="/dashboard/billing/invoices" className="text-sm text-primary hover:underline flex items-center gap-1">
-                  {t.viewAll} <DirectionalIcon icon={ChevronRight} className="w-3 h-3" />
-                </Link>
+                <ActionLink
+                  asChild
+                  trailingIcon={ChevronRight}
+                  directional
+                  className="text-sm"
+                >
+                  <Link href="/dashboard/billing/invoices">{t.viewAll}</Link>
+                </ActionLink>
               </CardHeader>
               <CardContent className="pt-6">
                 {invoices.length > 0 ? (

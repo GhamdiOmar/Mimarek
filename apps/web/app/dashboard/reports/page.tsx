@@ -498,15 +498,15 @@ export default function ReportsPage() {
                 const busy =
                   loadingId === `${report.id}-pdf` || loadingId === `${report.id}-excel`;
                 return (
-                  <button
+                  <Button
                     key={report.id}
                     type="button"
+                    variant="ghost"
                     onClick={() => handlePDF(report.id)}
                     disabled={loadingId !== null}
                     className={cn(
-                      "flex w-full items-center gap-3 rounded-2xl border border-border bg-card p-4 text-start",
-                      "transition-colors hover:border-foreground/20 active:scale-[0.99] disabled:opacity-60",
-                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--primary))]"
+                      "flex h-auto w-full items-center gap-3 rounded-2xl border border-border bg-card p-4 text-start",
+                      "transition-colors hover:border-foreground/20 active:scale-[0.99]"
                     )}
                   >
                     <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 p-3 text-primary">
@@ -528,7 +528,7 @@ export default function ReportsPage() {
                       className="h-5 w-5 shrink-0 text-muted-foreground rtl:scale-x-[-1]"
                       aria-hidden="true"
                     />
-                  </button>
+                  </Button>
                 );
               })}
             </div>

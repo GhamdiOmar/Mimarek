@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Button, Input, DirectionalIcon } from "@repo/ui";
+import { Button, Input, DirectionalIcon, IconButton } from "@repo/ui";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Globe, ArrowRight, User, Briefcase, Loader2, Eye, EyeOff } from "lucide-react";
@@ -86,10 +86,15 @@ export default function RegisterPage() {
           <div className="lg:hidden dark:brightness-0 dark:invert"><MimaricLogo width={100} /></div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <button onClick={() => setLang(lang === "ar" ? "en" : "ar")} className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setLang(lang === "ar" ? "en" : "ar")}
+              className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground"
+            >
               <Globe className="h-4 w-4" />
               <span>{lang === "ar" ? "English" : "العربية"}</span>
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -108,7 +113,9 @@ export default function RegisterPage() {
 
             {/* User Type Switcher */}
             <div className="mb-6 flex rounded-lg bg-muted/50 p-1">
-              <button
+              <Button
+                type="button"
+                variant="ghost"
                 onClick={() => setUserType("individual")}
                 className={cn(
                   "flex flex-nowrap flex-1 items-center justify-center gap-2 rounded-md py-2 text-sm font-medium whitespace-nowrap transition-all",
@@ -117,8 +124,10 @@ export default function RegisterPage() {
               >
                 <User className="h-4 w-4" />
                 {lang === "ar" ? "فرد" : "Individual"}
-              </button>
-              <button
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
                 onClick={() => setUserType("company")}
                 className={cn(
                   "flex flex-nowrap flex-1 items-center justify-center gap-2 rounded-md py-2 text-sm font-medium whitespace-nowrap transition-all",
@@ -127,7 +136,7 @@ export default function RegisterPage() {
               >
                 <Briefcase className="h-4 w-4" />
                 {lang === "ar" ? "شركة" : "Company"}
-              </button>
+              </Button>
             </div>
 
             <div className="space-y-4">
@@ -171,14 +180,19 @@ export default function RegisterPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     disabled={loading}
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute end-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  <IconButton
+                    icon={showPassword ? EyeOff : Eye}
+                    aria-label={
+                      showPassword
+                        ? (lang === "ar" ? "إخفاء كلمة المرور" : "Hide password")
+                        : (lang === "ar" ? "إظهار كلمة المرور" : "Show password")
+                    }
+                    variant="ghost"
+                    size="icon"
                     tabIndex={-1}
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute end-3 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground hover:text-foreground"
+                  />
                 </div>
                 <PasswordStrengthHint password={password} lang={lang} context={{ name, email }} />
               </div>

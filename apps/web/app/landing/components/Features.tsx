@@ -10,6 +10,7 @@ import {
   Check,
   type LucideIcon,
 } from "lucide-react";
+import { Button } from "@repo/ui";
 import { t as translations } from "../translations";
 
 type FeatureTab = {
@@ -96,19 +97,20 @@ export default function Features({ lang }: { lang: "ar" | "en" }) {
           {tabs.map((tab, i) => {
             const Icon = tab.icon;
             return (
-              <button
+              <Button
                 key={tab.id}
+                variant={active === i ? "primary" : "subtle"}
+                size="md"
                 onClick={() => setActive(i)}
-                className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors sm:px-5 ${
+                className={`gap-2 px-4 sm:px-5 ${
                   active === i
-                    ? "bg-primary text-primary-foreground dark:bg-primary-deep dark:text-white"
-                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                    ? "dark:bg-primary-deep dark:text-white"
+                    : ""
                 }`}
-                style={{ display: "inline-flex" }}
               >
                 <Icon className="h-[18px] w-[18px]" />
                 <span className="hidden sm:inline">{tab.title}</span>
-              </button>
+              </Button>
             );
           })}
         </div>

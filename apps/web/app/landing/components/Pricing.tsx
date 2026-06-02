@@ -131,33 +131,29 @@ export default function Pricing({ lang }: { lang: "ar" | "en" }) {
           >
             {t.monthly}
           </span>
-          <Button
-            asChild
-            style={{ display: "inline-flex" }}
+          {/* Billing toggle — role="switch" semantic widget; Button is not the right primitive here */}
+          <button
+            onClick={() => setAnnual(!annual)}
+            className={`relative h-6 w-11 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+              annual ? "bg-primary" : "bg-muted-foreground/30"
+            }`}
+            aria-label={t.pricingToggleAriaLabel}
+            role="switch"
+            aria-checked={annual}
+            type="button"
           >
-            <button
-              onClick={() => setAnnual(!annual)}
-              className={`relative h-6 w-11 rounded-full transition-colors ${
-                annual ? "bg-primary" : "bg-muted-foreground/30"
+            <span
+              className={`absolute top-0.5 size-5 rounded-full bg-white shadow-sm transition-transform ${
+                annual
+                  ? lang === "ar"
+                    ? "-translate-x-[1.25rem]"
+                    : "translate-x-[1.25rem]"
+                  : lang === "ar"
+                    ? "-translate-x-0.5"
+                    : "translate-x-0.5"
               }`}
-              aria-label={t.pricingToggleAriaLabel}
-              role="switch"
-              aria-checked={annual}
-              type="button"
-            >
-              <span
-                className={`absolute top-0.5 size-5 rounded-full bg-white shadow-sm transition-transform ${
-                  annual
-                    ? lang === "ar"
-                      ? "-translate-x-[1.25rem]"
-                      : "translate-x-[1.25rem]"
-                    : lang === "ar"
-                      ? "-translate-x-0.5"
-                      : "translate-x-0.5"
-                }`}
-              />
-            </button>
-          </Button>
+            />
+          </button>
           <span
             className={`text-sm font-medium ${annual ? "text-primary dark:text-white" : "text-muted-foreground"}`}
           >

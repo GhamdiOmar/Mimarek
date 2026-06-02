@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Globe } from "lucide-react";
+import { Button } from "@repo/ui";
 import { t as translations } from "../translations";
 
 export default function Footer({
@@ -75,14 +76,15 @@ export default function Footer({
                 {lang === "ar" ? "English" : "العربية"}
               </Link>
             ) : (
-              <button
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={onToggleLang}
-                className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
-                style={{ display: "inline-flex" }}
+                className="mt-3 gap-1.5 text-muted-foreground hover:text-foreground"
               >
                 <Globe className="h-3.5 w-3.5" />
                 {lang === "ar" ? "English" : "العربية"}
-              </button>
+              </Button>
             )}
 
             {/* Made in Saudi badge */}

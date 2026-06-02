@@ -1,9 +1,10 @@
 "use client";
 
 // Fatal error boundary — rendered when even the root layout throws.
-// Intentionally self-contained (no shared UI imports) so a broken ThemeProvider
-// or Toaster can't cascade into this component.
+// ThemeProvider/Toaster cannot cascade here; UI primitives (Button) are safe to
+// import since they have no CSS-variable dependency at render time.
 import * as React from "react";
+import { Button } from "@repo/ui";
 
 const COPY = {
   ar: {
@@ -72,22 +73,21 @@ export default function GlobalError({
           <p style={{ color: "#6B7280", marginBottom: 24, lineHeight: 1.6 }}>
             {t.body}
           </p>
-          <button
+          <Button
             type="button"
+            variant="primary"
             onClick={() => reset()}
             style={{
               padding: "10px 20px",
               borderRadius: 8,
-              border: 0,
               background: "#7339AC",
               color: "white",
               fontWeight: 600,
-              cursor: "pointer",
               fontFamily: "inherit",
             }}
           >
             {t.button}
-          </button>
+          </Button>
           {error.digest && (
             <p
               style={{

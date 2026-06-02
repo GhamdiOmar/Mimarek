@@ -12,6 +12,7 @@ import {
   DataCard,
   EmptyState,
   FAB,
+  IconButton,
   Input,
   PageHeader,
   ResponsiveDialog,
@@ -238,9 +239,12 @@ export default function TeamManagementPage() {
             <CardContent className="space-y-4 p-5">
               <div className="flex items-center justify-between">
                 <h2 className="text-base font-semibold">{lang === "ar" ? "دعوة عضو جديد" : "Invite team member"}</h2>
-                <button type="button" onClick={() => setShowInvite(false)} aria-label={lang === "ar" ? "إغلاق" : "Close"} className="rounded-md p-2 hover:bg-muted">
-                  <X className="h-4 w-4" />
-                </button>
+                <IconButton
+                  icon={X}
+                  aria-label={lang === "ar" ? "إغلاق" : "Close"}
+                  variant="ghost"
+                  onClick={() => setShowInvite(false)}
+                />
               </div>
               <div className="grid gap-4 md:grid-cols-[1fr_220px_auto]">
                 <Input type="email" value={inviteEmail} onChange={(event) => setInviteEmail(event.target.value)} placeholder="name@example.com" dir="ltr" />

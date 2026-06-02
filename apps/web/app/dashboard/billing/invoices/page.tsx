@@ -30,6 +30,8 @@ import {
   EmptyState,
   BottomSheet,
   DirectionalIcon,
+  IconButton,
+  ActionLink,
 } from "@repo/ui";
 import Link from "next/link";
 import { PageHeader } from "@repo/ui/components/PageHeader";
@@ -157,17 +159,16 @@ export default function InvoicesPage() {
           {filterChips.map((chip) => {
             const isActive = mobileFilter === chip.key;
             return (
-              <button
+              <Button
                 key={chip.key}
+                variant={isActive ? "primary" : "subtle"}
+                size="sm"
+                aria-pressed={isActive}
                 onClick={() => setMobileFilter(chip.key)}
-                className={`h-9 px-4 rounded-full text-xs font-medium whitespace-nowrap transition-colors border ${
-                  isActive
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "bg-card text-muted-foreground border-border hover:bg-muted/50"
-                }`}
+                className="rounded-full whitespace-nowrap"
               >
                 {lang === "ar" ? chip.ar : chip.en}
-              </button>
+              </Button>
             );
           })}
         </div>
@@ -471,10 +472,14 @@ export default function InvoicesPage() {
     <div className="space-y-6" dir={lang === "ar" ? "rtl" : "ltr"}>
       {/* Header */}
       <div>
-        <Link href="/dashboard/billing" className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 mb-4">
-          <DirectionalIcon icon={ArrowLeft} className="w-4 h-4" />
-          {t.backToBilling}
-        </Link>
+        <ActionLink
+          asChild
+          leadingIcon={ArrowLeft}
+          directional
+          className="text-sm text-muted-foreground hover:text-foreground mb-4"
+        >
+          <Link href="/dashboard/billing">{t.backToBilling}</Link>
+        </ActionLink>
         <PageHeader
           title={t.title}
           description={t.subtitle}
@@ -534,24 +539,21 @@ export default function InvoicesPage() {
                       <TableCell className="font-semibold">{Number(inv.total).toLocaleString()} {t.sar}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <button
-                            className="p-1.5 rounded-md hover:bg-muted transition-colors"
-                            title={t.view}
+                          <IconButton
+                            icon={Eye}
+                            aria-label={t.view}
+                            variant="ghost"
                             onClick={() => handleViewInvoice(inv.id)}
                             disabled={loadingInvoice}
-                            aria-label={t.view}
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
-                          <button
-                            className="p-1.5 rounded-md hover:bg-muted transition-colors"
-                            title={t.download}
+                          />
+                          <IconButton
+                            icon={downloadingId === inv.id ? Loader2 : Download}
+                            aria-label={t.download}
+                            variant="ghost"
                             onClick={() => handleDownloadInvoice(inv.id)}
                             disabled={downloadingId === inv.id}
-                            aria-label={t.download}
-                          >
-                            {downloadingId === inv.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                          </button>
+                            className={downloadingId === inv.id ? "animate-spin" : undefined}
+                          />
                         </div>
                       </TableCell>
                     </TableRow>
@@ -601,9 +603,13 @@ export default function InvoicesPage() {
               <h2 className="text-lg font-bold text-foreground">
                 {lang === "ar" ? "تفاصيل الفاتورة" : "Invoice Details"} — {viewInvoice.invoiceNumber}
               </h2>
-              <button onClick={() => setViewInvoice(null)} className="text-muted-foreground hover:text-foreground transition-colors" aria-label={lang === "ar" ? "إغلاق" : "Close"}>
-                <X className="w-5 h-5" />
-              </button>
+              <IconButton
+                icon={X}
+                aria-label={lang === "ar" ? "إغلاق" : "Close"}
+                variant="ghost"
+                onClick={() => setViewInvoice(null)}
+                className="text-muted-foreground hover:text-foreground"
+              />
             </div>
             <div id="invoice-detail-print" className="p-6 space-y-6">
               <div className="grid grid-cols-2 gap-4 text-sm">

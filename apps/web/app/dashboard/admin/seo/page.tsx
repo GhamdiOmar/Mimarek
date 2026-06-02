@@ -25,6 +25,7 @@ import {
 import Image from "next/image";
 import {
   Button,
+  IconButton,
   Card,
   Input,
   Badge,
@@ -809,16 +810,28 @@ export default function SeoSettingsPage() {
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
                       <label className="text-xs font-medium text-success uppercase tracking-wide">Allow</label>
-                      <button onClick={() => addPath(ri, "allow")} className="text-xs text-primary hover:underline flex items-center gap-1">
-                        <Plus className="h-3 w-3" /> {lang === "ar" ? "إضافة" : "Add"}
-                      </button>
+                      <Button
+                        variant="link"
+                        size="sm"
+                        onClick={() => addPath(ri, "allow")}
+                        style={{ display: "inline-flex" }}
+                        className="h-auto py-0 px-0 text-xs"
+                      >
+                        <Plus className="h-3 w-3 me-1" />
+                        {lang === "ar" ? "إضافة" : "Add"}
+                      </Button>
                     </div>
                     {rule.allow.map((p, pi) => (
                       <div key={pi} className="flex gap-2">
                         <Input value={p} onChange={(e) => updatePath(ri, "allow", pi, e.target.value)} dir="ltr" className="flex-1" />
-                        <button onClick={() => removePath(ri, "allow", pi)} className="text-destructive hover:text-destructive/80" aria-label={lang === "ar" ? "حذف" : "Delete"}>
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                        <IconButton
+                          icon={Trash2}
+                          onClick={() => removePath(ri, "allow", pi)}
+                          aria-label={lang === "ar" ? "حذف" : "Delete"}
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive hover:text-destructive"
+                        />
                       </div>
                     ))}
                   </div>
@@ -826,16 +839,28 @@ export default function SeoSettingsPage() {
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
                       <label className="text-xs font-medium text-destructive uppercase tracking-wide">Disallow</label>
-                      <button onClick={() => addPath(ri, "disallow")} className="text-xs text-primary hover:underline flex items-center gap-1">
-                        <Plus className="h-3 w-3" /> {lang === "ar" ? "إضافة" : "Add"}
-                      </button>
+                      <Button
+                        variant="link"
+                        size="sm"
+                        onClick={() => addPath(ri, "disallow")}
+                        style={{ display: "inline-flex" }}
+                        className="h-auto py-0 px-0 text-xs"
+                      >
+                        <Plus className="h-3 w-3 me-1" />
+                        {lang === "ar" ? "إضافة" : "Add"}
+                      </Button>
                     </div>
                     {rule.disallow.map((p, pi) => (
                       <div key={pi} className="flex gap-2">
                         <Input value={p} onChange={(e) => updatePath(ri, "disallow", pi, e.target.value)} dir="ltr" className="flex-1" />
-                        <button onClick={() => removePath(ri, "disallow", pi)} className="text-destructive hover:text-destructive/80" aria-label={lang === "ar" ? "حذف" : "Delete"}>
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                        <IconButton
+                          icon={Trash2}
+                          onClick={() => removePath(ri, "disallow", pi)}
+                          aria-label={lang === "ar" ? "حذف" : "Delete"}
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive hover:text-destructive"
+                        />
                       </div>
                     ))}
                   </div>

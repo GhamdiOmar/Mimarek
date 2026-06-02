@@ -36,6 +36,7 @@ import {
   Skeleton,
   Alert,
   AlertDescription,
+  IconButton,
 } from "@repo/ui";
 import { useLanguage } from "../../../components/LanguageProvider";
 import { usePermissions } from "../../../hooks/usePermissions";
@@ -616,18 +617,15 @@ export default function PaymentsPage() {
         {/* Type tabs */}
         <div className="flex flex-wrap gap-2">
           {typeTabs.map((tab) => (
-            <button
+            <Button
               key={tab.key}
+              variant={typeFilter === tab.key ? "primary" : "subtle"}
+              size="sm"
               onClick={() => setTypeFilter(tab.key as typeof typeFilter)}
-              className={[
-                "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
-                typeFilter === tab.key
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground hover:bg-muted/80",
-              ].join(" ")}
+              style={{ display: "inline-flex" }}
             >
               {lang === "ar" ? tab.ar : tab.en}
-            </button>
+            </Button>
           ))}
         </div>
 
@@ -635,18 +633,20 @@ export default function PaymentsPage() {
         <div className="flex flex-wrap gap-3 items-center">
           <div className="flex flex-wrap gap-2">
             {statusTabs.map((tab) => (
-              <button
+              <Button
                 key={tab.key}
+                variant={statusFilter === tab.key ? "outline" : "subtle"}
+                size="sm"
                 onClick={() => setStatusFilter(tab.key)}
-                className={[
-                  "px-3 py-1 rounded-md text-xs font-medium transition-colors border",
+                className={
                   statusFilter === tab.key
                     ? "border-primary bg-primary/10 text-primary"
-                    : "border-border bg-card text-muted-foreground hover:border-muted-foreground/50",
-                ].join(" ")}
+                    : "border-border bg-card text-muted-foreground hover:border-muted-foreground/50"
+                }
+                style={{ display: "inline-flex" }}
               >
                 {lang === "ar" ? tab.ar : tab.en}
-              </button>
+              </Button>
             ))}
           </div>
 
@@ -659,13 +659,13 @@ export default function PaymentsPage() {
               className="ps-9 w-56"
             />
             {search && (
-              <button
-                onClick={() => setSearch("")}
-                className="absolute top-1/2 -translate-y-1/2 end-3 text-muted-foreground hover:text-foreground"
+              <IconButton
+                icon={X}
                 aria-label={lang === "ar" ? "مسح البحث" : "Clear search"}
-              >
-                <X className="w-4 h-4" />
-              </button>
+                variant="ghost"
+                onClick={() => setSearch("")}
+                className="absolute top-1/2 -translate-y-1/2 end-3 text-muted-foreground hover:text-foreground h-6 w-6"
+              />
             )}
           </div>
         </div>
@@ -753,12 +753,15 @@ export default function PaymentsPage() {
                   </TableCell>
                   <TableCell>
                     {can("payments:write") && entry.status !== "PAID" && (
-                      <button
+                      <Button
+                        variant="link"
+                        size="sm"
                         onClick={() => openPayModal(entry)}
-                        className="text-xs text-primary hover:opacity-80 font-medium transition-colors"
+                        style={{ display: "inline-flex" }}
+                        className="p-0 h-auto text-xs font-medium"
                       >
                         {lang === "ar" ? "تسجيل دفعة" : "Record Payment"}
-                      </button>
+                      </Button>
                     )}
                     {entry.status === "PAID" && (
                       <span className="text-xs text-muted-foreground">{lang === "ar" ? "مُسدَّد" : "Settled"}</span>

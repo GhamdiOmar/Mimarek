@@ -424,21 +424,25 @@ export default function AdminSubscriptionsPage() {
 
             {totalPages > 1 && (
               <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
-                <button
+                <Button
+                  variant="outline"
+                  size="sm"
                   disabled={page <= 1}
                   onClick={() => setPage(page - 1)}
-                  className="min-h-11 rounded-md border border-border px-3 py-1.5 font-medium disabled:opacity-40"
+                  style={{ display: "inline-flex", minHeight: "44px" }}
                 >
                   {t.prev}
-                </button>
+                </Button>
                 <span className="tabular-nums">{page} / {totalPages}</span>
-                <button
+                <Button
+                  variant="outline"
+                  size="sm"
                   disabled={page >= totalPages}
                   onClick={() => setPage(page + 1)}
-                  className="min-h-11 rounded-md border border-border px-3 py-1.5 font-medium disabled:opacity-40"
+                  style={{ display: "inline-flex", minHeight: "44px" }}
                 >
                   {t.next}
-                </button>
+                </Button>
               </div>
             )}
           </div>

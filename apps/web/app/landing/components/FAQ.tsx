@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
+import { Button } from "@repo/ui";
 import { t as translations } from "../translations";
 
 export default function FAQ({ lang }: { lang: "ar" | "en" }) {
@@ -32,10 +33,11 @@ export default function FAQ({ lang }: { lang: "ar" | "en" }) {
               key={i}
               className="rounded-lg border border-border/50 bg-card/50 dark:bg-card/30"
             >
-              <button
+              <Button
+                variant="ghost"
                 onClick={() => setOpen(open === i ? null : i)}
-                className="flex w-full items-center justify-between gap-4 px-5 py-4 text-start"
-                style={{ display: "flex" }}
+                aria-expanded={open === i}
+                className="flex w-full items-center justify-between gap-4 px-5 py-4 text-start h-auto rounded-none"
               >
                 <span className="text-base font-semibold text-primary dark:text-white">
                   {q}
@@ -45,7 +47,7 @@ export default function FAQ({ lang }: { lang: "ar" | "en" }) {
                     open === i ? "rotate-180" : ""
                   }`}
                 />
-              </button>
+              </Button>
               {open === i && (
                 <div className="px-5 pb-4">
                   <p className="leading-relaxed text-muted-foreground">{a}</p>
