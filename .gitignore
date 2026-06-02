@@ -46,6 +46,14 @@ dist
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+*.log
+
+# Temp scratch / screenshots (never commit)
+tmp-*
+*.tmp
+
+# Skill outputs (regeneratable)
+graphify-out/
 
 # Misc
 .DS_Store
