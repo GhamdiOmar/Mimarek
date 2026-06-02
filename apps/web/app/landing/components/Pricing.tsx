@@ -132,6 +132,7 @@ export default function Pricing({ lang }: { lang: "ar" | "en" }) {
             {t.monthly}
           </span>
           {/* Billing toggle — role="switch" semantic widget; Button is not the right primitive here */}
+          {/* eslint-disable-next-line react/forbid-elements -- semantic toggle switch (role=switch); see AGENTS.md §6.6 */}
           <button
             onClick={() => setAnnual(!annual)}
             className={`relative h-6 w-11 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${

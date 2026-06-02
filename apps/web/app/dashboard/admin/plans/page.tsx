@@ -693,6 +693,7 @@ export default function AdminPlansPage() {
                 </p>
               </div>
             </div>
+            {/* eslint-disable-next-line react/forbid-elements -- semantic toggle switch (role=switch); see AGENTS.md §6.6 */}
             <button
               type="button"
               role="switch"

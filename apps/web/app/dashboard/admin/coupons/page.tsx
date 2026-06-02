@@ -708,6 +708,7 @@ export default function CouponManagementPage() {
 
                     {/* Status Toggle */}
                     <TableCell>
+                      {/* eslint-disable-next-line react/forbid-elements -- semantic toggle switch (role=switch); see AGENTS.md §6.6 */}
                       <button
                         onClick={() =>
                           handleToggle(coupon.id, coupon.isActive)
