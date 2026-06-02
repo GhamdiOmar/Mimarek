@@ -139,7 +139,22 @@
     "togglable",
     "RRRA",
     "unpublishing",
-    "mylistings"
+    "mylistings",
+    "annualised",
+    "Annualised",
+    "categorised",
+    "categorisation",
+    "denormalised",
+    "denormalisation",
+    "memoise",
+    "memoised",
+    "memoisation",
+    "pooler",
+    "serialised",
+    "serialises",
+    "synchronised",
+    "unparseable",
+    "upserts"
   ],
   "ignoreRegExpList": [
     "[\\u0600-\\u06FF\\u0750-\\u077F\\uFB50-\\uFDFF\\uFE70-\\uFEFF]+",
