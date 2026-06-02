@@ -382,6 +382,22 @@ CSS class available in globals.css: `.icon-directional { transform: scaleX(-1); 
 
 ### 6.6 Buttons
 
+#### 6.6.0 Clickable Element Decision Rule
+
+**Every clickable thing in Mimaric MUST be exactly one of the three scenarios below. Anything else is a violation.** Before adding any click target, pick its scenario — there is no fourth option.
+
+| # | Scenario | Element | Required affordances |
+|---|----------|---------|----------------------|
+| 1. Standard Button | Primary/secondary actions, submits, modal footers, CTAs | `<Button variant=…>` | Rectangular; background; shadow (light) / lighter-surface elevation (dark); radius; hover recolor + press motion (`active:scale-[0.97]`); focus-visible ring; optional tooltip; verb label. Max ONE `primary` per screen. |
+| 2. Icon Action Button | Row/card/toolbar actions, dismiss/close, dense controls | `<IconButton icon aria-label tooltip>` | Lucide SVG icon; **required `aria-label` + tooltip**; hover recolor + chrome (border/bg) appearing on hover; **≥44×44px mobile / 36px desktop** target; focus-visible ring. More than 3 row actions → collapse to an overflow menu. |
+| 3. Navigation Link | Real navigation only (breadcrumb, back, "view all", external) | `<ActionLink href>` | A real `href`/route; consistent text-link style + focus-visible ring. **Never used for in-place actions** — those are Scenario 1 or 2. |
+
+**Banned (now enforced by ESLint — `packages/eslint-config`):**
+- Pure-text in-place action with only a color/underline change (no button/link semantics).
+- `onClick` on `<div>` / `<span>` / `<tr>` / `<summary>` without `role="button"` + `tabIndex` + a keyboard handler.
+- Raw `<button>` / `<a>` carrying hand-rolled button styling instead of `<Button>` / `<IconButton>` / `<ActionLink>`.
+- Icon-only buttons without `aria-label`.
+
 #### 6.6.1 Variants
 
 | Variant | Background | Text | Use |
@@ -405,7 +421,7 @@ CSS class available in globals.css: `.icon-directional { transform: scaleX(-1); 
 | `sm` | 32px | 12px | 13px | Table toolbars, dense UI |
 | `md` | 40px | 16px | 14px | Default |
 | `lg` | 48px | 20px | 16px | Mobile primary CTAs, landing |
-| `icon` | 36–44px square | — | — | Icon-only (44px mobile, 36px desktop dense) |
+| `icon` | 44×44px mobile, 36px desktop (`h-11 w-11 md:h-9 md:w-9`) | — | — | Icon-only — meets the mobile touch-target minimum |
 
 **Mobile minimum touch target: 44×44px (`h-11 w-11`).**
 
@@ -415,10 +431,12 @@ CSS class available in globals.css: `.icon-directional { transform: scaleX(-1); 
 |---|---|
 | Default | Resting appearance per variant |
 | Hover | `filter: brightness(1.06)` OR `/85` bg opacity |
-| Active | `translateY(1px)` + 16–20% darker bg |
+| Active | `active:scale-[0.97]` (the Mimaric press state — see note below) + 16–20% darker bg |
 | Focus-visible | 2px ring at `--ring` (Mimaric Purple), 2px offset |
 | Disabled | `opacity: 0.45`, `cursor: not-allowed`, no hover change |
 | Loading | Spinner replaces leading icon or prepends to label; width stays stable; disable onClick |
+
+**Press state — `active:scale-[0.97]` (Mimaric choice):** the deliberate Mimaric press feedback is a uniform scale-down (`active:scale-[0.97]`), not the older `translateY(1px)` lift. It reads consistently across button sizes and on touch, and matches the implemented component — the spec follows the component here, not the legacy text.
 
 **Post-action micro-feedback (optional `state` prop):**
 - `success` — checkmark for 1.5s (e.g., "Copied!")
@@ -431,6 +449,50 @@ CSS class available in globals.css: `.icon-directional { transform: scaleX(-1); 
 - Destructive actions require confirmation modal OR 5-second undo toast.
 - Never use `alert()`.
 - Haptic feedback on mobile primary actions via `navigator.vibrate(10)` where supported.
+
+#### 6.6.5 `IconButton` primitive
+
+**Purpose:** Scenario 2 of § 6.6.0 — the single governed primitive for icon-only actions (row/card/toolbar controls, dismiss/close, dense affordances). Never hand-roll a `<button>` with a bare icon.
+
+**Required / optional props:**
+- `icon` — Lucide icon component (required).
+- `aria-label` — **required**; the accessible name. There is no valid icon-only button without it.
+- `tooltip` — optional; **defaults to the `aria-label`** so every icon button is self-describing on hover/focus.
+- `variant` — optional; defaults to `ghost`. Accepts the § 6.6.1 variants.
+- Inherits the responsive `icon` size from § 6.6.2 (≥44×44px mobile, 36px desktop) and the focus-visible ring.
+
+```tsx
+<IconButton icon={Trash2} aria-label={t("Delete lease", "حذف العقد")} variant="ghost" onClick={onDelete} />
+// tooltip falls back to "Delete lease" / "حذف العقد"
+```
+
+More than 3 icon actions in a row/toolbar → collapse the overflow into a three-dot menu (see § 6.6.0 and § 6.10.1).
+
+#### 6.6.6 `ActionLink` primitive
+
+**Purpose:** Scenario 3 of § 6.6.0 — the governed primitive for **real navigation only** (breadcrumb, back, "view all", external links). Never use it for in-place actions; those are `<Button>` or `<IconButton>`.
+
+**Required / optional props:**
+- `href` — **required**; a real route/URL. An `ActionLink` without an `href` is a misuse — switch to a `<Button>`.
+- `leadingIcon` / `trailingIcon` — optional Lucide icons (e.g. `ChevronLeft` for back, `ExternalLink` for external). Directional icons follow the § 6.5.1 RTL mirroring rules.
+- Consistent text-link style + focus-visible ring at `--ring`.
+
+```tsx
+<ActionLink href="/dashboard/contracts" trailingIcon={ChevronLeft}>
+  {t("View all contracts", "عرض كل العقود")}
+</ActionLink>
+```
+
+Both `IconButton` and `ActionLink` live in `packages/ui/src/components/` and are exported from `@repo/ui` alongside `Button`.
+
+#### Rationale & references
+
+This taxonomy codifies established button-vs-link and target-size guidance — not a Mimaric invention:
+
+- **Buttons act, links navigate** — Nielsen Norman Group and MDN / WAI-ARIA Authoring Practices Guide: a link changes location (`href`), a button performs an action; text-only in-place "actions" are a documented anti-pattern (they break keyboard, screen-reader, and right-click/open-in-new-tab expectations).
+- **Target size** — WCAG 2.2 § 2.5.8 Target Size (Minimum) sets 24×24px as AA; Apple HIG (44pt), Material 3 (48dp), and WCAG 2.5.5 (AAA, 44px) recommend the larger target Mimaric adopts for mobile.
+- **Governed variant taxonomies** — Material 3 (filled / tonal / outlined / text / icon), IBM Carbon, and GitHub Primer all enforce a small fixed variant set and "max one primary per view".
+- **Data-table row actions** — TanStack/Primer/Carbon table guidance: surface ≤3 actions as icon buttons with tooltips, collapse the rest into an overflow menu.
 
 ### 6.7 Forms & Inputs
 
