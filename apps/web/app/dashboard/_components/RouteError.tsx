@@ -6,6 +6,7 @@
 // CLAUDE.md § 6.12   — every error: what happened + what to do + retry.
 // ────────────────────────────────────────────────────────────
 import * as React from "react";
+import Link from "next/link";
 import { AlertTriangle, RefreshCw } from "lucide-react";
 import { Button, EmptyState } from "@repo/ui";
 import { useLanguage } from "../../../components/LanguageProvider";
@@ -48,7 +49,7 @@ export function RouteError({ error, reset }: RouteErrorProps) {
         }
         secondaryAction={
           <Button type="button" variant="ghost" asChild>
-            <a href="/dashboard/help">{supportLabel}</a>
+            <Link href="/dashboard/help">{supportLabel}</Link>
           </Button>
         }
       />
