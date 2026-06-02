@@ -3,7 +3,7 @@
 import * as React from "react";
 import { ArrowLeft, Search as SearchIcon, Users, Building2, FileText, X } from "lucide-react";
 import Link from "next/link";
-import { BottomSheet, DirectionalIcon } from "@repo/ui";
+import { BottomSheet, DirectionalIcon, IconButton } from "@repo/ui";
 import { cn } from "@repo/ui/lib/utils";
 import { useLanguage } from "../LanguageProvider";
 import { globalSearch } from "../../app/actions/search";
@@ -71,13 +71,13 @@ export function MobileSearchSheet({ open, onOpenChange }: MobileSearchSheetProps
       <div className="-mx-4 -mb-4 flex h-full flex-col">
         {/* AppBar */}
         <div className="flex h-12 shrink-0 items-center gap-2 border-b border-border px-2">
-          <button
-            onClick={() => onOpenChange(false)}
-            className="flex h-11 w-11 items-center justify-center rounded-md text-muted-foreground hover:bg-muted/40 hover:text-foreground rtl:scale-x-[-1]"
+          <IconButton
+            icon={ArrowLeft}
             aria-label={lang === "ar" ? "إغلاق" : "Close"}
-          >
-            <DirectionalIcon icon={ArrowLeft} className="h-5 w-5" />
-          </button>
+            onClick={() => onOpenChange(false)}
+            variant="ghost"
+            directional
+          />
           <div className="relative flex-1">
             <SearchIcon className="h-4 w-4 absolute start-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input
@@ -90,13 +90,13 @@ export function MobileSearchSheet({ open, onOpenChange }: MobileSearchSheetProps
               className="w-full rounded-md bg-muted/40 py-2 ps-9 pe-9 text-sm outline-none focus:bg-background focus:ring-2 focus:ring-primary/30"
             />
             {query && (
-              <button
-                onClick={() => handleInput("")}
-                className="absolute end-2 top-1/2 -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground hover:bg-muted/60"
+              <IconButton
+                icon={X}
                 aria-label={lang === "ar" ? "مسح" : "Clear"}
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
+                onClick={() => handleInput("")}
+                variant="ghost"
+                className="absolute end-2 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full md:h-7 md:w-7"
+              />
             )}
           </div>
         </div>

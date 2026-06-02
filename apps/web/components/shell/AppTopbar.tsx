@@ -3,7 +3,7 @@
 import * as React from "react";
 import { Menu, Search, Bell, Globe, User, Settings, ShieldCheck, HelpCircle, LogOut } from "lucide-react";
 import { cn } from "@repo/ui/lib/utils";
-import { Popover, PopoverTrigger, PopoverContent, DirectionalIcon } from "@repo/ui";
+import { Popover, PopoverTrigger, PopoverContent, DirectionalIcon, Button, IconButton } from "@repo/ui";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut as nextAuthSignOut } from "next-auth/react";
@@ -87,13 +87,13 @@ export function AppTopbar({ onMenuClick }: { onMenuClick: () => void }) {
     <header className="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-border bg-card/90 backdrop-blur-md px-4 sm:px-6">
       <div className="flex items-center gap-3">
         {/* Mobile hamburger */}
-        <button
-          onClick={onMenuClick}
-          className="md:hidden p-2 text-muted-foreground hover:text-foreground transition-colors"
+        <IconButton
+          icon={Menu}
           aria-label={lang === "ar" ? "فتح القائمة" : "Open menu"}
-        >
-          <Menu className="h-5 w-5" />
-        </button>
+          onClick={onMenuClick}
+          variant="ghost"
+          className="md:hidden"
+        />
         {/* Breadcrumbs */}
         <nav className="hidden sm:flex items-center text-xs text-muted-foreground font-medium" aria-label="Breadcrumb">
           {crumbs.map((crumb, i) => (
@@ -164,26 +164,27 @@ export function AppTopbar({ onMenuClick }: { onMenuClick: () => void }) {
           setShowNotifs(open);
         }}>
           <PopoverTrigger asChild>
-            <button
-              className="relative p-2 text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-muted/40"
-              aria-label={lang === "ar" ? "الإشعارات" : "Notifications"}
-            >
-              <Bell className="h-[18px] w-[18px]" />
+            <span className="relative inline-flex">
+              <IconButton
+                icon={Bell}
+                aria-label={lang === "ar" ? "الإشعارات" : "Notifications"}
+                variant="ghost"
+              />
               {unreadCount > 0 && (
-                <span className="absolute top-1 end-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground ring-2 ring-card">
+                <span className="pointer-events-none absolute top-1 end-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground ring-2 ring-card">
                   {unreadCount > 9 ? "9+" : unreadCount}
                 </span>
               )}
-            </button>
+            </span>
           </PopoverTrigger>
           <PopoverContent align="start" sideOffset={8} className="w-[calc(100vw-2rem)] sm:w-96 p-0 max-h-[480px] overflow-hidden rounded-xl">
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/20">
               <span className="text-sm font-bold text-foreground">{lang === "ar" ? "الإشعارات" : "Notifications"}</span>
               {unreadCount > 0 && (
-                <button onClick={handleMarkAllRead} className="text-xs font-medium text-primary hover:underline">
+                <Button onClick={handleMarkAllRead} variant="link" size="sm">
                   {lang === "ar" ? "تحديد الكل كمقروء" : "Mark all read"}
-                </button>
+                </Button>
               )}
             </div>
             {/* Notification list */}
@@ -195,11 +196,12 @@ export function AppTopbar({ onMenuClick }: { onMenuClick: () => void }) {
                 </div>
               ) : (
                 notifications.map((n) => (
-                  <button
+                  <Button
                     key={n.id}
                     onClick={() => handleNotifClick(n)}
+                    variant="ghost"
                     className={cn(
-                      "w-full text-start px-4 py-3.5 hover:bg-muted/20 transition-colors border-b border-border/50 last:border-0 group",
+                      "w-full justify-start text-start px-4 py-3.5 h-auto rounded-none hover:bg-muted/20 transition-colors border-b border-border/50 last:border-0",
                       !n.read && "bg-primary/5 border-s-2 border-s-primary"
                     )}
                   >
@@ -227,7 +229,7 @@ export function AppTopbar({ onMenuClick }: { onMenuClick: () => void }) {
                         </div>
                       </div>
                     </div>
-                  </button>
+                  </Button>
                 ))
               )}
             </div>
@@ -237,25 +239,27 @@ export function AppTopbar({ onMenuClick }: { onMenuClick: () => void }) {
         <ThemeToggle />
 
         {/* Language */}
-        <button
+        <Button
           onClick={() => setLang(lang === "ar" ? "en" : "ar")}
-          className="flex items-center gap-1.5 px-2.5 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/40 rounded-md transition-all"
+          variant="ghost"
+          size="sm"
           aria-label={lang === "ar" ? "Switch to English" : "تغيير للعربية"}
+          className="gap-1.5 px-2.5"
         >
           <Globe className="h-4 w-4" />
           <span className="text-xs font-medium hidden sm:inline">{lang === "ar" ? "EN" : "ع"}</span>
-        </button>
+        </Button>
 
         <div className="h-6 w-px bg-border mx-0.5" />
 
         {/* User */}
         <Popover>
           <PopoverTrigger asChild>
-            <button className="flex items-center gap-2.5 group p-1.5" aria-label={lang === "ar" ? "الملف الشخصي" : "Profile"}>
+            <Button variant="ghost" size="icon" className="group p-1.5 h-auto w-auto" aria-label={lang === "ar" ? "الملف الشخصي" : "Profile"}>
               <div className="h-8 w-8 rounded-full bg-muted border border-border flex items-center justify-center overflow-hidden transition-all group-hover:border-primary/40">
                 <User className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
               </div>
-            </button>
+            </Button>
           </PopoverTrigger>
           <PopoverContent align="end" sideOffset={8} className="w-64 p-0">
             <div className="px-4 py-3 border-b border-border">
@@ -283,13 +287,14 @@ export function AppTopbar({ onMenuClick }: { onMenuClick: () => void }) {
               ))}
             </div>
             <div className="border-t border-border py-1">
-              <button
+              <Button
                 onClick={() => nextAuthSignOut({ callbackUrl: "/auth/login" })}
-                className="flex items-center gap-2.5 px-4 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors w-full"
+                variant="ghost"
+                className="w-full justify-start gap-2.5 px-4 py-2 h-auto text-destructive hover:bg-destructive/10 hover:text-destructive"
               >
                 <DirectionalIcon icon={LogOut} className="h-4 w-4" />
                 <span>{lang === "ar" ? "تسجيل الخروج" : "Sign Out"}</span>
-              </button>
+              </Button>
             </div>
           </PopoverContent>
         </Popover>

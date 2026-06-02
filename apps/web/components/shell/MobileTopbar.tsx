@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Menu, Search, Bell, User } from "lucide-react";
 import { cn } from "@repo/ui/lib/utils";
+import { Button, IconButton } from "@repo/ui";
 import { MimaricLogo } from "../brand/MimaricLogo";
 import { useSession } from "../SimpleSessionProvider";
 import { useLanguage } from "../LanguageProvider";
@@ -47,13 +48,12 @@ export function MobileTopbar({ onMenuClick }: MobileTopbarProps) {
         )}
       >
         {/* Leading: hamburger */}
-        <button
-          onClick={onMenuClick}
-          className="flex h-11 w-11 items-center justify-center rounded-md text-muted-foreground hover:bg-muted/40 hover:text-foreground"
+        <IconButton
+          icon={Menu}
           aria-label={lang === "ar" ? "فتح القائمة" : "Open menu"}
-        >
-          <Menu className="h-5 w-5" />
-        </button>
+          onClick={onMenuClick}
+          variant="ghost"
+        />
 
         {/* Centered wordmark */}
         <div className="flex flex-1 items-center justify-center">
@@ -62,36 +62,38 @@ export function MobileTopbar({ onMenuClick }: MobileTopbarProps) {
 
         {/* Trailing */}
         <div className="flex items-center gap-0.5">
-          <button
-            onClick={() => setShowSearch(true)}
-            className="flex h-11 w-11 items-center justify-center rounded-md text-muted-foreground hover:bg-muted/40 hover:text-foreground"
+          <IconButton
+            icon={Search}
             aria-label={lang === "ar" ? "بحث" : "Search"}
-          >
-            <Search className="h-5 w-5" />
-          </button>
+            onClick={() => setShowSearch(true)}
+            variant="ghost"
+          />
 
-          <button
-            onClick={() => setShowNotifs(true)}
-            className="relative flex h-11 w-11 items-center justify-center rounded-md text-muted-foreground hover:bg-muted/40 hover:text-foreground"
-            aria-label={lang === "ar" ? "الإشعارات" : "Notifications"}
-          >
-            <Bell className="h-5 w-5" />
+          <span className="relative inline-flex">
+            <IconButton
+              icon={Bell}
+              aria-label={lang === "ar" ? "الإشعارات" : "Notifications"}
+              onClick={() => setShowNotifs(true)}
+              variant="ghost"
+            />
             {unreadCount > 0 && (
               <span
                 className={cn(
-                  "absolute top-2 end-2 flex h-4 w-4 items-center justify-center rounded-full",
+                  "pointer-events-none absolute top-2 end-2 flex h-4 w-4 items-center justify-center rounded-full",
                   "bg-destructive text-[10px] font-bold text-destructive-foreground ring-2 ring-card tabular-nums"
                 )}
               >
                 {unreadCount > 9 ? "9+" : unreadCount}
               </span>
             )}
-          </button>
+          </span>
 
-          <button
+          <Button
             onClick={() => setShowMenu(true)}
-            className="flex h-11 w-11 items-center justify-center"
+            variant="ghost"
+            size="icon"
             aria-label={lang === "ar" ? "الملف الشخصي" : "Profile"}
+            className="p-0"
           >
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 ring-1 ring-primary/20">
               {session?.user?.name ? (
@@ -102,7 +104,7 @@ export function MobileTopbar({ onMenuClick }: MobileTopbarProps) {
                 <User className="h-4 w-4 text-primary" />
               )}
             </div>
-          </button>
+          </Button>
         </div>
       </header>
 

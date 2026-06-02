@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { signOut as nextAuthSignOut } from "next-auth/react";
 import { useTheme } from "next-themes";
-import { BottomSheet, DirectionalIcon } from "@repo/ui";
+import { BottomSheet, DirectionalIcon, Button } from "@repo/ui";
 import { cn } from "@repo/ui/lib/utils";
 import { useSession } from "../SimpleSessionProvider";
 import { useLanguage } from "../LanguageProvider";
@@ -120,12 +120,11 @@ export function MobileUserMenuSheet({ open, onOpenChange, orgName }: MobileUserM
 
         {/* Language + Theme toggles */}
         <div className="space-y-1 pt-3 border-t border-border">
-          <button
+          <Button
             onClick={() => setLang(lang === "ar" ? "en" : "ar")}
-            className={cn(
-              "flex w-full items-center gap-3 rounded-xl px-3 py-3 transition-colors",
-              "hover:bg-muted/40 active:bg-muted/60"
-            )}
+            variant="ghost"
+            className="w-full justify-start gap-3 rounded-xl px-3 py-3 h-auto hover:bg-muted/40 active:bg-muted/60"
+            aria-label={lang === "ar" ? "تغيير اللغة" : "Change language"}
           >
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
               <Globe className="h-4 w-4 text-primary" />
@@ -136,14 +135,13 @@ export function MobileUserMenuSheet({ open, onOpenChange, orgName }: MobileUserM
             <span className="inline-flex items-center rounded-md bg-muted px-2 py-1 text-xs font-semibold text-foreground">
               {lang === "ar" ? "العربية" : "English"}
             </span>
-          </button>
+          </Button>
 
-          <button
+          <Button
             onClick={themeCycle}
-            className={cn(
-              "flex w-full items-center gap-3 rounded-xl px-3 py-3 transition-colors",
-              "hover:bg-muted/40 active:bg-muted/60"
-            )}
+            variant="ghost"
+            className="w-full justify-start gap-3 rounded-xl px-3 py-3 h-auto hover:bg-muted/40 active:bg-muted/60"
+            aria-label={lang === "ar" ? "تغيير السمة" : "Change theme"}
           >
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
               <ThemeIcon className="h-4 w-4 text-primary" />
@@ -154,20 +152,18 @@ export function MobileUserMenuSheet({ open, onOpenChange, orgName }: MobileUserM
             <span className="inline-flex items-center rounded-md bg-muted px-2 py-1 text-xs font-semibold text-foreground">
               {themeLabel[lang]}
             </span>
-          </button>
+          </Button>
         </div>
 
         {/* Sign out */}
         <div className="pt-3 border-t border-border">
-          <button
+          <Button
             onClick={() => {
               onOpenChange(false);
               nextAuthSignOut({ callbackUrl: "/auth/login" });
             }}
-            className={cn(
-              "flex w-full items-center gap-3 rounded-xl px-3 py-3 transition-colors",
-              "text-destructive hover:bg-destructive/10 active:bg-destructive/15"
-            )}
+            variant="ghost"
+            className="w-full justify-start gap-3 rounded-xl px-3 py-3 h-auto text-destructive hover:bg-destructive/10 hover:text-destructive active:bg-destructive/15"
           >
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-destructive/10">
               <DirectionalIcon icon={LogOut} className="h-4 w-4 text-destructive" />
@@ -175,7 +171,7 @@ export function MobileUserMenuSheet({ open, onOpenChange, orgName }: MobileUserM
             <span className="flex-1 text-start text-sm font-semibold">
               {lang === "ar" ? "تسجيل الخروج" : "Sign out"}
             </span>
-          </button>
+          </Button>
         </div>
       </div>
     </BottomSheet>
