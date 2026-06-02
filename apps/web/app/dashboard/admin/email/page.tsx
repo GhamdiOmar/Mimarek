@@ -319,7 +319,7 @@ export default function AdminEmailSettingsPage() {
                 <Send className="h-4 w-4" />
                 {t.test}
               </Button>
-              <Button type="button" variant="danger" onClick={clearPassword} loading={clearing} style={{ display: "inline-flex" }}>
+              <Button type="button" variant="destructive" onClick={clearPassword} loading={clearing} style={{ display: "inline-flex" }}>
                 <Trash2 className="h-4 w-4" />
                 {t.clear}
               </Button>

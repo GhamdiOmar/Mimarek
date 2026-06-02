@@ -307,7 +307,7 @@ export default function AdminMarketplacePage() {
               Cancel
             </Button>
             <Button
-              variant="danger"
+              variant="destructive"
               onClick={handleSuspend}
               disabled={suspending || !suspendReason.trim()}
             >

@@ -729,7 +729,7 @@ function MarketplacePage() {
                       </div>
                       {inq.status === "OPEN" && (
                         <Button
-                          variant="danger"
+                          variant="destructive"
                           size="sm"
                           className="shrink-0 min-h-[44px]"
                           onClick={() => { setWithdrawTarget(inq); setWithdrawError(null); }}
@@ -801,7 +801,7 @@ function MarketplacePage() {
                           <TableCell>
                             {inq.status === "OPEN" && (
                               <Button
-                                variant="danger"
+                                variant="destructive"
                                 size="sm"
                                 onClick={() => { setWithdrawTarget(inq); setWithdrawError(null); }}
                               >
@@ -840,7 +840,7 @@ function MarketplacePage() {
               {lang === "ar" ? "إلغاء" : "Cancel"}
             </Button>
             <Button
-              variant="danger"
+              variant="destructive"
               onClick={handleWithdraw}
               disabled={withdrawing}
             >

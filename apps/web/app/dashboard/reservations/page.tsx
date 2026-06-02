@@ -1099,7 +1099,7 @@ export default function ReservationsPage() {
               {lang === "ar" ? "تراجع" : "Go Back"}
             </Button>
             <Button
-              variant="danger"
+              variant="destructive"
               onClick={handleCancel}
               disabled={cancelling}
               style={{ display: "inline-flex" }}

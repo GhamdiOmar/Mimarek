@@ -529,7 +529,7 @@ export default function HelpPage() {
                 <Button size="sm" variant="success" onClick={() => handleReview(req.id, "APPROVED")} disabled={reviewActionLoading} className="h-6 px-2 text-[10px]" style={{ display: "inline-flex" }}>
                   {reviewActionLoading ? <Loader2 className="h-3 w-3 me-1 animate-spin" /> : <CheckCircle2 className="h-3 w-3 me-1" />}{lang === "ar" ? "موافقة" : "Approve"}
                 </Button>
-                <Button size="sm" variant="danger" onClick={() => handleReview(req.id, "DECLINED")} disabled={reviewActionLoading} className="h-6 px-2 text-[10px]" style={{ display: "inline-flex" }}>
+                <Button size="sm" variant="destructive" onClick={() => handleReview(req.id, "DECLINED")} disabled={reviewActionLoading} className="h-6 px-2 text-[10px]" style={{ display: "inline-flex" }}>
                   {reviewActionLoading ? <Loader2 className="h-3 w-3 me-1 animate-spin" /> : <XCircle className="h-3 w-3 me-1" />}{lang === "ar" ? "رفض" : "Decline"}
                 </Button>
               </div>
@@ -604,7 +604,7 @@ export default function HelpPage() {
                 <Button size="sm" variant="success" onClick={() => handleJoinReview(req.id, "APPROVED_JOIN")} disabled={joinReviewActionLoading} className="h-6 px-2 text-[10px]" style={{ display: "inline-flex" }}>
                   {joinReviewActionLoading ? <Loader2 className="h-3 w-3 me-1 animate-spin" /> : <CheckCircle2 className="h-3 w-3 me-1" />}{lang === "ar" ? "موافقة" : "Approve"}
                 </Button>
-                <Button size="sm" variant="danger" onClick={() => handleJoinReview(req.id, "DECLINED_JOIN")} disabled={joinReviewActionLoading} className="h-6 px-2 text-[10px]" style={{ display: "inline-flex" }}>
+                <Button size="sm" variant="destructive" onClick={() => handleJoinReview(req.id, "DECLINED_JOIN")} disabled={joinReviewActionLoading} className="h-6 px-2 text-[10px]" style={{ display: "inline-flex" }}>
                   {joinReviewActionLoading ? <Loader2 className="h-3 w-3 me-1 animate-spin" /> : <XCircle className="h-3 w-3 me-1" />}{lang === "ar" ? "رفض" : "Decline"}
                 </Button>
               </div>
@@ -1266,7 +1266,7 @@ export default function HelpPage() {
                           <Button size="sm" variant="success" onClick={() => handleReview(req.id, "APPROVED")} disabled={reviewActionLoading} className="h-8 px-3 text-xs flex-1" style={{ display: "inline-flex" }}>
                             {reviewActionLoading ? <Loader2 className="h-3 w-3 me-1 animate-spin" /> : <CheckCircle2 className="h-3 w-3 me-1" />}{lang === "ar" ? "موافقة" : "Approve"}
                           </Button>
-                          <Button size="sm" variant="danger" onClick={() => handleReview(req.id, "DECLINED")} disabled={reviewActionLoading} className="h-8 px-3 text-xs flex-1" style={{ display: "inline-flex" }}>
+                          <Button size="sm" variant="destructive" onClick={() => handleReview(req.id, "DECLINED")} disabled={reviewActionLoading} className="h-8 px-3 text-xs flex-1" style={{ display: "inline-flex" }}>
                             {reviewActionLoading ? <Loader2 className="h-3 w-3 me-1 animate-spin" /> : <XCircle className="h-3 w-3 me-1" />}{lang === "ar" ? "رفض" : "Decline"}
                           </Button>
                         </div>
@@ -1322,7 +1322,7 @@ export default function HelpPage() {
                           <Button size="sm" variant="success" onClick={() => handleJoinReview(req.id, "APPROVED_JOIN")} disabled={joinReviewActionLoading} className="h-8 px-3 text-xs flex-1" style={{ display: "inline-flex" }}>
                             {joinReviewActionLoading ? <Loader2 className="h-3 w-3 me-1 animate-spin" /> : <CheckCircle2 className="h-3 w-3 me-1" />}{lang === "ar" ? "موافقة" : "Approve"}
                           </Button>
-                          <Button size="sm" variant="danger" onClick={() => handleJoinReview(req.id, "DECLINED_JOIN")} disabled={joinReviewActionLoading} className="h-8 px-3 text-xs flex-1" style={{ display: "inline-flex" }}>
+                          <Button size="sm" variant="destructive" onClick={() => handleJoinReview(req.id, "DECLINED_JOIN")} disabled={joinReviewActionLoading} className="h-8 px-3 text-xs flex-1" style={{ display: "inline-flex" }}>
                             {joinReviewActionLoading ? <Loader2 className="h-3 w-3 me-1 animate-spin" /> : <XCircle className="h-3 w-3 me-1" />}{lang === "ar" ? "رفض" : "Decline"}
                           </Button>
                         </div>

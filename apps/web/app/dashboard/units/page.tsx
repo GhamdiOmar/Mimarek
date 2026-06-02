@@ -804,7 +804,7 @@ function AdvancedUnitMatrixPage() {
                 </Button>
                 <Button
                   size="sm"
-                  variant="danger"
+                  variant="destructive"
                   style={{ display: "inline-flex" }}
                   className="gap-2 bg-destructive/80 hover:bg-destructive whitespace-nowrap"
                   onClick={handleBulkDelete}
@@ -1755,7 +1755,7 @@ function AdvancedUnitMatrixPage() {
               {lang === "ar" ? "إلغاء" : "Cancel"}
             </Button>
             <Button
-              variant="danger"
+              variant="destructive"
               style={{ display: "inline-flex" }}
               className="gap-2"
               onClick={confirmBulkDelete}

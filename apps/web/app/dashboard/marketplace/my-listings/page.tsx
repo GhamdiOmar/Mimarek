@@ -375,7 +375,7 @@ export default function MyListingsPage() {
                       </Button>
                       {(listing.status === "PUBLISHED" || listing.status === "DRAFT") && (
                         <Button
-                          variant="danger"
+                          variant="destructive"
                           size="sm"
                           className="flex-1 min-h-[44px]"
                           onClick={() => openUnpublish(listing)}
@@ -738,7 +738,7 @@ export default function MyListingsPage() {
               {lang === "ar" ? "إلغاء" : "Cancel"}
             </Button>
             <Button
-              variant="danger"
+              variant="destructive"
               onClick={handleUnpublish}
               disabled={unpublishing || !unpublishReason.trim()}
             >

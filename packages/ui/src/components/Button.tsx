@@ -1,6 +1,9 @@
+"use client";
+
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
+import { Check, X } from "lucide-react";
 import { cn } from "../lib/utils";
 
 const buttonVariants = cva(
@@ -14,8 +17,10 @@ const buttonVariants = cva(
           "btn-secondary border border-border bg-card text-foreground hover:bg-muted/60 active:bg-muted/80",
         success:
           "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/85 active:bg-secondary/75",
-        danger:
+        destructive:
           "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/85 active:bg-destructive/75",
+        premium:
+          "bg-accent text-primary-deep shadow-sm hover:bg-accent/85 active:bg-accent/75",
         outline:
           "border border-border bg-transparent text-foreground hover:bg-muted/40 active:bg-muted/60",
         subtle:
@@ -28,7 +33,7 @@ const buttonVariants = cva(
         sm: "h-8 px-3 text-xs rounded",
         md: "h-10 px-5 py-2",
         lg: "h-12 px-8 text-base",
-        icon: "h-9 w-9",
+        icon: "h-11 w-11 md:h-9 md:w-9",
       },
     },
     defaultVariants: {
@@ -44,6 +49,8 @@ export interface ButtonProps
   asChild?: boolean;
   loading?: boolean;
   loadingText?: string;
+  /** Post-action micro-feedback: "success" shows a check for ~1.5s; "error" applies a destructive ring + shake for ~1.5s */
+  state?: "success" | "error";
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
@@ -57,14 +64,36 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       loadingText,
       children,
       disabled,
+      state,
       ...props
     },
     ref
   ) => {
+    const [feedbackState, setFeedbackState] = React.useState<
+      "success" | "error" | null
+    >(null);
+
+    // Trigger feedback animation when `state` prop changes
+    React.useEffect(() => {
+      if (!state) return;
+      setFeedbackState(state);
+      const timer = setTimeout(() => setFeedbackState(null), 1500);
+      return () => clearTimeout(timer);
+    }, [state]);
+
     const Comp = asChild ? Slot : "button";
+
+    const feedbackClasses =
+      feedbackState === "error"
+        ? "ring-2 ring-destructive ring-offset-1 animate-[shake_0.4s_ease-in-out]"
+        : "";
+
     return (
       <Comp
-        className={cn(buttonVariants({ variant, size, className }))}
+        className={cn(
+          buttonVariants({ variant, size, className }),
+          feedbackClasses
+        )}
         ref={ref}
         disabled={disabled || loading}
         {...props}
@@ -92,6 +121,16 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
               />
             </svg>
             {loadingText || children}
+          </>
+        ) : feedbackState === "success" ? (
+          <>
+            <Check className="h-4 w-4 shrink-0" aria-hidden="true" />
+            {children}
+          </>
+        ) : feedbackState === "error" ? (
+          <>
+            <X className="h-4 w-4 shrink-0" aria-hidden="true" />
+            {children}
           </>
         ) : (
           children

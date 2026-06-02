@@ -1410,7 +1410,7 @@ function CustomerDrawer({
               {lang === "ar" ? "إلغاء" : "Cancel"}
             </Button>
             <Button
-              variant="danger"
+              variant="destructive"
               style={{ display: "inline-flex" }}
               className="gap-2"
               onClick={handleDropInterest}
@@ -2999,7 +2999,7 @@ export default function CRMPage() {
               {lang === "ar" ? "إلغاء" : "Cancel"}
             </Button>
             <Button
-              variant="danger"
+              variant="destructive"
               style={{ display: "inline-flex" }}
               className="gap-2"
               onClick={confirmLost}
@@ -3052,7 +3052,7 @@ export default function CRMPage() {
               {lang === "ar" ? "إلغاء" : "Cancel"}
             </Button>
             <Button
-              variant="danger"
+              variant="destructive"
               style={{ display: "inline-flex" }}
               className="gap-2"
               onClick={confirmDelete}

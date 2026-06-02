@@ -297,7 +297,7 @@ export default function TeamManagementPage() {
             </Button>
             <Button
               type="button"
-              variant="danger"
+              variant="destructive"
               loading={Boolean(removeCandidate && busyId === removeCandidate.id)}
               onClick={async () => {
                 if (!removeCandidate) return;
@@ -446,7 +446,7 @@ function InvitationList({
                     <RotateCcw className="h-4 w-4" />
                     {lang === "ar" ? "إعادة إرسال" : "Resend"}
                   </Button>
-                  <Button variant="danger" size="sm" onClick={() => onRevoke(invitation.id)} loading={busyId === invitation.id} style={{ display: "inline-flex" }}>
+                  <Button variant="destructive" size="sm" onClick={() => onRevoke(invitation.id)} loading={busyId === invitation.id} style={{ display: "inline-flex" }}>
                     <Trash2 className="h-4 w-4" />
                     {lang === "ar" ? "إلغاء" : "Revoke"}
                   </Button>
