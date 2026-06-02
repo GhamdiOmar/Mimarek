@@ -99,9 +99,9 @@ export default function Features({ lang }: { lang: "ar" | "en" }) {
               <button
                 key={tab.id}
                 onClick={() => setActive(i)}
-                className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors sm:px-5 ${
+                className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors sm:px-5 ${
                   active === i
-                    ? "bg-primary text-primary-foreground"
+                    ? "bg-primary text-primary-foreground dark:bg-primary-deep dark:text-white"
                     : "bg-muted text-muted-foreground hover:bg-muted/80"
                 }`}
                 style={{ display: "inline-flex" }}

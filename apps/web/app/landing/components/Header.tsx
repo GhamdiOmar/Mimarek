@@ -83,7 +83,7 @@ export default function Header({ lang }: { lang: "ar" | "en" }) {
             </Link>
             <Link
               href="/auth/register"
-              className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary"
+              className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary/90 dark:bg-primary-deep dark:hover:bg-primary-deep/90"
               style={{ display: "inline-flex" }}
             >
               {t.startFreeTrial}

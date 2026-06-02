@@ -28,15 +28,17 @@ export default function LandingPage({
     >
       <SchemaMarkup lang={lang} />
       <Header lang={lang} />
-      <Hero lang={lang} />
-      <LogoBar lang={lang} />
-      <Features lang={lang} />
-      <Vision2030 lang={lang} />
-      <HowItWorks lang={lang} />
-      <Stats lang={lang} />
-      <Pricing lang={lang} />
-      <FAQ lang={lang} />
-      <FinalCTA lang={lang} />
+      <main id="main-content">
+        <Hero lang={lang} />
+        <LogoBar lang={lang} />
+        <Features lang={lang} />
+        <Vision2030 lang={lang} />
+        <HowItWorks lang={lang} />
+        <Stats lang={lang} />
+        <Pricing lang={lang} />
+        <FAQ lang={lang} />
+        <FinalCTA lang={lang} />
+      </main>
       <Footer lang={lang} onToggleLang={onToggleLang} toggleLangHref={toggleLangHref} />
     </div>
   );

@@ -48,6 +48,7 @@ model Organization {
 
   // ── Commercialization relations ──
   subscriptions        Subscription[]
+  mrrSnapshots         SubscriptionMrrSnapshot[]
   entitlementOverrides EntitlementOverride[]
   paymentMethods       PaymentMethod[]
   invoices             Invoice[]
@@ -129,10 +130,12 @@ model User {
   joinRequests         JoinRequest[]        @relation("UserJoinRequests")
   reviewedJoinRequests JoinRequest[]        @relation("JoinReviewers")
   customerActivities   CustomerActivity[]   @relation("ActivityCreator")
+  lastActiveAt         DateTime? // Debounced sign-in / authed-request timestamp — powers admin-no-login KPIs
   createdAt            DateTime             @default(now())
   updatedAt            DateTime             @updatedAt
 
   @@index([organizationId])
+  @@index([organizationId, lastActiveAt])
 }
 
 enum UserRole {
@@ -1077,15 +1080,21 @@ model Subscription {
   nextBillingDate    DateTime?
   priceAtRenewal     Decimal? // Locked-in price for next renewal
   metadata           Json?
+  mrrSar             Decimal? // ex-VAT, denormalized monthly recurring revenue at current price
+  acquiredMonth      String? // "YYYY-MM", set on first TRIALING transition (or ACTIVE if no trial)
+  activatedMonth     String? // "YYYY-MM", set on first ACTIVE transition
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
 
-  events   SubscriptionEvent[]
-  invoices Invoice[]
+  events       SubscriptionEvent[]
+  invoices     Invoice[]
+  mrrSnapshots SubscriptionMrrSnapshot[]
 
   @@index([organizationId])
   @@index([status])
   @@index([currentPeriodEnd])
+  @@index([acquiredMonth])
+  @@index([activatedMonth])
 }
 
 // ─── Subscription Event (audit trail for status transitions) ────────────────
@@ -1099,10 +1108,33 @@ model SubscriptionEvent {
   triggeredBy    String // "system", "webhook", "admin:<userId>", "user:<userId>"
   reason         String?
   metadata       Json? // Additional context (e.g., gateway response, dunning attempt #)
+  eventCategory  String? // NEW | EXPANSION | CONTRACTION | CHURN | REACTIVATION | TRIAL_STARTED | TRIAL_CONVERTED | REFUND_ADJUSTMENT
+  mrrDeltaSar    Decimal? // Signed ex-VAT delta; positive for new/expansion, negative for contraction/churn/refund
+  idempotencyKey String?             @unique // Format: "<subscriptionId>:<occurredAt>:<eventCategory>"
   createdAt      DateTime            @default(now())
 
   @@index([subscriptionId])
   @@index([createdAt])
+  @@index([eventCategory, createdAt])
+}
+
+// ─── Subscription MRR Snapshot (per-month per-sub denormalised MRR) ─────────
+
+model SubscriptionMrrSnapshot {
+  id             String             @id @default(cuid())
+  organizationId String
+  organization   Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  subscriptionId String
+  subscription   Subscription       @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  snapshotMonth  String // "YYYY-MM" — first of month captured
+  mrrSar         Decimal            @default(0) // ex-VAT MRR at snapshot time
+  status         SubscriptionStatus // Subscription status at snapshot time
+  planId         String // Plan ID at snapshot time
+  createdAt      DateTime           @default(now())
+
+  @@unique([subscriptionId, snapshotMonth])
+  @@index([snapshotMonth, status])
+  @@index([organizationId, snapshotMonth])
 }
 
 // ─── Entitlement Override (per-org exceptions for enterprise/custom deals) ──
@@ -1168,6 +1200,7 @@ model Invoice {
   @@index([status])
   @@index([issuedAt])
   @@index([invoiceNumber])
+  @@index([dueDate, status]) // AR aging queries
 }
 
 // ─── Invoice Line Item ──────────────────────────────────────────────────────

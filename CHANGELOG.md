@@ -1,5 +1,62 @@
 # Changelog — Mimaric PropTech
 
+## [4.8.0] — 2026-06-02 — Platform Admin Product Analytics v1 + landing-page a11y + login timeout + dev pool stability
+
+Lands a revenue-mechanics analytics layer on the `/dashboard/admin` SYSTEM_ADMIN surface (Phase 1 of a three-phase plan), fixes every WCAG 2.1 AA axe violation on the marketing landing pages, adds a 30-second timeout + bilingual error to the login form, and stops the dev-mode Supabase pool from starving NextAuth after one login attempt.
+
+### Added (analytics v1)
+
+- **Schema (additive)** — `Subscription.mrrSar` / `acquiredMonth` / `activatedMonth` (nullable); `SubscriptionEvent.eventCategory` / `mrrDeltaSar` / `idempotencyKey @unique` (nullable); new `SubscriptionMrrSnapshot` table with `@@unique([subscriptionId, snapshotMonth])`; `User.lastActiveAt` + `@@index([organizationId, lastActiveAt])`; `Invoice.@@index([dueDate, status])`. All new columns on populated tables are nullable per AGENTS §4.
+- **Back-fill** — `scripts/backfill-analytics-v1.ts` walks each Subscription's event history and derives `eventCategory` + `mrrDeltaSar` from `(fromStatus, toStatus, plan diff)`; populates `mrrSar` from `Plan.priceMonthly` / `priceAnnual` × billing cycle; sets `acquiredMonth` / `activatedMonth` from earliest TRIALING / ACTIVE event.
+- **Server actions** — 10 metric actions + 1 helper in `apps/web/app/actions/admin-analytics/` (`getNetNewArr`, `getArrWaterfall`, `getArAging`, `getCollectedVsBilled`, `getFailedPaymentArrAtRisk`, `getZatcaClearanceRate`, `getTopArrConcentration`, `getDiscountLeakage`, `getTrialToPaidConversion`, `getPlatformRiskInputs`, plus `snapshotMrrForMonth`). All guarded with `requirePermission("billing:admin")`, accept `{from, to}`, return `JSON.parse(JSON.stringify(...))`-serialised payloads.
+- **Cron infrastructure** — new `vercel.json` with `/api/cron/snapshot-mrr` (day 1 of each month at 00:05 UTC, writes prev-month snapshot) and `/api/cron/refresh-current-month-snapshot` (every 6h, upserts current month). Reuses the existing `?secret=$CRON_SECRET` auth pattern.
+- **UI primitives** — `KPICard.description?: string` prop renders a `lucide-react` Info icon next to the label; on hover / focus opens a Radix `Tooltip` (keyboard-accessible per §6.17). Bilingual `aria-label`: "About this metric" / "حول هذا المقياس".
+- **URL-synced state** — `apps/web/lib/use-date-range-query.ts` reads `?from=YYYY-MM-DD&to=YYYY-MM-DD`, defaults to MTD when absent, writes via `router.replace()` on change. Memoised on the raw query strings to prevent the re-render loop. Generic building block `apps/web/lib/use-query-state.ts`.
+- **Dashboard rebuild** — `apps/web/app/dashboard/admin/page.tsx` desktop branch: `PageHeader` with `DateRangePicker` (MTD default, 6 presets) + `LastUpdatedAgo` (visible refresh); hero KPI "Net New ARR" with breakdown line + 12-mo sparkline; ARR Waterfall section (8 KPIs + Recharts BarChart + reconciliation-drift banner); Collections & AR Aging (7 KPIs + stacked bar); Tenant Risk Inputs (4 KPIs); Concentration & Revenue Mix (4 KPIs); Platform Scale demoted to `tier="utility"`; 12-mo MRR trend; existing Quick Links retained. Every metric carries a bilingual EN/AR description (24-entry catalog).
+
+### Added (login UX)
+
+- **30-second login submit timeout** — `apps/web/app/auth/login/page.tsx` wraps `loginAction(formData)` in `withTimeout(_, 30_000)`; on timeout the spinner stops, the button re-enables, and a red bilingual banner shows the AR / EN copy per AGENTS §6.11.4 ("what happened + what to do next"). New `TIMEOUT` entry in the page's `errorMessages` map.
+
+### Fixed (a11y — landing pages, axe-core 4.10.2 clean in both themes)
+
+- **Button name** — Monthly/Annual pricing toggle (`landing/components/Pricing.tsx`) is now `role="switch"` with `aria-checked` + bilingual `aria-label` (new `pricingToggleAriaLabel` translation key in both locales). Dropped the conflicting `aria-pressed` after the first axe pass flagged it as `aria-allowed-attr`.
+- **Region** (96 nodes) — `landing/LandingPage.tsx` now wraps Hero → FinalCTA in `<main id="main-content">` between `<header>` and `<footer>`. The body content is no longer orphaned outside landmarks.
+- **Heading order** — Footer column titles `<h4>` → `<h3>` (`landing/components/Footer.tsx`), so the page no longer skips from `<h2>` to `<h4>`.
+- **Color contrast (11 elements)** — Hero subtitle / Hero link / Hero trust badges (`text-white/60` → `text-white/85`–`/90`); Vision2030 subtitle + card descriptions (`text-white/60` → `text-white/85`); Features tab active state (`bg-primary text-primary-foreground` → adds `dark:bg-primary-deep dark:text-white`); "Save 20%" + "Most Popular" pricing badges (`text-primary` → adds `dark:text-white`); Header "Start Free Trial" CTA + FinalCTA "Start Free Trial" button (white-on-primary failures → `dark:bg-primary-deep` / `text-primary-deep font-bold`); Footer "made-in-Saudi" tagline + Footer copyright + Pricing plan feature "not included" labels (`text-muted-foreground/60` → full `text-muted-foreground`).
+
+### Fixed (dev-mode infra)
+
+- **Supabase pg.Pool starvation under HMR** — `packages/db/src/index.ts` now memoises the `pg.Pool` on `globalThis.pgPool` (in addition to `PrismaClient`), capped at `max: 10` with `idleTimeoutMillis: 10_000`. Before this, every Next.js HMR rebuild allocated a fresh `pg.Pool`, the old connections never closed, and NextAuth + every server action hung indefinitely after one login attempt. Also dropped `"query"` from the dev log channel — the query firehose was contributing to the dev server choking under axe-core re-runs.
+
+### Changed
+
+- `apps/web/app/actions/trends/getMrrTrend.ts` now sources from `SubscriptionMrrSnapshot` instead of summing live invoices (immune to historical `Plan` price mutations). Signature unchanged (`number[]`).
+
+### Verification
+
+- Full `npx tsc --noEmit` green across `packages/ui`, `packages/db`, `apps/web`. `npm run build --workspace=apps/web` green locally.
+- Schema additions applied via `prisma db push` against the live Supabase per AGENTS §4. Back-fill ran cleanly (4 subscriptions updated, 1 event categorised, 4 non-zero `mrrSar`); current-month snapshot row populated.
+- `/dashboard/admin` structural verification via accessibility-tree snapshot + DOM `inspect` in all four theme/locale combinations:
+  - **Light-RTL:** hero "صافي الإيراد السنوي الجديد" + breakdown line + DateRangePicker "١ يونيو ٢٠٢٦ — ٢ يونيو ٢٠٢٦" + 29 info-icon `aria-label="حول هذا المقياس"` buttons + 6 Arabic sections + reconciliation banner "تحذير المطابقة: انحراف 5K ر.س" (expected against an empty-history snapshot).
+  - **Light-LTR:** "Net New ARR" + 29 "About this metric" buttons + "1 Jun 2026 — 2 Jun 2026" picker + 6 English sections.
+  - **Dark-LTR:** body `rgb(16,13,22)` (warm charcoal), card `rgb(26,22,34)` (elevated, no shadow per §6.13), foreground `rgb(227,226,233)`; English labels + descriptions correct.
+  - **Dark-RTL:** same dark surfaces, RTL layout confirmed via `border-inline-start-color: rgb(66,140,215)` (info accent) on cards positioned at the right-side leading edge (`x:849.75`); Arabic labels + descriptions correct, locale prop `"ar"`.
+- Raster screenshots via the preview MCP tool's Chromium snapshot timed out on the heavy multi-chart page (a known Recharts + many-card rendering bottleneck); accessibility-tree + targeted `preview_inspect` calls substituted equivalent structural, colour, and layout verification.
+- Landing page `/ar` (light + dark): **`axe.run()` returns `{ violations: [] }`** (axe-core 4.10.2 injected into the running production build). Verified the same on `/en`. Before this work the same scan returned 4 critical/serious violations.
+- The four cross-theme/locale screenshot raster quadruple (light-LTR / light-RTL / dark-LTR / dark-RTL) + manual keyboard-Tab walk + mobile 375×812 viewport pass remain deferred per AGENTS §3.9 — surfaced as a §3.9 known-blocker before tagging.
+
+### Upgrade notes
+
+- **Env var:** add `AUTH_TRUST_HOST=true` to the production env. Without it NextAuth v5 returns 500 "server configuration" on non-HTTPS hosts (was already added locally; not committed since `.env*` is gitignored).
+- **Cron secret:** ensure `CRON_SECRET` is set in the Vercel project before the two new cron routes can fire. The routes fail-closed with HTTP 500 when the secret is unset (same pattern as the existing `expire-reservations` cron).
+- **First prod snapshot:** the monthly snapshot cron writes the **previous** full calendar month on the first of each month at 00:05 UTC, so the first deploy will only seed one historical month. To back-fill more, manually hit `/api/cron/refresh-current-month-snapshot?secret=$CRON_SECRET` (writes the current month) before relying on the 12-month MRR trend chart.
+- No tenant-side schema changes; no tenant route additions; no permissions migration.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimaric/compare/v4.7.0...v4.8.0
+
+---
+
 ## [4.7.0] — 2026-05-17 — Payment money-correctness + executable dashboards
 
 Phase 5. Headlined by a **fix to a live, pre-existing data-integrity defect**: rent payment recording could not represent a partial payment at all, which silently corrupted every collection-rate, AR-aging, revenue, and rent-collection figure in the product. Also lands the RoleTaskQueue, Documents required-by-stage, and a Reports regroup. Schema changes are additive (`prisma db push` safe).
@@ -142,7 +199,6 @@ The first non-patch release since v4.2.x: a **verified-organization-only B2B mar
 - Functional cross-org E2E through the UI (two real orgs, Playwright + Chromium): seller publish (eligibility gate enforced incl. `MISSING_ADDRESS`) → buyer cross-org browse → listing detail (Maps URL exact) → buyer express interest → seller CRM customer created (`source=MARKETPLACE`, in seller org) → convert to deal (cross-org reservation + `PENDING_SETTLEMENT` transfer) → **settlement correctly refused without a SIGNED sale contract**. Zero marketplace-attributable console errors; mobile 375px no overflow; buyer-browse own-org exclusion confirmed.
 - **Screenshot evidence captured** — light/dark × AR/EN for browse, detail, my-listings + admin moderation + mobile (`apps/web/e2e/__screenshots__/marketplace/`). The earlier preview-renderer limitation was bypassed by running the suite under Playwright/Chromium.
 - **axe-core accessible-name scan** — zero violations across all marketplace surfaces and dialogs (browse, my-listings, detail, admin moderation, publish/interest/edit/suspend dialogs). Pre-existing name violations elsewhere (`/dashboard/settings`, `/dashboard/reports`, `/dashboard/maintenance/tickets`) are out of scope for this feature.
-
 ### Upgrade notes
 
 - Schema is **additive** (new models/enums + nullable columns on `Unit`/`Reservation`/`Contract`). Apply with `prisma db push` (per AGENTS §4 — no destructive migration). No backfill required; the one unique index is on a new nullable column (multiple NULLs allowed in Postgres).

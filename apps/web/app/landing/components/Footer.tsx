@@ -86,7 +86,7 @@ export default function Footer({
             )}
 
             {/* Made in Saudi badge */}
-            <p className="mt-3 text-xs text-muted-foreground/60">
+            <p className="mt-3 text-xs text-muted-foreground">
               {t.madeInSaudi}
             </p>
           </div>
@@ -94,9 +94,9 @@ export default function Footer({
           {/* Link columns */}
           {columns.map((col) => (
             <div key={col.title}>
-              <h4 className="text-sm font-semibold text-primary dark:text-white">
+              <h3 className="text-sm font-semibold text-primary dark:text-white">
                 {col.title}
-              </h4>
+              </h3>
               <ul className="mt-3 space-y-2.5">
                 {col.links.map((link) => (
                   <li key={link.label}>
@@ -115,7 +115,7 @@ export default function Footer({
 
         {/* Bottom bar */}
         <div className="mt-10 border-t border-border pt-6">
-          <p className="text-center text-xs text-muted-foreground/60">
+          <p className="text-center text-xs text-muted-foreground">
             &copy; {new Date().getFullYear()} Mimaric. {t.allRightsReserved}
           </p>
         </div>

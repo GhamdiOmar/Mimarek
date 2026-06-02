@@ -56,7 +56,7 @@ export default function Hero({ lang }: { lang: "ar" | "en" }) {
           >
             {t.heroTitle}
           </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-white/60 sm:text-xl">
+          <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-white/85 sm:text-xl">
             {t.heroSubtitle}
           </p>
 
@@ -73,7 +73,7 @@ export default function Hero({ lang }: { lang: "ar" | "en" }) {
             </Button>
             <a
               href="#features"
-              className="text-sm font-medium text-white/60 underline underline-offset-4 decoration-white/20 transition-colors hover:text-white hover:decoration-white/40"
+              className="text-sm font-medium text-white/85 underline underline-offset-4 decoration-white/40 transition-colors hover:text-white hover:decoration-white/60"
             >
               {t.watchDemo}
             </a>
@@ -87,7 +87,7 @@ export default function Hero({ lang }: { lang: "ar" | "en" }) {
                 className="flex items-center gap-1.5"
               >
                 <Icon className="h-4 w-4 text-primary" />
-                <span className="text-xs font-medium text-white/70 sm:text-sm">
+                <span className="text-xs font-medium text-white/90 sm:text-sm">
                   {label}
                 </span>
               </div>

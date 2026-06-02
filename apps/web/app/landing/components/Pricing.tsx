@@ -140,7 +140,9 @@ export default function Pricing({ lang }: { lang: "ar" | "en" }) {
               className={`relative h-6 w-11 rounded-full transition-colors ${
                 annual ? "bg-primary" : "bg-muted-foreground/30"
               }`}
-              aria-pressed={annual}
+              aria-label={t.pricingToggleAriaLabel}
+              role="switch"
+              aria-checked={annual}
               type="button"
             >
               <span
@@ -162,7 +164,7 @@ export default function Pricing({ lang }: { lang: "ar" | "en" }) {
             {t.annual}
           </span>
           {annual && (
-            <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+            <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary dark:text-white">
               {t.annualSave}
             </span>
           )}
@@ -182,7 +184,7 @@ export default function Pricing({ lang }: { lang: "ar" | "en" }) {
                 }`}
               >
                 {plan.highlighted && (
-                  <span className="absolute top-3 end-3 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+                  <span className="absolute top-3 end-3 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary dark:text-white">
                     {t.mostPopular}
                   </span>
                 )}
@@ -270,7 +272,7 @@ export default function Pricing({ lang }: { lang: "ar" | "en" }) {
                         className={`text-sm ${
                           included
                             ? "text-foreground/80"
-                            : "text-muted-foreground/60"
+                            : "text-muted-foreground"
                         }`}
                       >
                         {label}

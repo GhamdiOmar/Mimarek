@@ -2,11 +2,17 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ArrowUpRight, ArrowDownRight, Minus } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, Minus, Info } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "../lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { arSA, enUS } from "date-fns/locale";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "../primitives/tooltip";
 
 export type KPIAccent =
   | "primary"
@@ -41,6 +47,13 @@ export type KPITier = "hero" | "standard" | "utility";
 export interface KPICardProps {
   /** Noun-phrase label, e.g. "Monthly Revenue". */
   label: string;
+  /**
+   * Optional one-paragraph description of what the metric measures.
+   * When set, renders an info-icon button next to the label that opens
+   * a HoverCard on hover / focus. Use for admin-facing metric explanations
+   * — bilingual strings are the caller's responsibility (pick by `locale`).
+   */
+  description?: string;
   /** Big number — formatted string or React node. */
   value: React.ReactNode;
   /** Trailing unit, e.g. "SAR", "%", "days". */
@@ -151,6 +164,7 @@ function deltaTone(direction: "up" | "down" | "flat", isGoodIfUp: boolean) {
 
 export function KPICard({
   label,
+  description,
   value,
   unit,
   subtitle,
@@ -255,15 +269,45 @@ export function KPICard({
     : isUtility
       ? "text-[11px]"
       : "text-xs";
+  const infoAriaLabel =
+    effLocale === "ar" ? "حول هذا المقياس" : "About this metric";
+
   const body = (
     <>
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <span
-            className={cn("block font-medium text-muted-foreground", labelClass)}
-          >
-            {label}
-          </span>
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span
+              className={cn("font-medium text-muted-foreground truncate", labelClass)}
+            >
+              {label}
+            </span>
+            {description && (
+              <TooltipProvider delayDuration={150}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label={infoAriaLabel}
+                      onClick={(e) => e.stopPropagation()}
+                      className="shrink-0 inline-flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                      style={{ display: "inline-flex" }}
+                    >
+                      <Info className="h-3.5 w-3.5" aria-hidden="true" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="top"
+                    align="start"
+                    sideOffset={6}
+                    className="max-w-[20rem] whitespace-normal bg-popover text-popover-foreground border border-border shadow-md text-xs leading-relaxed py-2 px-3"
+                  >
+                    {description}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+          </div>
           <div
             className={cn(
               "mt-1.5 flex items-baseline gap-1.5 font-bold text-card-foreground tabular-nums",

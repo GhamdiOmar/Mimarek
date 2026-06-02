@@ -3,31 +3,37 @@
 import { db } from "@repo/db";
 import { requirePermission } from "../../../lib/auth-helpers";
 
+/**
+ * 12-month MRR trend in monthly SAR ex-VAT, most recent month last.
+ *
+ * Sourced from SubscriptionMrrSnapshot — immune to historical Plan price
+ * changes that would otherwise retroactively rewrite the chart. Until
+ * the snapshot cron has run for a given month, that month's bucket
+ * reads 0; the dashboard renders that as "—" per AGENTS.md §6.8.4.
+ */
 export async function getMrrTrend(): Promise<number[]> {
   await requirePermission("billing:admin");
 
   const now = new Date();
-  const start = new Date(now.getFullYear(), now.getMonth() - 11, 1);
-
-  const invoices = await db.invoice.findMany({
-    where: {
-      status: "PAID",
-      paidAt: { gte: start },
-    },
-    select: { paidAt: true, total: true },
-  });
-
-  const buckets = Array.from({ length: 12 }, () => 0);
-  for (const inv of invoices) {
-    if (!inv.paidAt) continue;
-    const monthsAgo =
-      (now.getFullYear() - inv.paidAt.getFullYear()) * 12 +
-      (now.getMonth() - inv.paidAt.getMonth());
-    const idx = 11 - monthsAgo;
-    if (idx >= 0 && idx < 12) {
-      buckets[idx] = (buckets[idx] ?? 0) + Number(inv.total);
-    }
+  const months: string[] = [];
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(now.getUTCFullYear(), now.getUTCMonth() - i, 1);
+    const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+    months.push(`${d.getUTCFullYear()}-${m}`);
   }
 
-  return buckets as number[];
+  const rows = await db.subscriptionMrrSnapshot.findMany({
+    where: { snapshotMonth: { in: months }, status: "ACTIVE" },
+    select: { snapshotMonth: true, mrrSar: true },
+  });
+
+  const byMonth = new Map<string, number>();
+  for (const r of rows) {
+    byMonth.set(
+      r.snapshotMonth,
+      (byMonth.get(r.snapshotMonth) ?? 0) + Number(r.mrrSar ?? 0),
+    );
+  }
+
+  return months.map((m) => byMonth.get(m) ?? 0);
 }

@@ -21,7 +21,7 @@ export default function FinalCTA({ lang }: { lang: "ar" | "en" }) {
         <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
           <Link
             href="/auth/register"
-            className="rounded-xl bg-white px-8 py-3.5 text-base font-semibold text-primary shadow-lg transition-colors hover:bg-gray-100"
+            className="rounded-xl bg-white px-8 py-3.5 text-base font-bold text-primary-deep shadow-lg transition-colors hover:bg-gray-100"
             style={{ display: "inline-flex" }}
           >
             {t.startFreeTrial}

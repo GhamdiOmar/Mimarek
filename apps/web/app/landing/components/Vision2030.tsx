@@ -43,7 +43,7 @@ export default function Vision2030({ lang }: { lang: "ar" | "en" }) {
         <h2 className="mt-6 text-center text-3xl font-bold text-white sm:text-4xl">
           {t.vision2030Title}
         </h2>
-        <p className="mx-auto mt-4 max-w-2xl text-center text-lg text-white/60">
+        <p className="mx-auto mt-4 max-w-2xl text-center text-lg text-white/85">
           {t.vision2030Subtitle}
         </p>
 
@@ -58,7 +58,7 @@ export default function Vision2030({ lang }: { lang: "ar" | "en" }) {
                 <Icon className="h-6 w-6 text-primary" />
               </div>
               <h3 className="mt-6 text-xl font-bold text-white">{title}</h3>
-              <p className="mt-3 leading-relaxed text-white/60">{desc}</p>
+              <p className="mt-3 leading-relaxed text-white/85">{desc}</p>
             </div>
           ))}
         </div>

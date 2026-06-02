@@ -60,8 +60,30 @@ export default function LoginPage() {
     USE_MANAGEMENT_MODE: {
       ar: "هذا الحساب مخصص لإدارة العقارات. اختر إدارة العقارات ثم حاول مرة أخرى.",
       en: "This account belongs to property management. Select Property management and try again."
+    },
+    TIMEOUT: {
+      ar: "انتهت مهلة الطلب. الخدمة بطيئة حالياً — يرجى المحاولة مرة أخرى لاحقاً.",
+      en: "The request timed out. The service is slow right now — please try again in a moment."
     }
   };
+
+  const LOGIN_TIMEOUT_MS = 30_000;
+
+  /**
+   * Race a promise against a timeout. Resolves with the original value if it
+   * finishes first; throws a `LOGIN_TIMEOUT` error after `ms` so the UI can
+   * surface the bilingual "try again later" message instead of an indefinite
+   * spinner.
+   */
+  function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error("LOGIN_TIMEOUT")), ms);
+      promise.then(
+        (v) => { clearTimeout(timer); resolve(v); },
+        (e) => { clearTimeout(timer); reject(e); },
+      );
+    });
+  }
 
   const handleLogin = async () => {
     setLoading(true);
@@ -73,7 +95,7 @@ export default function LoginPage() {
     formData.append("mode", mode);
 
     try {
-      const result = await loginAction(formData);
+      const result = await withTimeout(loginAction(formData), LOGIN_TIMEOUT_MS);
       if (result?.error) {
         if (result.error.startsWith("RATE_LIMITED")) {
           const seconds = parseInt(result.error.split(":")[1] ?? "30", 10);
@@ -93,7 +115,11 @@ export default function LoginPage() {
       }
     } catch (err: any) {
       if (err.message?.includes("NEXT_REDIRECT")) return;
-      setError(lang === "ar" ? "حدث خطأ في النظام. يرجى المحاولة لاحقاً." : "System error. Please try again later.");
+      if (err.message === "LOGIN_TIMEOUT") {
+        setError(errorMessages.TIMEOUT?.[lang] ?? (lang === "ar" ? "انتهت مهلة الطلب." : "Request timed out."));
+      } else {
+        setError(lang === "ar" ? "حدث خطأ في النظام. يرجى المحاولة لاحقاً." : "System error. Please try again later.");
+      }
       setLoading(false);
     }
   };
