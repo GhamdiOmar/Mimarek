@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import {
   Button,
+  IconButton,
   Badge,
   SARAmount,
   AppBar,
@@ -395,14 +396,13 @@ export default function MaintenanceDetailPage() {
         centered
         onBack={() => router.push("/dashboard/maintenance/tickets")}
         trailing={
-          <button
-            type="button"
-            onClick={() => setEditingCost(true)}
+          <IconButton
+            icon={Pencil}
             aria-label={lang === "ar" ? "تعديل" : "Edit"}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground hover:bg-muted/60 active:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--primary))]"
-          >
-            <Pencil className="h-5 w-5" aria-hidden="true" />
-          </button>
+            onClick={() => setEditingCost(true)}
+            variant="ghost"
+            className="h-10 w-10 rounded-full"
+          />
         }
       />
 
@@ -610,15 +610,17 @@ export default function MaintenanceDetailPage() {
                 variant: "draft",
               };
               return (
-                <button
+                <Button
                   key={nextStatus}
                   type="button"
+                  variant="outline"
                   disabled={saving}
                   onClick={async () => {
                     await handleStatusChange(nextStatus);
                     setMobileStatusSheet(false);
                   }}
-                  className="flex w-full items-center justify-between rounded-xl border border-border bg-background px-4 py-3 text-start transition-colors hover:border-foreground/20 active:scale-[0.99] disabled:opacity-60"
+                  className="w-full justify-between rounded-xl px-4 py-3 h-auto min-h-11 text-start"
+                  style={{ display: "inline-flex" }}
                 >
                   <span className="flex items-center gap-2 text-sm font-medium text-foreground">
                     {transitioningTo === nextStatus ? (
@@ -634,7 +636,7 @@ export default function MaintenanceDetailPage() {
                   >
                     {nextLabel[lang]}
                   </Badge>
-                </button>
+                </Button>
               );
             })}
           </div>
@@ -648,14 +650,16 @@ export default function MaintenanceDetailPage() {
         title={lang === "ar" ? "تعيين المسؤول" : "Assign to"}
       >
         <div className="space-y-2">
-          <button
+          <Button
             type="button"
+            variant="outline"
             disabled={saving}
             onClick={async () => {
               await handleAssign("");
               setMobileAssignSheet(false);
             }}
-            className="flex w-full items-center gap-3 rounded-xl border border-border bg-background px-4 py-3 text-start disabled:opacity-60"
+            className="w-full justify-start gap-3 rounded-xl px-4 py-3 h-auto min-h-11"
+            style={{ display: "inline-flex" }}
           >
             <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-muted text-muted-foreground">
               <X className="h-4 w-4" />
@@ -663,22 +667,24 @@ export default function MaintenanceDetailPage() {
             <span className="text-sm font-medium text-foreground">
               {lang === "ar" ? "— بدون تعيين —" : "— Unassigned —"}
             </span>
-          </button>
+          </Button>
           {users.map((u: any) => (
-            <button
+            <Button
               key={u.id}
               type="button"
+              variant="outline"
               disabled={saving}
               onClick={async () => {
                 await handleAssign(u.id);
                 setMobileAssignSheet(false);
               }}
-              className="flex w-full items-center gap-3 rounded-xl border border-border bg-background px-4 py-3 text-start disabled:opacity-60"
+              className="w-full justify-start gap-3 rounded-xl px-4 py-3 h-auto min-h-11"
+              style={{ display: "inline-flex" }}
             >
               <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <CircleUser className="h-5 w-5" />
               </span>
-              <span className="min-w-0 flex-1">
+              <span className="min-w-0 flex-1 text-start">
                 <span className="block truncate text-sm font-medium text-foreground">
                   {u.name}
                 </span>
@@ -689,7 +695,7 @@ export default function MaintenanceDetailPage() {
               {request.assignedToId === u.id && (
                 <CheckCircle2 className="h-4 w-4 text-primary" />
               )}
-            </button>
+            </Button>
           ))}
         </div>
       </BottomSheet>

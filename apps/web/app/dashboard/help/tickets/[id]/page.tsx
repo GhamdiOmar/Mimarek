@@ -15,7 +15,7 @@ import {
   Loader2,
   MessageSquare,
 } from "lucide-react";
-import { Button, AppBar, BottomSheet, Textarea, DirectionalIcon, EmptyState } from "@repo/ui";
+import { Button, IconButton, AppBar, BottomSheet, Textarea, DirectionalIcon, EmptyState } from "@repo/ui";
 import { cn } from "@repo/ui/lib/utils";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -223,14 +223,13 @@ export default function TicketDetailPage() {
         lang={lang}
         trailing={
           isAdmin ? (
-            <button
-              type="button"
-              onClick={() => setMobileActionsOpen(true)}
+            <IconButton
+              icon={MoreHorizontal}
               aria-label={lang === "ar" ? "المزيد" : "More"}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-full text-foreground hover:bg-muted/60 active:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--primary))]"
-            >
-              <MoreHorizontal className="h-5 w-5" aria-hidden="true" />
-            </button>
+              onClick={() => setMobileActionsOpen(true)}
+              variant="ghost"
+              className="h-11 w-11 rounded-full"
+            />
           ) : undefined
         }
       />
@@ -391,9 +390,11 @@ export default function TicketDetailPage() {
             {STATUS_OPTIONS.map((opt) => {
               const isActive = ticket.status === opt.value;
               return (
-                <button
+                <Button
                   key={opt.value}
                   type="button"
+                  variant={isActive ? "subtle" : "outline"}
+                  disabled={updatingStatus}
                   onClick={async () => {
                     if (isActive) {
                       setMobileActionsOpen(false);
@@ -402,17 +403,15 @@ export default function TicketDetailPage() {
                     await handleStatusChange(opt.value);
                     setMobileActionsOpen(false);
                   }}
-                  disabled={updatingStatus}
                   className={cn(
-                    "w-full min-h-11 flex items-center justify-between rounded-xl border px-4 py-3 text-start text-sm transition-colors",
-                    isActive
-                      ? "bg-primary/10 border-primary/20 text-primary font-semibold"
-                      : "bg-card border-border text-foreground hover:bg-muted/30"
+                    "w-full min-h-11 justify-between rounded-xl px-4 py-3 h-auto text-sm",
+                    isActive && "bg-primary/10 border-primary/20 text-primary font-semibold"
                   )}
+                  style={{ display: "inline-flex" }}
                 >
                   <span>{lang === "ar" ? opt.label.ar : opt.label.en}</span>
                   {isActive && <CheckCircle2 className="h-4 w-4" aria-hidden="true" />}
-                </button>
+                </Button>
               );
             })}
             {updatingStatus && (

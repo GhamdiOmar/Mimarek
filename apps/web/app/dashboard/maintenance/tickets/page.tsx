@@ -24,6 +24,7 @@ import {
 import { exportToExcel } from "../../../../lib/export";
 import {
   Button,
+  IconButton,
   ResponsiveDialog,
   Card,
   KPICard,
@@ -395,14 +396,13 @@ export default function MaintenancePage() {
         title={lang === "ar" ? "الصيانة" : "Maintenance"}
         lang={lang}
         trailing={
-          <button
-            type="button"
-            onClick={() => setShowFilters(true)}
+          <IconButton
+            icon={Filter}
             aria-label={lang === "ar" ? "تصفية" : "Filter"}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-full text-foreground hover:bg-muted/60 active:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--primary))]"
-          >
-            <Filter className="h-5 w-5" aria-hidden="true" />
-          </button>
+            onClick={() => setShowFilters(true)}
+            variant="ghost"
+            className="h-11 w-11 rounded-full"
+          />
         }
       />
 
@@ -882,23 +882,28 @@ export default function MaintenancePage() {
                     <TableCell>
                       <div className="flex items-center gap-1">
                         <Link href={`/dashboard/maintenance/${r.id}`}>
-                          <Button variant="ghost" size="sm" style={{ display: "inline-flex" }} aria-label={lang === "ar" ? "عرض" : "View"}>
-                            <Eye className="h-3.5 w-3.5" />
-                          </Button>
+                          <IconButton
+                            icon={Eye}
+                            aria-label={lang === "ar" ? "عرض" : "View"}
+                            variant="ghost"
+                            size="sm"
+                          />
                         </Link>
-                        <Button variant="ghost" size="sm" onClick={() => openEdit(r)} style={{ display: "inline-flex" }} aria-label={lang === "ar" ? "تعديل" : "Edit"}>
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button
+                        <IconButton
+                          icon={Pencil}
+                          aria-label={lang === "ar" ? "تعديل" : "Edit"}
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => openEdit(r)}
+                        />
+                        <IconButton
+                          icon={Trash2}
+                          aria-label={lang === "ar" ? "حذف" : "Delete"}
                           variant="ghost"
                           size="sm"
                           className="text-destructive hover:text-destructive/80"
                           onClick={() => handleDelete(r.id)}
-                          style={{ display: "inline-flex" }}
-                          aria-label={lang === "ar" ? "حذف" : "Delete"}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
+                        />
                       </div>
                     </TableCell>
                   </TableRow>

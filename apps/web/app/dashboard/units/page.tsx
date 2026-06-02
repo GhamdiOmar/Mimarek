@@ -30,6 +30,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import {
   Button,
+  IconButton,
   Badge,
   Input,
   SARAmount,
@@ -388,17 +389,18 @@ function AdvancedUnitMatrixPage() {
           }
           lang={lang}
           trailing={
-            <button
-              type="button"
-              onClick={() => setMobileFilterOpen(true)}
-              aria-label={lang === "ar" ? "تصفية" : "Filter"}
-              className="relative inline-flex h-11 w-11 items-center justify-center rounded-full text-foreground hover:bg-muted/60 active:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--primary))]"
-            >
-              <Filter className="h-5 w-5" aria-hidden="true" />
+            <span className="relative inline-flex">
+              <IconButton
+                icon={Filter}
+                aria-label={lang === "ar" ? "تصفية" : "Filter"}
+                variant="ghost"
+                onClick={() => setMobileFilterOpen(true)}
+                className="h-11 w-11 rounded-full"
+              />
               {mobileActiveFilterCount > 0 && (
-                <span className="absolute top-1.5 end-1.5 h-2 w-2 rounded-full bg-primary" />
+                <span className="pointer-events-none absolute top-1.5 end-1.5 h-2 w-2 rounded-full bg-primary" />
               )}
-            </button>
+            </span>
           }
         />
 
@@ -584,36 +586,32 @@ function AdvancedUnitMatrixPage() {
                 {lang === "ar" ? "الحالة" : "Status"}
               </div>
               <div className="flex flex-wrap gap-2">
-                <button
+                <Button
                   type="button"
+                  variant={!statusFilter ? "primary" : "outline"}
+                  size="sm"
                   onClick={() => setStatusFilter("")}
-                  className={cn(
-                    "rounded-full px-3 py-1.5 text-xs font-medium border transition-colors",
-                    !statusFilter
-                      ? "border-transparent bg-primary text-primary-foreground"
-                      : "border-border bg-card text-muted-foreground hover:border-foreground/20",
-                  )}
+                  aria-pressed={!statusFilter}
+                  className="rounded-full"
+                  style={{ display: "inline-flex" }}
                 >
                   {lang === "ar" ? "الكل" : "All"}
-                </button>
+                </Button>
                 {Object.entries(unitStatusLabels).map(([key, label]) => {
                   const active = statusFilter === key;
                   return (
-                    <button
+                    <Button
                       key={key}
                       type="button"
-                      onClick={() =>
-                        setStatusFilter(active ? "" : key)
-                      }
-                      className={cn(
-                        "rounded-full px-3 py-1.5 text-xs font-medium border transition-colors",
-                        active
-                          ? "border-transparent bg-primary text-primary-foreground"
-                          : "border-border bg-card text-muted-foreground hover:border-foreground/20",
-                      )}
+                      variant={active ? "primary" : "outline"}
+                      size="sm"
+                      onClick={() => setStatusFilter(active ? "" : key)}
+                      aria-pressed={active}
+                      className="rounded-full"
+                      style={{ display: "inline-flex" }}
                     >
                       {label[lang]}
-                    </button>
+                    </Button>
                   );
                 })}
               </div>
@@ -625,36 +623,32 @@ function AdvancedUnitMatrixPage() {
                 {lang === "ar" ? "نوع الوحدة" : "Unit type"}
               </div>
               <div className="flex flex-wrap gap-2">
-                <button
+                <Button
                   type="button"
+                  variant={!mobileTypeFilter ? "primary" : "outline"}
+                  size="sm"
                   onClick={() => setMobileTypeFilter("")}
-                  className={cn(
-                    "rounded-full px-3 py-1.5 text-xs font-medium border transition-colors",
-                    !mobileTypeFilter
-                      ? "border-transparent bg-primary text-primary-foreground"
-                      : "border-border bg-card text-muted-foreground hover:border-foreground/20",
-                  )}
+                  aria-pressed={!mobileTypeFilter}
+                  className="rounded-full"
+                  style={{ display: "inline-flex" }}
                 >
                   {lang === "ar" ? "الكل" : "All"}
-                </button>
+                </Button>
                 {Object.entries(unitTypeLabels).map(([key, label]) => {
                   const active = mobileTypeFilter === key;
                   return (
-                    <button
+                    <Button
                       key={key}
                       type="button"
-                      onClick={() =>
-                        setMobileTypeFilter(active ? "" : key)
-                      }
-                      className={cn(
-                        "rounded-full px-3 py-1.5 text-xs font-medium border transition-colors",
-                        active
-                          ? "border-transparent bg-primary text-primary-foreground"
-                          : "border-border bg-card text-muted-foreground hover:border-foreground/20",
-                      )}
+                      variant={active ? "primary" : "outline"}
+                      size="sm"
+                      onClick={() => setMobileTypeFilter(active ? "" : key)}
+                      aria-pressed={active}
+                      className="rounded-full"
+                      style={{ display: "inline-flex" }}
                     >
                       {label[lang]}
-                    </button>
+                    </Button>
                   );
                 })}
               </div>
@@ -717,9 +711,13 @@ function AdvancedUnitMatrixPage() {
       {error && (
         <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-destructive/10 border border-destructive/30">
           <p className="text-sm text-destructive">{error}</p>
-          <button onClick={() => setError(null)} className="text-destructive/70 hover:text-destructive" aria-label={lang === "ar" ? "إغلاق" : "Close"}>
-            <X className="h-4 w-4" />
-          </button>
+          <IconButton
+            icon={X}
+            aria-label={lang === "ar" ? "إغلاق" : "Close"}
+            variant="ghost"
+            onClick={() => setError(null)}
+            className="text-destructive/70 hover:text-destructive"
+          />
         </div>
       )}
 
@@ -815,12 +813,15 @@ function AdvancedUnitMatrixPage() {
                 </Button>
               </div>
 
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => setSelectedUnits([])}
-                className="text-xs text-white/50 hover:text-white underline underline-offset-4 ms-4"
+                className="text-xs text-white/50 hover:text-white ms-4"
+                style={{ display: "inline-flex" }}
               >
                 {lang === "ar" ? "إلغاء التحديد" : "Clear Selection"}
-              </button>
+              </Button>
             </div>
           )}
 
@@ -829,42 +830,46 @@ function AdvancedUnitMatrixPage() {
             {/* Row 1: Status tabs + view toggle */}
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex flex-wrap gap-2">
-                <button
+                <Button
+                  variant={!statusFilter ? "subtle" : "ghost"}
+                  size="sm"
                   onClick={() => setStatusFilter("")}
+                  aria-pressed={!statusFilter}
                   className={cn(
-                    "rounded-full px-3 py-1 text-xs font-medium transition-colors",
-                    !statusFilter
-                      ? "bg-primary/10 text-primary ring-1 ring-primary/30"
-                      : "bg-muted text-muted-foreground hover:bg-muted/70"
+                    "rounded-full",
+                    !statusFilter && "bg-primary/10 text-primary ring-1 ring-primary/30 hover:bg-primary/15"
                   )}
                   style={{ display: "inline-flex" }}
                 >
                   {lang === "ar" ? "الكل" : "All"} {statusCounts.total}
-                </button>
+                </Button>
                 {Object.entries(unitStatusLabels).map(([key, label]) => {
                   const count = units.filter((u: any) => u.status === key).length;
                   const active = statusFilter === key;
                   const activeClasses: Record<string, string> = {
-                    AVAILABLE: "bg-success/15 text-success ring-1 ring-success/30",
-                    RESERVED: "bg-info/15 text-info ring-1 ring-info/30",
-                    SOLD: "bg-primary/15 text-primary ring-1 ring-primary/30",
-                    RENTED: "bg-secondary/15 text-secondary ring-1 ring-secondary/30",
-                    MAINTENANCE: "bg-warning/15 text-warning ring-1 ring-warning/30",
+                    AVAILABLE: "bg-success/15 text-success ring-1 ring-success/30 hover:bg-success/20",
+                    RESERVED: "bg-info/15 text-info ring-1 ring-info/30 hover:bg-info/20",
+                    SOLD: "bg-primary/15 text-primary ring-1 ring-primary/30 hover:bg-primary/20",
+                    RENTED: "bg-secondary/15 text-secondary ring-1 ring-secondary/30 hover:bg-secondary/20",
+                    MAINTENANCE: "bg-warning/15 text-warning ring-1 ring-warning/30 hover:bg-warning/20",
                   };
                   return (
-                    <button
+                    <Button
                       key={key}
+                      variant={active ? "subtle" : "ghost"}
+                      size="sm"
                       onClick={() => setStatusFilter(active ? "" : key)}
+                      aria-pressed={active}
                       className={cn(
-                        "rounded-full px-3 py-1 text-xs font-medium transition-colors",
+                        "rounded-full",
                         active
                           ? activeClasses[key] ?? "bg-primary/10 text-primary ring-1 ring-primary/30"
-                          : "bg-muted text-muted-foreground hover:bg-muted/70"
+                          : "text-muted-foreground"
                       )}
                       style={{ display: "inline-flex" }}
                     >
                       {label[lang]} {count}
-                    </button>
+                    </Button>
                   );
                 })}
               </div>
@@ -878,44 +883,52 @@ function AdvancedUnitMatrixPage() {
                   ] as const).map((d) => {
                     const active = density === d.key;
                     return (
-                      <button
+                      <Button
                         key={d.key}
+                        variant={active ? "secondary" : "ghost"}
+                        size="sm"
                         onClick={() => setDensity(d.key)}
+                        aria-pressed={active}
+                        aria-label={lang === "ar" ? `الكثافة: ${d.ar}` : `Density: ${d.en}`}
                         className={cn(
-                          "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+                          "rounded-md px-3 py-1.5 text-xs",
                           active
                             ? "bg-background text-foreground shadow-sm"
                             : "text-muted-foreground hover:text-foreground"
                         )}
                         style={{ display: "inline-flex" }}
-                        aria-pressed={active}
-                        aria-label={lang === "ar" ? `الكثافة: ${d.ar}` : `Density: ${d.en}`}
                       >
                         {lang === "ar" ? d.ar : d.en}
-                      </button>
+                      </Button>
                     );
                   })}
                 </div>
-                <button
+                <Button
+                  variant={viewMode === "cards" ? "subtle" : "outline"}
+                  size="sm"
                   onClick={() => setViewMode("cards")}
+                  aria-pressed={viewMode === "cards"}
                   className={cn(
-                    "px-3 py-2 rounded-full text-sm border transition-colors",
-                    viewMode === "cards" ? "border-primary/30 bg-primary/15 text-foreground" : "border-border bg-card text-muted-foreground"
+                    "rounded-full",
+                    viewMode === "cards" && "border-primary/30 bg-primary/15 text-foreground hover:bg-primary/20"
                   )}
                   style={{ display: "inline-flex" }}
                 >
                   {lang === "ar" ? "بطاقات" : "Cards"}
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant={viewMode === "table" ? "subtle" : "outline"}
+                  size="sm"
                   onClick={() => setViewMode("table")}
+                  aria-pressed={viewMode === "table"}
                   className={cn(
-                    "px-3 py-2 rounded-full text-sm border transition-colors",
-                    viewMode === "table" ? "border-primary/30 bg-primary/15 text-foreground" : "border-border bg-card text-muted-foreground"
+                    "rounded-full",
+                    viewMode === "table" && "border-primary/30 bg-primary/15 text-foreground hover:bg-primary/20"
                   )}
                   style={{ display: "inline-flex" }}
                 >
                   {lang === "ar" ? "جدول" : "Table"}
-                </button>
+                </Button>
               </div>
             </div>
             {/* Row 2: Search + filters */}
@@ -983,9 +996,13 @@ function AdvancedUnitMatrixPage() {
                 return (
                   <div
                     key={unit.id}
+                    role="button"
+                    tabIndex={0}
                     onClick={() => openUnitDetail(unit)}
+                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openUnitDetail(unit); } }}
+                    aria-label={`${unitTypeLabels[unit.type]?.[lang] ?? unit.type} ${unit.number}`}
                     className={cn(
-                      "rounded-xl border border-border bg-card hover:border-primary/40 transition-colors cursor-pointer",
+                      "rounded-xl border border-border bg-card hover:border-primary/40 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                       padding,
                       density === "comfortable" ? "space-y-4" : "space-y-3"
                     )}
@@ -1070,10 +1087,14 @@ function AdvancedUnitMatrixPage() {
 
               {/* Add Unit Placeholder */}
               <div
+                role="button"
+                tabIndex={0}
                 onClick={() => setShowAddModal(true)}
-                className="rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center min-h-[240px] text-muted-foreground hover:border-primary hover:text-primary transition-all cursor-pointer"
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowAddModal(true); } }}
+                aria-label={lang === "ar" ? "إضافة وحدة جديدة" : "Add new unit"}
+                className="rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center min-h-[240px] text-muted-foreground hover:border-primary hover:text-primary transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
-                <Plus className="h-8 w-8" />
+                <Plus className="h-8 w-8" aria-hidden="true" />
                 <span className="text-xs font-bold mt-2">{lang === "ar" ? "إضافة وحدة" : "Add Unit"}</span>
               </div>
             </div>
@@ -1094,7 +1115,15 @@ function AdvancedUnitMatrixPage() {
                   </TableHeader>
                   <TableBody>
                     {filteredUnits.map((unit: any) => (
-                      <TableRow key={unit.id} className="cursor-pointer hover:bg-muted/30" onClick={() => openUnitDetail(unit)}>
+                      <TableRow
+                        key={unit.id}
+                        className="cursor-pointer hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+                        tabIndex={0}
+                        role="row"
+                        onClick={() => openUnitDetail(unit)}
+                        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openUnitDetail(unit); } }}
+                        aria-label={`${unitTypeLabels[unit.type]?.[lang] ?? unit.type} ${unit.number}`}
+                      >
                         <TableCell className="font-bold text-primary/80 tabular-nums">{unit.number}</TableCell>
                         <TableCell>{unit.buildingName || unit.city || "—"}</TableCell>
                         <TableCell>{unitTypeLabels[unit.type]?.[lang] ?? unit.type}</TableCell>

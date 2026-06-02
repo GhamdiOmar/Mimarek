@@ -16,9 +16,12 @@ import {
   Search,
   Loader2,
   AlertTriangle,
+  X,
 } from "lucide-react";
 import {
   Button,
+  IconButton,
+  ActionLink,
   Input,
   Badge,
   AppBar,
@@ -178,22 +181,20 @@ export default function DocumentVaultPage() {
         {mobileCategories.map((cat) => {
           const isActive = activeCategory === cat.id;
           return (
-            <button
+            <Button
               key={cat.id}
               type="button"
               role="tab"
               aria-selected={isActive}
+              aria-pressed={isActive}
+              variant={isActive ? "primary" : "subtle"}
+              size="sm"
               onClick={() => setActiveCategory(cat.id)}
-              className={cn(
-                "min-h-[36px] whitespace-nowrap rounded-full px-4 py-2 text-xs font-medium transition-colors active:scale-95",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--primary))]",
-                isActive
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground"
-              )}
+              className="whitespace-nowrap rounded-full active:scale-95"
+              style={{ display: "inline-flex" }}
             >
               {cat.label[lang]}
-            </button>
+            </Button>
           );
         })}
       </div>
@@ -375,9 +376,13 @@ export default function DocumentVaultPage() {
       {uploadError && (
         <div className="flex items-center gap-2 px-4 py-2 bg-destructive/10 border border-destructive/30 rounded-md">
           <p className="text-sm text-destructive flex-1">{uploadError}</p>
-          <button onClick={() => setUploadError(null)} className="text-destructive/70 hover:text-destructive text-xs font-medium">
-            {lang === "ar" ? "إغلاق" : "Dismiss"}
-          </button>
+          <IconButton
+            icon={X}
+            aria-label={lang === "ar" ? "إغلاق" : "Dismiss"}
+            variant="ghost"
+            onClick={() => setUploadError(null)}
+            className="text-destructive/70 hover:text-destructive"
+          />
         </div>
       )}
 
@@ -396,18 +401,22 @@ export default function DocumentVaultPage() {
                    { id: "FINANCE",   label: { ar: "مالي",          en: "Finance" } },
                    { id: "MARKETING", label: { ar: "تسويق",         en: "Marketing" } },
                  ].map((cat) => (
-                    <button
+                    <Button
                       key={cat.id}
+                      variant={activeCategory === cat.id ? "subtle" : "ghost"}
+                      size="sm"
                       onClick={() => setActiveCategory(cat.id)}
+                      aria-pressed={activeCategory === cat.id}
                       className={cn(
-                        "w-full text-start px-3 py-2 text-sm rounded-md transition-colors",
+                        "w-full justify-start text-sm",
                         activeCategory === cat.id
-                          ? "bg-secondary/10 text-secondary font-bold"
-                          : "text-muted-foreground hover:bg-muted hover:text-primary"
+                          ? "bg-secondary/10 text-secondary font-bold hover:bg-secondary/15"
+                          : "text-muted-foreground hover:text-primary"
                       )}
+                      style={{ display: "inline-flex" }}
                     >
                        {cat.label[lang]}
-                    </button>
+                    </Button>
                  ))}
               </div>
            </div>
@@ -522,9 +531,12 @@ export default function DocumentVaultPage() {
                       )}>
                          {['pdf'].includes(doc.type?.toLowerCase()) ? <FilePdf className="h-7 w-7" /> : ['jpg', 'png', 'jpeg'].includes(doc.type?.toLowerCase()) ? <FileImage className="h-7 w-7" /> : <FileText className="h-7 w-7" />}
                       </div>
-                      <button className="h-11 w-11 sm:h-8 sm:w-8 flex items-center justify-center text-muted-foreground hover:text-primary transition-colors" aria-label={lang === "ar" ? "المزيد" : "More"}>
-                         <MoreVertical className="h-5 w-5" />
-                      </button>
+                      <IconButton
+                        icon={MoreVertical}
+                        aria-label={lang === "ar" ? "المزيد" : "More"}
+                        variant="ghost"
+                        className="h-11 w-11 sm:h-8 sm:w-8"
+                      />
                    </div>
                    
                    <div className="space-y-1">
@@ -534,9 +546,15 @@ export default function DocumentVaultPage() {
 
                    <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
                       <Badge variant="available" className="text-[9px] bg-muted text-muted-foreground border-none">{doc.category}</Badge>
-                      <a href={doc.url} target="_blank" rel="noopener noreferrer" className="h-11 w-11 sm:h-8 sm:w-8 rounded-full hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-secondary transition-all">
-                         <Download className="h-[18px] w-[18px]" />
-                      </a>
+                      <ActionLink
+                        asChild
+                        aria-label={lang === "ar" ? `تنزيل ${doc.name}` : `Download ${doc.name}`}
+                        className="h-11 w-11 sm:h-8 sm:w-8 rounded-full hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-secondary transition-all no-underline hover:no-underline"
+                      >
+                        <a href={doc.url} target="_blank" rel="noopener noreferrer">
+                          <Download className="h-[18px] w-[18px]" aria-hidden="true" />
+                        </a>
+                      </ActionLink>
                    </div>
                 </div>
               ))}

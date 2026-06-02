@@ -35,6 +35,8 @@ import {
 } from "lucide-react";
 import {
   Button,
+  IconButton,
+  ActionLink,
   Badge,
   Input,
   Card,
@@ -559,7 +561,11 @@ function CustomerDrawer({
           </div>
           <div className="flex items-center gap-2">
             {/* Feature A: Edit Profile button */}
-            <button
+            <Button
+              variant="outline"
+              size="sm"
+              style={{ display: "inline-flex" }}
+              className="gap-1.5 text-xs"
               onClick={() => {
                 setEditForm({
                   name: customer.name ?? "",
@@ -575,19 +581,18 @@ function CustomerDrawer({
                 setEditSuccess(false);
                 setShowEditModal(true);
               }}
-              className="h-8 px-3 rounded-lg border border-border flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors"
-              title={lang === "ar" ? "تعديل الملف" : "Edit Profile"}
             >
               <Pencil className="h-3.5 w-3.5" />
               {lang === "ar" ? "تعديل" : "Edit"}
-            </button>
-            <button
-              onClick={onClose}
-              className="h-8 w-8 rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors"
+            </Button>
+            <IconButton
+              icon={X}
               aria-label={lang === "ar" ? "إغلاق" : "Close"}
-            >
-              <X className="h-4 w-4" />
-            </button>
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="h-8 w-8"
+            />
           </div>
         </div>
 
@@ -831,14 +836,16 @@ function CustomerDrawer({
                 <Link2 className="h-3.5 w-3.5" />
                 {lang === "ar" ? "الاهتمامات / Interested Properties" : "Interested Properties / الاهتمامات"}
               </h3>
-              <button
-                onClick={openLinkModal}
-                className="flex items-center gap-1 text-[10px] font-semibold text-primary border border-primary/30 rounded-md px-2 py-1 hover:bg-primary/5 transition-colors"
+              <Button
+                variant="outline"
+                size="sm"
                 style={{ display: "inline-flex" }}
+                className="gap-1 text-[10px] text-primary border-primary/30 hover:bg-primary/5 h-7 px-2"
+                onClick={openLinkModal}
               >
                 <Plus className="h-3 w-3" />
                 {lang === "ar" ? "ربط عقار" : "Link Property"}
-              </button>
+              </Button>
             </div>
 
             {loadingInterests ? (
@@ -931,25 +938,28 @@ function CustomerDrawer({
                       {/* Actions — only for ACTIVE interests */}
                       {interest.status === "ACTIVE" && (
                         <div className="flex items-center gap-2 pt-1 border-t border-border/40">
-                          <button
-                            onClick={() => openConvertModal(interest)}
-                            className="flex items-center gap-1 text-[10px] font-semibold text-white bg-primary rounded px-2 py-1 hover:bg-primary/90 transition-colors"
+                          <Button
+                            size="sm"
                             style={{ display: "inline-flex" }}
+                            className="gap-1 text-[10px] h-7 px-2"
+                            onClick={() => openConvertModal(interest)}
                           >
                             <DirectionalIcon icon={ArrowRight} className="h-3 w-3" />
                             {lang === "ar" ? "تحويل لحجز" : "Convert to Reservation"}
-                          </button>
-                          <button
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            style={{ display: "inline-flex" }}
+                            className="gap-1 text-[10px] h-7 px-2 text-destructive border-destructive/30 hover:bg-destructive/5"
                             onClick={() => {
                               setDroppingInterest(interest);
                               setShowDropConfirm(true);
                             }}
-                            className="flex items-center gap-1 text-[10px] font-semibold text-destructive border border-destructive/30 rounded px-2 py-1 hover:bg-destructive/5 transition-colors"
-                            style={{ display: "inline-flex" }}
                           >
                             <Trash2 className="h-3 w-3" />
                             {lang === "ar" ? "إسقاط" : "Drop"}
-                          </button>
+                          </Button>
                         </div>
                       )}
                     </div>
@@ -1017,13 +1027,14 @@ function CustomerDrawer({
                           </span>
                         </div>
                       </div>
-                      <a
+                      <ActionLink
                         href={href}
-                        className="flex items-center gap-1 text-[10px] font-semibold text-primary hover:underline underline-offset-2 shrink-0"
+                        className="text-[10px] font-semibold shrink-0"
+                        trailingIcon={ChevronRight}
+                        directional
                       >
                         {lang === "ar" ? "عرض" : "View"}
-                        <DirectionalIcon icon={ChevronRight} className="h-3 w-3" />
-                      </a>
+                      </ActionLink>
                     </div>
                   );
                 })}
@@ -1055,15 +1066,18 @@ function CustomerDrawer({
                 <NextActionPanel actions={journey.nextActions} lang={lang} />
                 {journey.related.length > 0 && (
                   <>
-                    <button
+                    <Button
                       type="button"
+                      variant="link"
+                      size="sm"
+                      style={{ display: "inline-flex" }}
+                      className="text-xs h-auto p-0"
                       onClick={() => setJourneyRelatedOpen(true)}
-                      className="text-xs font-medium text-primary hover:underline underline-offset-2"
                     >
                       {lang === "ar"
                         ? `السجلات المرتبطة (${journey.related.length})`
                         : `Related records (${journey.related.length})`}
-                    </button>
+                    </Button>
                     <RelatedContextPanel
                       open={journeyRelatedOpen}
                       onOpenChange={setJourneyRelatedOpen}
@@ -1309,20 +1323,22 @@ function CustomerDrawer({
             ) : (
               <div className="max-h-48 overflow-y-auto space-y-1.5 border border-border rounded-lg p-2">
                 {filteredUnits.map((unit) => (
-                  <button
+                  <Button
                     key={unit.id}
                     type="button"
+                    variant="ghost"
+                    size="sm"
+                    style={{ display: "block", width: "100%" }}
+                    className={cn(
+                      "text-start p-2.5 rounded-lg border h-auto",
+                      linkSelectedUnit?.id === unit.id
+                        ? "border-primary/40 bg-primary/5 hover:bg-primary/10"
+                        : "border-border hover:bg-muted/30"
+                    )}
                     onClick={() => {
                       setLinkSelectedUnit(unit);
                       setLinkIntent("");
                     }}
-                    className={cn(
-                      "w-full text-start p-2.5 rounded-lg border transition-colors",
-                      linkSelectedUnit?.id === unit.id
-                        ? "border-primary/40 bg-primary/5"
-                        : "border-border hover:bg-muted/30"
-                    )}
-                    style={{ display: "block" }}
                   >
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 flex-wrap">
@@ -1339,7 +1355,7 @@ function CustomerDrawer({
                         {unit.rentalPrice && <div className="text-primary">{formatSAR(unit.rentalPrice, lang)}/{lang === "ar" ? "شهر" : "mo"}</div>}
                       </div>
                     </div>
-                  </button>
+                  </Button>
                 ))}
               </div>
             )}
@@ -1351,32 +1367,36 @@ function CustomerDrawer({
                   {lang === "ar" ? "نية العميل" : "Client Intent"}
                 </p>
                 <div className="flex gap-2">
-                  <button
+                  <Button
                     type="button"
-                    onClick={() => setLinkIntent("BUY")}
+                    variant="outline"
+                    size="sm"
+                    style={{ display: "inline-flex", flex: 1 }}
                     className={cn(
-                      "flex-1 py-2 rounded-lg border text-sm font-semibold transition-colors",
+                      "py-2 text-sm h-auto justify-center",
                       linkIntent === "BUY"
-                        ? "border-info/50 bg-info/10 text-info"
-                        : "border-border text-muted-foreground hover:bg-muted/30"
+                        ? "border-info/50 bg-info/10 text-info hover:bg-info/15"
+                        : ""
                     )}
-                    style={{ display: "inline-flex", justifyContent: "center" }}
+                    onClick={() => setLinkIntent("BUY")}
                   >
                     {lang === "ar" ? "شراء" : "Buy"}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
-                    onClick={() => setLinkIntent("RENT")}
+                    variant="outline"
+                    size="sm"
+                    style={{ display: "inline-flex", flex: 1 }}
                     className={cn(
-                      "flex-1 py-2 rounded-lg border text-sm font-semibold transition-colors",
+                      "py-2 text-sm h-auto justify-center",
                       linkIntent === "RENT"
-                        ? "border-primary/50 bg-primary/10 text-primary"
-                        : "border-border text-muted-foreground hover:bg-muted/30"
+                        ? "border-primary/50 bg-primary/10 text-primary hover:bg-primary/15"
+                        : ""
                     )}
-                    style={{ display: "inline-flex", justifyContent: "center" }}
+                    onClick={() => setLinkIntent("RENT")}
                   >
                     {lang === "ar" ? "إيجار" : "Rent"}
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}
@@ -1552,21 +1572,23 @@ function KanbanCard({
           )}
         </div>
         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button
+          <IconButton
+            icon={Eye}
+            aria-label={lang === "ar" ? "عرض الملف" : "View Profile"}
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 border border-border bg-background hover:text-primary hover:border-primary/30"
             onClick={() => onViewProfile(customer)}
-            className="h-6 w-6 rounded-md border border-border bg-background flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/30 transition-colors"
-            title={lang === "ar" ? "عرض الملف" : "View Profile"}
-          >
-            <Eye className="h-3 w-3" />
-          </button>
+          />
           {canDelete && (
-            <button
+            <IconButton
+              icon={Trash2}
+              aria-label={lang === "ar" ? "حذف" : "Delete"}
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 border border-border bg-background hover:text-destructive hover:border-destructive/30"
               onClick={() => onDelete(customer)}
-              className="h-6 w-6 rounded-md border border-border bg-background flex items-center justify-center text-muted-foreground hover:text-destructive hover:border-destructive/30 transition-colors"
-              title={lang === "ar" ? "حذف" : "Delete"}
-            >
-              <Trash2 className="h-3 w-3" />
-            </button>
+            />
           )}
         </div>
       </div>
@@ -1598,13 +1620,16 @@ function KanbanCard({
             {(SOURCE_LABELS[customer.source] as { ar: string; en: string })[lang]}
           </span>
         )}
-        <button
+        <Button
+          variant="link"
+          size="sm"
+          style={{ display: "inline-flex" }}
+          className="ms-auto gap-1 text-[10px] h-auto p-0"
           onClick={() => onViewProfile(customer)}
-          className="ms-auto flex items-center gap-1 text-[10px] font-semibold text-primary hover:underline underline-offset-2 transition-colors"
         >
           {lang === "ar" ? "عرض الملف" : "View Profile"}
           <DirectionalIcon icon={ChevronRight} className="h-3 w-3" />
-        </button>
+        </Button>
       </div>
 
       {/* Hover quick-actions — revealed on card hover only */}
@@ -1644,16 +1669,14 @@ function KanbanCard({
             <Mail className="h-3.5 w-3.5" />
           </a>
         )}
-        <button
-          type="button"
-          onClick={() => onViewProfile(customer)}
+        <IconButton
+          icon={ExternalLink}
           aria-label={lang === "ar" ? "فتح الملف الشخصي" : "Open profile"}
-          title={lang === "ar" ? "فتح الملف" : "Open profile"}
-          className="ms-auto h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-          style={{ display: "inline-flex" }}
-        >
-          <ExternalLink className="h-3.5 w-3.5" />
-        </button>
+          variant="ghost"
+          size="icon"
+          className="ms-auto h-7 w-7"
+          onClick={() => onViewProfile(customer)}
+        />
       </div>
     </div>
   );
@@ -1957,31 +1980,29 @@ export default function CRMPage() {
           const c = row.original;
           return (
             <div className="flex items-center justify-end gap-2">
-              <button
-                type="button"
+              <IconButton
+                icon={Eye}
+                aria-label={lang === "ar" ? "عرض الملف" : "View profile"}
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 border border-border bg-background hover:text-primary hover:border-primary/30"
                 onClick={(e) => {
                   e.stopPropagation();
                   setDrawerCustomer(c);
                 }}
-                aria-label={lang === "ar" ? "عرض الملف" : "View profile"}
-                className="h-7 w-7 rounded-md border border-border bg-background flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/30 transition-colors"
-                style={{ display: "inline-flex" }}
-              >
-                <Eye className="h-3.5 w-3.5" />
-              </button>
+              />
               {canDelete && (
-                <button
-                  type="button"
+                <IconButton
+                  icon={Trash2}
+                  aria-label={lang === "ar" ? "حذف" : "Delete"}
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 border border-border bg-background hover:text-destructive hover:border-destructive/30"
                   onClick={(e) => {
                     e.stopPropagation();
                     openDelete(c);
                   }}
-                  aria-label={lang === "ar" ? "حذف" : "Delete"}
-                  className="h-7 w-7 rounded-md border border-border bg-background flex items-center justify-center text-muted-foreground hover:text-destructive hover:border-destructive/30 transition-colors"
-                  style={{ display: "inline-flex" }}
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
+                />
               )}
             </div>
           );
@@ -2345,18 +2366,14 @@ export default function CRMPage() {
         title={lang === "ar" ? "إدارة العملاء" : "CRM"}
         lang={lang}
         trailing={
-          <button
-            type="button"
-            onClick={() => setShowMobileFilters(true)}
+          <IconButton
+            icon={Filter}
             aria-label={lang === "ar" ? "تصفية" : "Filter"}
-            className={cn(
-              "inline-flex h-10 w-10 items-center justify-center rounded-full",
-              "text-foreground hover:bg-muted/60 active:bg-muted transition-colors",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--primary))]"
-            )}
-          >
-            <Filter className="h-5 w-5" aria-hidden="true" />
-          </button>
+            variant="ghost"
+            size="icon"
+            className="h-10 w-10 rounded-full"
+            onClick={() => setShowMobileFilters(true)}
+          />
         }
       />
 
@@ -2422,15 +2439,13 @@ export default function CRMPage() {
                     </p>
                   ) : (
                     stageCustomers.map((c) => (
-                      <button
+                      <Button
                         key={c.id}
                         type="button"
+                        variant="ghost"
+                        style={{ display: "block" }}
                         onClick={() => setDrawerCustomer(c)}
-                        className={cn(
-                          "w-full rounded-xl border border-border bg-card p-3 text-start",
-                          "transition-colors hover:border-foreground/20 active:scale-[0.99]",
-                          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--primary))]"
-                        )}
+                        className="w-full rounded-xl border border-border bg-card p-3 text-start h-auto hover:border-foreground/20 active:scale-[0.99] transition-colors"
                       >
                         <div className="truncate text-sm font-semibold text-foreground">
                           {c.name}
@@ -2448,7 +2463,7 @@ export default function CRMPage() {
                             {formatSAR(c.budget, lang)}
                           </div>
                         ) : null}
-                      </button>
+                      </Button>
                     ))
                   ),
               };
@@ -2507,54 +2522,48 @@ export default function CRMPage() {
               {lang === "ar" ? "الحالة" : "Status"}
             </h4>
             <div className="flex flex-wrap gap-2">
-              <button
+              <Button
                 type="button"
+                variant={!statusFilter && !showLost ? "primary" : "outline"}
+                size="sm"
+                style={{ display: "inline-flex" }}
+                className="rounded-full px-3 py-1.5 text-xs h-auto"
                 onClick={() => {
                   setStatusFilter("");
                   setShowLost(false);
                 }}
-                className={cn(
-                  "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
-                  !statusFilter && !showLost
-                    ? "border-transparent bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]"
-                    : "border-border bg-card text-muted-foreground"
-                )}
               >
                 {lang === "ar" ? "الكل" : "All"}
-              </button>
+              </Button>
               {PIPELINE_STAGES.map((s) => (
-                <button
+                <Button
                   key={s.key}
                   type="button"
+                  variant={statusFilter === s.key ? "primary" : "outline"}
+                  size="sm"
+                  style={{ display: "inline-flex" }}
+                  className="rounded-full px-3 py-1.5 text-xs h-auto"
                   onClick={() => {
                     setStatusFilter(statusFilter === s.key ? "" : s.key);
                     setShowLost(false);
                   }}
-                  className={cn(
-                    "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
-                    statusFilter === s.key
-                      ? "border-transparent bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]"
-                      : "border-border bg-card text-muted-foreground"
-                  )}
                 >
                   {s.label[lang]}
-                </button>
+                </Button>
               ))}
-              <button
+              <Button
                 type="button"
+                variant={showLost ? "destructive" : "outline"}
+                size="sm"
+                style={{ display: "inline-flex" }}
+                className="rounded-full px-3 py-1.5 text-xs h-auto"
                 onClick={() => {
                   setShowLost((v) => !v);
                   setStatusFilter("");
                 }}
-                className={cn(
-                  "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
-                  showLost
-                    ? "border-transparent bg-destructive text-destructive-foreground"
-                    : "border-border bg-card text-muted-foreground"
-                )}
               >
                 {lang === "ar" ? "الخسائر فقط" : "Lost only"}
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -2563,15 +2572,18 @@ export default function CRMPage() {
               <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 {lang === "ar" ? "الخصوصية" : "Privacy"}
               </h4>
-              <button
+              <Button
                 type="button"
-                onClick={() => setShowPii((v) => !v)}
+                variant="outline"
+                size="sm"
+                style={{ display: "inline-flex" }}
                 className={cn(
-                  "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+                  "rounded-full gap-2 px-3 py-1.5 text-xs h-auto",
                   showPii
-                    ? "border-warning/40 bg-warning/10 text-warning"
-                    : "border-border bg-card text-muted-foreground"
+                    ? "border-warning/40 bg-warning/10 text-warning hover:bg-warning/20"
+                    : ""
                 )}
+                onClick={() => setShowPii((v) => !v)}
               >
                 <Eye className="h-3.5 w-3.5" aria-hidden="true" />
                 {showPii
@@ -2581,7 +2593,7 @@ export default function CRMPage() {
                   : lang === "ar"
                     ? "عرض البيانات الحساسة"
                     : "Show PII"}
-              </button>
+              </Button>
             </div>
           )}
 
@@ -2615,21 +2627,23 @@ export default function CRMPage() {
         actions={
           <>
             {hasPiiAccess && (
-              <button
-                onClick={() => setShowPii((v) => !v)}
+              <Button
+                variant="outline"
+                size="sm"
+                style={{ display: "inline-flex" }}
                 className={cn(
-                  "h-8 px-3 rounded-lg border text-xs font-medium transition-colors",
+                  "gap-1.5 text-xs",
                   showPii
-                    ? "border-warning/50 bg-warning/10 text-warning"
-                    : "border-border bg-card text-muted-foreground hover:bg-muted/30"
+                    ? "border-warning/50 bg-warning/10 text-warning hover:bg-warning/20"
+                    : ""
                 )}
-                style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
+                onClick={() => setShowPii((v) => !v)}
               >
                 <Eye className="h-3.5 w-3.5" />
                 {showPii
                   ? lang === "ar" ? "إخفاء البيانات الحساسة" : "Hide PII"
                   : lang === "ar" ? "عرض البيانات الحساسة" : "Show PII"}
-              </button>
+              </Button>
             )}
             {canExport && (
               <Button
@@ -2663,9 +2677,14 @@ export default function CRMPage() {
       {error && (
         <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-destructive/10 border border-destructive/30">
           <p className="text-sm text-destructive">{error}</p>
-          <button onClick={() => setError(null)} className="text-destructive/70 hover:text-destructive" aria-label={lang === "ar" ? "إغلاق" : "Dismiss"}>
-            <X className="h-4 w-4" />
-          </button>
+          <IconButton
+            icon={X}
+            aria-label={lang === "ar" ? "إغلاق" : "Dismiss"}
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 text-destructive/70 hover:text-destructive"
+            onClick={() => setError(null)}
+          />
         </div>
       )}
 
@@ -2710,77 +2729,87 @@ export default function CRMPage() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           {/* Status filters */}
           <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => { setStatusFilter(""); setShowLost(false); }}
-              className={cn(
-                "px-3.5 py-2 rounded-full text-sm font-medium border transition-colors",
-                !statusFilter && !showLost
-                  ? "border-primary/30 bg-primary/15 text-foreground"
-                  : "border-border bg-card text-muted-foreground hover:bg-muted/50"
-              )}
+            <Button
+              variant={!statusFilter && !showLost ? "subtle" : "outline"}
+              size="sm"
               style={{ display: "inline-flex" }}
+              className={cn(
+                "rounded-full px-3.5 py-2 text-sm h-auto",
+                !statusFilter && !showLost
+                  ? "border-primary/30 bg-primary/15 text-foreground hover:bg-primary/20"
+                  : ""
+              )}
+              onClick={() => { setStatusFilter(""); setShowLost(false); }}
             >
               {lang === "ar" ? "الكل" : "All"} {customers.filter(c => c.status !== "LOST").length}
-            </button>
+            </Button>
             {PIPELINE_STAGES.map((s) => {
               const count = customers.filter((c) => c.status === s.key).length;
               return (
-                <button
+                <Button
                   key={s.key}
-                  onClick={() => { setStatusFilter(statusFilter === s.key ? "" : s.key); setShowLost(false); }}
-                  className={cn(
-                    "px-3.5 py-2 rounded-full text-sm font-medium border transition-colors",
-                    statusFilter === s.key
-                      ? "border-primary/30 bg-primary/15 text-foreground"
-                      : "border-border bg-card text-muted-foreground hover:bg-muted/50"
-                  )}
+                  variant={statusFilter === s.key ? "subtle" : "outline"}
+                  size="sm"
                   style={{ display: "inline-flex" }}
+                  className={cn(
+                    "rounded-full px-3.5 py-2 text-sm h-auto",
+                    statusFilter === s.key
+                      ? "border-primary/30 bg-primary/15 text-foreground hover:bg-primary/20"
+                      : ""
+                  )}
+                  onClick={() => { setStatusFilter(statusFilter === s.key ? "" : s.key); setShowLost(false); }}
                 >
                   {s.label[lang]} {count}
-                </button>
+                </Button>
               );
             })}
             {/* Lost toggle */}
-            <button
-              onClick={() => { setShowLost((v) => !v); setStatusFilter(""); }}
-              className={cn(
-                "px-3.5 py-2 rounded-full text-sm font-medium border transition-colors",
-                showLost
-                  ? "border-destructive/30 bg-destructive/10 text-destructive"
-                  : "border-border bg-card text-muted-foreground hover:bg-muted/50"
-              )}
+            <Button
+              variant={showLost ? "outline" : "outline"}
+              size="sm"
               style={{ display: "inline-flex" }}
+              className={cn(
+                "rounded-full px-3.5 py-2 text-sm h-auto",
+                showLost
+                  ? "border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/15"
+                  : ""
+              )}
+              onClick={() => { setShowLost((v) => !v); setStatusFilter(""); }}
             >
               {lang === "ar" ? "خسائر" : "Lost"} {kpis.lost}
-            </button>
+            </Button>
           </div>
 
           {/* View toggle */}
           <div className="flex gap-2">
-            <button
-              onClick={() => setViewMode("kanban")}
-              className={cn(
-                "px-3 py-2 rounded-full text-sm border transition-colors",
-                viewMode === "kanban"
-                  ? "border-primary/30 bg-primary/15 text-foreground"
-                  : "border-border bg-card text-muted-foreground hover:bg-muted/30"
-              )}
+            <Button
+              variant={viewMode === "kanban" ? "subtle" : "outline"}
+              size="sm"
               style={{ display: "inline-flex" }}
+              className={cn(
+                "rounded-full px-3 py-2 text-sm h-auto",
+                viewMode === "kanban"
+                  ? "border-primary/30 bg-primary/15 text-foreground hover:bg-primary/20"
+                  : ""
+              )}
+              onClick={() => setViewMode("kanban")}
             >
               {lang === "ar" ? "كانبان" : "Kanban"}
-            </button>
-            <button
-              onClick={() => setViewMode("list")}
-              className={cn(
-                "px-3 py-2 rounded-full text-sm border transition-colors",
-                viewMode === "list"
-                  ? "border-primary/30 bg-primary/15 text-foreground"
-                  : "border-border bg-card text-muted-foreground hover:bg-muted/30"
-              )}
+            </Button>
+            <Button
+              variant={viewMode === "list" ? "subtle" : "outline"}
+              size="sm"
               style={{ display: "inline-flex" }}
+              className={cn(
+                "rounded-full px-3 py-2 text-sm h-auto",
+                viewMode === "list"
+                  ? "border-primary/30 bg-primary/15 text-foreground hover:bg-primary/20"
+                  : ""
+              )}
+              onClick={() => setViewMode("list")}
             >
               {lang === "ar" ? "قائمة" : "List"}
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -2868,17 +2897,19 @@ export default function CRMPage() {
 
                 {/* Add shortcut (not on LOST column) */}
                 {canWrite && !showLost && (
-                  <button
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    style={{ display: "inline-flex", width: "100%" }}
+                    className="mt-auto gap-1.5 p-2 rounded-xl border-2 border-dashed text-muted-foreground hover:border-primary/40 hover:text-primary h-auto text-xs justify-center"
                     onClick={() => {
                       setNewCustomer((prev) => ({ ...prev, status: status.key }));
                       setShowAddModal(true);
                     }}
-                    className="mt-auto flex items-center justify-center gap-1.5 p-2 rounded-xl border-2 border-dashed border-border text-muted-foreground hover:border-primary/40 hover:text-primary transition-colors text-xs font-medium"
-                    style={{ display: "inline-flex", width: "100%" }}
                   >
                     <Plus className="h-3.5 w-3.5" />
                     {lang === "ar" ? "إضافة" : "Add"}
-                  </button>
+                  </Button>
                 )}
               </div>
             );
@@ -2943,31 +2974,29 @@ export default function CRMPage() {
                       : "—"}
                   </span>
                   <div className="flex items-center gap-2">
-                    <button
-                      type="button"
+                    <IconButton
+                      icon={Eye}
+                      aria-label={lang === "ar" ? "عرض الملف" : "View profile"}
+                      variant="ghost"
+                      size="icon"
+                      className="h-11 w-11 sm:h-8 sm:w-8 border border-border bg-background"
                       onClick={(e) => {
                         e.stopPropagation();
                         setDrawerCustomer(c);
                       }}
-                      aria-label={lang === "ar" ? "عرض الملف" : "View profile"}
-                      className="h-11 w-11 sm:h-8 sm:w-8 rounded-md border border-border bg-background flex items-center justify-center text-muted-foreground"
-                      style={{ display: "inline-flex" }}
-                    >
-                      <Eye className="h-3.5 w-3.5" />
-                    </button>
+                    />
                     {canDelete && (
-                      <button
-                        type="button"
+                      <IconButton
+                        icon={Trash2}
+                        aria-label={lang === "ar" ? "حذف" : "Delete"}
+                        variant="ghost"
+                        size="icon"
+                        className="h-11 w-11 sm:h-8 sm:w-8 border border-border bg-background"
                         onClick={(e) => {
                           e.stopPropagation();
                           openDelete(c);
                         }}
-                        aria-label={lang === "ar" ? "حذف" : "Delete"}
-                        className="h-11 w-11 sm:h-8 sm:w-8 rounded-md border border-border bg-background flex items-center justify-center text-muted-foreground"
-                        style={{ display: "inline-flex" }}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
+                      />
                     )}
                   </div>
                 </div>
@@ -3013,20 +3042,22 @@ export default function CRMPage() {
       >
         <div dir={lang === "ar" ? "rtl" : "ltr"} className="space-y-2 py-2">
             {LOST_REASONS.map((reason) => (
-              <button
+              <Button
                 key={reason.key}
                 type="button"
-                onClick={() => setLostReason(reason.key)}
+                variant={lostReason === reason.key ? "outline" : "outline"}
+                size="sm"
+                style={{ display: "block", width: "100%" }}
                 className={cn(
-                  "w-full text-start px-4 py-3 rounded-lg border text-sm font-medium transition-colors",
+                  "text-start px-4 py-3 h-auto text-sm justify-start",
                   lostReason === reason.key
-                    ? "border-destructive/50 bg-destructive/10 text-destructive"
-                    : "border-border bg-card text-foreground hover:bg-muted/30"
+                    ? "border-destructive/50 bg-destructive/10 text-destructive hover:bg-destructive/15"
+                    : "hover:bg-muted/30"
                 )}
-                style={{ display: "block" }}
+                onClick={() => setLostReason(reason.key)}
               >
                 {reason.label[lang]}
-              </button>
+              </Button>
             ))}
         </div>
       </ResponsiveDialog>
@@ -3080,9 +3111,14 @@ export default function CRMPage() {
               <h2 className="text-lg font-bold text-foreground">
                 {lang === "ar" ? "إضافة عميل جديد" : "Add New Customer"}
               </h2>
-              <button onClick={() => setShowAddModal(false)} className="text-muted-foreground hover:text-foreground" aria-label={lang === "ar" ? "إغلاق" : "Close"}>
-                <X className="h-5 w-5" />
-              </button>
+              <IconButton
+                icon={X}
+                aria-label={lang === "ar" ? "إغلاق" : "Close"}
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setShowAddModal(false)}
+              />
             </div>
 
             <div className="p-6 space-y-4">
@@ -3208,14 +3244,14 @@ export default function CRMPage() {
                           </span>
                         )}
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => { setNewCustSelectedUnit(null); setNewCustIntent(null); setNewCustUnitSearch(""); }}
-                        className="text-muted-foreground hover:text-foreground shrink-0"
+                      <IconButton
+                        icon={X}
                         aria-label={lang === "ar" ? "إزالة" : "Remove"}
-                      >
-                        <X className="h-3.5 w-3.5" />
-                      </button>
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 shrink-0"
+                        onClick={() => { setNewCustSelectedUnit(null); setNewCustIntent(null); setNewCustUnitSearch(""); }}
+                      />
                     </div>
                   ) : (
                     <>
@@ -3238,11 +3274,14 @@ export default function CRMPage() {
                               const price = getUnitPrice(unit, newCustIntent);
                               const tag = getBudgetTag(price, newCustomer.budget, newCustIntent);
                               return (
-                                <button
+                                <Button
                                   key={unit.id}
                                   type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  style={{ display: "flex", width: "100%" }}
+                                  className="items-center justify-between gap-3 px-3 py-2.5 text-start h-auto rounded-none"
                                   onClick={() => { setNewCustSelectedUnit(unit); setNewCustUnitSearch(""); }}
-                                  className="w-full flex items-center justify-between gap-3 px-3 py-2.5 text-start hover:bg-muted/50 transition-colors"
                                 >
                                   <div className="flex items-center gap-1.5 min-w-0 text-sm">
                                     <span className="font-medium text-foreground truncate">{unit.number}</span>
@@ -3267,7 +3306,7 @@ export default function CRMPage() {
                                       </span>
                                     )}
                                   </div>
-                                </button>
+                                </Button>
                               );
                             })}
                           </div>
@@ -3292,30 +3331,31 @@ export default function CRMPage() {
                         {lang === "ar" ? "نوع الاهتمام" : "Interest Type"}
                       </label>
                       <div className="flex gap-2">
-                        <button
+                        <Button
                           type="button"
-                          onClick={() => setNewCustIntent("BUY")}
+                          variant={newCustIntent === "BUY" ? "primary" : "outline"}
+                          size="sm"
+                          style={{ display: "inline-flex", flex: 1 }}
                           className={cn(
-                            "flex-1 py-2 text-sm font-medium rounded-lg border transition-colors",
+                            "py-2 text-sm h-auto justify-center",
                             newCustIntent === "BUY"
-                              ? "bg-info text-info-foreground border-info"
-                              : "border-border text-muted-foreground hover:bg-muted/50"
+                              ? "bg-info text-info-foreground border-info hover:bg-info/90"
+                              : ""
                           )}
+                          onClick={() => setNewCustIntent("BUY")}
                         >
                           {lang === "ar" ? "شراء" : "Buy"}
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                           type="button"
+                          variant={newCustIntent === "RENT" ? "primary" : "outline"}
+                          size="sm"
+                          style={{ display: "inline-flex", flex: 1 }}
+                          className="py-2 text-sm h-auto justify-center"
                           onClick={() => setNewCustIntent("RENT")}
-                          className={cn(
-                            "flex-1 py-2 text-sm font-medium rounded-lg border transition-colors",
-                            newCustIntent === "RENT"
-                              ? "bg-primary text-primary-foreground border-primary"
-                              : "border-border text-muted-foreground hover:bg-muted/50"
-                          )}
                         >
                           {lang === "ar" ? "إيجار" : "Rent"}
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   )}

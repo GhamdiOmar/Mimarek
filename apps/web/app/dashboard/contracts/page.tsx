@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import {
   Button,
+  IconButton,
   Badge,
   Input,
   Card,
@@ -563,13 +564,15 @@ export default function ContractsPage() {
         title={lang === "ar" ? "نوع العقد الجديد" : "Pick contract type"}
       >
         <div className="grid grid-cols-2 gap-3 p-1">
-          <button
+          <Button
             type="button"
+            variant="outline"
             onClick={() => {
               setNewContractSheetOpen(false);
               openSaleModal();
             }}
-            className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-card p-5 text-center transition-colors hover:border-foreground/20 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--primary))]"
+            className="flex h-auto flex-col items-center gap-2 rounded-2xl p-5"
+            style={{ display: "flex" }}
           >
             <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
               <Home className="h-5 w-5" aria-hidden="true" />
@@ -580,14 +583,16 @@ export default function ContractsPage() {
             <span className="text-xs text-muted-foreground">
               {lang === "ar" ? "نقل ملكية وحدة" : "Transfer unit ownership"}
             </span>
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="outline"
             onClick={() => {
               setNewContractSheetOpen(false);
               openLeaseModal();
             }}
-            className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-card p-5 text-center transition-colors hover:border-foreground/20 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--primary))]"
+            className="flex h-auto flex-col items-center gap-2 rounded-2xl p-5"
+            style={{ display: "flex" }}
           >
             <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
               <Key className="h-5 w-5" aria-hidden="true" />
@@ -598,7 +603,7 @@ export default function ContractsPage() {
             <span className="text-xs text-muted-foreground">
               {lang === "ar" ? "تأجير وحدة لمستأجر" : "Rent unit to a tenant"}
             </span>
-          </button>
+          </Button>
         </div>
       </BottomSheet>
     </div>
@@ -642,30 +647,26 @@ export default function ContractsPage() {
       {/* Tab bar */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex border border-border rounded-lg overflow-hidden">
-          <button
+          <Button
             onClick={() => setTab("SALE")}
-            className={[
-              "px-4 py-2 text-sm font-medium transition-colors",
-              tab === "SALE"
-                ? "bg-primary text-primary-foreground"
-                : "bg-card text-muted-foreground hover:bg-muted",
-            ].join(" ")}
+            variant={tab === "SALE" ? "primary" : "subtle"}
+            size="sm"
+            className="rounded-none rounded-s-lg border-0 px-4 py-2"
+            style={{ display: "inline-flex" }}
           >
             {lang === "ar" ? "عقود البيع" : "Sale Contracts"}
             <span className="ms-2 text-xs opacity-70">({saleContracts.length})</span>
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => setTab("LEASE")}
-            className={[
-              "px-4 py-2 text-sm font-medium transition-colors border-s border-border",
-              tab === "LEASE"
-                ? "bg-primary text-primary-foreground"
-                : "bg-card text-muted-foreground hover:bg-muted",
-            ].join(" ")}
+            variant={tab === "LEASE" ? "primary" : "subtle"}
+            size="sm"
+            className="rounded-none rounded-e-lg border-0 border-s border-border px-4 py-2"
+            style={{ display: "inline-flex" }}
           >
             {lang === "ar" ? "عقود الإيجار" : "Lease Contracts"}
             <span className="ms-2 text-xs opacity-70">({leaseContracts.length})</span>
-          </button>
+          </Button>
         </div>
 
         <div className="flex items-center gap-3">
@@ -678,13 +679,16 @@ export default function ContractsPage() {
               className="ps-9 w-56"
             />
             {search && (
-              <button
-                onClick={() => setSearch("")}
-                className="absolute top-1/2 -translate-y-1/2 end-3 text-muted-foreground hover:text-foreground"
-                aria-label={lang === "ar" ? "مسح البحث" : "Clear search"}
-              >
-                <X className="w-4 h-4" />
-              </button>
+              <span className="absolute top-1/2 -translate-y-1/2 end-1">
+                <IconButton
+                  icon={X}
+                  aria-label={lang === "ar" ? "مسح البحث" : "Clear search"}
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setSearch("")}
+                  className="h-7 w-7"
+                />
+              </span>
             )}
           </div>
 
@@ -804,21 +808,23 @@ export default function ContractsPage() {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => setDetailContract(c)}
-                        className="text-muted-foreground hover:text-foreground transition-colors"
-                        title={lang === "ar" ? "عرض التفاصيل" : "View details"}
+                      <IconButton
+                        icon={Eye}
                         aria-label={lang === "ar" ? "عرض التفاصيل" : "View details"}
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setDetailContract(c)}
+                        className="h-8 w-8"
+                      />
                       {(c.status === "DRAFT" || c.status === "SENT") && (
-                        <button
+                        <Button
+                          variant="success"
+                          size="sm"
                           onClick={() => handleSignContract(c.id)}
-                          className="text-xs text-success hover:opacity-80 font-medium"
+                          style={{ display: "inline-flex" }}
                         >
                           {lang === "ar" ? "توقيع" : "Sign"}
-                        </button>
+                        </Button>
                       )}
                     </div>
                   </TableCell>
@@ -871,21 +877,23 @@ export default function ContractsPage() {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => setDetailContract(c)}
-                        className="text-muted-foreground hover:text-foreground transition-colors"
-                        title={lang === "ar" ? "عرض التفاصيل" : "View details"}
+                      <IconButton
+                        icon={Eye}
                         aria-label={lang === "ar" ? "عرض التفاصيل" : "View details"}
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setDetailContract(c)}
+                        className="h-8 w-8"
+                      />
                       {(c.status === "DRAFT" || c.status === "SENT") && (
-                        <button
+                        <Button
+                          variant="success"
+                          size="sm"
                           onClick={() => handleSignContract(c.id)}
-                          className="text-xs text-success hover:opacity-80 font-medium"
+                          style={{ display: "inline-flex" }}
                         >
                           {lang === "ar" ? "توقيع" : "Sign"}
-                        </button>
+                        </Button>
                       )}
                     </div>
                   </TableCell>
@@ -1012,15 +1020,18 @@ export default function ContractsPage() {
                 <NextActionPanel actions={journey.nextActions} lang={lang} />
                 {journey.related.length > 0 && (
                   <>
-                    <button
+                    <Button
                       type="button"
+                      variant="link"
+                      size="sm"
                       onClick={() => setJourneyRelatedOpen(true)}
-                      className="text-xs font-medium text-primary hover:underline underline-offset-2"
+                      className="h-auto p-0 text-xs"
+                      style={{ display: "inline-flex" }}
                     >
                       {lang === "ar"
                         ? `السجلات المرتبطة (${journey.related.length})`
                         : `Related records (${journey.related.length})`}
-                    </button>
+                    </Button>
                     <RelatedContextPanel
                       open={journeyRelatedOpen}
                       onOpenChange={setJourneyRelatedOpen}
@@ -1076,14 +1087,17 @@ export default function ContractsPage() {
               {saleForm.customerSearch && !saleForm.customerId && saleCustomerOptions.length > 0 && (
                 <div className="absolute z-10 top-full mt-1 w-full bg-popover border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
                   {saleCustomerOptions.map((c) => (
-                    <button
+                    <Button
                       key={c.id}
                       type="button"
+                      variant="ghost"
+                      size="sm"
                       onClick={() => setSaleForm((f) => ({ ...f, customerId: c.id, customerName: c.name, customerSearch: c.name }))}
-                      className="w-full text-start px-3 py-2 text-sm hover:bg-muted"
+                      className="w-full justify-start rounded-none px-3 py-2 text-sm font-normal"
+                      style={{ display: "flex" }}
                     >
                       {c.name}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               )}
@@ -1106,15 +1120,18 @@ export default function ContractsPage() {
               {saleForm.unitSearch && !saleForm.unitId && saleUnitOptions.length > 0 && (
                 <div className="absolute z-10 top-full mt-1 w-full bg-popover border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
                   {saleUnitOptions.map((u) => (
-                    <button
+                    <Button
                       key={u.id}
                       type="button"
+                      variant="ghost"
+                      size="sm"
                       onClick={() => setSaleForm((f) => ({ ...f, unitId: u.id, unitNumber: u.number, unitSearch: u.number }))}
-                      className="w-full text-start px-3 py-2 text-sm hover:bg-muted"
+                      className="w-full justify-start rounded-none px-3 py-2 text-sm font-normal"
+                      style={{ display: "flex" }}
                     >
                       {lang === "ar" ? "وحدة" : "Unit"} {u.number}
                       <span className="ms-2 text-xs text-muted-foreground">{u.status}</span>
-                    </button>
+                    </Button>
                   ))}
                 </div>
               )}
@@ -1191,14 +1208,17 @@ export default function ContractsPage() {
               {leaseForm.customerSearch && !leaseForm.customerId && leaseCustomerOptions.length > 0 && (
                 <div className="absolute z-10 top-full mt-1 w-full bg-popover border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
                   {leaseCustomerOptions.map((c) => (
-                    <button
+                    <Button
                       key={c.id}
                       type="button"
+                      variant="ghost"
+                      size="sm"
                       onClick={() => setLeaseForm((f) => ({ ...f, customerId: c.id, customerName: c.name, customerSearch: c.name }))}
-                      className="w-full text-start px-3 py-2 text-sm hover:bg-muted"
+                      className="w-full justify-start rounded-none px-3 py-2 text-sm font-normal"
+                      style={{ display: "flex" }}
                     >
                       {c.name}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               )}
@@ -1221,14 +1241,17 @@ export default function ContractsPage() {
               {leaseForm.unitSearch && !leaseForm.unitId && leaseUnitOptions.length > 0 && (
                 <div className="absolute z-10 top-full mt-1 w-full bg-popover border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
                   {leaseForm.unitSearch && !leaseForm.unitId && leaseUnitOptions.map((u) => (
-                    <button
+                    <Button
                       key={u.id}
                       type="button"
+                      variant="ghost"
+                      size="sm"
                       onClick={() => setLeaseForm((f) => ({ ...f, unitId: u.id, unitNumber: u.number, unitSearch: u.number }))}
-                      className="w-full text-start px-3 py-2 text-sm hover:bg-muted"
+                      className="w-full justify-start rounded-none px-3 py-2 text-sm font-normal"
+                      style={{ display: "flex" }}
                     >
                       {lang === "ar" ? "وحدة" : "Unit"} {u.number}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               )}
