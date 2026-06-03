@@ -37,8 +37,6 @@ const ActionLink = React.forwardRef<HTMLAnchorElement, ActionLinkProps>(
     },
     ref
   ) => {
-    const Comp = asChild ? Slot : "a";
-
     const renderIcon = (Icon: LucideIcon) =>
       directional ? (
         <DirectionalIcon icon={Icon} className="h-4 w-4 shrink-0" />
@@ -46,8 +44,35 @@ const ActionLink = React.forwardRef<HTMLAnchorElement, ActionLinkProps>(
         <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
       );
 
+    // `asChild` composes with a caller-provided element (e.g. next/link).
+    // Radix Slot requires EXACTLY ONE child, so inject any leading/trailing
+    // icons INSIDE that child rather than as siblings — otherwise Slot throws
+    // "React.Children.only expected to receive a single React element child".
+    if (asChild) {
+      const child = React.Children.only(children) as React.ReactElement<{
+        children?: React.ReactNode;
+      }>;
+      return (
+        <Slot
+          ref={ref}
+          className={cn(actionLinkVariants(), className)}
+          {...rest}
+        >
+          {React.cloneElement(
+            child,
+            undefined,
+            <>
+              {LeadingIcon && renderIcon(LeadingIcon)}
+              {child.props.children}
+              {TrailingIcon && renderIcon(TrailingIcon)}
+            </>
+          )}
+        </Slot>
+      );
+    }
+
     return (
-      <Comp
+      <a
         ref={ref}
         href={href}
         className={cn(actionLinkVariants(), className)}
@@ -56,7 +81,7 @@ const ActionLink = React.forwardRef<HTMLAnchorElement, ActionLinkProps>(
         {LeadingIcon && renderIcon(LeadingIcon)}
         {children}
         {TrailingIcon && renderIcon(TrailingIcon)}
-      </Comp>
+      </a>
     );
   }
 );
