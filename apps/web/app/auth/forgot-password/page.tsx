@@ -59,11 +59,15 @@ export default function ForgotPasswordPage() {
       <div className="flex w-full flex-1 flex-col bg-background lg:w-1/2 xl:w-7/12">
         <div className="flex items-center justify-between p-6 lg:px-12">
           <div className="lg:hidden"><MimaricLogo width={100} /></div>
-          <button onClick={() => setLang(lang === "ar" ? "en" : "ar")} className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setLang(lang === "ar" ? "en" : "ar")}
+            className="flex items-center gap-2 text-muted-foreground hover:text-primary"
+          >
             <Globe className="h-5 w-5" />
-
             <span>{lang === "ar" ? "English" : "العربية"}</span>
-          </button>
+          </Button>
         </div>
 
         <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 sm:px-6 pb-12 lg:px-12">

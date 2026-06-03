@@ -279,30 +279,32 @@ function MarketplacePage() {
 
       {/* Tabs */}
       <div className="flex gap-1 border-b border-border">
-        <button
+        <Button
           type="button"
+          variant="ghost"
           onClick={() => setActiveTab("browse")}
           className={cn(
-            "px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px",
+            "rounded-none px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px h-auto",
             activeTab === "browse"
               ? "border-primary text-primary"
               : "border-transparent text-muted-foreground hover:text-foreground"
           )}
         >
           {lang === "ar" ? "تصفّح الإعلانات" : "Browse Listings"}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
+          variant="ghost"
           onClick={() => setActiveTab("inquiries")}
           className={cn(
-            "px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px",
+            "rounded-none px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px h-auto",
             activeTab === "inquiries"
               ? "border-primary text-primary"
               : "border-transparent text-muted-foreground hover:text-foreground"
           )}
         >
           {lang === "ar" ? "استفساراتي" : "My Inquiries"}
-        </button>
+        </Button>
       </div>
 
       {/* ── Browse tab ─────────────────────────────────────────────────── */}
@@ -729,7 +731,7 @@ function MarketplacePage() {
                       </div>
                       {inq.status === "OPEN" && (
                         <Button
-                          variant="danger"
+                          variant="destructive"
                           size="sm"
                           className="shrink-0 min-h-[44px]"
                           onClick={() => { setWithdrawTarget(inq); setWithdrawError(null); }}
@@ -801,7 +803,7 @@ function MarketplacePage() {
                           <TableCell>
                             {inq.status === "OPEN" && (
                               <Button
-                                variant="danger"
+                                variant="destructive"
                                 size="sm"
                                 onClick={() => { setWithdrawTarget(inq); setWithdrawError(null); }}
                               >
@@ -840,7 +842,7 @@ function MarketplacePage() {
               {lang === "ar" ? "إلغاء" : "Cancel"}
             </Button>
             <Button
-              variant="danger"
+              variant="destructive"
               onClick={handleWithdraw}
               disabled={withdrawing}
             >

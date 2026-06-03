@@ -17,6 +17,8 @@ import {
 } from "lucide-react";
 import {
   Button,
+  IconButton,
+  ActionLink,
   Badge,
   Input,
   Card,
@@ -377,18 +379,13 @@ export default function ReservationsPage() {
         title={lang === "ar" ? "الحجوزات" : "Reservations"}
         lang={lang}
         trailing={
-          <button
-            type="button"
-            onClick={() => setShowMobileFilters(true)}
+          <IconButton
+            icon={Filter}
             aria-label={lang === "ar" ? "تصفية" : "Filter"}
-            className={cn(
-              "inline-flex h-10 w-10 items-center justify-center rounded-full",
-              "text-foreground hover:bg-muted/60 active:bg-muted transition-colors",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--primary))]",
-            )}
-          >
-            <Filter className="h-5 w-5" aria-hidden="true" />
-          </button>
+            variant="ghost"
+            onClick={() => setShowMobileFilters(true)}
+            className="h-10 w-10 rounded-full"
+          />
         }
       />
 
@@ -586,19 +583,17 @@ export default function ReservationsPage() {
       >
         <div className="flex flex-wrap gap-2 py-2">
           {mobileStatusTabs.map((tab) => (
-            <button
+            <Button
               key={tab.key}
               type="button"
+              variant={statusFilter === tab.key ? "primary" : "subtle"}
+              size="sm"
               onClick={() => setStatusFilter(tab.key)}
-              className={cn(
-                "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
-                statusFilter === tab.key
-                  ? "border-transparent bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]"
-                  : "border-border bg-card text-muted-foreground",
-              )}
+              className="rounded-full"
+              style={{ display: "inline-flex" }}
             >
               {lang === "ar" ? tab.ar : tab.en}
-            </button>
+            </Button>
           ))}
         </div>
       </BottomSheet>
@@ -656,18 +651,15 @@ export default function ReservationsPage() {
       <Card className="p-4 space-y-3">
         <div className="flex flex-wrap gap-2">
           {statusTabs.map((tab) => (
-            <button
+            <Button
               key={tab.key}
+              variant={statusFilter === tab.key ? "primary" : "subtle"}
+              size="sm"
               onClick={() => setStatusFilter(tab.key)}
-              className={[
-                "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
-                statusFilter === tab.key
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground hover:bg-muted/80",
-              ].join(" ")}
+              style={{ display: "inline-flex" }}
             >
               {lang === "ar" ? tab.ar : tab.en}
-            </button>
+            </Button>
           ))}
         </div>
         <div className="relative max-w-sm">
@@ -679,13 +671,16 @@ export default function ReservationsPage() {
             className="ps-9"
           />
           {search && (
-            <button
-              onClick={() => setSearch("")}
-              className="absolute top-1/2 -translate-y-1/2 end-3 text-muted-foreground hover:text-foreground"
-              aria-label={lang === "ar" ? "مسح البحث" : "Clear search"}
-            >
-              <X className="w-4 h-4" />
-            </button>
+            <span className="absolute top-1/2 -translate-y-1/2 end-1">
+              <IconButton
+                icon={X}
+                aria-label={lang === "ar" ? "مسح البحث" : "Clear search"}
+                variant="ghost"
+                size="icon"
+                onClick={() => setSearch("")}
+                className="h-7 w-7"
+              />
+            </span>
           )}
         </div>
       </Card>
@@ -784,43 +779,46 @@ export default function ReservationsPage() {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => setDetailDeal(deal)}
-                        className="text-muted-foreground hover:text-foreground transition-colors"
-                        title={lang === "ar" ? "عرض التفاصيل" : "View Details"}
+                      <IconButton
+                        icon={Eye}
                         aria-label={lang === "ar" ? "عرض التفاصيل" : "View Details"}
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setDetailDeal(deal)}
+                        className="h-8 w-8"
+                      />
                       {can("deals:write") && deal.status === "PENDING" && (
-                        <button
-                          onClick={() => handleConfirmDeal(deal.id)}
-                          className="text-muted-foreground hover:text-success transition-colors"
-                          title={lang === "ar" ? "تأكيد الحجز" : "Confirm Reservation"}
+                        <IconButton
+                          icon={CheckCircle}
                           aria-label={lang === "ar" ? "تأكيد الحجز" : "Confirm Reservation"}
-                        >
-                          <CheckCircle className="w-4 h-4" />
-                        </button>
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleConfirmDeal(deal.id)}
+                          className="h-8 w-8 text-muted-foreground hover:text-success"
+                        />
                       )}
                       {deal.status === "CONFIRMED" && (
-                        <Link
-                          href={`/dashboard/contracts?dealId=${deal.id}`}
-                          className="inline-flex items-center gap-1 text-xs text-primary hover:opacity-80 font-medium"
+                        <ActionLink
+                          asChild
+                          trailingIcon={ArrowRight}
+                          directional
+                          className="text-xs font-medium"
                         >
-                          {lang === "ar" ? "تحويل لعقد" : "Convert to Contract"}
-                          <DirectionalIcon icon={ArrowRight} className="w-3 h-3" />
-                        </Link>
+                          <Link href={`/dashboard/contracts?dealId=${deal.id}`}>
+                            {lang === "ar" ? "تحويل لعقد" : "Convert to Contract"}
+                          </Link>
+                        </ActionLink>
                       )}
                       {can("deals:write") &&
                         (deal.status === "PENDING" || deal.status === "CONFIRMED") && (
-                          <button
-                            onClick={() => setCancelDeal(deal)}
-                            className="text-muted-foreground hover:text-destructive transition-colors"
-                            title={lang === "ar" ? "إلغاء الحجز" : "Cancel Reservation"}
+                          <IconButton
+                            icon={Ban}
                             aria-label={lang === "ar" ? "إلغاء الحجز" : "Cancel Reservation"}
-                          >
-                            <Ban className="w-4 h-4" />
-                          </button>
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setCancelDeal(deal)}
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                          />
                         )}
                     </div>
                   </TableCell>
@@ -884,16 +882,20 @@ export default function ReservationsPage() {
                 {customerSearch && !form.customerId && filteredCustomers.length > 0 && (
                   <div className="absolute z-10 top-full mt-1 w-full bg-popover border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
                     {filteredCustomers.map((c) => (
-                      <button
+                      <Button
                         key={c.id}
+                        type="button"
+                        variant="ghost"
+                        size="sm"
                         onClick={() => {
                           setForm((f) => ({ ...f, customerId: c.id, customerName: c.name }));
                           setCustomerSearch(c.name);
                         }}
-                        className="w-full text-start px-3 py-2 text-sm hover:bg-muted transition-colors"
+                        className="w-full justify-start rounded-none px-3 py-2 text-sm font-normal"
+                        style={{ display: "flex" }}
                       >
                         {c.name}
-                      </button>
+                      </Button>
                     ))}
                   </div>
                 )}
@@ -917,16 +919,20 @@ export default function ReservationsPage() {
                 {unitSearch && !form.unitId && filteredUnits.length > 0 && (
                   <div className="absolute z-10 top-full mt-1 w-full bg-popover border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
                     {filteredUnits.map((u) => (
-                      <button
+                      <Button
                         key={u.id}
+                        type="button"
+                        variant="ghost"
+                        size="sm"
                         onClick={() => {
                           setForm((f) => ({ ...f, unitId: u.id, unitNumber: u.number }));
                           setUnitSearch(u.number);
                         }}
-                        className="w-full text-start px-3 py-2 text-sm hover:bg-muted transition-colors"
+                        className="w-full justify-start rounded-none px-3 py-2 text-sm font-normal"
+                        style={{ display: "flex" }}
                       >
                         {lang === "ar" ? "وحدة" : "Unit"} {u.number}
-                      </button>
+                      </Button>
                     ))}
                   </div>
                 )}
@@ -1061,15 +1067,18 @@ export default function ReservationsPage() {
                   <NextActionPanel actions={journey.nextActions} lang={lang} />
                   {journey.related.length > 0 && (
                     <>
-                      <button
+                      <Button
                         type="button"
+                        variant="link"
+                        size="sm"
                         onClick={() => setJourneyRelatedOpen(true)}
-                        className="text-xs font-medium text-primary hover:underline underline-offset-2"
+                        className="h-auto p-0 text-xs"
+                        style={{ display: "inline-flex" }}
                       >
                         {lang === "ar"
                           ? `السجلات المرتبطة (${journey.related.length})`
                           : `Related records (${journey.related.length})`}
-                      </button>
+                      </Button>
                       <RelatedContextPanel
                         open={journeyRelatedOpen}
                         onOpenChange={setJourneyRelatedOpen}
@@ -1099,7 +1108,7 @@ export default function ReservationsPage() {
               {lang === "ar" ? "تراجع" : "Go Back"}
             </Button>
             <Button
-              variant="danger"
+              variant="destructive"
               onClick={handleCancel}
               disabled={cancelling}
               style={{ display: "inline-flex" }}

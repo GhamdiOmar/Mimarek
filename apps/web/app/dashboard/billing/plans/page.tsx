@@ -14,7 +14,7 @@ import {
   X,
   Loader2,
 } from "lucide-react";
-import { Button, AppBar, SARAmount, Skeleton, DirectionalIcon } from "@repo/ui";
+import { Button, AppBar, SARAmount, Skeleton, DirectionalIcon, IconButton, ActionLink } from "@repo/ui";
 import { PageHeader } from "@repo/ui/components/PageHeader";
 import Link from "next/link";
 import { getPlans, subscribeToPlan, getCurrentSubscription } from "../../../actions/billing";
@@ -149,29 +149,35 @@ export default function PlansPage() {
       <div className="flex-1 px-4 pt-4 pb-8 space-y-4">
         {/* Billing cycle toggle */}
         <div className="flex items-center gap-1 p-1 rounded-full bg-muted">
-          <button
+          <Button
+            variant={billingCycle === "MONTHLY" ? "subtle" : "ghost"}
+            size="sm"
             onClick={() => setBillingCycle("MONTHLY")}
-            className={`flex-1 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+            className={`flex-1 rounded-full text-sm font-medium transition-colors ${
               billingCycle === "MONTHLY"
                 ? "bg-background text-foreground shadow-sm"
                 : "text-muted-foreground"
             }`}
+            style={{ display: "inline-flex" }}
           >
             {t.monthly}
-          </button>
-          <button
+          </Button>
+          <Button
+            variant={billingCycle === "ANNUAL" ? "subtle" : "ghost"}
+            size="sm"
             onClick={() => setBillingCycle("ANNUAL")}
-            className={`flex-1 px-4 py-2 rounded-full text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${
+            className={`flex-1 rounded-full text-sm font-medium transition-colors gap-1.5 ${
               billingCycle === "ANNUAL"
                 ? "bg-background text-foreground shadow-sm"
                 : "text-muted-foreground"
             }`}
+            style={{ display: "inline-flex" }}
           >
             {t.annual}
             <span className="text-[10px] bg-success/10 text-success px-1.5 py-0.5 rounded-full">
               {t.save20}
             </span>
-          </button>
+          </Button>
         </div>
 
         {/* Coupon input */}
@@ -186,13 +192,13 @@ export default function PlansPage() {
                   : `${appliedCoupon.value} ${t.sar} ${t.discount}`}
               </p>
             </div>
-            <button
-              onClick={handleRemoveCoupon}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-md text-success hover:bg-success/10"
+            <IconButton
+              icon={X}
               aria-label={t.removeCoupon}
-            >
-              <X className="w-4 h-4" />
-            </button>
+              variant="ghost"
+              onClick={handleRemoveCoupon}
+              className="text-success hover:bg-success/10 h-8 w-8"
+            />
           </div>
         ) : (
           <div className="flex items-center gap-2">
@@ -371,38 +377,48 @@ export default function PlansPage() {
     <div className="space-y-6" dir={lang === "ar" ? "rtl" : "ltr"}>
       {/* Back + Header */}
       <div>
-        <Link href="/dashboard/billing" className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 mb-4">
-          <DirectionalIcon icon={ArrowLeft} className="w-4 h-4" />
-          {t.backToBilling}
-        </Link>
+        <ActionLink
+          asChild
+          leadingIcon={ArrowLeft}
+          directional
+          className="text-sm text-muted-foreground hover:text-foreground mb-4"
+        >
+          <Link href="/dashboard/billing">{t.backToBilling}</Link>
+        </ActionLink>
         <PageHeader title={t.title} description={t.subtitle} />
       </div>
 
       {/* Billing Cycle Toggle */}
       <div className="inline-flex items-center justify-center gap-1 p-1.5 rounded-full bg-muted mx-auto">
-        <button
+        <Button
+          variant={billingCycle === "MONTHLY" ? "subtle" : "ghost"}
+          size="sm"
           onClick={() => setBillingCycle("MONTHLY")}
-          className={`px-6 py-2.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${
+          className={`rounded-full text-sm font-medium whitespace-nowrap px-6 py-2.5 ${
             billingCycle === "MONTHLY"
               ? "bg-background text-foreground shadow-sm"
               : "text-muted-foreground hover:text-foreground"
           }`}
+          style={{ display: "inline-flex" }}
         >
           {t.monthly}
-        </button>
-        <button
+        </Button>
+        <Button
+          variant={billingCycle === "ANNUAL" ? "subtle" : "ghost"}
+          size="sm"
           onClick={() => setBillingCycle("ANNUAL")}
-          className={`px-6 py-2.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap flex items-center gap-2 ${
+          className={`rounded-full text-sm font-medium whitespace-nowrap gap-2 px-6 py-2.5 ${
             billingCycle === "ANNUAL"
               ? "bg-background text-foreground shadow-sm"
               : "text-muted-foreground hover:text-foreground"
           }`}
+          style={{ display: "inline-flex" }}
         >
           {t.annual}
           <span className="text-xs bg-success/15 text-success px-2 py-0.5 rounded-full whitespace-nowrap">
             {t.save20}
           </span>
-        </button>
+        </Button>
       </div>
 
       {/* Coupon Code Section */}
@@ -422,14 +438,13 @@ export default function PlansPage() {
                 {lang === "ar" ? appliedCoupon.descriptionAr : appliedCoupon.descriptionEn}
               </p>
             </div>
-            <button
-              onClick={handleRemoveCoupon}
-              className="p-1 rounded-md hover:bg-success/15 text-success"
-              title={t.removeCoupon}
+            <IconButton
+              icon={X}
               aria-label={t.removeCoupon}
-            >
-              <X className="w-4 h-4" />
-            </button>
+              variant="ghost"
+              onClick={handleRemoveCoupon}
+              className="text-success hover:bg-success/15"
+            />
           </div>
         ) : (
           <div className="flex items-center gap-2">

@@ -447,21 +447,25 @@ export default function AdminTicketsPage() {
 
             {totalPages > 1 && (
               <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
-                <button
+                <Button
+                  variant="outline"
+                  size="sm"
                   disabled={page <= 1}
                   onClick={() => setPage((p) => p - 1)}
-                  className="min-h-11 rounded-md border border-border px-3 py-1.5 font-medium disabled:opacity-40"
+                  style={{ display: "inline-flex", minHeight: "44px" }}
                 >
                   {lang === "ar" ? "السابق" : "Previous"}
-                </button>
+                </Button>
                 <span className="tabular-nums">{page} / {totalPages}</span>
-                <button
+                <Button
+                  variant="outline"
+                  size="sm"
                   disabled={page >= totalPages}
                   onClick={() => setPage((p) => p + 1)}
-                  className="min-h-11 rounded-md border border-border px-3 py-1.5 font-medium disabled:opacity-40"
+                  style={{ display: "inline-flex", minHeight: "44px" }}
                 >
                   {lang === "ar" ? "التالي" : "Next"}
-                </button>
+                </Button>
               </div>
             )}
           </div>
@@ -570,21 +574,25 @@ export default function AdminTicketsPage() {
               : `Showing ${tickets.length} of ${total} tickets`}
           </span>
           <div className="flex items-center gap-2">
-            <button
+            <Button
+              variant="outline"
+              size="sm"
               disabled={page <= 1}
               onClick={() => setPage((p) => p - 1)}
-              className="px-3 py-1.5 rounded-md border border-border text-xs font-medium disabled:opacity-40 hover:bg-muted/40 transition-colors"
+              style={{ display: "inline-flex" }}
             >
               {lang === "ar" ? "السابق" : "Previous"}
-            </button>
+            </Button>
             <span className="text-xs">{lang === "ar" ? `صفحة ${page} من ${totalPages}` : `Page ${page} of ${totalPages}`}</span>
-            <button
+            <Button
+              variant="outline"
+              size="sm"
               disabled={page >= totalPages}
               onClick={() => setPage((p) => p + 1)}
-              className="px-3 py-1.5 rounded-md border border-border text-xs font-medium disabled:opacity-40 hover:bg-muted/40 transition-colors"
+              style={{ display: "inline-flex" }}
             >
               {lang === "ar" ? "التالي" : "Next"}
-            </button>
+            </Button>
           </div>
         </div>
       )}

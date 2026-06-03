@@ -12,7 +12,7 @@ import {
   Plus,
   Loader2,
 } from "lucide-react";
-import { Button } from "@repo/ui";
+import { Button, IconButton } from "@repo/ui";
 import { useLanguage } from "./LanguageProvider";
 import {
   addCustomerActivity,
@@ -182,6 +182,10 @@ export default function CustomerActivityTimeline({ customerId }: CustomerActivit
       {showForm && (
         <div className="rounded-lg border border-gray-200 bg-gray-50/60 p-4 space-y-3 animate-in slide-in-from-top-2 duration-200">
           {/* Type selector */}
+          {/* eslint-disable-next-line -- raw <button> intentional: these are toggle-selector pills with bespoke
+              rounded-full + active/inactive bg classes that Button variants cannot reproduce without
+              overriding the entire variant styling. Migrating to Button here would require className
+              overrides that defeat the governance. Revisit if a Chip/TogglePill primitive ships. */}
           <div className="flex flex-wrap gap-2">
             {ALL_TYPES.map((type) => {
               const Icon = ACTIVITY_ICONS[type];
@@ -302,14 +306,14 @@ export default function CustomerActivityTimeline({ customerId }: CustomerActivit
                 </div>
 
                 {/* Delete */}
-                <button
-                  type="button"
+                <IconButton
+                  icon={Trash2}
+                  aria-label={lang === "ar" ? "حذف النشاط" : "Delete activity"}
+                  tooltip={lang === "ar" ? "حذف النشاط" : "Delete activity"}
+                  variant="ghost"
                   onClick={() => handleDelete(activity.id)}
-                  className="opacity-0 group-hover:opacity-100 flex-shrink-0 p-1 rounded text-muted-foreground hover:text-red-600 transition-all"
-                  aria-label={lang === "ar" ? "حذف" : "Delete"}
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
+                  className="opacity-0 group-hover:opacity-100 flex-shrink-0 hover:text-destructive"
+                />
               </div>
             );
           })}

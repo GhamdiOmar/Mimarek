@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import {
   Button,
+  IconButton,
   Card,
   Table,
   TableHeader,
@@ -575,13 +576,14 @@ export default function CouponManagementPage() {
             <AlertCircle className="h-[18px] w-[18px]" />
           )}
           {toast.message}
-          <button
+          <IconButton
+            icon={X}
             onClick={() => setToast(null)}
-            className="ms-2 hover:opacity-70"
             aria-label={lang === "ar" ? "إغلاق" : "Dismiss"}
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
+            variant="ghost"
+            size="icon"
+            className="ms-2 h-5 w-5 min-h-0 hover:opacity-70"
+          />
         </div>
       )}
 
@@ -706,6 +708,7 @@ export default function CouponManagementPage() {
 
                     {/* Status Toggle */}
                     <TableCell>
+                      {/* eslint-disable-next-line react/forbid-elements -- semantic toggle switch (role=switch); see AGENTS.md §6.6 */}
                       <button
                         onClick={() =>
                           handleToggle(coupon.id, coupon.isActive)
@@ -825,13 +828,14 @@ export default function CouponManagementPage() {
                   {labels.modalTitle}
                 </h2>
               </div>
-              <button
+              <IconButton
+                icon={X}
                 onClick={() => setShowModal(false)}
-                className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-md hover:bg-muted"
                 aria-label={lang === "ar" ? "إغلاق" : "Close"}
-              >
-                <X className="h-5 w-5" />
-              </button>
+                variant="ghost"
+                size="icon"
+                className="text-muted-foreground hover:text-foreground"
+              />
             </div>
 
             {/* Modal Body */}
@@ -1015,21 +1019,20 @@ export default function CouponManagementPage() {
                     {allPlans.map((plan) => {
                       const isSelected = formPlanIds.includes(plan.id);
                       return (
-                        <button
+                        <Button
                           key={plan.id}
                           type="button"
+                          variant={isSelected ? "primary" : "subtle"}
+                          size="sm"
+                          aria-pressed={isSelected}
                           onClick={() => togglePlanSelection(plan.id)}
-                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                            isSelected
-                              ? "bg-primary text-white border-primary"
-                              : "bg-muted text-muted-foreground border-border hover:border-primary/50"
-                          }`}
+                          className="rounded-full"
                         >
                           {isSelected && (
                             <CheckCircle2 className="h-3.5 w-3.5" />
                           )}
                           {lang === "ar" ? plan.nameAr : plan.nameEn}
-                        </button>
+                        </Button>
                       );
                     })}
                   </div>

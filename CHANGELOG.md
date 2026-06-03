@@ -1,5 +1,45 @@
 # Changelog — Mimaric PropTech
 
+## [4.9.0] — 2026-06-02 — Governed clickable system: Button unification, IconButton/ActionLink primitives, full migration + ESLint guardrail
+
+Establishes a single governed model for every clickable affordance in the product and migrates the entire web app onto it. Before this, ~175 raw `<button>` elements (plus pure-text "actions" with only a color/underline change, and `onClick` on non-interactive `<div>`/`<tr>`) bypassed the design system — the inconsistency was most visible in table/card row actions. Now there is one canonical `Button`, two new primitives (`IconButton`, `ActionLink`), a written spec in AGENTS.md §6.6, and an ESLint rule that blocks reintroduction. Also folds in graph-surfaced structural cleanups (route-boundary boilerplate, dead code/assets).
+
+### Added (design system)
+
+- **Governed taxonomy — AGENTS.md §6.6.0 "Clickable Element Decision Rule"** — every clickable thing must be exactly one of three scenarios: (1) **Standard Button** `<Button variant>` — rectangular, background, shadow/elevation, hover recolor + press motion, focus ring; (2) **Icon Action Button** `<IconButton>` — Lucide icon, **required `aria-label` + tooltip**, hover chrome, ≥44px mobile target; (3) **Navigation Link** `<ActionLink href>` — real navigation only, never in-place actions. Plus a "Banned" list (pure-text in-place actions, `onClick` on non-interactive elements, hand-rolled `<button>`, icon buttons without `aria-label`) and a rationale block citing NN/g link-vs-button, WCAG 2.2 §2.5.8 target size, and Material 3 / IBM Carbon / GitHub Primer taxonomies. New §6.6.5 (IconButton) and §6.6.6 (ActionLink) primitive specs.
+- **`IconButton` primitive** (`packages/ui/src/components/IconButton.tsx`) — wraps the canonical `Button` at `size="icon"`, default `variant="ghost"`; `aria-label` is a **required, TS-enforced** prop (impossible to render an unlabeled icon button); self-wraps a Radix `Tooltip` (defaults to the label); `directional` flips the icon in RTL via `DirectionalIcon`.
+- **`ActionLink` primitive** (`packages/ui/src/components/ActionLink.tsx`) — framework-agnostic (Radix `Slot`/`asChild`, no `next/link` import in the UI package), consistent text-link styling + focus ring, optional leading/trailing icons. App composes it with `next/link` via `asChild`.
+- **ESLint guardrail** (`packages/eslint-config/next.js`) — `react/forbid-elements` forbids raw `<button>` in apps ("use `<Button>`/`<IconButton>` from @repo/ui"), scoped so `packages/ui` primitives are exempt. Three legitimate `role="switch"` toggles carry an inline escape-hatch with a reason.
+
+### Changed (Button component)
+
+- `packages/ui/src/components/Button.tsx` — renamed the `danger` variant to **`destructive`** (codemod across 9 files / 19 callsites; aligns the component with the long-standing §6.6.1 spec); added the **`premium`** variant (gold `--accent`); made `size="icon"` **responsive** (`h-11 w-11 md:h-9 md:w-9`) to meet the 44px mobile touch target; added an optional `state="success"|"error"` post-action micro-feedback prop (check / shake, 1.5s) with a `shake` keyframe in `globals.css`.
+
+### Changed (migration — 175 → 7)
+
+- Migrated **~175 raw clickable elements across ~45 files** to the governed primitives — dashboard hotspots (CRM, units, contracts, reservations, documents, help, maintenance), billing/payments, all `/admin/*`, marketplace, settings, onboarding, reports, auth, the marketing landing page, **and the app shell** (topbar, sidebar, mobile nav/sheets, theme toggle). Row/card actions → `IconButton` (with `aria-label` + tooltip); filter/toggle pills → `Button` with `aria-pressed`; pure-text actions → `Button variant="link"` or `IconButton`; navigating text links → `ActionLink`; `onClick` on `<div>`/`<tr>` → keyboard-accessible (`role="button"` + `tabIndex` + `onKeyDown`, or a real button). Only **7 raw `<button>` remain**, all documented exceptions: 3 semantic `role="switch"` toggles, listbox options, and selector chips (escape-hatched pending a future Chip/Combobox primitive).
+
+### Changed (structural cleanup — from the knowledge-graph audit)
+
+- **Route boundaries** — 39 duplicated `error.tsx` / `loading.tsx` / `not-found.tsx` files now delegate to the shared `RouteError` / `RouteLoading` / `RouteNotFound` components (Client/Server constraints preserved); 6 intentionally-custom boundaries left as-is.
+- **Dead code/assets removed** — the Turborepo stub `packages/ui/src/button.tsx` (used `alert()`), the unused `@phosphor-icons/react` dependency (0 source imports; Lucide-only is honored), and 14 orphaned starter SVGs in `apps/{web,portal}/public`.
+
+### Verification
+
+- **Full production build** (`turbo run build --filter=@repo/web`) green — all routes compiled. Forced, uncached `check-types` (`@repo/ui` + `@repo/web`) green at every migration wave (not just subagent self-reports). ESLint: **0 errors**.
+- **Runtime (production preview, port 3000):** landing `/ar` (RTL) — 13 governed buttons, **0 icon-only buttons missing an accessible name**, `role="switch"` preserved, governed variant classes applied, **console error-free**; **axe-core 4.10.2 → `{ violations: [] }`** (WCAG 2.0/2.1 A+AA). Login page — password-visibility toggle now exposes a bilingual `aria-label` ("إظهار كلمة المرور"), governed submit button, 0 unlabeled icon buttons, console clean.
+- **§3.9 known-blocker (environmental):** the preview MCP raster `screenshot` tool times out (~30s renderer bottleneck — the same limitation documented for v4.8.0), and eval-driven NextAuth login does not capture React controlled-input state, so the cross-theme screenshot quadruple (light/dark × LTR/RTL) and the authenticated-page raster walkthrough were substituted with DOM/structural + accessibility-tree + axe verification on the publicly reachable pages. Manual cross-theme visual review on authenticated dashboards (CRM/units) remains advisable post-merge.
+
+### Upgrade notes
+
+- **Breaking (internal):** the `Button` `variant="danger"` value is now `variant="destructive"`. All in-repo callsites were migrated; any downstream/uncommitted code using `danger` must update.
+- New `@repo/ui` exports: `IconButton`, `ActionLink` (and their variant helpers). Prefer them over raw `<button>`/`<a>` — the ESLint rule now flags raw `<button>` in apps.
+- No schema changes, no new env vars, no tenant route or permission changes.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimaric/compare/v4.8.0...v4.9.0
+
+---
+
 ## [4.8.0] — 2026-06-02 — Platform Admin Product Analytics v1 + landing-page a11y + login timeout + dev pool stability
 
 Lands a revenue-mechanics analytics layer on the `/dashboard/admin` SYSTEM_ADMIN surface (Phase 1 of a three-phase plan), fixes every WCAG 2.1 AA axe violation on the marketing landing pages, adds a 30-second timeout + bilingual error to the login form, and stops the dev-mode Supabase pool from starving NextAuth after one login attempt.

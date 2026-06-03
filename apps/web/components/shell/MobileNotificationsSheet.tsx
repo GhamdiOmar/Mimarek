@@ -3,7 +3,7 @@
 import * as React from "react";
 import { Bell, CheckCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { BottomSheet } from "@repo/ui";
+import { BottomSheet, Button } from "@repo/ui";
 import { cn } from "@repo/ui/lib/utils";
 import { useLanguage } from "../LanguageProvider";
 import {
@@ -78,13 +78,15 @@ export function MobileNotificationsSheet({
             <span className="text-xs font-medium text-foreground tabular-nums">
               {lang === "ar" ? `${unread} غير مقروء` : `${unread} unread`}
             </span>
-            <button
+            <Button
               onClick={handleMarkAll}
-              className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-semibold text-primary hover:bg-primary/10"
+              variant="link"
+              size="sm"
+              className="gap-1.5 text-primary"
             >
               <CheckCheck className="h-3.5 w-3.5" />
               {lang === "ar" ? "تحديد الكل" : "Mark all read"}
-            </button>
+            </Button>
           </div>
         )}
 
@@ -115,11 +117,12 @@ export function MobileNotificationsSheet({
         {!loading && notifs.length > 0 && (
           <div className="space-y-2">
             {notifs.map((n) => (
-              <button
+              <Button
                 key={n.id}
                 onClick={() => handleTap(n)}
+                variant="ghost"
                 className={cn(
-                  "w-full rounded-xl border border-border bg-card px-3 py-3 text-start transition-colors hover:bg-muted/30 active:bg-muted/50",
+                  "w-full justify-start rounded-xl border border-border bg-card px-3 py-3 h-auto text-start hover:bg-muted/30 active:bg-muted/50",
                   !n.read && "bg-primary/5 border-primary/30"
                 )}
               >
@@ -146,7 +149,7 @@ export function MobileNotificationsSheet({
                     </span>
                   </div>
                 </div>
-              </button>
+              </Button>
             ))}
           </div>
         )}

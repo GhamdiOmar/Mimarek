@@ -6,6 +6,7 @@
 // CLAUDE.md § 6.12 — every error: what happened + what to do + retry.
 // ────────────────────────────────────────────────────────────
 import * as React from "react";
+import Link from "next/link";
 import { AlertTriangle, RefreshCw } from "lucide-react";
 import { Button } from "@repo/ui";
 
@@ -39,7 +40,7 @@ export default function Error({
           Try again
         </Button>
         <Button type="button" variant="ghost" asChild>
-          <a href="/dashboard/help">Contact support</a>
+          <Link href="/dashboard/help">Contact support</Link>
         </Button>
       </div>
       {error.digest && (

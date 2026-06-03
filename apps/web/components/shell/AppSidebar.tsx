@@ -8,6 +8,7 @@ import {
   SearchCheck, TicketCheck, ClipboardList, Wallet, Gauge,
 } from "lucide-react";
 import { cn } from "@repo/ui/lib/utils";
+import { Button, IconButton } from "@repo/ui";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useLanguage } from "../LanguageProvider";
@@ -103,13 +104,13 @@ export function AppSidebar({ isCollapsed, setIsCollapsed, mobileOpen, setMobileO
         aria-label={lang === "ar" ? "الشريط الجانبي" : "Sidebar"}
       >
         {/* Mobile close */}
-        <button
-          onClick={() => setMobileOpen(false)}
-          className="absolute top-3 start-3 md:hidden p-2 text-white/60 hover:text-white min-h-[40px] min-w-[40px] flex items-center justify-center"
+        <IconButton
+          icon={X}
           aria-label={lang === "ar" ? "إغلاق القائمة" : "Close menu"}
-        >
-          <X className="h-[18px] w-[18px]" />
-        </button>
+          onClick={() => setMobileOpen(false)}
+          variant="ghost"
+          className="absolute top-3 start-3 md:hidden text-white/60 hover:text-white hover:bg-white/10"
+        />
 
         {/* Logo */}
         <div className="flex h-14 items-center px-4 border-b border-white/6">
@@ -144,14 +145,16 @@ export function AppSidebar({ isCollapsed, setIsCollapsed, mobileOpen, setMobileO
 
         {/* Footer */}
         <div className="border-t border-white/6 p-2 space-y-0.5">
-          <button
+          <Button
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="hidden md:flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm text-white/50 hover:bg-white/5 hover:text-white/80 transition-all min-h-[40px]"
+            variant="ghost"
             aria-label={lang === "ar" ? "طي القائمة" : "Toggle sidebar"}
+            aria-pressed={isCollapsed}
+            className="hidden md:flex w-full justify-start gap-3 rounded-md px-3 py-2.5 h-auto text-sm text-white/50 hover:bg-white/5 hover:text-white/80 min-h-[40px]"
           >
             {isCollapsed ? <PanelLeftOpen className="h-[18px] w-[18px]" /> : <PanelLeftClose className="h-[18px] w-[18px]" />}
             {showLabel && <span>{lang === "ar" ? "طي القائمة" : "Collapse"}</span>}
-          </button>
+          </Button>
           {!isPlatformUser && (
             <Link
               href="/dashboard/help"

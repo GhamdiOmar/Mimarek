@@ -23,6 +23,8 @@ export * from "./components/FormSection";
 export * from "./components/FormField"; /* exports FieldWrapper */
 export * from "./components/PageIntro";
 export * from "./components/DirectionalIcon";
+export * from "./components/IconButton";
+export * from "./components/ActionLink";
 export * from "./components/DateRangePicker";
 export * from "./components/LastUpdatedAgo";
 

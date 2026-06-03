@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
+import { IconButton } from "@repo/ui";
 import { t as translations } from "../translations";
 
 export default function Header({ lang }: { lang: "ar" | "en" }) {
@@ -91,14 +92,13 @@ export default function Header({ lang }: { lang: "ar" | "en" }) {
           </div>
 
           {/* Mobile menu button */}
-          <button
-            onClick={() => setMobileOpen(!mobileOpen)}
-            className="inline-flex items-center justify-center rounded-lg p-2 text-white md:hidden"
+          <IconButton
+            icon={mobileOpen ? X : Menu}
             aria-label={mobileOpen ? "Close menu" : "Open menu"}
-            style={{ display: "inline-flex" }}
-          >
-            {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-          </button>
+            variant="ghost"
+            onClick={() => setMobileOpen(!mobileOpen)}
+            className="text-white md:hidden hover:bg-white/10"
+          />
         </div>
       </div>
 

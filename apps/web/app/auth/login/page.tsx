@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Button, Input, DirectionalIcon } from "@repo/ui";
+import { Button, Input, DirectionalIcon, IconButton } from "@repo/ui";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Globe, ArrowRight, Loader2, Eye, EyeOff } from "lucide-react";
@@ -173,13 +173,15 @@ export default function LoginPage() {
           </div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => setLang(lang === "ar" ? "en" : "ar")}
-              className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground"
             >
               <Globe className="h-4 w-4" />
               <span>{lang === "ar" ? "English" : "العربية"}</span>
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -199,20 +201,22 @@ export default function LoginPage() {
 
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-2 rounded-md bg-muted p-1">
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
                   onClick={() => setMode("management")}
-                  className={`min-h-[44px] rounded px-3 text-sm font-medium transition-colors ${mode === "management" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                  className={`min-h-[44px] w-full rounded px-3 text-sm font-medium transition-colors ${mode === "management" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
                 >
                   {lang === "ar" ? "إدارة العقارات" : "Property management"}
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
+                  variant="ghost"
                   onClick={() => setMode("tenant")}
-                  className={`min-h-[44px] rounded px-3 text-sm font-medium transition-colors ${mode === "tenant" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                  className={`min-h-[44px] w-full rounded px-3 text-sm font-medium transition-colors ${mode === "tenant" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
                 >
                   {lang === "ar" ? "بوابة المستأجر" : "Tenant portal"}
-                </button>
+                </Button>
               </div>
 
               {error && (
@@ -259,20 +263,20 @@ export default function LoginPage() {
                     onKeyDown={(e) => { if (e.key === "Enter" && email && password && !loading && rateLimitSeconds <= 0) handleLogin(); }}
                     disabled={loading}
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute end-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                    tabIndex={-1}
+                  <IconButton
+                    icon={showPassword ? EyeOff : Eye}
                     aria-label={
                       showPassword
                         ? (lang === "ar" ? "إخفاء كلمة المرور" : "Hide password")
                         : (lang === "ar" ? "إظهار كلمة المرور" : "Show password")
                     }
+                    variant="ghost"
+                    size="icon"
+                    tabIndex={-1}
                     aria-pressed={showPassword}
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute end-3 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground hover:text-foreground"
+                  />
                 </div>
               </div>
 

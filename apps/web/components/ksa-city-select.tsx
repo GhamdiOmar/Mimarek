@@ -75,6 +75,11 @@ export function KsaCitySelect({ value, onChange, placeholder, className }: KsaCi
             </div>
           ) : (
             filtered.map((city) => (
+              // eslint-disable-next-line -- raw <button> intentional: these are listbox-option elements
+              // inside a custom combobox dropdown. Button adds w-fit + whitespace-nowrap + fixed
+              // height (h-8/h-10) which breaks the w-full dropdown layout and option row density.
+              // Migrating to Button here would require overriding the variant entirely, defeating
+              // governance. Revisit if a Combobox/ListboxOption primitive ships in @repo/ui.
               <button
                 key={city.value}
                 type="button"

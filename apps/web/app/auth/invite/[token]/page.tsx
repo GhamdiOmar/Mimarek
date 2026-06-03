@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Button, Input, DirectionalIcon } from "@repo/ui";
+import { Button, Input, DirectionalIcon, IconButton } from "@repo/ui";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -167,13 +167,15 @@ export default function InviteAcceptPage() {
           <div className="lg:hidden">
             <MimaricLogo width={100} />
           </div>
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => setLang(lang === "ar" ? "en" : "ar")}
-            className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+            className="flex items-center gap-2 text-muted-foreground hover:text-primary"
           >
             <Globe className="h-5 w-5" />
             <span>{lang === "ar" ? "English" : "العربية"}</span>
-          </button>
+          </Button>
         </div>
 
         <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 sm:px-6 pb-12 lg:px-12 lg:pt-0">
@@ -296,14 +298,19 @@ export default function InviteAcceptPage() {
                       onChange={(e) => setPassword(e.target.value)}
                       disabled={loading}
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute end-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors"
+                    <IconButton
+                      icon={showPassword ? EyeOff : Eye}
+                      aria-label={
+                        showPassword
+                          ? (lang === "ar" ? "إخفاء كلمة المرور" : "Hide password")
+                          : (lang === "ar" ? "إظهار كلمة المرور" : "Show password")
+                      }
+                      variant="ghost"
+                      size="icon"
                       tabIndex={-1}
-                    >
-                      {showPassword ? <EyeOff className="h-[18px] w-[18px]" /> : <Eye className="h-[18px] w-[18px]" />}
-                    </button>
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute end-3 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground hover:text-primary"
+                    />
                   </div>
                   <PasswordStrengthHint
                     password={password}

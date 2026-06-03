@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import {
   Button,
+  IconButton,
   Badge,
   SARAmount,
   ResponsiveDialog,
@@ -304,19 +305,14 @@ export default function PreventiveMaintenancePage() {
         lang={lang}
         onBack={() => router.push("/dashboard/maintenance/tickets")}
         trailing={
-          <button
-            type="button"
+          <IconButton
+            icon={generating ? Loader2 : Zap}
+            aria-label={lang === "ar" ? "تشغيل الآن" : "Run now"}
             onClick={() => setRunConfirmOpen(true)}
             disabled={generating}
-            aria-label={lang === "ar" ? "تشغيل الآن" : "Run now"}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground hover:bg-muted/60 active:bg-muted transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--primary))]"
-          >
-            {generating ? (
-              <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
-            ) : (
-              <Zap className="h-5 w-5" aria-hidden="true" />
-            )}
-          </button>
+            variant="ghost"
+            className={`h-10 w-10 rounded-full${generating ? " [&_svg]:animate-spin" : ""}`}
+          />
         }
       />
 

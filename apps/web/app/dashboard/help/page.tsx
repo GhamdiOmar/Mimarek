@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import {
   Button,
+  IconButton,
   PageHeader,
   AppBar,
   FAB,
@@ -529,7 +530,7 @@ export default function HelpPage() {
                 <Button size="sm" variant="success" onClick={() => handleReview(req.id, "APPROVED")} disabled={reviewActionLoading} className="h-6 px-2 text-[10px]" style={{ display: "inline-flex" }}>
                   {reviewActionLoading ? <Loader2 className="h-3 w-3 me-1 animate-spin" /> : <CheckCircle2 className="h-3 w-3 me-1" />}{lang === "ar" ? "موافقة" : "Approve"}
                 </Button>
-                <Button size="sm" variant="danger" onClick={() => handleReview(req.id, "DECLINED")} disabled={reviewActionLoading} className="h-6 px-2 text-[10px]" style={{ display: "inline-flex" }}>
+                <Button size="sm" variant="destructive" onClick={() => handleReview(req.id, "DECLINED")} disabled={reviewActionLoading} className="h-6 px-2 text-[10px]" style={{ display: "inline-flex" }}>
                   {reviewActionLoading ? <Loader2 className="h-3 w-3 me-1 animate-spin" /> : <XCircle className="h-3 w-3 me-1" />}{lang === "ar" ? "رفض" : "Decline"}
                 </Button>
               </div>
@@ -604,7 +605,7 @@ export default function HelpPage() {
                 <Button size="sm" variant="success" onClick={() => handleJoinReview(req.id, "APPROVED_JOIN")} disabled={joinReviewActionLoading} className="h-6 px-2 text-[10px]" style={{ display: "inline-flex" }}>
                   {joinReviewActionLoading ? <Loader2 className="h-3 w-3 me-1 animate-spin" /> : <CheckCircle2 className="h-3 w-3 me-1" />}{lang === "ar" ? "موافقة" : "Approve"}
                 </Button>
-                <Button size="sm" variant="danger" onClick={() => handleJoinReview(req.id, "DECLINED_JOIN")} disabled={joinReviewActionLoading} className="h-6 px-2 text-[10px]" style={{ display: "inline-flex" }}>
+                <Button size="sm" variant="destructive" onClick={() => handleJoinReview(req.id, "DECLINED_JOIN")} disabled={joinReviewActionLoading} className="h-6 px-2 text-[10px]" style={{ display: "inline-flex" }}>
                   {joinReviewActionLoading ? <Loader2 className="h-3 w-3 me-1 animate-spin" /> : <XCircle className="h-3 w-3 me-1" />}{lang === "ar" ? "رفض" : "Decline"}
                 </Button>
               </div>
@@ -670,15 +671,17 @@ export default function HelpPage() {
 
         {/* Contact support CTA */}
         <div className="px-4 pt-4">
-          <button
+          <Button
             type="button"
+            variant="outline"
             onClick={() => setMobileNewTicketOpen(true)}
-            className="w-full min-h-11 bg-primary/10 border border-primary/20 rounded-xl p-4 flex items-center gap-3 text-start transition-colors hover:bg-primary/15 active:bg-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--primary))]"
+            className="w-full min-h-11 bg-primary/10 border-primary/20 rounded-xl p-4 justify-start gap-3 text-start h-auto hover:bg-primary/15 active:bg-primary/20"
+            style={{ display: "inline-flex" }}
           >
             <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary">
               <LifeBuoy className="h-5 w-5" aria-hidden="true" />
             </span>
-            <div className="min-w-0 flex-1">
+            <div className="min-w-0 flex-1 text-start">
               <div className="text-sm font-semibold text-foreground">
                 {lang === "ar" ? "تواصل مع الدعم الفني" : "Contact Support"}
               </div>
@@ -692,7 +695,7 @@ export default function HelpPage() {
               className="h-5 w-5 shrink-0 text-primary rtl:scale-x-[-1]"
               aria-hidden="true"
             />
-          </button>
+          </Button>
         </div>
 
         {/* FAQ categories */}
@@ -916,19 +919,20 @@ export default function HelpPage() {
         {tabs.map((tab) => {
           const Icon = tabIcons[tab.key] ?? HelpCircle;
           return (
-            <button
+            <Button
               key={tab.key}
+              variant={activeTab === tab.key ? "primary" : "ghost"}
+              size="sm"
               onClick={() => setActiveTab(tab.key)}
               className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium whitespace-nowrap transition-all",
-                activeTab === tab.key
-                  ? "bg-primary text-white shadow-md"
-                  : "text-muted-foreground hover:bg-muted/30 hover:text-foreground"
+                "gap-2 whitespace-nowrap",
+                activeTab === tab.key ? "shadow-md" : "text-muted-foreground"
               )}
+              style={{ display: "inline-flex" }}
             >
               <Icon className="h-4 w-4" />
               {tab.label[lang]}
-            </button>
+            </Button>
           );
         })}
       </div>
@@ -938,21 +942,36 @@ export default function HelpPage() {
         <div className="space-y-6">
           {/* Quick Actions */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <button onClick={() => { setActiveTab("tickets"); setShowNewTicket(true); }} className="bg-card p-6 rounded-md shadow-card border border-border hover:shadow-lg hover:-translate-y-0.5 transition-all text-start">
+            <Button
+              variant="outline"
+              onClick={() => { setActiveTab("tickets"); setShowNewTicket(true); }}
+              className="bg-card p-6 rounded-md shadow-card h-auto justify-start flex-col items-start hover:shadow-lg hover:-translate-y-0.5 transition-all text-start"
+              style={{ display: "inline-flex" }}
+            >
               <Ticket className="h-8 w-8 text-secondary mb-3" />
               <h3 className="font-bold text-foreground">{lang === "ar" ? "تقديم تذكرة" : "Submit Ticket"}</h3>
               <p className="text-xs text-muted-foreground mt-1">{lang === "ar" ? "أبلغ عن مشكلة أو اطلب ميزة جديدة" : "Report an issue or request a feature"}</p>
-            </button>
-            <button onClick={() => setActiveTab("permissions")} className="bg-card p-6 rounded-md shadow-card border border-border hover:shadow-lg hover:-translate-y-0.5 transition-all text-start">
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setActiveTab("permissions")}
+              className="bg-card p-6 rounded-md shadow-card h-auto justify-start flex-col items-start hover:shadow-lg hover:-translate-y-0.5 transition-all text-start"
+              style={{ display: "inline-flex" }}
+            >
               <ShieldCheck className="h-8 w-8 text-warning mb-3" />
               <h3 className="font-bold text-foreground">{lang === "ar" ? "طلب صلاحيات" : "Request Permissions"}</h3>
               <p className="text-xs text-muted-foreground mt-1">{lang === "ar" ? "اطلب ترقية صلاحياتك في النظام" : "Request a role upgrade in the system"}</p>
-            </button>
-            <button onClick={() => setActiveTab("faq")} className="bg-card p-6 rounded-md shadow-card border border-border hover:shadow-lg hover:-translate-y-0.5 transition-all text-start">
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setActiveTab("faq")}
+              className="bg-card p-6 rounded-md shadow-card h-auto justify-start flex-col items-start hover:shadow-lg hover:-translate-y-0.5 transition-all text-start"
+              style={{ display: "inline-flex" }}
+            >
               <BookOpen className="h-8 w-8 text-info mb-3" />
               <h3 className="font-bold text-foreground">{lang === "ar" ? "الأسئلة الشائعة" : "FAQs & Guides"}</h3>
               <p className="text-xs text-muted-foreground mt-1">{lang === "ar" ? "ابحث في الأسئلة الشائعة وأدلة الاستخدام" : "Browse FAQs and usage guides"}</p>
-            </button>
+            </Button>
           </div>
 
         </div>
@@ -974,20 +993,26 @@ export default function HelpPage() {
 
           {/* Category Pills */}
           <div className="flex gap-2 overflow-x-auto pb-1">
-            <button
+            <Button
+              size="sm"
+              variant={faqCategory === "all" ? "primary" : "subtle"}
               onClick={() => setFaqCategory("all")}
-              className={cn("px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all", faqCategory === "all" ? "bg-primary text-white" : "bg-muted/50 text-muted-foreground hover:bg-muted")}
+              className="rounded-full whitespace-nowrap"
+              style={{ display: "inline-flex" }}
             >
               {lang === "ar" ? "الكل" : "All"}
-            </button>
+            </Button>
             {FAQ_CATEGORIES.map((cat) => (
-              <button
+              <Button
                 key={cat.key}
+                size="sm"
+                variant={faqCategory === cat.key ? "primary" : "subtle"}
                 onClick={() => setFaqCategory(cat.key)}
-                className={cn("px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all", faqCategory === cat.key ? "bg-primary text-white" : "bg-muted/50 text-muted-foreground hover:bg-muted")}
+                className="rounded-full whitespace-nowrap"
+                style={{ display: "inline-flex" }}
               >
                 {cat.label[lang]}
-              </button>
+              </Button>
             ))}
           </div>
 
@@ -998,13 +1023,15 @@ export default function HelpPage() {
             ) : (
               filteredFaqs.map((item) => (
                 <div key={item.id}>
-                  <button
+                  <Button
+                    variant="ghost"
                     onClick={() => setOpenFaq(openFaq === item.id ? null : item.id)}
-                    className="flex items-center justify-between w-full px-4 py-3 text-sm font-medium text-foreground hover:bg-muted/10 transition-colors text-start"
+                    className="flex items-center justify-between w-full px-4 py-3 h-auto text-sm font-medium text-foreground hover:bg-muted/10 transition-colors text-start rounded-none"
+                    style={{ display: "inline-flex" }}
                   >
                     <span>{item.question[lang]}</span>
                     {openFaq === item.id ? <ChevronUp className="h-4 w-4 min-w-[16px]" /> : <ChevronDown className="h-4 w-4 min-w-[16px]" />}
-                  </button>
+                  </Button>
                   {openFaq === item.id && (
                     <div className="px-4 pb-3 text-sm text-muted-foreground leading-relaxed bg-muted/5">
                       {item.answer[lang]}
@@ -1021,14 +1048,16 @@ export default function HelpPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {GUIDE_ITEMS.map((guide, idx) => (
                 <div key={guide.id} className="bg-card rounded-md border border-border overflow-hidden flex flex-col">
-                  <button
+                  <Button
+                    variant="ghost"
                     onClick={() => setOpenGuide(openGuide === guide.id ? null : guide.id)}
-                    className="w-full text-start p-4 flex items-start gap-3 hover:bg-muted/20 transition-colors"
+                    className="w-full text-start p-4 h-auto justify-start items-start gap-3 hover:bg-muted/20 transition-colors rounded-none"
+                    style={{ display: "inline-flex" }}
                   >
                     <span className="min-w-[32px] h-8 rounded-md bg-secondary/10 text-secondary flex items-center justify-center text-sm font-bold mt-0.5">
                       {idx + 1}
                     </span>
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0 text-start">
                       <h3 className="font-bold text-foreground text-sm leading-snug">{guide.title[lang]}</h3>
                       <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">{guide.description[lang]}</p>
                     </div>
@@ -1040,7 +1069,7 @@ export default function HelpPage() {
                     )}>
                       <ChevronDown className="h-3.5 w-3.5" />
                     </span>
-                  </button>
+                  </Button>
                   {openGuide === guide.id && (
                     <div className="px-4 pb-4 border-t border-border bg-muted/5">
                       <ol className="mt-3 space-y-2.5">
@@ -1266,7 +1295,7 @@ export default function HelpPage() {
                           <Button size="sm" variant="success" onClick={() => handleReview(req.id, "APPROVED")} disabled={reviewActionLoading} className="h-8 px-3 text-xs flex-1" style={{ display: "inline-flex" }}>
                             {reviewActionLoading ? <Loader2 className="h-3 w-3 me-1 animate-spin" /> : <CheckCircle2 className="h-3 w-3 me-1" />}{lang === "ar" ? "موافقة" : "Approve"}
                           </Button>
-                          <Button size="sm" variant="danger" onClick={() => handleReview(req.id, "DECLINED")} disabled={reviewActionLoading} className="h-8 px-3 text-xs flex-1" style={{ display: "inline-flex" }}>
+                          <Button size="sm" variant="destructive" onClick={() => handleReview(req.id, "DECLINED")} disabled={reviewActionLoading} className="h-8 px-3 text-xs flex-1" style={{ display: "inline-flex" }}>
                             {reviewActionLoading ? <Loader2 className="h-3 w-3 me-1 animate-spin" /> : <XCircle className="h-3 w-3 me-1" />}{lang === "ar" ? "رفض" : "Decline"}
                           </Button>
                         </div>
@@ -1322,7 +1351,7 @@ export default function HelpPage() {
                           <Button size="sm" variant="success" onClick={() => handleJoinReview(req.id, "APPROVED_JOIN")} disabled={joinReviewActionLoading} className="h-8 px-3 text-xs flex-1" style={{ display: "inline-flex" }}>
                             {joinReviewActionLoading ? <Loader2 className="h-3 w-3 me-1 animate-spin" /> : <CheckCircle2 className="h-3 w-3 me-1" />}{lang === "ar" ? "موافقة" : "Approve"}
                           </Button>
-                          <Button size="sm" variant="danger" onClick={() => handleJoinReview(req.id, "DECLINED_JOIN")} disabled={joinReviewActionLoading} className="h-8 px-3 text-xs flex-1" style={{ display: "inline-flex" }}>
+                          <Button size="sm" variant="destructive" onClick={() => handleJoinReview(req.id, "DECLINED_JOIN")} disabled={joinReviewActionLoading} className="h-8 px-3 text-xs flex-1" style={{ display: "inline-flex" }}>
                             {joinReviewActionLoading ? <Loader2 className="h-3 w-3 me-1 animate-spin" /> : <XCircle className="h-3 w-3 me-1" />}{lang === "ar" ? "رفض" : "Decline"}
                           </Button>
                         </div>

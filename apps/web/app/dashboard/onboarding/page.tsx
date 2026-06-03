@@ -322,14 +322,15 @@ export default function OnboardingPage() {
                 />
               </div>
             </div>
-            <button
+            <Button
               type="button"
+              variant="link"
               onClick={handleSkipUnit}
               disabled={loading}
-              className="w-full min-h-11 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              className="w-full min-h-11 text-sm text-muted-foreground hover:text-foreground"
             >
               {lang === "ar" ? "تخطي هذه الخطوة" : "Skip this step"}
-            </button>
+            </Button>
           </div>
         )}
 
