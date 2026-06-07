@@ -86,11 +86,11 @@ type Reservation = {
 type Customer = { id: string; name: string; phone?: string };
 type Unit = { id: string; number: string; status: string; buildingId?: string };
 
-const STATUS_COLORS: Record<string, string> = {
-  PENDING: "bg-warning/15 text-warning",
-  CONFIRMED: "bg-success/15 text-success",
-  EXPIRED: "bg-destructive/15 text-destructive",
-  CANCELLED: "bg-muted text-muted-foreground",
+const STATUS_VARIANT: Record<string, React.ComponentProps<typeof Badge>["variant"]> = {
+  PENDING: "pending",
+  CONFIRMED: "success",
+  EXPIRED: "error",
+  CANCELLED: "default",
 };
 
 const STATUS_LABELS: Record<string, { ar: string; en: string }> = {
@@ -770,9 +770,9 @@ export default function ReservationsPage() {
                     {deal.depositAmount ? SAR(deal.depositAmount) : <span className="text-muted-foreground/70">—</span>}
                   </TableCell>
                   <TableCell>
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[deal.status]}`}>
+                    <Badge variant={STATUS_VARIANT[deal.status] ?? "default"} size="sm">
                       {lang === "ar" ? (STATUS_LABELS[deal.status]?.ar ?? deal.status) : (STATUS_LABELS[deal.status]?.en ?? deal.status)}
-                    </span>
+                    </Badge>
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {new Date(deal.expiresAt).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-SA")}
@@ -1022,9 +1022,9 @@ export default function ReservationsPage() {
                 </div>
                 <div>
                   <p className="text-muted-foreground text-xs">{lang === "ar" ? "الحالة" : "Status"}</p>
-                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[detailDeal.status]}`}>
+                  <Badge variant={STATUS_VARIANT[detailDeal.status] ?? "default"} size="sm">
                     {lang === "ar" ? (STATUS_LABELS[detailDeal.status]?.ar ?? detailDeal.status) : (STATUS_LABELS[detailDeal.status]?.en ?? detailDeal.status)}
-                  </span>
+                  </Badge>
                 </div>
                 <div>
                   <p className="text-muted-foreground text-xs">{lang === "ar" ? "تاريخ الانتهاء" : "Expiry Date"}</p>

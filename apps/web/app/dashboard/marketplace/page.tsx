@@ -74,12 +74,12 @@ const PROPERTY_TYPE_LABELS: Record<string, { ar: string; en: string }> = {
   PARKING: { ar: "موقف", en: "Parking" },
 };
 
-const INQUIRY_STATUS_STYLES: Record<string, string> = {
-  OPEN: "bg-info/15 text-info",
-  WITHDRAWN: "bg-muted text-muted-foreground",
-  CONVERTED_TO_DEAL: "bg-success/15 text-success",
-  CLOSED_WON: "bg-success/15 text-success",
-  CLOSED_LOST: "bg-destructive/15 text-destructive",
+const INQUIRY_STATUS_VARIANT: Record<string, "info" | "default" | "success" | "error"> = {
+  OPEN: "info",
+  WITHDRAWN: "default",
+  CONVERTED_TO_DEAL: "success",
+  CLOSED_WON: "success",
+  CLOSED_LOST: "error",
 };
 
 const INQUIRY_STATUS_LABELS: Record<string, { ar: string; en: string }> = {
@@ -711,16 +711,11 @@ function MarketplacePage() {
                           {inq.listing.title ?? inq.listing.listingNumber}
                         </Link>
                         <div className="flex flex-wrap items-center gap-2">
-                          <span
-                            className={cn(
-                              "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
-                              INQUIRY_STATUS_STYLES[inq.status] ?? "bg-muted text-muted-foreground"
-                            )}
-                          >
+                          <Badge variant={INQUIRY_STATUS_VARIANT[inq.status] ?? "default"} size="sm">
                             {lang === "ar"
                               ? (INQUIRY_STATUS_LABELS[inq.status]?.ar ?? inq.status)
                               : (INQUIRY_STATUS_LABELS[inq.status]?.en ?? inq.status)}
-                          </span>
+                          </Badge>
                           {inq.listing.city && (
                             <span className="text-xs text-muted-foreground">{inq.listing.city}</span>
                           )}
@@ -779,16 +774,11 @@ function MarketplacePage() {
                             </span>
                           </TableCell>
                           <TableCell>
-                            <span
-                              className={cn(
-                                "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
-                                INQUIRY_STATUS_STYLES[inq.status] ?? "bg-muted text-muted-foreground"
-                              )}
-                            >
+                            <Badge variant={INQUIRY_STATUS_VARIANT[inq.status] ?? "default"} size="sm">
                               {lang === "ar"
                                 ? (INQUIRY_STATUS_LABELS[inq.status]?.ar ?? inq.status)
                                 : (INQUIRY_STATUS_LABELS[inq.status]?.en ?? inq.status)}
-                            </span>
+                            </Badge>
                           </TableCell>
                           <TableCell>
                             {inq.transfer ? (

@@ -82,12 +82,12 @@ type Contract = {
 type Customer = { id: string; name: string };
 type Unit = { id: string; number: string; status: string };
 
-const CONTRACT_STATUS_COLORS: Record<string, string> = {
-  DRAFT: "bg-muted text-muted-foreground",
-  SENT: "bg-info/15 text-info",
-  SIGNED: "bg-success/15 text-success",
-  CANCELLED: "bg-destructive/15 text-destructive",
-  VOID: "bg-warning/15 text-warning",
+const CONTRACT_STATUS_VARIANT: Record<string, React.ComponentProps<typeof Badge>["variant"]> = {
+  DRAFT: "draft",
+  SENT: "info",
+  SIGNED: "success",
+  CANCELLED: "error",
+  VOID: "warning",
 };
 
 const CONTRACT_STATUS_LABELS: Record<string, { ar: string; en: string }> = {
@@ -797,9 +797,9 @@ export default function ContractsPage() {
                   </TableCell>
                   <TableCell>{SAR(Number(c.amount))}</TableCell>
                   <TableCell>
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${CONTRACT_STATUS_COLORS[c.status]}`}>
+                    <Badge variant={CONTRACT_STATUS_VARIANT[c.status] ?? "default"} size="sm">
                       {lang === "ar" ? (CONTRACT_STATUS_LABELS[c.status]?.ar ?? c.status) : (CONTRACT_STATUS_LABELS[c.status]?.en ?? c.status)}
-                    </span>
+                    </Badge>
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {c.signedAt
@@ -871,9 +871,9 @@ export default function ContractsPage() {
                       : <span className="text-muted-foreground/70">—</span>}
                   </TableCell>
                   <TableCell>
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${CONTRACT_STATUS_COLORS[c.status]}`}>
+                    <Badge variant={CONTRACT_STATUS_VARIANT[c.status] ?? "default"} size="sm">
                       {lang === "ar" ? (CONTRACT_STATUS_LABELS[c.status]?.ar ?? c.status) : (CONTRACT_STATUS_LABELS[c.status]?.en ?? c.status)}
-                    </span>
+                    </Badge>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-3">
@@ -952,9 +952,9 @@ export default function ContractsPage() {
               </div>
               <div>
                 <p className="text-muted-foreground text-xs">{lang === "ar" ? "الحالة" : "Status"}</p>
-                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${CONTRACT_STATUS_COLORS[detailContract.status]}`}>
+                <Badge variant={CONTRACT_STATUS_VARIANT[detailContract.status] ?? "default"} size="sm">
                   {lang === "ar" ? (CONTRACT_STATUS_LABELS[detailContract.status]?.ar ?? detailContract.status) : (CONTRACT_STATUS_LABELS[detailContract.status]?.en ?? detailContract.status)}
-                </span>
+                </Badge>
               </div>
               {detailContract.signedAt && (
                 <div className="col-span-2">

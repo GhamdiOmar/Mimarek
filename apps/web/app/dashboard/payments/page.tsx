@@ -140,11 +140,11 @@ function getPaymentTone(entry: {
   };
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  PAID: "bg-success/15 text-success",
-  UNPAID: "bg-warning/15 text-warning",
-  OVERDUE: "bg-destructive/15 text-destructive",
-  PARTIALLY_PAID: "bg-warning/15 text-warning",
+const STATUS_VARIANT: Record<string, React.ComponentProps<typeof Badge>["variant"]> = {
+  PAID: "success",
+  UNPAID: "pending",
+  OVERDUE: "overdue",
+  PARTIALLY_PAID: "warning",
 };
 
 const STATUS_LABELS: Record<string, { ar: string; en: string }> = {
@@ -736,20 +736,20 @@ export default function PaymentsPage() {
                   <TableCell className="font-medium">{entry.clientName}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">{entry.propertyLabel}</TableCell>
                   <TableCell>
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/15 text-primary">
+                    <Badge variant="info" size="sm">
                       {entry.type === "rent"
                         ? lang === "ar" ? "إيجار" : "Rent"
                         : lang === "ar" ? "بيع" : "Sale"}
-                    </span>
+                    </Badge>
                   </TableCell>
                   <TableCell className={`font-medium ${tone.amountClass}`}>{SAR(entry.amount)}</TableCell>
                   <TableCell className={`text-sm ${tone.dueDateClass}`}>
                     {new Date(entry.dueDate).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-SA")}
                   </TableCell>
                   <TableCell>
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[entry.status]}`}>
+                    <Badge variant={STATUS_VARIANT[entry.status] ?? "default"} size="sm">
                       {lang === "ar" ? (STATUS_LABELS[entry.status]?.ar ?? entry.status) : (STATUS_LABELS[entry.status]?.en ?? entry.status)}
-                    </span>
+                    </Badge>
                   </TableCell>
                   <TableCell>
                     {can("payments:write") && entry.status !== "PAID" && (

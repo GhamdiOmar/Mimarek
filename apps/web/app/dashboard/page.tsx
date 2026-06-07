@@ -30,6 +30,7 @@ import {
   LastUpdatedAgo,
   EmptyState,
   RoleTaskQueue,
+  Badge,
 } from "@repo/ui";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "../../components/LanguageProvider";
@@ -87,18 +88,14 @@ type MaintenanceSummaryItem = { status: string; count: number };
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function statusBadge(status: string, lang: "ar" | "en") {
-  const map: Record<string, { label: { ar: string; en: string }; cls: string }> = {
-    PENDING:   { label: { ar: "معلق", en: "Pending" },     cls: "bg-warning/15 text-warning" },
-    CONFIRMED: { label: { ar: "مؤكد", en: "Confirmed" },   cls: "bg-info/15 text-info" },
-    SIGNED:    { label: { ar: "موقع", en: "Signed" },      cls: "bg-success/15 text-success" },
-    CANCELLED: { label: { ar: "ملغى", en: "Cancelled" },   cls: "bg-destructive/15 text-destructive" },
+  const map: Record<string, { label: { ar: string; en: string }; variant: "warning" | "info" | "success" | "error" | "default" }> = {
+    PENDING:   { label: { ar: "معلق", en: "Pending" },     variant: "warning" },
+    CONFIRMED: { label: { ar: "مؤكد", en: "Confirmed" },   variant: "info" },
+    SIGNED:    { label: { ar: "موقع", en: "Signed" },      variant: "success" },
+    CANCELLED: { label: { ar: "ملغى", en: "Cancelled" },   variant: "error" },
   };
-  const entry = map[status] ?? { label: { ar: status, en: status }, cls: "bg-muted text-muted-foreground" };
-  return (
-    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${entry.cls}`}>
-      {entry.label[lang]}
-    </span>
-  );
+  const entry = map[status] ?? { label: { ar: status, en: status }, variant: "default" as const };
+  return <Badge variant={entry.variant} size="sm">{entry.label[lang]}</Badge>;
 }
 
 function maintenanceStatusIcon(status: string) {

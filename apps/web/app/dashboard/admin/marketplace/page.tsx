@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import {
   Button,
+  Badge,
   Card,
   Table,
   TableHeader,
@@ -51,16 +52,6 @@ type ModerationListing = {
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
-const STATUS_STYLES: Record<string, string> = {
-  DRAFT: "bg-muted text-muted-foreground",
-  PUBLISHED: "bg-success/15 text-success",
-  UNDER_CONTRACT: "bg-info/15 text-info",
-  SOLD_TRANSFERRED: "bg-primary/15 text-primary",
-  UNPUBLISHED: "bg-warning/15 text-warning",
-  EXPIRED: "bg-destructive/15 text-destructive",
-  SUSPENDED: "bg-destructive/15 text-destructive",
-};
-
 const STATUS_LABELS: Record<string, string> = {
   DRAFT: "Draft",
   PUBLISHED: "Published",
@@ -71,10 +62,20 @@ const STATUS_LABELS: Record<string, string> = {
   SUSPENDED: "Suspended",
 };
 
-const COMPLIANCE_STYLES: Record<string, string> = {
-  APPROVED: "bg-success/15 text-success",
-  PENDING_REVIEW: "bg-warning/15 text-warning",
-  REJECTED: "bg-destructive/15 text-destructive",
+const STATUS_VARIANT: Record<string, "default" | "success" | "info" | "sold" | "warning" | "error"> = {
+  DRAFT: "default",
+  PUBLISHED: "success",
+  UNDER_CONTRACT: "info",
+  SOLD_TRANSFERRED: "sold",
+  UNPUBLISHED: "warning",
+  EXPIRED: "error",
+  SUSPENDED: "error",
+};
+
+const COMPLIANCE_VARIANT: Record<string, "success" | "warning" | "error"> = {
+  APPROVED: "success",
+  PENDING_REVIEW: "warning",
+  REJECTED: "error",
 };
 
 // ─── Page ────────────────────────────────────────────────────────────────────
@@ -239,25 +240,15 @@ export default function AdminMarketplacePage() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <span
-                      className={cn(
-                        "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
-                        STATUS_STYLES[listing.status] ?? "bg-muted text-muted-foreground"
-                      )}
-                    >
+                    <Badge variant={STATUS_VARIANT[listing.status] ?? "default"} size="sm">
                       {STATUS_LABELS[listing.status] ?? listing.status}
-                    </span>
+                    </Badge>
                   </TableCell>
                   <TableCell>
-                    <span
-                      className={cn(
-                        "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium",
-                        COMPLIANCE_STYLES[listing.complianceStatus] ?? "bg-muted text-muted-foreground"
-                      )}
-                    >
+                    <Badge variant={COMPLIANCE_VARIANT[listing.complianceStatus] ?? "default"} size="sm">
                       <Shield className="h-3 w-3" aria-hidden="true" />
                       {listing.complianceStatus}
-                    </span>
+                    </Badge>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1.5 text-sm text-foreground">

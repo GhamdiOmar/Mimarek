@@ -37,6 +37,7 @@ import {
   Textarea,
   BottomSheet,
   DataTable,
+  Badge,
   type ColumnDef,
 } from "@repo/ui";
 import { exportToExcel } from "../../../lib/export";
@@ -237,51 +238,29 @@ export default function HelpPage() {
   ];
 
   const statusBadge = (status: string) => {
-    const map: Record<string, string> = {
-      OPEN: "bg-muted text-muted-foreground",
-      IN_PROGRESS: "bg-info/10 text-info",
-      WAITING_ON_USER: "bg-warning/10 text-warning",
-      RESOLVED: "bg-success/10 text-success",
-      CLOSED: "bg-primary/10 text-primary",
-      PENDING: "bg-warning/10 text-warning",
-      APPROVED: "bg-success/10 text-success",
-      DECLINED: "bg-destructive/10 text-destructive",
+    const map: Record<string, { label: { ar: string; en: string }; variant: "default" | "info" | "warning" | "success" | "pending" | "error" }> = {
+      OPEN:            { label: { ar: "مفتوحة",        en: "Open" },        variant: "default" },
+      IN_PROGRESS:     { label: { ar: "قيد المعالجة",  en: "In Progress" }, variant: "info" },
+      WAITING_ON_USER: { label: { ar: "بانتظار الرد",  en: "Waiting" },     variant: "warning" },
+      RESOLVED:        { label: { ar: "تم الحل",       en: "Resolved" },    variant: "success" },
+      CLOSED:          { label: { ar: "مغلقة",         en: "Closed" },      variant: "default" },
+      PENDING:         { label: { ar: "قيد المراجعة",  en: "Pending" },     variant: "warning" },
+      APPROVED:        { label: { ar: "تمت الموافقة",  en: "Approved" },    variant: "success" },
+      DECLINED:        { label: { ar: "مرفوض",         en: "Declined" },    variant: "error" },
     };
-    const labels: Record<string, { ar: string; en: string }> = {
-      OPEN: { ar: "مفتوحة", en: "Open" },
-      IN_PROGRESS: { ar: "قيد المعالجة", en: "In Progress" },
-      WAITING_ON_USER: { ar: "بانتظار الرد", en: "Waiting" },
-      RESOLVED: { ar: "تم الحل", en: "Resolved" },
-      CLOSED: { ar: "مغلقة", en: "Closed" },
-      PENDING: { ar: "قيد المراجعة", en: "Pending" },
-      APPROVED: { ar: "تمت الموافقة", en: "Approved" },
-      DECLINED: { ar: "مرفوض", en: "Declined" },
-    };
-    return (
-      <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold", map[status] ?? "bg-muted text-muted-foreground")}>
-        {(labels[status] ?? { ar: status, en: status })[lang]}
-      </span>
-    );
+    const entry = map[status] ?? { label: { ar: status, en: status }, variant: "default" as const };
+    return <Badge variant={entry.variant} size="sm">{entry.label[lang]}</Badge>;
   };
 
   const priorityBadge = (priority: string) => {
-    const map: Record<string, string> = {
-      LOW: "bg-muted text-muted-foreground",
-      MEDIUM: "bg-info/10 text-info",
-      HIGH: "bg-warning/10 text-warning",
-      URGENT: "bg-destructive/10 text-destructive",
+    const map: Record<string, { label: { ar: string; en: string }; variant: "default" | "info" | "warning" | "error" }> = {
+      LOW:    { label: { ar: "منخفضة", en: "Low" },    variant: "default" },
+      MEDIUM: { label: { ar: "متوسطة", en: "Medium" }, variant: "info" },
+      HIGH:   { label: { ar: "عالية",  en: "High" },   variant: "warning" },
+      URGENT: { label: { ar: "عاجلة",  en: "Urgent" }, variant: "error" },
     };
-    const labels: Record<string, { ar: string; en: string }> = {
-      LOW: { ar: "منخفضة", en: "Low" },
-      MEDIUM: { ar: "متوسطة", en: "Medium" },
-      HIGH: { ar: "عالية", en: "High" },
-      URGENT: { ar: "عاجلة", en: "Urgent" },
-    };
-    return (
-      <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold", map[priority] ?? "bg-muted")}>
-        {(labels[priority] ?? { ar: priority, en: priority })[lang]}
-      </span>
-    );
+    const entry = map[priority] ?? { label: { ar: priority, en: priority }, variant: "default" as const };
+    return <Badge variant={entry.variant} size="sm">{entry.label[lang]}</Badge>;
   };
 
   const handleExportTickets = () => {
