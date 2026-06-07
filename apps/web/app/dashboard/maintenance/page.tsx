@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import {
   KPICard,
+  PageIntro,
   Card,
   CardHeader,
   CardTitle,
@@ -125,32 +126,30 @@ export default function MaintenanceOverviewPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">
-            {lang === "ar" ? "الصيانة" : "Maintenance Overview"}
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            {lang === "ar"
-              ? "الطلبات، وقت المعالجة، ومستوى الخدمة"
-              : "Tickets, resolution time, and SLA health"}
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <DateRangePicker locale={lang} />
-          <LastUpdatedAgo timestamp={lastLoaded} locale={lang} onRefresh={load} />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() =>
-              (window.location.href = "/dashboard/maintenance/tickets")
-            }
-            style={{ display: "inline-flex" }}
-          >
-            {lang === "ar" ? "كل الطلبات" : "All Tickets"}
-          </Button>
-        </div>
-      </div>
+      <PageIntro
+        title={lang === "ar" ? "الصيانة" : "Maintenance Overview"}
+        description={
+          lang === "ar"
+            ? "الطلبات، وقت المعالجة، ومستوى الخدمة"
+            : "Tickets, resolution time, and SLA health"
+        }
+        actions={
+          <div className="flex flex-wrap items-center gap-3">
+            <DateRangePicker locale={lang} />
+            <LastUpdatedAgo timestamp={lastLoaded} locale={lang} onRefresh={load} />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                (window.location.href = "/dashboard/maintenance/tickets")
+              }
+              style={{ display: "inline-flex" }}
+            >
+              {lang === "ar" ? "كل الطلبات" : "All Tickets"}
+            </Button>
+          </div>
+        }
+      />
 
       {error && (
         <div className="flex items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/10 p-4">
