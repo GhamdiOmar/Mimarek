@@ -804,7 +804,7 @@ function AdvancedUnitMatrixPage() {
                   size="sm"
                   variant="destructive"
                   style={{ display: "inline-flex" }}
-                  className="gap-2 bg-destructive/80 hover:bg-destructive whitespace-nowrap"
+                  className="gap-2 whitespace-nowrap"
                   onClick={handleBulkDelete}
                   disabled={updating || deleting}
                 >

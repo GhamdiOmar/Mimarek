@@ -1574,10 +1574,8 @@ function KanbanCard({
         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <IconButton
             icon={Eye}
-            aria-label={lang === "ar" ? "عرض الملف" : "View Profile"}
+            aria-label={lang === "ar" ? "عرض" : "View"}
             variant="ghost"
-            size="icon"
-            className="h-6 w-6 border border-border bg-background hover:text-primary hover:border-primary/30"
             onClick={() => onViewProfile(customer)}
           />
           {canDelete && (
@@ -1585,8 +1583,7 @@ function KanbanCard({
               icon={Trash2}
               aria-label={lang === "ar" ? "حذف" : "Delete"}
               variant="ghost"
-              size="icon"
-              className="h-6 w-6 border border-border bg-background hover:text-destructive hover:border-destructive/30"
+              className="text-destructive"
               onClick={() => onDelete(customer)}
             />
           )}
@@ -1979,13 +1976,11 @@ export default function CRMPage() {
         cell: ({ row }) => {
           const c = row.original;
           return (
-            <div className="flex items-center justify-end gap-2">
+            <div className="flex items-center justify-end gap-1">
               <IconButton
                 icon={Eye}
-                aria-label={lang === "ar" ? "عرض الملف" : "View profile"}
+                aria-label={lang === "ar" ? "عرض" : "View"}
                 variant="ghost"
-                size="icon"
-                className="h-7 w-7 border border-border bg-background hover:text-primary hover:border-primary/30"
                 onClick={(e) => {
                   e.stopPropagation();
                   setDrawerCustomer(c);
@@ -1996,8 +1991,7 @@ export default function CRMPage() {
                   icon={Trash2}
                   aria-label={lang === "ar" ? "حذف" : "Delete"}
                   variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 border border-border bg-background hover:text-destructive hover:border-destructive/30"
+                  className="text-destructive"
                   onClick={(e) => {
                     e.stopPropagation();
                     openDelete(c);

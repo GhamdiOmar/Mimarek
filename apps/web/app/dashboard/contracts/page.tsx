@@ -1053,7 +1053,7 @@ export default function ContractsPage() {
         title={lang === "ar" ? "عقد بيع جديد" : "New Sale Contract"}
         footer={
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-            <Button variant="outline" onClick={() => setSaleModalOpen(false)} style={{ display: "inline-flex" }}>
+            <Button variant="ghost" onClick={() => setSaleModalOpen(false)} style={{ display: "inline-flex" }}>
               {lang === "ar" ? "إلغاء" : "Cancel"}
             </Button>
             <Button type="submit" form="sale-contract-form" disabled={submitting} style={{ display: "inline-flex" }} className="gap-2">
@@ -1174,7 +1174,7 @@ export default function ContractsPage() {
         contentClassName="sm:max-w-[640px]"
         footer={
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-            <Button variant="outline" onClick={() => setLeaseModalOpen(false)} style={{ display: "inline-flex" }}>
+            <Button variant="ghost" onClick={() => setLeaseModalOpen(false)} style={{ display: "inline-flex" }}>
               {lang === "ar" ? "إلغاء" : "Cancel"}
             </Button>
             <Button type="submit" form="lease-contract-form" disabled={submitting} style={{ display: "inline-flex" }} className="gap-2">
