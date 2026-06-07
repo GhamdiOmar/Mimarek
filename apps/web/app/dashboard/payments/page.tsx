@@ -622,6 +622,8 @@ export default function PaymentsPage() {
               variant={typeFilter === tab.key ? "primary" : "subtle"}
               size="sm"
               onClick={() => setTypeFilter(tab.key as typeof typeFilter)}
+              aria-pressed={typeFilter === tab.key}
+              className="rounded-full"
               style={{ display: "inline-flex" }}
             >
               {lang === "ar" ? tab.ar : tab.en}
@@ -635,14 +637,11 @@ export default function PaymentsPage() {
             {statusTabs.map((tab) => (
               <Button
                 key={tab.key}
-                variant={statusFilter === tab.key ? "outline" : "subtle"}
+                variant={statusFilter === tab.key ? "primary" : "subtle"}
                 size="sm"
                 onClick={() => setStatusFilter(tab.key)}
-                className={
-                  statusFilter === tab.key
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-border bg-card text-muted-foreground hover:border-muted-foreground/50"
-                }
+                aria-pressed={statusFilter === tab.key}
+                className="rounded-full"
                 style={{ display: "inline-flex" }}
               >
                 {lang === "ar" ? tab.ar : tab.en}

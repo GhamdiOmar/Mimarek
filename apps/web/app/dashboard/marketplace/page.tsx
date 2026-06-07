@@ -278,30 +278,24 @@ function MarketplacePage() {
       />
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-border">
+      <div className="flex gap-1">
         <Button
           type="button"
-          variant="ghost"
+          variant={activeTab === "browse" ? "primary" : "subtle"}
+          size="sm"
           onClick={() => setActiveTab("browse")}
-          className={cn(
-            "rounded-none px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px h-auto",
-            activeTab === "browse"
-              ? "border-primary text-primary"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          )}
+          aria-pressed={activeTab === "browse"}
+          className="rounded-full whitespace-nowrap"
         >
           {lang === "ar" ? "تصفّح الإعلانات" : "Browse Listings"}
         </Button>
         <Button
           type="button"
-          variant="ghost"
+          variant={activeTab === "inquiries" ? "primary" : "subtle"}
+          size="sm"
           onClick={() => setActiveTab("inquiries")}
-          className={cn(
-            "rounded-none px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px h-auto",
-            activeTab === "inquiries"
-              ? "border-primary text-primary"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          )}
+          aria-pressed={activeTab === "inquiries"}
+          className="rounded-full whitespace-nowrap"
         >
           {lang === "ar" ? "استفساراتي" : "My Inquiries"}
         </Button>

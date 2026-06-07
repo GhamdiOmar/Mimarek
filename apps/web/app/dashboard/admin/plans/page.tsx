@@ -14,7 +14,7 @@ import {
   AlertTriangle,
   CheckCircle2,
 } from "lucide-react";
-import { Button, Card, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, ResponsiveDialog, DirectionalIcon, EmptyState } from "@repo/ui";
+import { Button, Card, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, ResponsiveDialog, DirectionalIcon, EmptyState, Switch } from "@repo/ui";
 import { PageHeader } from "@repo/ui/components/PageHeader";
 import Link from "next/link";
 import { adminGetAllPlans, adminUpsertPlan } from "../../../actions/billing";
@@ -693,28 +693,11 @@ export default function AdminPlansPage() {
                 </p>
               </div>
             </div>
-            {/* eslint-disable-next-line react/forbid-elements -- semantic toggle switch (role=switch); see AGENTS.md §6.6 */}
-            <button
-              type="button"
-              role="switch"
-              aria-checked={form.isPublic}
-              onClick={() => updateField("isPublic", !form.isPublic)}
-              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
-                form.isPublic
-                  ? "bg-success"
-                  : "bg-muted-foreground/30"
-              }`}
-            >
-              <span
-                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
-                  form.isPublic
-                    ? lang === "ar"
-                      ? "-translate-x-5"
-                      : "translate-x-5"
-                    : "translate-x-0"
-                }`}
-              />
-            </button>
+            <Switch
+              checked={form.isPublic}
+              onCheckedChange={(v) => updateField("isPublic", v)}
+              aria-label={t.isPublic}
+            />
           </div>
         </form>
       </ResponsiveDialog>

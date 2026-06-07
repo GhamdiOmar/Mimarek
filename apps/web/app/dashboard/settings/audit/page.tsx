@@ -242,6 +242,7 @@ export default function AuditLogPage() {
                   type="button"
                   variant={isActive ? "primary" : "subtle"}
                   size="sm"
+                  aria-pressed={isActive}
                   onClick={() => {
                     setActionFilter(a);
                     setPage(1);

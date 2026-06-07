@@ -37,6 +37,7 @@ import {
   FAB,
   Skeleton,
   Badge,
+  Switch,
 } from "@repo/ui";
 import { PageHeader } from "@repo/ui/components/PageHeader";
 import Link from "next/link";
@@ -708,37 +709,16 @@ export default function CouponManagementPage() {
 
                     {/* Status Toggle */}
                     <TableCell>
-                      {/* eslint-disable-next-line react/forbid-elements -- semantic toggle switch (role=switch); see AGENTS.md §6.6 */}
-                      <button
-                        onClick={() =>
+                      <Switch
+                        checked={coupon.isActive}
+                        onCheckedChange={() =>
                           handleToggle(coupon.id, coupon.isActive)
                         }
                         disabled={togglingId === coupon.id}
-                        className="group relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                        style={{
-                          backgroundColor: coupon.isActive
-                            ? "hsl(var(--success))"
-                            : "hsl(var(--muted-foreground) / 0.4)",
-                        }}
-                        role="switch"
-                        aria-checked={coupon.isActive}
                         aria-label={
                           coupon.isActive ? labels.active : labels.inactive
                         }
-                      >
-                        <span
-                          className="pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-sm ring-0 transition-transform duration-200"
-                          style={{
-                            transform: coupon.isActive
-                              ? lang === "ar"
-                                ? "translateX(-0.25rem)"
-                                : "translateX(1.25rem)"
-                              : lang === "ar"
-                                ? "translateX(-1.25rem)"
-                                : "translateX(0.25rem)",
-                          }}
-                        />
-                      </button>
+                      />
                       <span
                         className={`ms-2 text-xs font-medium ${
                           coupon.isActive

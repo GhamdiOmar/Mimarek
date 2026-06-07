@@ -897,15 +897,17 @@ export default function HelpPage() {
       <div className="flex gap-1 overflow-x-auto pb-1">
         {tabs.map((tab) => {
           const Icon = tabIcons[tab.key] ?? HelpCircle;
+          const isActive = activeTab === tab.key;
           return (
             <Button
               key={tab.key}
-              variant={activeTab === tab.key ? "primary" : "ghost"}
+              variant={isActive ? "primary" : "subtle"}
               size="sm"
               onClick={() => setActiveTab(tab.key)}
+              aria-pressed={isActive}
               className={cn(
-                "gap-2 whitespace-nowrap",
-                activeTab === tab.key ? "shadow-md" : "text-muted-foreground"
+                "gap-2 whitespace-nowrap rounded-full",
+                isActive ? "shadow-md" : "text-muted-foreground"
               )}
               style={{ display: "inline-flex" }}
             >
@@ -976,6 +978,7 @@ export default function HelpPage() {
               size="sm"
               variant={faqCategory === "all" ? "primary" : "subtle"}
               onClick={() => setFaqCategory("all")}
+              aria-pressed={faqCategory === "all"}
               className="rounded-full whitespace-nowrap"
               style={{ display: "inline-flex" }}
             >
@@ -987,6 +990,7 @@ export default function HelpPage() {
                 size="sm"
                 variant={faqCategory === cat.key ? "primary" : "subtle"}
                 onClick={() => setFaqCategory(cat.key)}
+                aria-pressed={faqCategory === cat.key}
                 className="rounded-full whitespace-nowrap"
                 style={{ display: "inline-flex" }}
               >

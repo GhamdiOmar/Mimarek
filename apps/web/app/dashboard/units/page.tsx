@@ -588,7 +588,7 @@ function AdvancedUnitMatrixPage() {
               <div className="flex flex-wrap gap-2">
                 <Button
                   type="button"
-                  variant={!statusFilter ? "primary" : "outline"}
+                  variant={!statusFilter ? "primary" : "subtle"}
                   size="sm"
                   onClick={() => setStatusFilter("")}
                   aria-pressed={!statusFilter}
@@ -603,7 +603,7 @@ function AdvancedUnitMatrixPage() {
                     <Button
                       key={key}
                       type="button"
-                      variant={active ? "primary" : "outline"}
+                      variant={active ? "primary" : "subtle"}
                       size="sm"
                       onClick={() => setStatusFilter(active ? "" : key)}
                       aria-pressed={active}
@@ -625,7 +625,7 @@ function AdvancedUnitMatrixPage() {
               <div className="flex flex-wrap gap-2">
                 <Button
                   type="button"
-                  variant={!mobileTypeFilter ? "primary" : "outline"}
+                  variant={!mobileTypeFilter ? "primary" : "subtle"}
                   size="sm"
                   onClick={() => setMobileTypeFilter("")}
                   aria-pressed={!mobileTypeFilter}
@@ -640,7 +640,7 @@ function AdvancedUnitMatrixPage() {
                     <Button
                       key={key}
                       type="button"
-                      variant={active ? "primary" : "outline"}
+                      variant={active ? "primary" : "subtle"}
                       size="sm"
                       onClick={() => setMobileTypeFilter(active ? "" : key)}
                       aria-pressed={active}
@@ -831,14 +831,11 @@ function AdvancedUnitMatrixPage() {
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex flex-wrap gap-2">
                 <Button
-                  variant={!statusFilter ? "subtle" : "ghost"}
+                  variant={!statusFilter ? "primary" : "subtle"}
                   size="sm"
                   onClick={() => setStatusFilter("")}
                   aria-pressed={!statusFilter}
-                  className={cn(
-                    "rounded-full",
-                    !statusFilter && "bg-primary/10 text-primary ring-1 ring-primary/30 hover:bg-primary/15"
-                  )}
+                  className="rounded-full"
                   style={{ display: "inline-flex" }}
                 >
                   {lang === "ar" ? "الكل" : "All"} {statusCounts.total}
@@ -846,26 +843,14 @@ function AdvancedUnitMatrixPage() {
                 {Object.entries(unitStatusLabels).map(([key, label]) => {
                   const count = units.filter((u: any) => u.status === key).length;
                   const active = statusFilter === key;
-                  const activeClasses: Record<string, string> = {
-                    AVAILABLE: "bg-success/15 text-success ring-1 ring-success/30 hover:bg-success/20",
-                    RESERVED: "bg-info/15 text-info ring-1 ring-info/30 hover:bg-info/20",
-                    SOLD: "bg-primary/15 text-primary ring-1 ring-primary/30 hover:bg-primary/20",
-                    RENTED: "bg-secondary/15 text-secondary ring-1 ring-secondary/30 hover:bg-secondary/20",
-                    MAINTENANCE: "bg-warning/15 text-warning ring-1 ring-warning/30 hover:bg-warning/20",
-                  };
                   return (
                     <Button
                       key={key}
-                      variant={active ? "subtle" : "ghost"}
+                      variant={active ? "primary" : "subtle"}
                       size="sm"
                       onClick={() => setStatusFilter(active ? "" : key)}
                       aria-pressed={active}
-                      className={cn(
-                        "rounded-full",
-                        active
-                          ? activeClasses[key] ?? "bg-primary/10 text-primary ring-1 ring-primary/30"
-                          : "text-muted-foreground"
-                      )}
+                      className="rounded-full"
                       style={{ display: "inline-flex" }}
                     >
                       {label[lang]} {count}
@@ -904,27 +889,21 @@ function AdvancedUnitMatrixPage() {
                   })}
                 </div>
                 <Button
-                  variant={viewMode === "cards" ? "subtle" : "outline"}
+                  variant={viewMode === "cards" ? "primary" : "subtle"}
                   size="sm"
                   onClick={() => setViewMode("cards")}
                   aria-pressed={viewMode === "cards"}
-                  className={cn(
-                    "rounded-full",
-                    viewMode === "cards" && "border-primary/30 bg-primary/15 text-foreground hover:bg-primary/20"
-                  )}
+                  className="rounded-full"
                   style={{ display: "inline-flex" }}
                 >
                   {lang === "ar" ? "بطاقات" : "Cards"}
                 </Button>
                 <Button
-                  variant={viewMode === "table" ? "subtle" : "outline"}
+                  variant={viewMode === "table" ? "primary" : "subtle"}
                   size="sm"
                   onClick={() => setViewMode("table")}
                   aria-pressed={viewMode === "table"}
-                  className={cn(
-                    "rounded-full",
-                    viewMode === "table" && "border-primary/30 bg-primary/15 text-foreground hover:bg-primary/20"
-                  )}
+                  className="rounded-full"
                   style={{ display: "inline-flex" }}
                 >
                   {lang === "ar" ? "جدول" : "Table"}

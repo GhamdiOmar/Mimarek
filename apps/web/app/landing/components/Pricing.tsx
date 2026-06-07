@@ -9,7 +9,7 @@ import {
   Check,
   X,
 } from "lucide-react";
-import { Button } from "@repo/ui";
+import { Button, Switch } from "@repo/ui";
 import { t as translations } from "../translations";
 import type { LucideIcon } from "lucide-react";
 
@@ -131,30 +131,11 @@ export default function Pricing({ lang }: { lang: "ar" | "en" }) {
           >
             {t.monthly}
           </span>
-          {/* Billing toggle — role="switch" semantic widget; Button is not the right primitive here */}
-          {/* eslint-disable-next-line react/forbid-elements -- semantic toggle switch (role=switch); see AGENTS.md §6.6 */}
-          <button
-            onClick={() => setAnnual(!annual)}
-            className={`relative h-6 w-11 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
-              annual ? "bg-primary" : "bg-muted-foreground/30"
-            }`}
+          <Switch
+            checked={annual}
+            onCheckedChange={setAnnual}
             aria-label={t.pricingToggleAriaLabel}
-            role="switch"
-            aria-checked={annual}
-            type="button"
-          >
-            <span
-              className={`absolute top-0.5 size-5 rounded-full bg-white shadow-sm transition-transform ${
-                annual
-                  ? lang === "ar"
-                    ? "-translate-x-[1.25rem]"
-                    : "translate-x-[1.25rem]"
-                  : lang === "ar"
-                    ? "-translate-x-0.5"
-                    : "translate-x-0.5"
-              }`}
-            />
-          </button>
+          />
           <span
             className={`text-sm font-medium ${annual ? "text-primary dark:text-white" : "text-muted-foreground"}`}
           >

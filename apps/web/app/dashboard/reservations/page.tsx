@@ -589,6 +589,7 @@ export default function ReservationsPage() {
               variant={statusFilter === tab.key ? "primary" : "subtle"}
               size="sm"
               onClick={() => setStatusFilter(tab.key)}
+              aria-pressed={statusFilter === tab.key}
               className="rounded-full"
               style={{ display: "inline-flex" }}
             >
@@ -656,6 +657,8 @@ export default function ReservationsPage() {
               variant={statusFilter === tab.key ? "primary" : "subtle"}
               size="sm"
               onClick={() => setStatusFilter(tab.key)}
+              aria-pressed={statusFilter === tab.key}
+              className="rounded-full"
               style={{ display: "inline-flex" }}
             >
               {lang === "ar" ? tab.ar : tab.en}
