@@ -6,11 +6,10 @@ import {
   Loader2,
   Search,
   X,
-  MoreHorizontal,
-  ArrowRight,
   Ban,
   Eye,
   CheckCircle,
+  FileSignature,
   Filter,
   Handshake,
   AlertTriangle,
@@ -18,16 +17,11 @@ import {
 import {
   Button,
   IconButton,
-  ActionLink,
   Badge,
   Input,
   Card,
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
+  DataTable,
+  type ColumnDef,
   PageIntro,
   KPICard,
   ResponsiveDialog,
@@ -41,7 +35,6 @@ import {
   BottomSheet,
   Alert,
   AlertDescription,
-  DirectionalIcon,
   cn,
 } from "@repo/ui";
 import { useLanguage } from "../../../components/LanguageProvider";
@@ -368,6 +361,139 @@ export default function ReservationsPage() {
   const mobileStatusTabs = statusTabs;
   const canWriteDeals = can("deals:write");
 
+  // ── DataTable column definitions ────────────────────────────────────────
+  const columns = React.useMemo<ColumnDef<Reservation>[]>(
+    () => [
+      {
+        accessorKey: "customer",
+        id: "client",
+        header: lang === "ar" ? "العميل" : "Client",
+        enableSorting: true,
+        cell: ({ row }) => (
+          <span className="font-medium">{row.original.customer.name}</span>
+        ),
+      },
+      {
+        id: "property",
+        header: lang === "ar" ? "العقار" : "Property",
+        enableSorting: false,
+        cell: ({ row }) => (
+          <div className="text-sm">
+            <p className="font-medium">
+              {lang === "ar" ? "وحدة" : "Unit"} {row.original.unit.number}
+            </p>
+            <p className="text-muted-foreground text-xs">
+              {row.original.unit.buildingName ?? "—"}
+            </p>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "amount",
+        header: lang === "ar" ? "قيمة الحجز" : "Reservation Value",
+        enableSorting: true,
+        meta: { numeric: true },
+        cell: ({ row }) => (
+          <span className="tabular-nums">{SAR(row.original.amount)}</span>
+        ),
+      },
+      {
+        accessorKey: "depositAmount",
+        header: lang === "ar" ? "العربون" : "Deposit",
+        enableSorting: false,
+        meta: { numeric: true },
+        cell: ({ row }) =>
+          row.original.depositAmount ? (
+            <span className="tabular-nums">{SAR(row.original.depositAmount)}</span>
+          ) : (
+            <span className="text-muted-foreground/70">—</span>
+          ),
+      },
+      {
+        accessorKey: "status",
+        header: lang === "ar" ? "الحالة" : "Status",
+        enableSorting: true,
+        cell: ({ row }) => (
+          <Badge variant={STATUS_VARIANT[row.original.status] ?? "default"} size="sm">
+            {lang === "ar"
+              ? (STATUS_LABELS[row.original.status]?.ar ?? row.original.status)
+              : (STATUS_LABELS[row.original.status]?.en ?? row.original.status)}
+          </Badge>
+        ),
+      },
+      {
+        accessorKey: "expiresAt",
+        header: lang === "ar" ? "تاريخ الانتهاء" : "Expiry Date",
+        enableSorting: true,
+        cell: ({ row }) => (
+          <span className="text-sm text-muted-foreground tabular-nums">
+            {new Date(row.original.expiresAt).toLocaleDateString(
+              lang === "ar" ? "ar-SA" : "en-SA",
+            )}
+          </span>
+        ),
+      },
+      {
+        id: "actions",
+        header: "",
+        enableSorting: false,
+        enableHiding: false,
+        cell: ({ row }) => {
+          const deal = row.original;
+          return (
+            <div className="flex items-center justify-end gap-1">
+              {/* View */}
+              <IconButton
+                icon={Eye}
+                aria-label={lang === "ar" ? "عرض التفاصيل" : "View Details"}
+                variant="ghost"
+                size="icon"
+                onClick={() => setDetailDeal(deal)}
+                className="h-8 w-8"
+              />
+              {/* Confirm (PENDING only) */}
+              {canWriteDeals && deal.status === "PENDING" && (
+                <IconButton
+                  icon={CheckCircle}
+                  aria-label={lang === "ar" ? "تأكيد الحجز" : "Confirm Reservation"}
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleConfirmDeal(deal.id)}
+                  className="h-8 w-8 text-muted-foreground hover:text-success"
+                />
+              )}
+              {/* Convert to contract (CONFIRMED only) */}
+              {deal.status === "CONFIRMED" && (
+                <Link href={`/dashboard/contracts?dealId=${deal.id}`} tabIndex={-1}>
+                  <IconButton
+                    icon={FileSignature}
+                    aria-label={lang === "ar" ? "تحويل لعقد" : "Convert to contract"}
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-primary"
+                  />
+                </Link>
+              )}
+              {/* Cancel (PENDING or CONFIRMED) */}
+              {canWriteDeals &&
+                (deal.status === "PENDING" || deal.status === "CONFIRMED") && (
+                  <IconButton
+                    icon={Ban}
+                    aria-label={lang === "ar" ? "إلغاء الحجز" : "Cancel Reservation"}
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setCancelDeal(deal)}
+                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                  />
+                )}
+            </div>
+          );
+        },
+      },
+    ],
+    [lang, canWriteDeals, handleConfirmDeal],
+  );
+
   return (
     <>
     {/* ─── Mobile (< md) ─────────────────────────────────────────────── */}
@@ -689,13 +815,9 @@ export default function ReservationsPage() {
       </Card>
 
       {/* Table */}
-      <Card>
-        {loading ? (
-          <div className="flex items-center justify-center py-16">
-            <Loader2 className="w-6 h-6 animate-spin text-primary" />
-          </div>
-        ) : filtered.length === 0 ? (
-          deals.length === 0 ? (
+      {!loading && filtered.length === 0 ? (
+        <Card>
+          {deals.length === 0 ? (
             <EmptyState
               variant="first-time"
               icon={<Handshake className="h-12 w-12" aria-hidden="true" />}
@@ -744,93 +866,70 @@ export default function ReservationsPage() {
                 </Button>
               }
             />
-          )
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{lang === "ar" ? "العميل" : "Client"}</TableHead>
-                <TableHead>{lang === "ar" ? "العقار" : "Property"}</TableHead>
-                <TableHead>{lang === "ar" ? "قيمة الحجز" : "Reservation Value"}</TableHead>
-                <TableHead>{lang === "ar" ? "العربون" : "Deposit"}</TableHead>
-                <TableHead>{lang === "ar" ? "الحالة" : "Status"}</TableHead>
-                <TableHead>{lang === "ar" ? "تاريخ الانتهاء" : "Expiry Date"}</TableHead>
-                <TableHead>{lang === "ar" ? "الإجراءات" : "Actions"}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.map((deal) => (
-                <TableRow key={deal.id}>
-                  <TableCell className="font-medium">{deal.customer.name}</TableCell>
-                  <TableCell>
-                    <div className="text-sm">
-                      <p className="font-medium">{lang === "ar" ? "وحدة" : "Unit"} {deal.unit.number}</p>
-                      <p className="text-muted-foreground text-xs">{deal.unit.buildingName ?? "—"}</p>
-                    </div>
-                  </TableCell>
-                  <TableCell>{SAR(deal.amount)}</TableCell>
-                  <TableCell>
-                    {deal.depositAmount ? SAR(deal.depositAmount) : <span className="text-muted-foreground/70">—</span>}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={STATUS_VARIANT[deal.status] ?? "default"} size="sm">
-                      {lang === "ar" ? (STATUS_LABELS[deal.status]?.ar ?? deal.status) : (STATUS_LABELS[deal.status]?.en ?? deal.status)}
+          )}
+        </Card>
+      ) : (
+        <DataTable
+          columns={columns}
+          data={filtered}
+          loading={loading}
+          locale={lang === "ar" ? "ar" : "en"}
+          pagination
+          pageSize={10}
+          getRowId={(r) => r.id}
+          mobileCard={(deal) => {
+            const countdown = expiryCountdown(deal.expiresAt);
+            const badgeVariant = statusBadgeVariant(deal.status);
+            const statusLabel =
+              lang === "ar"
+                ? STATUS_LABELS[deal.status]?.ar ?? deal.status
+                : STATUS_LABELS[deal.status]?.en ?? deal.status;
+            const countdownTextClass =
+              countdown.tone === "destructive"
+                ? "text-destructive"
+                : countdown.tone === "warning"
+                  ? "text-warning"
+                  : countdown.tone === "success"
+                    ? "text-success"
+                    : "text-muted-foreground";
+            return (
+              <DataCard
+                icon={Handshake}
+                iconTone="purple"
+                divider={false}
+                title={deal.customer.name}
+                subtitle={[
+                  `${lang === "ar" ? "وحدة" : "Unit"} ${deal.unit.number}`,
+                  <SARAmount
+                    key="amount"
+                    value={Number(deal.amount)}
+                    size={12}
+                    compact
+                    className="tabular-nums"
+                  />,
+                ]}
+                trailing={
+                  <div className="flex flex-col items-end gap-1">
+                    <Badge variant={badgeVariant} size="sm">
+                      {statusLabel}
                     </Badge>
-                  </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    {new Date(deal.expiresAt).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-SA")}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <IconButton
-                        icon={Eye}
-                        aria-label={lang === "ar" ? "عرض التفاصيل" : "View Details"}
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setDetailDeal(deal)}
-                        className="h-8 w-8"
-                      />
-                      {can("deals:write") && deal.status === "PENDING" && (
-                        <IconButton
-                          icon={CheckCircle}
-                          aria-label={lang === "ar" ? "تأكيد الحجز" : "Confirm Reservation"}
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleConfirmDeal(deal.id)}
-                          className="h-8 w-8 text-muted-foreground hover:text-success"
-                        />
-                      )}
-                      {deal.status === "CONFIRMED" && (
-                        <ActionLink
-                          asChild
-                          trailingIcon={ArrowRight}
-                          directional
-                          className="text-xs font-medium"
-                        >
-                          <Link href={`/dashboard/contracts?dealId=${deal.id}`}>
-                            {lang === "ar" ? "تحويل لعقد" : "Convert to Contract"}
-                          </Link>
-                        </ActionLink>
-                      )}
-                      {can("deals:write") &&
-                        (deal.status === "PENDING" || deal.status === "CONFIRMED") && (
-                          <IconButton
-                            icon={Ban}
-                            aria-label={lang === "ar" ? "إلغاء الحجز" : "Cancel Reservation"}
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setCancelDeal(deal)}
-                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                          />
-                        )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
-      </Card>
+                    <span className={cn("text-[11px] tabular-nums", countdownTextClass)}>
+                      {countdown.label}
+                    </span>
+                  </div>
+                }
+                onClick={() => setDetailDeal(deal)}
+              />
+            );
+          }}
+          emptyTitle={lang === "ar" ? "لا توجد نتائج مطابقة" : "No matching reservations"}
+          emptyDescription={
+            lang === "ar"
+              ? "جرّب تعديل الفلاتر أو البحث بكلمات أخرى."
+              : "Try adjusting the filters or search terms."
+          }
+        />
+      )}
 
       {/* Create Deal Modal */}
       <ResponsiveDialog

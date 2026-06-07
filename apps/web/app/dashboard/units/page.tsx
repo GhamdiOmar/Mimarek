@@ -35,12 +35,8 @@ import {
   Input,
   SARAmount,
   Card,
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
+  DataTable,
+  type ColumnDef,
   PageIntro,
   StatusBadge,
   KPICard,
@@ -203,22 +199,18 @@ function AdvancedUnitMatrixPage() {
     loadUnits();
   }, []);
 
-  const toggleSelect = (id: string) => {
-    setSelectedUnits((prev) =>
-      prev.includes(id) ? prev.filter((uid) => uid !== id) : [...prev, id]
-    );
-  };
-
-  const handleBulkStatusUpdate = async (newStatus: string) => {
+  const handleBulkStatusUpdate = async (newStatus: string, ids?: string[]) => {
     if (!newStatus) return;
+    const targetIds = ids ?? selectedUnits;
+    if (targetIds.length === 0) return;
     setUpdating(true);
     setError(null);
     try {
-      const updates = selectedUnits.map((id) => ({ id, status: newStatus }));
+      const updates = targetIds.map((id) => ({ id, status: newStatus }));
       await massUpdateUnits(updates);
       setUnits(
         units.map((u) =>
-          u && selectedUnits.includes(u.id) ? { ...u, status: newStatus } : u
+          u && targetIds.includes(u.id) ? { ...u, status: newStatus } : u
         )
       );
       setSelectedUnits([]);
@@ -261,18 +253,20 @@ function AdvancedUnitMatrixPage() {
     }
   };
 
-  const handleBulkPriceUpdate = async () => {
+  const handleBulkPriceUpdate = async (ids?: string[]) => {
     if (!bulkPrice) return;
+    const targetIds = ids ?? selectedUnits;
+    if (targetIds.length === 0) return;
     setUpdating(true);
     try {
-      const updates = selectedUnits.map((id) => ({
+      const updates = targetIds.map((id) => ({
         id,
         price: parseFloat(bulkPrice),
       }));
       await massUpdateUnits(updates);
       setUnits(
         units.map((u) =>
-          selectedUnits.includes(u.id)
+          targetIds.includes(u.id)
             ? { ...u, price: parseFloat(bulkPrice) }
             : u
         )
@@ -287,18 +281,15 @@ function AdvancedUnitMatrixPage() {
     }
   };
 
-  const handleBulkDelete = async () => {
-    setShowDeleteConfirm(true);
-  };
-
-  const confirmBulkDelete = async () => {
+  const confirmBulkDelete = async (ids?: string[]) => {
+    const targetIds = ids ?? selectedUnits;
     setDeleting(true);
     setError(null);
     try {
-      for (const id of selectedUnits) {
+      for (const id of targetIds) {
         await deleteUnit(id);
       }
-      setUnits(units.filter((u) => !selectedUnits.includes(u.id)));
+      setUnits(units.filter((u) => !targetIds.includes(u.id)));
       setSelectedUnits([]);
       setShowDeleteConfirm(false);
     } catch (err) {
@@ -340,6 +331,108 @@ function AdvancedUnitMatrixPage() {
       return true;
     });
   }, [filteredUnits, mobileTypeFilter, mobileMinPrice, mobileMaxPrice]);
+
+  // ─── Table columns (used by DataTable in table-view) ──────────────────────
+  const unitColumns = React.useMemo<ColumnDef<any, any>[]>(() => [
+    {
+      accessorKey: "number",
+      header: lang === "ar" ? "رقم الوحدة" : "Unit #",
+      enableSorting: true,
+      cell: ({ row }) => (
+        <code className="font-mono text-sm font-semibold text-primary/80 tabular-nums">
+          {row.original.number}
+        </code>
+      ),
+    },
+    {
+      accessorKey: "buildingName",
+      header: lang === "ar" ? "المبنى / المدينة" : "Building / City",
+      enableSorting: true,
+      cell: ({ row }) => (
+        <span>{row.original.buildingName || row.original.city || "—"}</span>
+      ),
+    },
+    {
+      accessorKey: "type",
+      header: lang === "ar" ? "النوع" : "Type",
+      enableSorting: true,
+      cell: ({ row }) => (
+        <span>{unitTypeLabels[row.original.type]?.[lang] ?? row.original.type}</span>
+      ),
+    },
+    {
+      accessorKey: "area",
+      header: lang === "ar" ? "المساحة" : "Area",
+      enableSorting: true,
+      meta: { numeric: true },
+      cell: ({ row }) => (
+        <span className="tabular-nums">
+          {row.original.area != null ? `${row.original.area} m²` : "—"}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "status",
+      header: lang === "ar" ? "الحالة" : "Status",
+      enableSorting: true,
+      cell: ({ row }) => (
+        <StatusBadge
+          entityType="unit"
+          status={row.original.status}
+          label={unitStatusLabels[row.original.status]?.[lang] ?? row.original.status}
+        />
+      ),
+    },
+    {
+      accessorKey: "price",
+      header: lang === "ar" ? "السعر" : "Price",
+      enableSorting: true,
+      meta: { numeric: true },
+      cell: ({ row }) =>
+        row.original.price ? (
+          <SARAmount value={Number(row.original.price)} size={11} compact />
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        ),
+    },
+    {
+      id: "actions",
+      header: "",
+      enableSorting: false,
+      enableHiding: false,
+      cell: ({ row }) => (
+        <div className="flex items-center gap-1 justify-end">
+          <IconButton
+            icon={Eye}
+            aria-label={lang === "ar" ? "عرض" : "View"}
+            variant="ghost"
+            size="sm"
+            onClick={(e) => { e.stopPropagation(); openUnitDetail(row.original); }}
+          />
+          <IconButton
+            icon={Pencil}
+            aria-label={lang === "ar" ? "تعديل" : "Edit"}
+            variant="ghost"
+            size="sm"
+            onClick={(e) => { e.stopPropagation(); openUnitDetail(row.original); }}
+          />
+          <IconButton
+            icon={Trash2}
+            aria-label={lang === "ar" ? "حذف" : "Delete"}
+            variant="ghost"
+            size="sm"
+            className="text-destructive hover:text-destructive"
+            onClick={(e) => {
+              e.stopPropagation();
+              setSelectedUnits([row.original.id]);
+              setShowDeleteConfirm(true);
+            }}
+          />
+        </div>
+      ),
+    },
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  ], [lang]);
 
   if (loading) {
     return (
@@ -760,70 +853,7 @@ function AdvancedUnitMatrixPage() {
       {/* ═══ PHYSICAL UNITS ═══ */}
       {true && (
         <>
-          {/* Bulk Action Bar (Floating) */}
-          {selectedUnits.length > 0 && (
-            <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 bg-primary-deep text-white px-6 py-4 rounded-xl shadow-2xl border border-white/10 flex items-center gap-8 animate-in slide-in-from-bottom-10">
-              <div className="flex items-center gap-3 border-e border-white/20 pe-6 me-2">
-                <span className="h-6 w-6 bg-secondary text-white rounded-full flex items-center justify-center text-xs font-bold leading-none">
-                  {selectedUnits.length}
-                </span>
-                <span className="text-sm">
-                  {lang === "ar" ? "وحدة مختارة" : "Units Selected"}
-                </span>
-              </div>
-
-              <div className="flex items-center gap-4">
-                {updating && <Loader2 className="h-4 w-4 animate-spin text-white" />}
-                <select
-                  onChange={(e) => handleBulkStatusUpdate(e.target.value)}
-                  disabled={updating || deleting}
-                  className="bg-secondary/80 hover:bg-secondary text-white text-xs font-bold rounded-md px-3 py-2 outline-none border-none cursor-pointer disabled:opacity-50"
-                >
-                  <option value="">
-                    {lang === "ar" ? "تحديث الحالة" : "Update Status"}
-                  </option>
-                  {Object.entries(unitStatusLabels).map(([value, label]) => (
-                    <option key={value} value={value}>
-                      {label[lang]}
-                    </option>
-                  ))}
-                </select>
-
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  style={{ display: "inline-flex" }}
-                  className="gap-2 bg-card/10 border-white/20 text-white hover:bg-card/20"
-                  onClick={() => setShowPriceModal(true)}
-                  disabled={updating}
-                >
-                  <DollarSign className="h-4 w-4" />
-                  {lang === "ar" ? "تغيير السعر" : "Change Price"}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  style={{ display: "inline-flex" }}
-                  className="gap-2 whitespace-nowrap"
-                  onClick={handleBulkDelete}
-                  disabled={updating || deleting}
-                >
-                  {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                  {lang === "ar" ? "حذف" : "Delete"}
-                </Button>
-              </div>
-
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setSelectedUnits([])}
-                className="text-xs text-white/50 hover:text-white ms-4"
-                style={{ display: "inline-flex" }}
-              >
-                {lang === "ar" ? "إلغاء التحديد" : "Clear Selection"}
-              </Button>
-            </div>
-          )}
+          {/* Bulk actions are now handled inside DataTable (table view only) */}
 
           {/* Consolidated Toolbar */}
           <Card className="p-4 space-y-4">
@@ -1078,43 +1108,104 @@ function AdvancedUnitMatrixPage() {
               </div>
             </div>
           ) : (
-            /* Table View */
-            <Card className="overflow-hidden">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>{lang === "ar" ? "رقم الوحدة" : "Unit #"}</TableHead>
-                      <TableHead>{lang === "ar" ? "المبنى / المدينة" : "Building / City"}</TableHead>
-                      <TableHead>{lang === "ar" ? "النوع" : "Type"}</TableHead>
-                      <TableHead>{lang === "ar" ? "المساحة" : "Area"}</TableHead>
-                      <TableHead>{lang === "ar" ? "الحالة" : "Status"}</TableHead>
-                      <TableHead>{lang === "ar" ? "السعر" : "Price"}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredUnits.map((unit: any) => (
-                      <TableRow
-                        key={unit.id}
-                        className="cursor-pointer hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
-                        tabIndex={0}
-                        role="row"
-                        onClick={() => openUnitDetail(unit)}
-                        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openUnitDetail(unit); } }}
-                        aria-label={`${unitTypeLabels[unit.type]?.[lang] ?? unit.type} ${unit.number}`}
-                      >
-                        <TableCell className="font-bold text-primary/80 tabular-nums">{unit.number}</TableCell>
-                        <TableCell>{unit.buildingName || unit.city || "—"}</TableCell>
-                        <TableCell>{unitTypeLabels[unit.type]?.[lang] ?? unit.type}</TableCell>
-                        <TableCell className="tabular-nums">{unit.area} m²</TableCell>
-                        <TableCell><StatusBadge entityType="unit" status={unit.status} label={unitStatusLabels[unit.status]?.[lang] ?? unit.status} /></TableCell>
-                        <TableCell>{unit.price ? <SARAmount value={Number(unit.price)} size={11} compact /> : "—"}</TableCell>
-                      </TableRow>
+            /* Table View — powered by shared DataTable primitive */
+            <DataTable
+              columns={unitColumns}
+              data={filteredUnits}
+              locale={lang === "ar" ? "ar" : "en"}
+              pagination
+              pageSize={10}
+              getRowId={(r) => r.id}
+              enableSelection
+              bulkActions={(selected) => (
+                <div className="flex items-center gap-2">
+                  {updating && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
+                  <select
+                    onChange={(e) => {
+                      const ids = selected.map((r: any) => r.id);
+                      setSelectedUnits(ids);
+                      handleBulkStatusUpdate(e.target.value, ids);
+                    }}
+                    disabled={updating || deleting}
+                    className="text-xs rounded-md border border-border bg-background px-2 py-1 outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+                  >
+                    <option value="">
+                      {lang === "ar" ? "تحديث الحالة" : "Update Status"}
+                    </option>
+                    {Object.entries(unitStatusLabels).map(([value, label]) => (
+                      <option key={value} value={value}>
+                        {label[lang]}
+                      </option>
                     ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </Card>
+                  </select>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    style={{ display: "inline-flex" }}
+                    className="gap-1"
+                    onClick={() => {
+                      setSelectedUnits(selected.map((r: any) => r.id));
+                      setShowPriceModal(true);
+                    }}
+                    disabled={updating}
+                  >
+                    <DollarSign className="h-3.5 w-3.5" />
+                    {lang === "ar" ? "تغيير السعر" : "Change Price"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    style={{ display: "inline-flex" }}
+                    className="gap-1"
+                    onClick={() => {
+                      setSelectedUnits(selected.map((r: any) => r.id));
+                      setShowDeleteConfirm(true);
+                    }}
+                    disabled={updating || deleting}
+                  >
+                    {deleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                    {lang === "ar" ? "حذف" : "Delete"}
+                  </Button>
+                </div>
+              )}
+              onRowClick={(row) => openUnitDetail(row)}
+              rowClassName={(row) => {
+                if (row.status === "MAINTENANCE") return "border-s-2 border-s-warning/60";
+                if (row.status === "AVAILABLE") return "border-s-2 border-s-success/60";
+                return undefined;
+              }}
+              mobileCard={(row) => {
+                const statusLabel = unitStatusLabels[row.status]?.[lang] ?? row.status;
+                return (
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <code className="font-mono text-sm font-semibold text-primary/80">
+                          {row.number}
+                        </code>
+                        <StatusBadge entityType="unit" status={row.status} label={statusLabel} />
+                      </div>
+                      <div className="mt-1 text-xs text-muted-foreground truncate">
+                        {unitTypeLabels[row.type]?.[lang] ?? row.type}
+                        {(row.buildingName || row.city) ? ` · ${row.buildingName || row.city}` : ""}
+                        {row.area != null ? ` · ${row.area} m²` : ""}
+                      </div>
+                    </div>
+                    {row.price && (
+                      <div className="shrink-0">
+                        <SARAmount value={Number(row.price)} size={11} compact />
+                      </div>
+                    )}
+                  </div>
+                );
+              }}
+              emptyTitle={lang === "ar" ? "لا توجد وحدات" : "No units"}
+              emptyDescription={
+                lang === "ar"
+                  ? "جرّب تعديل البحث أو الفلاتر."
+                  : "Try adjusting your search or filters."
+              }
+            />
           )}
         </>
       )}
@@ -1149,7 +1240,7 @@ function AdvancedUnitMatrixPage() {
               {lang === "ar" ? "إلغاء" : "Cancel"}
             </Button>
             <Button
-              onClick={handleBulkPriceUpdate}
+              onClick={() => handleBulkPriceUpdate()}
               disabled={updating || !bulkPrice}
               style={{ display: "inline-flex" }}
               className="gap-2"
@@ -1766,7 +1857,7 @@ function AdvancedUnitMatrixPage() {
               variant="destructive"
               style={{ display: "inline-flex" }}
               className="gap-2"
-              onClick={confirmBulkDelete}
+              onClick={() => confirmBulkDelete()}
               disabled={deleting}
             >
               {deleting && <Loader2 className="h-4 w-4 animate-spin" />}
