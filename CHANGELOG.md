@@ -1,5 +1,53 @@
 # Changelog — Mimaric PropTech
 
+## [4.10.0] — 2026-06-08 — UI uniformity pass: governed badges, icon-only row actions, one pill standard, Switch migration, 15 tables → DataTable
+
+Builds on the v4.9.0 governed-clickable system by eliminating the *visual* inconsistencies that survived it. A verified audit (`docs/uniformity-audit.md`) catalogued six classes of drift; this release fixes all six and writes the resulting standards back into AGENTS.md §6 so they can't recur. The headline structural change is migrating every hand-rolled data table onto the shared `DataTable` primitive — unlocking sort, per-column filter, column show/hide, density, and mobile-card collapse across the product.
+
+### Changed (P1 — status badges)
+
+- Replaced hand-rolled inline status pills (`<span>` driven by local `STATUS_COLORS`/`statusBadge()` maps) with the governed `<Badge variant size="sm">` on 9 pages: reservations, payments, contracts, dashboard, admin/tickets, help, help/tickets/[id], admin/marketplace, marketplace (plus my-listings during its table migration). Dead color maps deleted; bilingual labels unchanged. Closed-ticket status maps to neutral `default` (not the property-status `sold` variant).
+
+### Changed (P2/P3 — row actions, icon-only standard)
+
+- Every per-row action is now an **icon-only `IconButton` at the default size** — including forward actions, which were previously rendered three different ways. Reservations *Convert to contract* (was an `ActionLink` text link) and contracts *Sign* (was `Button variant="success"`) are now icon-only with a `text-primary` tint + distinct icon (`FileSignature` / `PenLine`); navigation preserved via `next/link` wrapping.
+- Canonical sentence-case `aria-label` lexicon (View/Edit/Delete/Remove/Close/Clear/Convert to contract/Sign) replaces the prior "View Profile" / "View profile" / "View Details" drift. Removed `h-6`/`h-7`/`h-8`/`size="sm"` overrides for one uniform row-action size; CRM's bordered-chip icon buttons normalized to ghost.
+- settings/team remove-member action fixed from `Button variant="secondary" size="icon"` + stray inline `style` to a proper `IconButton` with `text-destructive`.
+
+### Changed (P4 — semantic variant normalization)
+
+- admin/email Save is now the single `primary` CTA (was `secondary`); contracts modal Cancel buttons → `ghost` (were `outline`); units bulk-delete uses standard `destructive` (dropped the `bg-destructive/80` dimming); added a missing `aria-label` on the maintenance/preventive pause-toggle.
+
+### Changed (P5 — filter pills + switches)
+
+- One canonical pill mapping everywhere — active `primary` / inactive `subtle`, `rounded-full`, `size="sm"`, `aria-pressed`, **identical on mobile and desktop** — applied to units, crm, payments, reservations, help, settings/audit, coupons, and the marketplace browse/inquiries tabs (converted from underline-tabs). Fixed a crm "Lost" pill whose active/inactive variants were identical.
+- Migrated the 3 remaining raw `role="switch"` toggles (landing Pricing billing, admin/plans isPublic, admin/coupons isActive) to the shared `<Switch>` primitive; the coupons toggle now uses the primitive's purple active state for cross-switch uniformity.
+
+### Changed (P6 — DataTable + PageIntro adoption)
+
+- Migrated **15 hand-rolled `<Table>` pages** to the shared `DataTable`: admin (coupons, payments, plans, subscriptions, marketplace), billing/invoices, contracts (sale + lease), maintenance/tickets, marketplace inquiries, my-listings, payments, reservations, settings/team, settings/audit, units. Each page keeps its existing filter/search bar feeding the data; row actions follow the icon-only standard; currency/count columns use `meta:{numeric}` (right-aligned, tabular); status-keyed row accents preserved via a new `rowClassName` prop. units bulk select/delete/price/status rewired onto DataTable `enableSelection`+`bulkActions`. The marketplace **browse** listings view is intentionally kept as a gallery; invoices retains its modal line-items sub-table.
+- Added `rowClassName?: (row) => string` to the `DataTable` primitive (desktop rows + mobile cards) so per-row status accents survive migration.
+- Converted hand-rolled page-title blocks to the `PageIntro` primitive on finance, leasing, maintenance, onboarding.
+
+### Added (design system)
+
+- **AGENTS.md §6.6.7 / §6.6.8** — ratified the icon-only row-action standard (default size, `gap-1`, view→forward→destructive order, `text-primary` forward / `text-destructive` delete, canonical `aria-label` lexicon) and the filter-pill standard (active primary / inactive subtle, rounded-full, `aria-pressed`, mobile=desktop) plus the `role="switch"` → `<Switch>` rule. (Mirrored in the local CLAUDE.md §6.6.)
+- `docs/uniformity-audit.md` — the verified six-dimension flag register this release executes against.
+
+### Verification
+
+- **Full production build** (`turbo run build`) green — all routes compiled (exit 0). Forced `check-types` green at every wave (not just subagent self-reports). Direct grep confirmed **zero leftover raw `<Table>` usages** except the two intentional ones (marketplace browse, invoices modal).
+- **Runtime (production server, port 3000):** all 10 migrated **tenant** routes verified via accessibility-tree/DOM inspection — each renders one DataTable (no duplicates), row/forward/bulk actions present, pills expose `aria-pressed`, settings/team has no inline-style buttons, **console error-free across the full sweep**. units bulk-select reveals the bulk action bar; reservations Convert and contracts Sign icon actions present and navigable.
+- **§3.9 environmental substitution (unchanged from v4.8.0/v4.9.0):** the preview MCP raster `screenshot` tool times out (~30s renderer bottleneck) and eval-driven login can't set controlled inputs, so the cross-theme screenshot quadruple was substituted with production-build + accessibility-tree/DOM + console verification on the authenticated tenant routes. Admin (system-only) routes are verified at build/typecheck/structural level; authenticated admin visual review remains advisable post-merge.
+
+### Upgrade notes
+
+- **`role="switch"` → `<Switch>`:** the three remaining hand-rolled toggles now use the shared primitive; any downstream copy of those toggles should adopt `<Switch>`.
+- New `DataTable` `rowClassName` prop is additive (optional) — no migration needed for existing consumers.
+- No schema changes, no new env vars, no tenant route or permission changes.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimaric/compare/v4.9.0...v4.10.0
+
 ## [4.9.0] — 2026-06-02 — Governed clickable system: Button unification, IconButton/ActionLink primitives, full migration + ESLint guardrail
 
 Establishes a single governed model for every clickable affordance in the product and migrates the entire web app onto it. Before this, ~175 raw `<button>` elements (plus pure-text "actions" with only a color/underline change, and `onClick` on non-interactive `<div>`/`<tr>`) bypassed the design system — the inconsistency was most visible in table/card row actions. Now there is one canonical `Button`, two new primitives (`IconButton`, `ActionLink`), a written spec in AGENTS.md §6.6, and an ESLint rule that blocks reintroduction. Also folds in graph-surfaced structural cleanups (route-boundary boilerplate, dead code/assets).
