@@ -76,6 +76,8 @@ export interface DataTableProps<TData, TValue> {
   getRowId?: (row: TData) => string;
   /** Mobile card renderer. When provided, the table collapses to a card list at <md. */
   mobileCard?: (row: TData) => React.ReactNode;
+  /** Optional per-row className (desktop row + mobile card) — e.g. status-keyed start-border accents. */
+  rowClassName?: (row: TData) => string | undefined;
   /** Initial sort. */
   initialSorting?: SortingState;
   /** URL-sync — stores sort/filter/page state in query params. Requires caller to pass the current searchParams-like pair. */
@@ -106,6 +108,7 @@ function DataTableInner<TData, TValue>({
   onRowClick,
   getRowId,
   mobileCard,
+  rowClassName,
   initialSorting = [],
   urlState,
   className,
@@ -369,6 +372,7 @@ function DataTableInner<TData, TValue>({
                 className={cn(
                   "rounded-lg border border-border bg-card p-3 transition-colors",
                   onRowClick && "cursor-pointer active:bg-muted/40",
+                  rowClassName?.(row.original),
                 )}
               >
                 {mobileCard(row.original)}
@@ -462,7 +466,7 @@ function DataTableInner<TData, TValue>({
                     key={row.id}
                     data-state={row.getIsSelected() ? "selected" : undefined}
                     onClick={onRowClick ? () => onRowClick(row.original) : undefined}
-                    className={cn(onRowClick && "cursor-pointer")}
+                    className={cn(onRowClick && "cursor-pointer", rowClassName?.(row.original))}
                   >
                     {row.getVisibleCells().map((cell) => {
                       const meta = (cell.column.columnDef.meta ?? {}) as { align?: "start" | "end" | "center"; numeric?: boolean };

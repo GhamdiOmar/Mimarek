@@ -16,12 +16,6 @@ import {
   Badge,
   Input,
   Card,
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
   PageIntro,
   KPICard,
   ResponsiveDialog,
@@ -37,6 +31,8 @@ import {
   Alert,
   AlertDescription,
   IconButton,
+  DataTable,
+  type ColumnDef,
 } from "@repo/ui";
 import { useLanguage } from "../../../components/LanguageProvider";
 import { usePermissions } from "../../../hooks/usePermissions";
@@ -357,6 +353,177 @@ export default function PaymentsPage() {
 
   const canWritePayments = can("payments:write");
 
+  // ─── DataTable columns ────────────────────────────────────────────────────
+  const columns = React.useMemo<ColumnDef<PaymentEntry>[]>(
+    () => [
+      {
+        accessorKey: "clientName",
+        header: lang === "ar" ? "العميل" : "Client",
+        cell: ({ row }) => (
+          <span className="font-medium">{row.original.clientName}</span>
+        ),
+        enableSorting: true,
+        enableHiding: true,
+      },
+      {
+        accessorKey: "propertyLabel",
+        header: lang === "ar" ? "العقار" : "Property",
+        cell: ({ row }) => (
+          <span className="text-sm text-muted-foreground">{row.original.propertyLabel}</span>
+        ),
+        enableSorting: true,
+        enableHiding: true,
+      },
+      {
+        accessorKey: "type",
+        header: lang === "ar" ? "النوع" : "Type",
+        cell: ({ row }) => (
+          <Badge variant="info" size="sm">
+            {row.original.type === "rent"
+              ? lang === "ar" ? "إيجار" : "Rent"
+              : lang === "ar" ? "بيع" : "Sale"}
+          </Badge>
+        ),
+        enableSorting: false,
+        enableHiding: true,
+      },
+      {
+        accessorKey: "amount",
+        header: lang === "ar" ? "المبلغ" : "Amount (SAR)",
+        cell: ({ row }) => {
+          const tone = getPaymentTone(row.original);
+          return (
+            <span className={`font-medium ${tone.amountClass}`}>
+              {SAR(row.original.amount)}
+            </span>
+          );
+        },
+        enableSorting: true,
+        enableHiding: true,
+        meta: { numeric: true },
+      },
+      {
+        accessorKey: "dueDate",
+        header: lang === "ar" ? "تاريخ الاستحقاق" : "Due Date",
+        cell: ({ row }) => {
+          const tone = getPaymentTone(row.original);
+          return (
+            <span className={`text-sm ${tone.dueDateClass}`}>
+              {new Date(row.original.dueDate).toLocaleDateString(
+                lang === "ar" ? "ar-SA" : "en-SA",
+              )}
+            </span>
+          );
+        },
+        enableSorting: true,
+        enableHiding: true,
+      },
+      {
+        accessorKey: "status",
+        header: lang === "ar" ? "الحالة" : "Status",
+        cell: ({ row }) => (
+          <Badge variant={STATUS_VARIANT[row.original.status] ?? "default"} size="sm">
+            {lang === "ar"
+              ? (STATUS_LABELS[row.original.status]?.ar ?? row.original.status)
+              : (STATUS_LABELS[row.original.status]?.en ?? row.original.status)}
+          </Badge>
+        ),
+        enableSorting: true,
+        enableHiding: true,
+      },
+      {
+        id: "actions",
+        header: "",
+        enableSorting: false,
+        enableHiding: false,
+        cell: ({ row }) => {
+          const entry = row.original;
+          if (canWritePayments && entry.status !== "PAID") {
+            return (
+              <div className="flex items-center justify-end gap-1">
+                <IconButton
+                  icon={CreditCard}
+                  aria-label={lang === "ar" ? "تسجيل دفعة" : "Record payment"}
+                  variant="ghost"
+                  onClick={() => openPayModal(entry)}
+                  className="text-primary"
+                />
+              </div>
+            );
+          }
+          if (entry.status === "PAID") {
+            return (
+              <span className="text-xs text-muted-foreground">
+                {lang === "ar" ? "مُسدَّد" : "Settled"}
+              </span>
+            );
+          }
+          return null;
+        },
+      },
+    ],
+    [lang, canWritePayments],
+  );
+
+  // ─── DataTable mobileCard ─────────────────────────────────────────────────
+  function renderMobileCard(entry: PaymentEntry, divider = false) {
+    const method = methodLabel(entry.raw.paymentMethod);
+    const badgeVariant = statusBadgeVariant(entry.status);
+    const statusLabel =
+      lang === "ar"
+        ? STATUS_LABELS[entry.status]?.ar ?? entry.status
+        : STATUS_LABELS[entry.status]?.en ?? entry.status;
+    const dueLabel = new Date(entry.dueDate).toLocaleDateString(
+      lang === "ar" ? "ar-SA" : "en-SA",
+    );
+    const iconTone =
+      entry.status === "PAID"
+        ? "green"
+        : entry.status === "OVERDUE"
+          ? "red"
+          : entry.status === "PARTIALLY_PAID"
+            ? "amber"
+            : "purple";
+
+    const subtitleParts: React.ReactNode[] = [
+      entry.clientName,
+      `${lang === "ar" ? "استحقاق" : "Due"}: ${dueLabel}`,
+    ];
+    if (method) {
+      subtitleParts.push(
+        <Badge key="method" variant="outline" size="sm">
+          {method}
+        </Badge>,
+      );
+    }
+
+    return (
+      <DataCard
+        icon={CreditCard}
+        iconTone={iconTone}
+        divider={divider}
+        title={
+          <SARAmount
+            value={entry.amount}
+            size={14}
+            className="font-semibold text-foreground tabular-nums"
+          />
+        }
+        subtitle={subtitleParts}
+        trailing={
+          <Badge variant={badgeVariant} size="sm">
+            {statusLabel}
+          </Badge>
+        }
+        onClick={
+          canWritePayments && entry.status !== "PAID"
+            ? () => openPayModal(entry)
+            : undefined
+        }
+      />
+    );
+  }
+
   return (
     <>
     {/* ─── Mobile (< md) ─────────────────────────────────────────────── */}
@@ -484,64 +651,11 @@ export default function PaymentsPage() {
 
         {!loading && filtered.length > 0 && (
           <div className="rounded-2xl border border-border bg-card px-4">
-            {filtered.map((entry, idx) => {
-              const method = methodLabel(entry.raw.paymentMethod);
-              const badgeVariant = statusBadgeVariant(entry.status);
-              const statusLabel =
-                lang === "ar"
-                  ? STATUS_LABELS[entry.status]?.ar ?? entry.status
-                  : STATUS_LABELS[entry.status]?.en ?? entry.status;
-              const dueLabel = new Date(entry.dueDate).toLocaleDateString(
-                lang === "ar" ? "ar-SA" : "en-SA",
-              );
-              const iconTone =
-                entry.status === "PAID"
-                  ? "green"
-                  : entry.status === "OVERDUE"
-                    ? "red"
-                    : entry.status === "PARTIALLY_PAID"
-                      ? "amber"
-                      : "purple";
-
-              const subtitleParts: React.ReactNode[] = [
-                entry.clientName,
-                `${lang === "ar" ? "استحقاق" : "Due"}: ${dueLabel}`,
-              ];
-              if (method) {
-                subtitleParts.push(
-                  <Badge key="method" variant="outline" size="sm">
-                    {method}
-                  </Badge>,
-                );
-              }
-
-              return (
-                <DataCard
-                  key={entry.id}
-                  icon={CreditCard}
-                  iconTone={iconTone}
-                  divider={idx !== filtered.length - 1}
-                  title={
-                    <SARAmount
-                      value={entry.amount}
-                      size={14}
-                      className="font-semibold text-foreground tabular-nums"
-                    />
-                  }
-                  subtitle={subtitleParts}
-                  trailing={
-                    <Badge variant={badgeVariant} size="sm">
-                      {statusLabel}
-                    </Badge>
-                  }
-                  onClick={
-                    canWritePayments && entry.status !== "PAID"
-                      ? () => openPayModal(entry)
-                      : undefined
-                  }
-                />
-              );
-            })}
+            {filtered.map((entry, idx) => (
+              <React.Fragment key={entry.id}>
+                {renderMobileCard(entry, idx !== filtered.length - 1)}
+              </React.Fragment>
+            ))}
           </div>
         )}
       </div>
@@ -671,108 +785,44 @@ export default function PaymentsPage() {
       </Card>
 
       {/* Table */}
-      <Card>
-        {loading ? (
+      {loading ? (
+        <Card>
           <div className="flex items-center justify-center py-16">
             <Loader2 className="w-6 h-6 animate-spin text-primary" />
           </div>
-        ) : filtered.length === 0 ? (
-          allEntries.length === 0 ? (
-            <EmptyState
-              icon={<CreditCard className="h-12 w-12" aria-hidden="true" />}
-              title={lang === "ar" ? "لا توجد مدفوعات بعد" : "No payments yet"}
-              description={
-                lang === "ar"
-                  ? "ستظهر أقساط الإيجار والبيع هنا بمجرد تفعيل أول عقد."
-                  : "Rent and sale installments show up here once contracts are active."
-              }
-              helpHref="/dashboard/help#payments"
-              helpLabel={lang === "ar" ? "تعرّف على المدفوعات" : "Learn about payments"}
-            />
-          ) : (
-            <EmptyState
-              variant="filtered"
-              icon={<CreditCard className="h-12 w-12" aria-hidden="true" />}
-              title={lang === "ar" ? "لا توجد نتائج مطابقة" : "No matching payments"}
-              description={
-                lang === "ar"
-                  ? "جرّب تعديل البحث أو التبويب."
-                  : "Try adjusting your search or tab."
-              }
-              action={
-                <Button
-                  variant="secondary"
-                  onClick={() => {
-                    setSearch("");
-                    setTypeFilter("ALL");
-                    setStatusFilter("ALL");
-                  }}
-                  style={{ display: "inline-flex" }}
-                >
-                  {lang === "ar" ? "مسح الفلاتر" : "Clear filters"}
-                </Button>
-              }
-            />
-          )
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{lang === "ar" ? "العميل" : "Client"}</TableHead>
-                <TableHead>{lang === "ar" ? "العقار" : "Property"}</TableHead>
-                <TableHead>{lang === "ar" ? "النوع" : "Type"}</TableHead>
-                <TableHead>{lang === "ar" ? "المبلغ" : "Amount (SAR)"}</TableHead>
-                <TableHead>{lang === "ar" ? "تاريخ الاستحقاق" : "Due Date"}</TableHead>
-                <TableHead>{lang === "ar" ? "الحالة" : "Status"}</TableHead>
-                <TableHead>{lang === "ar" ? "الإجراءات" : "Actions"}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.map((entry) => {
-                const tone = getPaymentTone(entry);
-                return (
-                <TableRow key={entry.id} className={tone.rowClass}>
-                  <TableCell className="font-medium">{entry.clientName}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{entry.propertyLabel}</TableCell>
-                  <TableCell>
-                    <Badge variant="info" size="sm">
-                      {entry.type === "rent"
-                        ? lang === "ar" ? "إيجار" : "Rent"
-                        : lang === "ar" ? "بيع" : "Sale"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className={`font-medium ${tone.amountClass}`}>{SAR(entry.amount)}</TableCell>
-                  <TableCell className={`text-sm ${tone.dueDateClass}`}>
-                    {new Date(entry.dueDate).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-SA")}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={STATUS_VARIANT[entry.status] ?? "default"} size="sm">
-                      {lang === "ar" ? (STATUS_LABELS[entry.status]?.ar ?? entry.status) : (STATUS_LABELS[entry.status]?.en ?? entry.status)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {can("payments:write") && entry.status !== "PAID" && (
-                      <Button
-                        variant="link"
-                        size="sm"
-                        onClick={() => openPayModal(entry)}
-                        style={{ display: "inline-flex" }}
-                        className="p-0 h-auto text-xs font-medium"
-                      >
-                        {lang === "ar" ? "تسجيل دفعة" : "Record Payment"}
-                      </Button>
-                    )}
-                    {entry.status === "PAID" && (
-                      <span className="text-xs text-muted-foreground">{lang === "ar" ? "مُسدَّد" : "Settled"}</span>
-                    )}
-                  </TableCell>
-                </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        )}
-      </Card>
+        </Card>
+      ) : filtered.length === 0 && allEntries.length === 0 ? (
+        <Card>
+          <EmptyState
+            icon={<CreditCard className="h-12 w-12" aria-hidden="true" />}
+            title={lang === "ar" ? "لا توجد مدفوعات بعد" : "No payments yet"}
+            description={
+              lang === "ar"
+                ? "ستظهر أقساط الإيجار والبيع هنا بمجرد تفعيل أول عقد."
+                : "Rent and sale installments show up here once contracts are active."
+            }
+            helpHref="/dashboard/help#payments"
+            helpLabel={lang === "ar" ? "تعرّف على المدفوعات" : "Learn about payments"}
+          />
+        </Card>
+      ) : (
+        <DataTable
+          columns={columns}
+          data={filtered}
+          mobileCard={renderMobileCard}
+          rowClassName={(r) => getPaymentTone(r).rowClass}
+          locale={lang === "ar" ? "ar" : "en"}
+          pagination
+          pageSize={10}
+          getRowId={(r) => r.id}
+          emptyTitle={lang === "ar" ? "لا توجد نتائج مطابقة" : "No matching payments"}
+          emptyDescription={
+            lang === "ar"
+              ? "جرّب تعديل البحث أو التبويب."
+              : "Try adjusting your search or tab."
+          }
+        />
+      )}
 
       {/* Record Payment Modal */}
       <ResponsiveDialog
