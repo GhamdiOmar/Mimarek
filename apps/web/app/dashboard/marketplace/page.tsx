@@ -31,6 +31,9 @@ import {
   ResponsiveDialog,
   EmptyState,
   Skeleton,
+  DataTable,
+  IconButton,
+  type ColumnDef,
 } from "@repo/ui";
 import { cn } from "@repo/ui/lib/utils";
 import { useLanguage } from "../../../components/LanguageProvider";
@@ -252,6 +255,117 @@ function MarketplacePage() {
     e.preventDefault();
     pushParams({ q, city, district, propertyType, minPrice, maxPrice, minArea, maxArea, sellerOrgId, bedrooms, maxBuildingAge });
   }
+
+  // ── Inquiry DataTable columns ─────────────────────────────────────────────
+
+  const inquiryColumns = React.useMemo<ColumnDef<Inquiry>[]>(
+    () => [
+      {
+        accessorKey: "listing",
+        id: "listing",
+        header: lang === "ar" ? "الإعلان" : "Listing",
+        enableSorting: false,
+        enableHiding: false,
+        cell: ({ row }) => (
+          <Link
+            href={`/dashboard/marketplace/${row.original.listing.id}`}
+            className="text-sm font-medium text-foreground hover:text-primary"
+          >
+            {row.original.listing.title ?? row.original.listing.listingNumber}
+          </Link>
+        ),
+      },
+      {
+        accessorKey: "listing.city",
+        id: "city",
+        header: lang === "ar" ? "المدينة" : "City",
+        enableSorting: false,
+        cell: ({ row }) => (
+          <span className="text-sm text-foreground">
+            {row.original.listing.city ?? "—"}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "listing.price",
+        id: "price",
+        header: lang === "ar" ? "السعر" : "Price",
+        enableSorting: false,
+        meta: { numeric: true },
+        cell: ({ row }) => (
+          <span className="text-sm font-semibold text-primary">
+            {formatSARLocal(row.original.listing.price, lang)}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "status",
+        id: "status",
+        header: lang === "ar" ? "الحالة" : "Status",
+        enableSorting: false,
+        cell: ({ row }) => (
+          <Badge
+            variant={INQUIRY_STATUS_VARIANT[row.original.status] ?? "default"}
+            size="sm"
+          >
+            {lang === "ar"
+              ? (INQUIRY_STATUS_LABELS[row.original.status]?.ar ?? row.original.status)
+              : (INQUIRY_STATUS_LABELS[row.original.status]?.en ?? row.original.status)}
+          </Badge>
+        ),
+      },
+      {
+        accessorKey: "transfer",
+        id: "transfer",
+        header: lang === "ar" ? "التحويل" : "Transfer",
+        enableSorting: false,
+        cell: ({ row }) =>
+          row.original.transfer ? (
+            <span className="text-xs text-muted-foreground">
+              {row.original.transfer.status}
+            </span>
+          ) : (
+            "—"
+          ),
+      },
+      {
+        accessorKey: "createdAt",
+        id: "createdAt",
+        header: lang === "ar" ? "التاريخ" : "Date",
+        enableSorting: false,
+        cell: ({ row }) => (
+          <span className="text-xs text-muted-foreground">
+            {new Date(row.original.createdAt).toLocaleDateString(
+              lang === "ar" ? "ar-SA" : "en-GB"
+            )}
+          </span>
+        ),
+      },
+      {
+        id: "actions",
+        header: "",
+        enableSorting: false,
+        enableHiding: false,
+        cell: ({ row }) =>
+          row.original.status === "OPEN" ? (
+            <div className="flex items-center gap-1">
+              <IconButton
+                icon={X}
+                aria-label={lang === "ar" ? "سحب" : "Withdraw"}
+                variant="ghost"
+                size="sm"
+                className="text-destructive hover:text-destructive"
+                onClick={() => {
+                  setWithdrawTarget(row.original);
+                  setWithdrawError(null);
+                }}
+              />
+            </div>
+          ) : null,
+      },
+    ],
+    [lang, setWithdrawTarget, setWithdrawError]
+  );
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -691,117 +805,65 @@ function MarketplacePage() {
               }
             />
           ) : (
-            <>
-              {/* Mobile cards */}
-              <div className="space-y-3 md:hidden">
-                {inquiries.map((inq) => (
-                  <Card key={inq.id} className="p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="space-y-1 min-w-0">
-                        <Link
-                          href={`/dashboard/marketplace/${inq.listing.id}`}
-                          className="text-sm font-semibold text-foreground hover:text-primary truncate block"
-                        >
-                          {inq.listing.title ?? inq.listing.listingNumber}
-                        </Link>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <Badge variant={INQUIRY_STATUS_VARIANT[inq.status] ?? "default"} size="sm">
-                            {lang === "ar"
-                              ? (INQUIRY_STATUS_LABELS[inq.status]?.ar ?? inq.status)
-                              : (INQUIRY_STATUS_LABELS[inq.status]?.en ?? inq.status)}
-                          </Badge>
-                          {inq.listing.city && (
-                            <span className="text-xs text-muted-foreground">{inq.listing.city}</span>
-                          )}
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          {formatSARLocal(inq.listing.price, lang)}
-                        </p>
-                      </div>
-                      {inq.status === "OPEN" && (
-                        <Button
-                          variant="destructive"
+            <DataTable
+              columns={inquiryColumns}
+              data={inquiries}
+              locale={lang === "ar" ? "ar" : "en"}
+              pagination
+              pageSize={10}
+              getRowId={(r) => r.id}
+              emptyTitle={lang === "ar" ? "لا توجد استفسارات" : "No inquiries"}
+              emptyDescription={
+                lang === "ar"
+                  ? "لم يتم العثور على استفسارات مطابقة"
+                  : "No matching inquiries found"
+              }
+              mobileCard={(inq) => (
+                <Card className="p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="space-y-1 min-w-0">
+                      <Link
+                        href={`/dashboard/marketplace/${inq.listing.id}`}
+                        className="text-sm font-semibold text-foreground hover:text-primary truncate block"
+                      >
+                        {inq.listing.title ?? inq.listing.listingNumber}
+                      </Link>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge
+                          variant={INQUIRY_STATUS_VARIANT[inq.status] ?? "default"}
                           size="sm"
-                          className="shrink-0 min-h-[44px]"
-                          onClick={() => { setWithdrawTarget(inq); setWithdrawError(null); }}
                         >
-                          {lang === "ar" ? "سحب" : "Withdraw"}
-                        </Button>
-                      )}
+                          {lang === "ar"
+                            ? (INQUIRY_STATUS_LABELS[inq.status]?.ar ?? inq.status)
+                            : (INQUIRY_STATUS_LABELS[inq.status]?.en ?? inq.status)}
+                        </Badge>
+                        {inq.listing.city && (
+                          <span className="text-xs text-muted-foreground">
+                            {inq.listing.city}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {formatSARLocal(inq.listing.price, lang)}
+                      </p>
                     </div>
-                  </Card>
-                ))}
-              </div>
-
-              {/* Desktop table */}
-              <div className="hidden md:block">
-                <Card className="overflow-hidden">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>{lang === "ar" ? "الإعلان" : "Listing"}</TableHead>
-                        <TableHead>{lang === "ar" ? "المدينة" : "City"}</TableHead>
-                        <TableHead>{lang === "ar" ? "السعر" : "Price"}</TableHead>
-                        <TableHead>{lang === "ar" ? "الحالة" : "Status"}</TableHead>
-                        <TableHead>{lang === "ar" ? "التحويل" : "Transfer"}</TableHead>
-                        <TableHead>{lang === "ar" ? "التاريخ" : "Date"}</TableHead>
-                        <TableHead />
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {inquiries.map((inq) => (
-                        <TableRow key={inq.id}>
-                          <TableCell>
-                            <Link
-                              href={`/dashboard/marketplace/${inq.listing.id}`}
-                              className="text-sm font-medium text-foreground hover:text-primary"
-                            >
-                              {inq.listing.title ?? inq.listing.listingNumber}
-                            </Link>
-                          </TableCell>
-                          <TableCell>
-                            <span className="text-sm text-foreground">{inq.listing.city ?? "—"}</span>
-                          </TableCell>
-                          <TableCell>
-                            <span className="text-sm font-semibold text-primary">
-                              {formatSARLocal(inq.listing.price, lang)}
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={INQUIRY_STATUS_VARIANT[inq.status] ?? "default"} size="sm">
-                              {lang === "ar"
-                                ? (INQUIRY_STATUS_LABELS[inq.status]?.ar ?? inq.status)
-                                : (INQUIRY_STATUS_LABELS[inq.status]?.en ?? inq.status)}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {inq.transfer ? (
-                              <span className="text-xs text-muted-foreground">{inq.transfer.status}</span>
-                            ) : "—"}
-                          </TableCell>
-                          <TableCell>
-                            <span className="text-xs text-muted-foreground">
-                              {new Date(inq.createdAt).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-GB")}
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            {inq.status === "OPEN" && (
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => { setWithdrawTarget(inq); setWithdrawError(null); }}
-                              >
-                                {lang === "ar" ? "سحب" : "Withdraw"}
-                              </Button>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                    {inq.status === "OPEN" && (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="shrink-0 min-h-[44px]"
+                        onClick={() => {
+                          setWithdrawTarget(inq);
+                          setWithdrawError(null);
+                        }}
+                      >
+                        {lang === "ar" ? "سحب" : "Withdraw"}
+                      </Button>
+                    )}
+                  </div>
                 </Card>
-              </div>
-            </>
+              )}
+            />
           )}
         </div>
       )}

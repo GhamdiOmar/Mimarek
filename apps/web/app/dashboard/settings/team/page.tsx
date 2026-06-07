@@ -10,18 +10,14 @@ import {
   Card,
   CardContent,
   DataCard,
+  DataTable,
   EmptyState,
   FAB,
   IconButton,
   Input,
   PageHeader,
   ResponsiveDialog,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  type ColumnDef,
 } from "@repo/ui";
 import { useLanguage } from "../../../../components/LanguageProvider";
 import { CUSTOMER_ASSIGNABLE_ROLES } from "../../../../lib/permissions";
@@ -335,6 +331,64 @@ function TeamList({
   loading?: boolean;
   compact?: boolean;
 }) {
+  const columns = React.useMemo<ColumnDef<TeamMember>[]>(
+    () => [
+      {
+        id: "member",
+        accessorKey: "name",
+        header: lang === "ar" ? "العضو" : "Member",
+        enableSorting: true,
+        enableHiding: false,
+        cell: ({ row }) => (
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <User className="h-4 w-4" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold">{row.original.name ?? row.original.email}</p>
+              <p className="font-mono text-xs text-foreground" dir="ltr">{row.original.email}</p>
+            </div>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "role",
+        header: lang === "ar" ? "الدور" : "Role",
+        enableSorting: true,
+        cell: ({ row }) => (
+          <Badge variant="outline">{roleLabels[row.original.role]?.[lang] ?? row.original.role}</Badge>
+        ),
+      },
+      {
+        accessorKey: "createdAt",
+        header: lang === "ar" ? "تاريخ الانضمام" : "Joined",
+        enableSorting: true,
+        cell: ({ row }) => (
+          <span className="text-sm text-foreground">
+            {new Date(row.original.createdAt).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-US")}
+          </span>
+        ),
+      },
+      {
+        id: "actions",
+        header: "",
+        enableSorting: false,
+        enableHiding: false,
+        cell: ({ row }) => (
+          <IconButton
+            icon={Trash2}
+            variant="ghost"
+            className="text-destructive"
+            aria-label={lang === "ar" ? "إزالة" : "Remove"}
+            onClick={() => onRemove(row.original)}
+            loading={busyId === row.original.id}
+          />
+        ),
+      },
+    ],
+    [lang, onRemove, busyId],
+  );
+
   if (compact) {
     if (!members.length) return <EmptyState icon={<User className="h-12 w-12" />} title={lang === "ar" ? "لا يوجد أعضاء" : "No team members"} description={lang === "ar" ? "ابدأ بإرسال دعوة." : "Start by sending an invitation."} />;
     return (
@@ -349,9 +403,13 @@ function TeamList({
             trailing={
               <div className="flex items-center gap-2">
                 <Badge variant="outline">{roleLabels[member.role]?.[lang] ?? member.role}</Badge>
-                <Button variant="secondary" size="icon" className="h-11 w-11" onClick={() => onRemove(member)} aria-label={lang === "ar" ? "إزالة" : "Remove"} style={{ display: "inline-flex" }}>
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                <IconButton
+                  icon={Trash2}
+                  variant="ghost"
+                  className="h-11 w-11 text-destructive"
+                  onClick={() => onRemove(member)}
+                  aria-label={lang === "ar" ? "إزالة" : "Remove"}
+                />
               </div>
             }
             divider={index < members.length - 1}
@@ -362,52 +420,40 @@ function TeamList({
   }
 
   return (
-    <Card className="overflow-hidden">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>{lang === "ar" ? "العضو" : "Member"}</TableHead>
-            <TableHead>{lang === "ar" ? "الدور" : "Role"}</TableHead>
-            <TableHead>{lang === "ar" ? "تاريخ الانضمام" : "Joined"}</TableHead>
-            <TableHead className="text-center">{lang === "ar" ? "إجراءات" : "Actions"}</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {loading ? (
-            <TableRow>
-              <TableCell colSpan={4} className="py-12 text-center text-sm text-foreground animate-pulse">{lang === "ar" ? "جاري التحميل..." : "Loading..."}</TableCell>
-            </TableRow>
-          ) : members.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={4} className="py-12 text-center text-sm text-foreground">{lang === "ar" ? "لا يوجد أعضاء" : "No team members"}</TableCell>
-            </TableRow>
-          ) : (
-            members.map((member) => (
-              <TableRow key={member.id}>
-                <TableCell>
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
-                      <User className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold">{member.name ?? member.email}</p>
-                      <p className="text-xs text-foreground">{member.email}</p>
-                    </div>
-                  </div>
-                </TableCell>
-                <TableCell><Badge variant="outline">{roleLabels[member.role]?.[lang] ?? member.role}</Badge></TableCell>
-                <TableCell className="text-sm text-foreground">{new Date(member.createdAt).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-US")}</TableCell>
-                <TableCell className="text-center">
-                  <Button variant="secondary" size="icon" onClick={() => onRemove(member)} loading={busyId === member.id} aria-label={lang === "ar" ? "إزالة" : "Remove"} style={{ display: "inline-flex" }}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
-    </Card>
+    <DataTable
+      columns={columns}
+      data={members}
+      loading={loading}
+      locale={lang === "ar" ? "ar" : "en"}
+      pagination
+      pageSize={10}
+      getRowId={(r) => r.id}
+      emptyTitle={lang === "ar" ? "لا يوجد أعضاء" : "No team members"}
+      emptyDescription={lang === "ar" ? "ابدأ بإرسال دعوة." : "Start by sending an invitation."}
+      mobileCard={(member) => (
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <User className="h-4 w-4" />
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold">{member.name ?? member.email}</p>
+              <p className="truncate font-mono text-xs text-foreground" dir="ltr">{member.email}</p>
+            </div>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <Badge variant="outline">{roleLabels[member.role]?.[lang] ?? member.role}</Badge>
+            <IconButton
+              icon={Trash2}
+              variant="ghost"
+              className="text-destructive"
+              aria-label={lang === "ar" ? "إزالة" : "Remove"}
+              onClick={() => onRemove(member)}
+            />
+          </div>
+        </div>
+      )}
+    />
   );
 }
 

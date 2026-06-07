@@ -5,7 +5,6 @@ import {
   Store,
   Loader2,
   AlertCircle,
-  CheckCircle2,
   Pencil,
   EyeOff,
   Handshake,
@@ -18,18 +17,14 @@ import {
   Badge,
   Input,
   Card,
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
   PageIntro,
   ResponsiveDialog,
   EmptyState,
   Skeleton,
+  DataTable,
+  IconButton,
+  type ColumnDef,
 } from "@repo/ui";
-import { cn } from "@repo/ui/lib/utils";
 import { useLanguage } from "../../../../components/LanguageProvider";
 import {
   listMyMarketplaceListings,
@@ -68,16 +63,6 @@ type IncomingInquiry = {
 
 // ─── Status config ────────────────────────────────────────────────────────────
 
-const LISTING_STATUS_STYLES: Record<string, string> = {
-  DRAFT: "bg-muted text-muted-foreground",
-  PUBLISHED: "bg-success/15 text-success",
-  UNDER_CONTRACT: "bg-info/15 text-info",
-  SOLD_TRANSFERRED: "bg-primary/15 text-primary",
-  UNPUBLISHED: "bg-warning/15 text-warning",
-  EXPIRED: "bg-destructive/15 text-destructive",
-  SUSPENDED: "bg-destructive/15 text-destructive",
-};
-
 const LISTING_STATUS_LABELS: Record<string, { ar: string; en: string }> = {
   DRAFT: { ar: "مسودة", en: "Draft" },
   PUBLISHED: { ar: "منشور", en: "Published" },
@@ -86,6 +71,27 @@ const LISTING_STATUS_LABELS: Record<string, { ar: string; en: string }> = {
   UNPUBLISHED: { ar: "مُلغى النشر", en: "Unpublished" },
   EXPIRED: { ar: "منتهي الصلاحية", en: "Expired" },
   SUSPENDED: { ar: "موقوف", en: "Suspended" },
+};
+
+// Listing status → Badge variant mapping
+//   PUBLISHED  → success  (active/live)
+//   DRAFT      → draft    (dormant, muted)
+//   UNDER_CONTRACT → info (informational interim state)
+//   SOLD_TRANSFERRED → sold (primary-tinted completion)
+//   UNPUBLISHED → warning (reversible deactivation)
+//   EXPIRED    → error   (terminal negative)
+//   SUSPENDED  → error   (terminal negative)
+const LISTING_STATUS_BADGE: Record<
+  string,
+  React.ComponentProps<typeof Badge>["variant"]
+> = {
+  DRAFT: "draft",
+  PUBLISHED: "success",
+  UNDER_CONTRACT: "info",
+  SOLD_TRANSFERRED: "sold",
+  UNPUBLISHED: "warning",
+  EXPIRED: "error",
+  SUSPENDED: "error",
 };
 
 const INQUIRY_STATUS_STYLES: Record<string, string> = {
@@ -279,6 +285,220 @@ export default function MyListingsPage() {
     }
   }
 
+  // ── Column definitions ────────────────────────────────────────────────────
+
+  const listingColumns = React.useMemo<ColumnDef<MyListing>[]>(
+    () => [
+      {
+        accessorKey: "listingNumber",
+        header: lang === "ar" ? "رقم الإعلان" : "Listing #",
+        enableSorting: false,
+        cell: ({ row }) => (
+          <span className="font-mono text-xs text-muted-foreground">
+            {row.original.listingNumber}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "title",
+        header: lang === "ar" ? "العنوان" : "Title",
+        cell: ({ row }) => (
+          <span className="text-sm font-medium text-foreground line-clamp-1">
+            {row.original.title ?? "—"}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "status",
+        header: lang === "ar" ? "الحالة" : "Status",
+        enableSorting: false,
+        cell: ({ row }) => (
+          <Badge
+            variant={LISTING_STATUS_BADGE[row.original.status] ?? "default"}
+            size="sm"
+          >
+            {lang === "ar"
+              ? (LISTING_STATUS_LABELS[row.original.status]?.ar ?? row.original.status)
+              : (LISTING_STATUS_LABELS[row.original.status]?.en ?? row.original.status)}
+          </Badge>
+        ),
+      },
+      {
+        accessorKey: "price",
+        header: lang === "ar" ? "السعر" : "Price",
+        meta: { numeric: true },
+        cell: ({ row }) => (
+          <span className="text-sm font-semibold text-primary">
+            {formatSARLocal(row.original.price, lang)}
+          </span>
+        ),
+      },
+      {
+        id: "location",
+        header: lang === "ar" ? "الموقع" : "Location",
+        enableSorting: false,
+        cell: ({ row }) => (
+          <span className="text-sm text-foreground">
+            {[row.original.city, row.original.district].filter(Boolean).join("، ") || "—"}
+          </span>
+        ),
+      },
+      {
+        id: "inquiries",
+        accessorFn: (row) => row._count.inquiries,
+        header: lang === "ar" ? "الاستفسارات" : "Inquiries",
+        meta: { numeric: true },
+        cell: ({ row }) => (
+          <div className="flex items-center gap-1.5 text-sm text-foreground justify-end">
+            <Users className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+            {row.original._count.inquiries}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "publishedAt",
+        header: lang === "ar" ? "تاريخ النشر" : "Published",
+        enableSorting: false,
+        cell: ({ row }) => (
+          <span className="text-xs text-muted-foreground">
+            {row.original.publishedAt
+              ? new Date(row.original.publishedAt).toLocaleDateString(
+                  lang === "ar" ? "ar-SA" : "en-GB"
+                )
+              : "—"}
+          </span>
+        ),
+      },
+      {
+        id: "actions",
+        header: "",
+        enableSorting: false,
+        enableHiding: false,
+        cell: ({ row }) => (
+          <div className="flex items-center gap-1">
+            <IconButton
+              icon={Pencil}
+              aria-label={lang === "ar" ? `تعديل ${row.original.listingNumber}` : `Edit ${row.original.listingNumber}`}
+              tooltip={lang === "ar" ? "تعديل" : "Edit"}
+              variant="ghost"
+              size="icon"
+              onClick={() => openEdit(row.original)}
+              disabled={row.original.status === "SOLD_TRANSFERRED"}
+            />
+            {(row.original.status === "PUBLISHED" || row.original.status === "DRAFT") && (
+              <IconButton
+                icon={EyeOff}
+                aria-label={lang === "ar" ? `إلغاء نشر ${row.original.listingNumber}` : `Unpublish ${row.original.listingNumber}`}
+                tooltip={lang === "ar" ? "إلغاء النشر" : "Unpublish"}
+                variant="ghost"
+                size="icon"
+                className="text-destructive hover:text-destructive"
+                onClick={() => openUnpublish(row.original)}
+              />
+            )}
+          </div>
+        ),
+      },
+    ],
+    [lang]
+  );
+
+  const inquiryColumns = React.useMemo<ColumnDef<IncomingInquiry>[]>(
+    () => [
+      {
+        id: "listing",
+        header: lang === "ar" ? "الإعلان" : "Listing",
+        enableSorting: false,
+        cell: ({ row }) => (
+          <span className="text-sm font-medium text-foreground">
+            {row.original.listing.title ?? row.original.listing.listingNumber}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "status",
+        header: lang === "ar" ? "الحالة" : "Status",
+        enableSorting: false,
+        cell: ({ row }) => (
+          <span
+            className={[
+              "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
+              INQUIRY_STATUS_STYLES[row.original.status] ?? "bg-muted text-muted-foreground",
+            ].join(" ")}
+          >
+            {lang === "ar"
+              ? (INQUIRY_STATUS_LABELS[row.original.status]?.ar ?? row.original.status)
+              : (INQUIRY_STATUS_LABELS[row.original.status]?.en ?? row.original.status)}
+          </span>
+        ),
+      },
+      {
+        id: "transfer",
+        header: lang === "ar" ? "التحويل" : "Transfer",
+        enableSorting: false,
+        cell: ({ row }) =>
+          row.original.transfer ? (
+            <span className="text-xs text-muted-foreground">{row.original.transfer.status}</span>
+          ) : (
+            "—"
+          ),
+      },
+      {
+        accessorKey: "message",
+        header: lang === "ar" ? "الرسالة" : "Message",
+        enableSorting: false,
+        cell: ({ row }) => (
+          <span className="text-xs text-muted-foreground line-clamp-1 max-w-[200px]">
+            {row.original.message ?? "—"}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "createdAt",
+        header: lang === "ar" ? "التاريخ" : "Date",
+        enableSorting: false,
+        cell: ({ row }) => (
+          <span className="text-xs text-muted-foreground">
+            {new Date(row.original.createdAt).toLocaleDateString(
+              lang === "ar" ? "ar-SA" : "en-GB"
+            )}
+          </span>
+        ),
+      },
+      {
+        id: "actions",
+        header: "",
+        enableSorting: false,
+        enableHiding: false,
+        cell: ({ row }) => (
+          <div className="flex items-center gap-1.5">
+            {row.original.status === "OPEN" && (
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => openConvert(row.original)}
+              >
+                <ArrowRight className="h-3.5 w-3.5 me-1" aria-hidden="true" />
+                {lang === "ar" ? "تحويل لصفقة" : "Convert to Deal"}
+              </Button>
+            )}
+            {row.original.transfer?.status === "PENDING_SETTLEMENT" && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => openSettle(row.original)}
+              >
+                <Handshake className="h-3.5 w-3.5 me-1" aria-hidden="true" />
+                {lang === "ar" ? "تسوية" : "Settle"}
+              </Button>
+            )}
+          </div>
+        ),
+      },
+    ],
+    [lang]
+  );
+
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
@@ -329,161 +549,72 @@ export default function MyListingsPage() {
             }
           />
         ) : (
-          <>
-            {/* Mobile cards */}
-            <div className="space-y-3 md:hidden">
-              {listings.map((listing) => (
-                <Card key={listing.id} className="p-4">
-                  <div className="space-y-2">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-foreground truncate">
-                          {listing.title ?? listing.listingNumber}
-                        </p>
-                        <p className="font-mono text-xs text-muted-foreground">{listing.listingNumber}</p>
-                      </div>
-                      <span
-                        className={cn(
-                          "inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-xs font-medium",
-                          LISTING_STATUS_STYLES[listing.status] ?? "bg-muted text-muted-foreground"
-                        )}
-                      >
-                        {lang === "ar"
-                          ? (LISTING_STATUS_LABELS[listing.status]?.ar ?? listing.status)
-                          : (LISTING_STATUS_LABELS[listing.status]?.en ?? listing.status)}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-bold text-primary">
-                        {formatSARLocal(listing.price, lang)}
-                      </span>
-                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <Users className="h-3.5 w-3.5" aria-hidden="true" />
-                        {listing._count.inquiries}
-                      </div>
-                    </div>
-                    <div className="flex gap-2 pt-1">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1 min-h-[44px]"
-                        onClick={() => openEdit(listing)}
-                        disabled={listing.status === "SOLD_TRANSFERRED"}
-                      >
-                        <Pencil className="h-3.5 w-3.5 me-1" aria-hidden="true" />
-                        {lang === "ar" ? "تعديل" : "Edit"}
-                      </Button>
-                      {(listing.status === "PUBLISHED" || listing.status === "DRAFT") && (
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          className="flex-1 min-h-[44px]"
-                          onClick={() => openUnpublish(listing)}
-                        >
-                          <EyeOff className="h-3.5 w-3.5 me-1" aria-hidden="true" />
-                          {lang === "ar" ? "إلغاء النشر" : "Unpublish"}
-                        </Button>
-                      )}
-                    </div>
+          <DataTable
+            columns={listingColumns}
+            data={listings}
+            getRowId={(r) => r.id}
+            locale={lang === "ar" ? "ar" : "en"}
+            pagination
+            pageSize={10}
+            emptyTitle={lang === "ar" ? "لا توجد إعلانات" : "No listings"}
+            emptyDescription={lang === "ar" ? "لا توجد إعلانات تطابق هذه الفلاتر" : "No listings match the current filters"}
+            rowClassName={(row) =>
+              row.status === "SOLD_TRANSFERRED" ? "opacity-60" : undefined
+            }
+            mobileCard={(row) => (
+              <div className="space-y-2">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-foreground truncate">
+                      {row.title ?? row.listingNumber}
+                    </p>
+                    <p className="font-mono text-xs text-muted-foreground">{row.listingNumber}</p>
                   </div>
-                </Card>
-              ))}
-            </div>
-
-            {/* Desktop table */}
-            <div className="hidden md:block">
-              <Card className="overflow-hidden">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>{lang === "ar" ? "رقم الإعلان" : "Listing #"}</TableHead>
-                      <TableHead>{lang === "ar" ? "العنوان" : "Title"}</TableHead>
-                      <TableHead>{lang === "ar" ? "الحالة" : "Status"}</TableHead>
-                      <TableHead>{lang === "ar" ? "السعر" : "Price"}</TableHead>
-                      <TableHead>{lang === "ar" ? "الموقع" : "Location"}</TableHead>
-                      <TableHead>{lang === "ar" ? "الاستفسارات" : "Inquiries"}</TableHead>
-                      <TableHead>{lang === "ar" ? "تاريخ النشر" : "Published"}</TableHead>
-                      <TableHead>{lang === "ar" ? "إجراءات" : "Actions"}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {listings.map((listing) => (
-                      <TableRow key={listing.id}>
-                        <TableCell>
-                          <span className="font-mono text-xs text-muted-foreground">
-                            {listing.listingNumber}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <span className="text-sm font-medium text-foreground line-clamp-1">
-                            {listing.title ?? "—"}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <span
-                            className={cn(
-                              "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
-                              LISTING_STATUS_STYLES[listing.status] ?? "bg-muted text-muted-foreground"
-                            )}
-                          >
-                            {lang === "ar"
-                              ? (LISTING_STATUS_LABELS[listing.status]?.ar ?? listing.status)
-                              : (LISTING_STATUS_LABELS[listing.status]?.en ?? listing.status)}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <span className="text-sm font-semibold text-primary">
-                            {formatSARLocal(listing.price, lang)}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <span className="text-sm text-foreground">
-                            {[listing.city, listing.district].filter(Boolean).join("، ") || "—"}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1.5 text-sm text-foreground">
-                            <Users className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
-                            {listing._count.inquiries}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <span className="text-xs text-muted-foreground">
-                            {listing.publishedAt
-                              ? new Date(listing.publishedAt).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-GB")
-                              : "—"}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1.5">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => openEdit(listing)}
-                              disabled={listing.status === "SOLD_TRANSFERRED"}
-                              aria-label={lang === "ar" ? `تعديل ${listing.listingNumber}` : `Edit ${listing.listingNumber}`}
-                            >
-                              <Pencil className="h-4 w-4" aria-hidden="true" />
-                            </Button>
-                            {(listing.status === "PUBLISHED" || listing.status === "DRAFT") && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => openUnpublish(listing)}
-                                aria-label={lang === "ar" ? `إلغاء نشر ${listing.listingNumber}` : `Unpublish ${listing.listingNumber}`}
-                              >
-                                <EyeOff className="h-4 w-4 text-destructive" aria-hidden="true" />
-                              </Button>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </Card>
-            </div>
-          </>
+                  <Badge
+                    variant={LISTING_STATUS_BADGE[row.status] ?? "default"}
+                    size="sm"
+                    className="shrink-0"
+                  >
+                    {lang === "ar"
+                      ? (LISTING_STATUS_LABELS[row.status]?.ar ?? row.status)
+                      : (LISTING_STATUS_LABELS[row.status]?.en ?? row.status)}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-bold text-primary">
+                    {formatSARLocal(row.price, lang)}
+                  </span>
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Users className="h-3.5 w-3.5" aria-hidden="true" />
+                    {row._count.inquiries}
+                  </div>
+                </div>
+                <div className="flex gap-2 pt-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 min-h-[44px]"
+                    onClick={() => openEdit(row)}
+                    disabled={row.status === "SOLD_TRANSFERRED"}
+                  >
+                    <Pencil className="h-3.5 w-3.5 me-1" aria-hidden="true" />
+                    {lang === "ar" ? "تعديل" : "Edit"}
+                  </Button>
+                  {(row.status === "PUBLISHED" || row.status === "DRAFT") && (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="flex-1 min-h-[44px]"
+                      onClick={() => openUnpublish(row)}
+                    >
+                      <EyeOff className="h-3.5 w-3.5 me-1" aria-hidden="true" />
+                      {lang === "ar" ? "إلغاء النشر" : "Unpublish"}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
+          />
         )}
       </section>
 
@@ -512,144 +643,67 @@ export default function MyListingsPage() {
             compact
           />
         ) : (
-          <>
-            {/* Mobile cards */}
-            <div className="space-y-3 md:hidden">
-              {inquiries.map((inq) => (
-                <Card key={inq.id} className="p-4">
-                  <div className="space-y-2">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-foreground truncate">
-                          {inq.listing.title ?? inq.listing.listingNumber}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(inq.createdAt).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-GB")}
-                        </p>
-                      </div>
-                      <span
-                        className={cn(
-                          "inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-xs font-medium",
-                          INQUIRY_STATUS_STYLES[inq.status] ?? "bg-muted text-muted-foreground"
-                        )}
-                      >
-                        {lang === "ar"
-                          ? (INQUIRY_STATUS_LABELS[inq.status]?.ar ?? inq.status)
-                          : (INQUIRY_STATUS_LABELS[inq.status]?.en ?? inq.status)}
-                      </span>
-                    </div>
-                    {inq.message && (
-                      <p className="text-xs text-muted-foreground line-clamp-2">{inq.message}</p>
-                    )}
-                    <div className="flex flex-wrap gap-2 pt-1">
-                      {inq.status === "OPEN" && (
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          className="min-h-[44px]"
-                          onClick={() => openConvert(inq)}
-                        >
-                          <ArrowRight className="h-3.5 w-3.5 me-1" aria-hidden="true" />
-                          {lang === "ar" ? "تحويل لصفقة" : "Convert to Deal"}
-                        </Button>
-                      )}
-                      {inq.transfer?.status === "PENDING_SETTLEMENT" && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="min-h-[44px]"
-                          onClick={() => openSettle(inq)}
-                        >
-                          <Handshake className="h-3.5 w-3.5 me-1" aria-hidden="true" />
-                          {lang === "ar" ? "تسوية التحويل" : "Settle & Transfer"}
-                        </Button>
-                      )}
-                    </div>
+          <DataTable
+            columns={inquiryColumns}
+            data={inquiries}
+            getRowId={(r) => r.id}
+            locale={lang === "ar" ? "ar" : "en"}
+            pagination
+            pageSize={10}
+            emptyTitle={lang === "ar" ? "لا توجد استفسارات" : "No inquiries"}
+            emptyDescription={lang === "ar" ? "لا توجد استفسارات تطابق هذه الفلاتر" : "No inquiries match the current filters"}
+            mobileCard={(inq) => (
+              <div className="space-y-2">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">
+                      {inq.listing.title ?? inq.listing.listingNumber}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(inq.createdAt).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-GB")}
+                    </p>
                   </div>
-                </Card>
-              ))}
-            </div>
-
-            {/* Desktop table */}
-            <div className="hidden md:block">
-              <Card className="overflow-hidden">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>{lang === "ar" ? "الإعلان" : "Listing"}</TableHead>
-                      <TableHead>{lang === "ar" ? "الحالة" : "Status"}</TableHead>
-                      <TableHead>{lang === "ar" ? "التحويل" : "Transfer"}</TableHead>
-                      <TableHead>{lang === "ar" ? "الرسالة" : "Message"}</TableHead>
-                      <TableHead>{lang === "ar" ? "التاريخ" : "Date"}</TableHead>
-                      <TableHead>{lang === "ar" ? "إجراءات" : "Actions"}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {inquiries.map((inq) => (
-                      <TableRow key={inq.id}>
-                        <TableCell>
-                          <span className="text-sm font-medium text-foreground">
-                            {inq.listing.title ?? inq.listing.listingNumber}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <span
-                            className={cn(
-                              "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
-                              INQUIRY_STATUS_STYLES[inq.status] ?? "bg-muted text-muted-foreground"
-                            )}
-                          >
-                            {lang === "ar"
-                              ? (INQUIRY_STATUS_LABELS[inq.status]?.ar ?? inq.status)
-                              : (INQUIRY_STATUS_LABELS[inq.status]?.en ?? inq.status)}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          {inq.transfer ? (
-                            <span className="text-xs text-muted-foreground">{inq.transfer.status}</span>
-                          ) : "—"}
-                        </TableCell>
-                        <TableCell>
-                          <span className="text-xs text-muted-foreground line-clamp-1 max-w-[200px]">
-                            {inq.message ?? "—"}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <span className="text-xs text-muted-foreground">
-                            {new Date(inq.createdAt).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-GB")}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1.5">
-                            {inq.status === "OPEN" && (
-                              <Button
-                                variant="primary"
-                                size="sm"
-                                onClick={() => openConvert(inq)}
-                              >
-                                <ArrowRight className="h-3.5 w-3.5 me-1" aria-hidden="true" />
-                                {lang === "ar" ? "تحويل لصفقة" : "Convert to Deal"}
-                              </Button>
-                            )}
-                            {inq.transfer?.status === "PENDING_SETTLEMENT" && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => openSettle(inq)}
-                              >
-                                <Handshake className="h-3.5 w-3.5 me-1" aria-hidden="true" />
-                                {lang === "ar" ? "تسوية" : "Settle"}
-                              </Button>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </Card>
-            </div>
-          </>
+                  <span
+                    className={[
+                      "inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-xs font-medium",
+                      INQUIRY_STATUS_STYLES[inq.status] ?? "bg-muted text-muted-foreground",
+                    ].join(" ")}
+                  >
+                    {lang === "ar"
+                      ? (INQUIRY_STATUS_LABELS[inq.status]?.ar ?? inq.status)
+                      : (INQUIRY_STATUS_LABELS[inq.status]?.en ?? inq.status)}
+                  </span>
+                </div>
+                {inq.message && (
+                  <p className="text-xs text-muted-foreground line-clamp-2">{inq.message}</p>
+                )}
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {inq.status === "OPEN" && (
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      className="min-h-[44px]"
+                      onClick={() => openConvert(inq)}
+                    >
+                      <ArrowRight className="h-3.5 w-3.5 me-1" aria-hidden="true" />
+                      {lang === "ar" ? "تحويل لصفقة" : "Convert to Deal"}
+                    </Button>
+                  )}
+                  {inq.transfer?.status === "PENDING_SETTLEMENT" && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="min-h-[44px]"
+                      onClick={() => openSettle(inq)}
+                    >
+                      <Handshake className="h-3.5 w-3.5 me-1" aria-hidden="true" />
+                      {lang === "ar" ? "تسوية التحويل" : "Settle & Transfer"}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
+          />
         )}
       </section>
 
