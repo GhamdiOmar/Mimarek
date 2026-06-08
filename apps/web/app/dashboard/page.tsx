@@ -483,7 +483,7 @@ export default function DashboardPage() {
       {/* ─── Desktop (md+) ───────────────────────────────────────── */}
       <div className="hidden md:block space-y-8">
       {/* Greeting + toolbar */}
-      <div className="glass rounded-xl p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="rounded-lg border border-border bg-card card-quiet p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">
             {greeting}، {userName}
