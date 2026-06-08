@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import {
   KPICard,
+  PageIntro,
   SARAmount,
   Card,
   CardHeader,
@@ -113,27 +114,24 @@ export default function LeasingDashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">
-            {lang === "ar" ? "التأجير" : "Leasing"}
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            {lang === "ar"
-              ? "عقود، طلبات، ومسار التحويل"
-              : "Leases, applications, and pipeline"}
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <DateRangePicker locale={lang} />
-          <LastUpdatedAgo
-            timestamp={lastLoaded}
-            locale={lang}
-            onRefresh={load}
-          />
-        </div>
-      </div>
+      <PageIntro
+        title={lang === "ar" ? "التأجير" : "Leasing"}
+        description={
+          lang === "ar"
+            ? "عقود، طلبات، ومسار التحويل"
+            : "Leases, applications, and pipeline"
+        }
+        actions={
+          <div className="flex flex-wrap items-center gap-3">
+            <DateRangePicker locale={lang} />
+            <LastUpdatedAgo
+              timestamp={lastLoaded}
+              locale={lang}
+              onRefresh={load}
+            />
+          </div>
+        }
+      />
 
       {/* Error */}
       {error && (

@@ -7,8 +7,6 @@ import * as React from "react";
 import {
   ArrowLeft,
   CreditCard,
-  ChevronLeft,
-  ChevronRight,
   Users,
   CheckCircle2,
   Clock,
@@ -23,12 +21,6 @@ import {
 import {
   Button,
   Card,
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
   AppBar,
   DataCard,
   EmptyState,
@@ -37,6 +29,8 @@ import {
   SARAmount,
   Badge,
   DirectionalIcon,
+  DataTable,
+  type ColumnDef,
 } from "@repo/ui";
 import { PageHeader } from "@repo/ui/components/PageHeader";
 import Link from "next/link";
@@ -291,6 +285,88 @@ export default function AdminSubscriptionsPage() {
       })
     : subscriptions;
 
+  // ─── DataTable columns ───────────────────────────────────────────────────
+
+  const columns: ColumnDef<Subscription>[] = [
+    {
+      accessorKey: "organization",
+      header: t.organization,
+      enableSorting: false,
+      cell: ({ row }) => {
+        const org = row.original.organization;
+        return (
+          <div>
+            <div className="font-medium text-foreground">
+              {getOrgDisplayName(org)}
+            </div>
+            {org.crNumber && (
+              <div className="text-xs text-muted-foreground mt-0.5">
+                {t.crNumber}: {org.crNumber}
+              </div>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "plan",
+      header: t.plan,
+      enableSorting: false,
+      cell: ({ row }) => (
+        <span className="font-medium text-foreground">
+          {lang === "ar" ? row.original.plan.nameAr : row.original.plan.nameEn}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "status",
+      header: t.status,
+      enableSorting: false,
+      cell: ({ row }) => {
+        const s = row.original.status;
+        return (
+          <span
+            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${statusColors[s] ?? "bg-muted text-muted-foreground"}`}
+          >
+            {statusIcons[s]}
+            {t.statuses[s] ?? s}
+          </span>
+        );
+      },
+    },
+    {
+      accessorKey: "billingCycle",
+      header: t.billingCycle,
+      enableSorting: false,
+      cell: ({ row }) => (
+        <span className="text-muted-foreground">
+          {t.cycles[row.original.billingCycle] ?? row.original.billingCycle}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "priceAtRenewal",
+      header: t.price,
+      enableSorting: false,
+      meta: { numeric: true },
+      cell: ({ row }) => (
+        <span className="font-medium text-foreground">
+          {formatPrice(row.original.priceAtRenewal)}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "currentPeriodEnd",
+      header: t.periodEnd,
+      enableSorting: false,
+      cell: ({ row }) => (
+        <span className="text-muted-foreground">
+          {formatDate(row.original.currentPeriodEnd)}
+        </span>
+      ),
+    },
+  ];
+
   // ─── Render ─────────────────────────────────────────────────────────────
 
   return (
@@ -450,10 +526,10 @@ export default function AdminSubscriptionsPage() {
       )}
     </div>
 
-    {/* ─── Desktop (≥ md) ─ unchanged ───────────────────────────────── */}
+    {/* ─── Desktop (≥ md) ─────────────────────────────────────────────── */}
     <div className="hidden md:block">
     <div className="space-y-6" dir={lang === "ar" ? "rtl" : "ltr"}>
-      {/* Back Link + Language Toggle */}
+      {/* Back Link */}
       <div className="flex items-center justify-between">
         <Link
           href="/dashboard/admin"
@@ -511,123 +587,44 @@ export default function AdminSubscriptionsPage() {
         </Card>
       </div>
 
-      {/* Subscriptions Table */}
-      <Card className="overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>{t.organization}</TableHead>
-              <TableHead>{t.plan}</TableHead>
-              <TableHead>{t.status}</TableHead>
-              <TableHead>{t.billingCycle}</TableHead>
-              <TableHead>{t.price}</TableHead>
-              <TableHead>{t.periodEnd}</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={6} className="py-12 text-center text-muted-foreground">
-                  <div className="flex items-center justify-center gap-2">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary" />
-                    {t.loading}
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : subscriptions.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="p-0">
-                  <EmptyState
-                    variant="first-time"
-                    icon={<Receipt className="h-12 w-12" />}
-                    title={t.noSubscriptions}
-                    description={t.noSubscriptionsDesc}
-                  />
-                </TableCell>
-              </TableRow>
-            ) : (
-              subscriptions.map((sub) => (
-                <TableRow key={sub.id}>
-                  {/* Organization */}
-                  <TableCell>
-                    <div className="font-medium text-foreground">
-                      {getOrgDisplayName(sub.organization)}
-                    </div>
-                    {sub.organization.crNumber && (
-                      <div className="text-xs text-muted-foreground mt-0.5">
-                        {t.crNumber}: {sub.organization.crNumber}
-                      </div>
-                    )}
-                  </TableCell>
-
-                  {/* Plan */}
-                  <TableCell>
-                    <span className="font-medium text-foreground">
-                      {lang === "ar" ? sub.plan.nameAr : sub.plan.nameEn}
-                    </span>
-                  </TableCell>
-
-                  {/* Status */}
-                  <TableCell>
-                    <span
-                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${statusColors[sub.status] ?? "bg-muted text-muted-foreground"}`}
-                    >
-                      {statusIcons[sub.status]}
-                      {t.statuses[sub.status] ?? sub.status}
-                    </span>
-                  </TableCell>
-
-                  {/* Billing Cycle */}
-                  <TableCell className="text-muted-foreground">
-                    {t.cycles[sub.billingCycle] ?? sub.billingCycle}
-                  </TableCell>
-
-                  {/* Price */}
-                  <TableCell className="font-medium text-foreground">
-                    {formatPrice(sub.priceAtRenewal)}
-                  </TableCell>
-
-                  {/* Period End */}
-                  <TableCell className="text-muted-foreground">
-                    {formatDate(sub.currentPeriodEnd)}
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </Card>
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-muted-foreground">
-            {t.page} {page} {t.of} {totalPages}
-          </span>
-          <div className="flex gap-2">
-            <Button
-              size="sm"
-              variant="secondary"
-              disabled={page <= 1}
-              onClick={() => setPage(page - 1)}
-             
-            >
-              <DirectionalIcon icon={ChevronLeft} className="h-3.5 w-3.5 me-1" />
-              {t.prev}
-            </Button>
-            <Button
-              size="sm"
-              variant="secondary"
-              disabled={page >= totalPages}
-              onClick={() => setPage(page + 1)}
-             
-            >
-              {t.next}
-              <DirectionalIcon icon={ChevronRight} className="h-3.5 w-3.5 ms-1" />
-            </Button>
-          </div>
-        </div>
-      )}
+      {/* Subscriptions DataTable */}
+      <DataTable
+        columns={columns}
+        data={subscriptions}
+        loading={loading}
+        locale={lang === "ar" ? "ar" : "en"}
+        pagination
+        pageSize={10}
+        getRowId={(r) => r.id}
+        emptyTitle={t.noSubscriptions}
+        emptyDescription={t.noSubscriptionsDesc}
+        mobileCard={(sub) => {
+          const orgName = getOrgDisplayName(sub.organization);
+          const planName = lang === "ar" ? sub.plan.nameAr : sub.plan.nameEn;
+          const renewal = formatDate(sub.currentPeriodEnd);
+          const priceNum =
+            sub.priceAtRenewal != null ? Number(sub.priceAtRenewal) : null;
+          return (
+            <DataCard
+              icon={Building2}
+              iconTone="purple"
+              title={orgName}
+              subtitle={
+                <span className="inline-flex items-center gap-2">
+                  <span className="truncate">{planName}</span>
+                  <Badge variant={subStatusVariant(sub.status)} size="sm">
+                    {t.statuses[sub.status] ?? sub.status}
+                  </Badge>
+                  <span className="text-muted-foreground">{renewal}</span>
+                </span>
+              }
+              trailing={
+                <SARAmount value={priceNum} size={14} compact className="tabular-nums" />
+              }
+            />
+          );
+        }}
+      />
     </div>
     </div>
     </>

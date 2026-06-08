@@ -59,35 +59,26 @@ const CATEGORY_OPTIONS = [
 ];
 
 function statusBadge(status: string, lang: "ar" | "en") {
-  const map: Record<string, { label: { ar: string; en: string }; cls: string; icon: React.ReactNode }> = {
-    OPEN:            { label: { ar: "مفتوح", en: "Open" },                cls: "bg-info/15 text-info",        icon: <AlertCircle className="h-3 w-3" /> },
-    IN_PROGRESS:     { label: { ar: "قيد المعالجة", en: "In Progress" },  cls: "bg-warning/15 text-warning",  icon: <Clock className="h-3 w-3" /> },
-    WAITING_ON_USER: { label: { ar: "بانتظار المستخدم", en: "Waiting" },  cls: "bg-primary/15 text-primary",  icon: <Clock className="h-3 w-3" /> },
-    RESOLVED:        { label: { ar: "محلول", en: "Resolved" },            cls: "bg-success/15 text-success",  icon: <CheckCircle className="h-3 w-3" /> },
-    CLOSED:          { label: { ar: "مغلق", en: "Closed" },               cls: "bg-muted text-muted-foreground", icon: <XCircle className="h-3 w-3" /> },
+  const map: Record<string, { label: { ar: string; en: string }; variant: "info" | "warning" | "pending" | "success" | "default"; icon: React.ReactNode }> = {
+    OPEN:            { label: { ar: "مفتوح", en: "Open" },                variant: "info",    icon: <AlertCircle className="h-3 w-3" /> },
+    IN_PROGRESS:     { label: { ar: "قيد المعالجة", en: "In Progress" },  variant: "warning", icon: <Clock className="h-3 w-3" /> },
+    WAITING_ON_USER: { label: { ar: "بانتظار المستخدم", en: "Waiting" },  variant: "pending", icon: <Clock className="h-3 w-3" /> },
+    RESOLVED:        { label: { ar: "محلول", en: "Resolved" },            variant: "success", icon: <CheckCircle className="h-3 w-3" /> },
+    CLOSED:          { label: { ar: "مغلق", en: "Closed" },               variant: "default", icon: <XCircle className="h-3 w-3" /> },
   };
-  const entry = map[status] ?? { label: { ar: status, en: status }, cls: "bg-muted text-muted-foreground", icon: null };
-  return (
-    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${entry.cls}`}>
-      {entry.icon}
-      {entry.label[lang]}
-    </span>
-  );
+  const entry = map[status] ?? { label: { ar: status, en: status }, variant: "default" as const, icon: null };
+  return <Badge variant={entry.variant} size="sm">{entry.icon}{entry.label[lang]}</Badge>;
 }
 
 function priorityBadge(priority: string, lang: "ar" | "en") {
-  const map: Record<string, { label: { ar: string; en: string }; cls: string }> = {
-    LOW:    { label: { ar: "منخفض", en: "Low" },    cls: "bg-muted text-muted-foreground" },
-    MEDIUM: { label: { ar: "متوسط", en: "Medium" }, cls: "bg-info/15 text-info" },
-    HIGH:   { label: { ar: "عالي", en: "High" },    cls: "bg-warning/15 text-warning" },
-    URGENT: { label: { ar: "عاجل", en: "Urgent" },  cls: "bg-destructive/15 text-destructive" },
+  const map: Record<string, { label: { ar: string; en: string }; variant: "default" | "info" | "warning" | "error" }> = {
+    LOW:    { label: { ar: "منخفض", en: "Low" },    variant: "default" },
+    MEDIUM: { label: { ar: "متوسط", en: "Medium" }, variant: "info" },
+    HIGH:   { label: { ar: "عالي", en: "High" },    variant: "warning" },
+    URGENT: { label: { ar: "عاجل", en: "Urgent" },  variant: "error" },
   };
-  const entry = map[priority] ?? { label: { ar: priority, en: priority }, cls: "bg-muted text-muted-foreground" };
-  return (
-    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${entry.cls}`}>
-      {entry.label[lang]}
-    </span>
-  );
+  const entry = map[priority] ?? { label: { ar: priority, en: priority }, variant: "default" as const };
+  return <Badge variant={entry.variant} size="sm">{entry.label[lang]}</Badge>;
 }
 
 function categoryLabel(category: string, lang: "ar" | "en") {

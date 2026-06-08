@@ -20,17 +20,12 @@ import {
 } from "lucide-react";
 import {
   Button,
-  Card,
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
   AppBar,
   ActivityTimeline,
   EmptyState,
   DirectionalIcon,
+  DataTable,
+  type ColumnDef,
   type ActivityTimelineEvent,
   type ActivityTimelineTone,
 } from "@repo/ui";
@@ -215,6 +210,104 @@ export default function AuditLogPage() {
 
   const FILTER_ACTIONS = ["", ...ACTIONS];
 
+  // ── DataTable column definitions ──────────────────────────────────────────
+  const columns = React.useMemo<ColumnDef<AuditLog>[]>(
+    () => [
+      {
+        accessorKey: "createdAt",
+        header: t.timestamp,
+        enableSorting: false,
+        cell: ({ row }) => (
+          <span className="text-muted-foreground whitespace-nowrap tabular-nums text-xs">
+            {formatDate(row.original.createdAt)}
+          </span>
+        ),
+      },
+      {
+        id: "user",
+        header: t.user,
+        enableSorting: false,
+        cell: ({ row }) => (
+          <div className="text-xs">
+            <div className="font-medium">{row.original.userEmail}</div>
+            <div className="text-[10px] text-muted-foreground">{row.original.userRole}</div>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "action",
+        header: t.action,
+        enableSorting: false,
+        cell: ({ row }) => (
+          <span
+            className={cn(
+              "px-2 py-0.5 rounded-full text-[10px] font-semibold",
+              actionColors[row.original.action] || "bg-muted text-muted-foreground",
+            )}
+          >
+            {row.original.action}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "resource",
+        header: t.resource,
+        enableSorting: false,
+        cell: ({ row }) => (
+          <span className="font-medium text-xs">{row.original.resource}</span>
+        ),
+      },
+      {
+        accessorKey: "resourceId",
+        header: t.resourceId,
+        enableSorting: false,
+        cell: ({ row }) => (
+          <span className="text-muted-foreground font-mono text-[10px]">
+            {row.original.resourceId
+              ? row.original.resourceId.slice(0, 12) + "..."
+              : "—"}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "ipAddress",
+        header: t.ip,
+        enableSorting: false,
+        cell: ({ row }) => (
+          <span className="text-muted-foreground text-xs">
+            {row.original.ipAddress || "—"}
+          </span>
+        ),
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [lang],
+  );
+
+  // ── Mobile card renderer ──────────────────────────────────────────────────
+  const mobileCard = (row: AuditLog) => (
+    <div className="flex items-start gap-3 py-2">
+      <div className="flex-1 min-w-0 space-y-0.5">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span
+            className={cn(
+              "px-2 py-0.5 rounded-full text-[10px] font-semibold shrink-0",
+              actionColors[row.action] || "bg-muted text-muted-foreground",
+            )}
+          >
+            {row.action}
+          </span>
+          <span className="text-xs font-medium truncate">{row.resource}</span>
+        </div>
+        <div className="text-xs text-muted-foreground truncate">{row.userEmail}</div>
+        <div className="text-[10px] text-muted-foreground/80 tabular-nums">
+          {formatRelative(row.createdAt)}
+          {row.ipAddress ? ` · ${row.ipAddress}` : ""}
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <>
       {/* ─── Mobile (< md) ─────────────────────────────────────────────── */}
@@ -242,6 +335,7 @@ export default function AuditLogPage() {
                   type="button"
                   variant={isActive ? "primary" : "subtle"}
                   size="sm"
+                  aria-pressed={isActive}
                   onClick={() => {
                     setActionFilter(a);
                     setPage(1);
@@ -392,71 +486,18 @@ export default function AuditLogPage() {
           </div>
         </div>
 
-        {/* Table */}
-        <Card className="overflow-hidden rounded-xl">
-          <Table className="text-xs">
-            <TableHeader>
-              <TableRow>
-                <TableHead className="font-medium">{t.timestamp}</TableHead>
-                <TableHead className="font-medium">{t.user}</TableHead>
-                <TableHead className="font-medium">{t.action}</TableHead>
-                <TableHead className="font-medium">{t.resource}</TableHead>
-                <TableHead className="font-medium">{t.resourceId}</TableHead>
-                <TableHead className="font-medium">{t.ip}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
-                    <div className="animate-pulse">Loading...</div>
-                  </TableCell>
-                </TableRow>
-              ) : logs.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">{t.noLogs}</TableCell>
-                </TableRow>
-              ) : (
-                logs.map((log) => (
-                  <TableRow key={log.id}>
-                    <TableCell className="text-muted-foreground whitespace-nowrap">{formatDate(log.createdAt)}</TableCell>
-                    <TableCell>
-                      <div className="font-medium">{log.userEmail}</div>
-                      <div className="text-[10px] text-muted-foreground">{log.userRole}</div>
-                    </TableCell>
-                    <TableCell>
-                      <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-semibold", actionColors[log.action] || "bg-muted text-muted-foreground")}>
-                        {log.action}
-                      </span>
-                    </TableCell>
-                    <TableCell className="font-medium">{log.resource}</TableCell>
-                    <TableCell className="text-muted-foreground font-mono text-[10px]">{log.resourceId ? log.resourceId.slice(0, 12) + "..." : "—"}</TableCell>
-                    <TableCell className="text-muted-foreground">{log.ipAddress || "—"}</TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </Card>
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between mt-4">
-            <span className="text-xs text-muted-foreground">
-              {t.page} {page} {t.of} {totalPages}
-            </span>
-            <div className="flex gap-2">
-              <Button size="sm" variant="secondary" disabled={page <= 1} onClick={() => setPage(page - 1)}>
-                <DirectionalIcon icon={ChevronLeft} className="h-3.5 w-3.5" />
-                {t.prev}
-              </Button>
-              <Button size="sm" variant="secondary" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>
-                {t.next}
-                <DirectionalIcon icon={ChevronRight} className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-          </div>
-        )}
+        {/* DataTable */}
+        <DataTable
+          columns={columns}
+          data={logs}
+          mobileCard={mobileCard}
+          locale={lang === "ar" ? "ar" : "en"}
+          pagination
+          pageSize={10}
+          getRowId={(r) => r.id}
+          emptyTitle={t.noLogs}
+          emptyDescription={t.noLogsDesc}
+        />
       </div>
     </>
   );

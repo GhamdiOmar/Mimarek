@@ -485,6 +485,45 @@ More than 3 icon actions in a row/toolbar → collapse the overflow into a three
 
 Both `IconButton` and `ActionLink` live in `packages/ui/src/components/` and are exported from `@repo/ui` alongside `Button`.
 
+#### 6.6.7 Row-action standard (tables, lists, cards) — icon-only
+
+Every per-row action is an **icon-only `IconButton`** — including "forward" actions that advance a workflow. No labelled text buttons or text links inside a row-action cluster. (Decision: 2026-06-07, ratified across the P6 table migrations.)
+
+- **Component & size:** `<IconButton icon variant="ghost" aria-label .../>` at the **default `size="icon"`**. Never override with `h-6`/`h-7`/`h-8`/`size="sm"` — uniform size is the whole point.
+- **Container:** `<div className="flex items-center justify-end gap-1">`. Gap is always `gap-1`.
+- **Order:** view → forward action(s) → destructive. Destructive last.
+- **Tone:** destructive actions carry `className="text-destructive"`. **Forward actions** (advance the lifecycle — e.g. Convert→Contract, Sign, Reply, Record-payment) carry `className="text-primary"` plus a distinct icon so they read as workflow-advancing, not "view". Canonical forward icons: convert-to-contract = `FileSignature`, sign = `PenLine`, record-payment = `CreditCard`.
+- **Navigation-as-action:** if the forward action navigates, wrap the `IconButton` in `next/link` with `tabIndex={-1}` on the `<Link>` (the IconButton carries the tab stop + `aria-label`) — do **not** use `ActionLink` text inside a row.
+- **Overflow:** more than 3 icon actions in one row → collapse to a three-dot menu (§ 6.6.0).
+- **Inside `DataTable`:** the actions column is `{ id: "actions", header: "", enableSorting: false, enableHiding: false, cell: ({ row }) => <cluster/> }`.
+
+**Canonical `aria-label` lexicon (sentence case, one phrasing per action — EN / AR):**
+
+| Action | Label |
+|---|---|
+| View / open record | `View` / `عرض` |
+| Edit | `Edit` / `تعديل` |
+| Delete (destructive) | `Delete` / `حذف` |
+| Remove from a list | `Remove` / `إزالة` |
+| Close an overlay | `Close` / `إغلاق` |
+| Clear a filter/search | `Clear` / `مسح` |
+| Convert reservation → contract | `Convert to contract` / `تحويل لعقد` |
+| Sign | `Sign` / `توقيع` |
+
+Never use ad-hoc variants for the same action ("View Profile" / "View Details" / "View profile" are all just **View**).
+
+#### 6.6.8 Filter / segment pill standard
+
+Interactive filter, segment, and view-toggle pills use one mapping everywhere — **mobile and desktop identical**:
+
+- Active = `variant="primary"`; inactive = `variant="subtle"`.
+- `size="sm"`, shape `rounded-full`.
+- `aria-pressed={isActive}` on every toggle pill. Use `role="tab"`/`tablist` semantics (with `aria-selected`) **only** for genuine tab strips; otherwise `aria-pressed`, not `aria-selected`.
+- Never give the same control different active/inactive variants on mobile vs desktop.
+- Non-interactive status chips are **not** pills — render those as `<Badge>` (§ 6.2 / Badge primitive), never as a fake pill.
+
+True on/off toggles use the shared **`<Switch>`** primitive (`@repo/ui`, purple `data-[state=checked]`), never a hand-rolled `role="switch"` `<button>`.
+
 #### Rationale & references
 
 This taxonomy codifies established button-vs-link and target-size guidance — not a Mimaric invention:

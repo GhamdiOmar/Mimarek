@@ -13,6 +13,7 @@ import {
   Home,
   Key,
   Eye,
+  PenLine,
 } from "lucide-react";
 import {
   Button,
@@ -20,12 +21,6 @@ import {
   Badge,
   Input,
   Card,
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
   PageIntro,
   KPICard,
   ResponsiveDialog,
@@ -43,6 +38,8 @@ import {
   BottomSheet,
   Alert,
   AlertDescription,
+  DataTable,
+  type ColumnDef,
 } from "@repo/ui";
 import { useLanguage } from "../../../components/LanguageProvider";
 import { usePermissions } from "../../../hooks/usePermissions";
@@ -82,12 +79,12 @@ type Contract = {
 type Customer = { id: string; name: string };
 type Unit = { id: string; number: string; status: string };
 
-const CONTRACT_STATUS_COLORS: Record<string, string> = {
-  DRAFT: "bg-muted text-muted-foreground",
-  SENT: "bg-info/15 text-info",
-  SIGNED: "bg-success/15 text-success",
-  CANCELLED: "bg-destructive/15 text-destructive",
-  VOID: "bg-warning/15 text-warning",
+const CONTRACT_STATUS_VARIANT: Record<string, React.ComponentProps<typeof Badge>["variant"]> = {
+  DRAFT: "draft",
+  SENT: "info",
+  SIGNED: "success",
+  CANCELLED: "error",
+  VOID: "warning",
 };
 
 const CONTRACT_STATUS_LABELS: Record<string, { ar: string; en: string }> = {
@@ -368,6 +365,208 @@ export default function ContractsPage() {
       setSubmitting(false);
     }
   }
+
+  // ── Sale table columns ──────────────────────────────────────────────
+  const saleColumns: ColumnDef<Contract>[] = [
+    {
+      accessorKey: "contractNumber",
+      header: lang === "ar" ? "رقم العقد" : "Contract #",
+      cell: ({ row }) => (
+        <span className="font-mono text-xs text-muted-foreground">
+          {row.original.contractNumber ?? "—"}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "customer.name",
+      header: lang === "ar" ? "العميل" : "Client",
+      cell: ({ row }) => (
+        <span className="font-medium">{row.original.customer.name}</span>
+      ),
+    },
+    {
+      id: "property",
+      header: lang === "ar" ? "العقار" : "Property",
+      enableSorting: false,
+      cell: ({ row }) => (
+        <div className="text-sm">
+          <p className="font-medium">
+            {lang === "ar" ? "وحدة" : "Unit"} {row.original.unit.number}
+          </p>
+          <p className="text-muted-foreground text-xs">
+            {(row.original.unit as any).buildingName ?? (row.original.unit as any).city ?? "—"}
+          </p>
+        </div>
+      ),
+    },
+    {
+      accessorKey: "amount",
+      header: lang === "ar" ? "المبلغ" : "Amount (SAR)",
+      meta: { numeric: true },
+      cell: ({ row }) => SAR(Number(row.original.amount)),
+    },
+    {
+      accessorKey: "status",
+      header: lang === "ar" ? "الحالة" : "Status",
+      cell: ({ row }) => (
+        <Badge variant={CONTRACT_STATUS_VARIANT[row.original.status] ?? "default"} size="sm">
+          {lang === "ar"
+            ? (CONTRACT_STATUS_LABELS[row.original.status]?.ar ?? row.original.status)
+            : (CONTRACT_STATUS_LABELS[row.original.status]?.en ?? row.original.status)}
+        </Badge>
+      ),
+    },
+    {
+      accessorKey: "signedAt",
+      header: lang === "ar" ? "تاريخ التوقيع" : "Signed Date",
+      cell: ({ row }) =>
+        row.original.signedAt ? (
+          <span className="text-sm text-muted-foreground">
+            {new Date(row.original.signedAt).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-SA")}
+          </span>
+        ) : (
+          <span className="text-muted-foreground/70">—</span>
+        ),
+    },
+    {
+      id: "actions",
+      header: "",
+      enableSorting: false,
+      enableHiding: false,
+      cell: ({ row }) => {
+        const c = row.original;
+        return (
+          <div className="flex items-center justify-end gap-1">
+            <IconButton
+              icon={Eye}
+              aria-label={lang === "ar" ? "عرض التفاصيل" : "View details"}
+              variant="ghost"
+              size="icon"
+              onClick={() => setDetailContract(c)}
+              className="h-8 w-8"
+            />
+            {(c.status === "DRAFT" || c.status === "SENT") && (
+              <IconButton
+                icon={PenLine}
+                aria-label={lang === "ar" ? "توقيع" : "Sign"}
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-primary"
+                onClick={() => handleSignContract(c.id)}
+              />
+            )}
+          </div>
+        );
+      },
+    },
+  ];
+
+  // ── Lease table columns ──────────────────────────────────────────────
+  const leaseColumns: ColumnDef<Contract>[] = [
+    {
+      accessorKey: "contractNumber",
+      header: lang === "ar" ? "رقم العقد" : "Contract #",
+      cell: ({ row }) => (
+        <span className="font-mono text-xs text-muted-foreground">
+          {row.original.contractNumber ?? "—"}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "customer.name",
+      header: lang === "ar" ? "المستأجر" : "Tenant",
+      cell: ({ row }) => (
+        <span className="font-medium">{row.original.customer.name}</span>
+      ),
+    },
+    {
+      id: "property",
+      header: lang === "ar" ? "العقار" : "Property",
+      enableSorting: false,
+      cell: ({ row }) => (
+        <div className="text-sm">
+          <p className="font-medium">
+            {lang === "ar" ? "وحدة" : "Unit"} {row.original.unit.number}
+          </p>
+          <p className="text-muted-foreground text-xs">
+            {(row.original.unit as any).buildingName ?? (row.original.unit as any).city ?? "—"}
+          </p>
+        </div>
+      ),
+    },
+    {
+      accessorKey: "amount",
+      header: lang === "ar" ? "الإيجار السنوي" : "Annual Rent (SAR)",
+      meta: { numeric: true },
+      cell: ({ row }) => SAR(Number(row.original.amount)),
+    },
+    {
+      id: "startDate",
+      header: lang === "ar" ? "تاريخ البداية" : "Start Date",
+      cell: ({ row }) =>
+        row.original.lease?.startDate ? (
+          <span className="text-sm text-muted-foreground">
+            {new Date(row.original.lease.startDate).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-SA")}
+          </span>
+        ) : (
+          <span className="text-muted-foreground/70">—</span>
+        ),
+    },
+    {
+      id: "endDate",
+      header: lang === "ar" ? "تاريخ النهاية" : "End Date",
+      cell: ({ row }) =>
+        row.original.lease?.endDate ? (
+          <span className="text-sm text-muted-foreground">
+            {new Date(row.original.lease.endDate).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-SA")}
+          </span>
+        ) : (
+          <span className="text-muted-foreground/70">—</span>
+        ),
+    },
+    {
+      accessorKey: "status",
+      header: lang === "ar" ? "الحالة" : "Status",
+      cell: ({ row }) => (
+        <Badge variant={CONTRACT_STATUS_VARIANT[row.original.status] ?? "default"} size="sm">
+          {lang === "ar"
+            ? (CONTRACT_STATUS_LABELS[row.original.status]?.ar ?? row.original.status)
+            : (CONTRACT_STATUS_LABELS[row.original.status]?.en ?? row.original.status)}
+        </Badge>
+      ),
+    },
+    {
+      id: "actions",
+      header: "",
+      enableSorting: false,
+      enableHiding: false,
+      cell: ({ row }) => {
+        const c = row.original;
+        return (
+          <div className="flex items-center justify-end gap-1">
+            <IconButton
+              icon={Eye}
+              aria-label={lang === "ar" ? "عرض التفاصيل" : "View details"}
+              variant="ghost"
+              size="icon"
+              onClick={() => setDetailContract(c)}
+              className="h-8 w-8"
+            />
+            {(c.status === "DRAFT" || c.status === "SENT") && (
+              <IconButton
+                icon={PenLine}
+                aria-label={lang === "ar" ? "توقيع" : "Sign"}
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-primary"
+                onClick={() => handleSignContract(c.id)}
+              />
+            )}
+          </div>
+        );
+      },
+    },
+  ];
 
   return (
     <>
@@ -770,137 +969,93 @@ export default function ContractsPage() {
             />
           )
         ) : tab === "SALE" ? (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{lang === "ar" ? "رقم العقد" : "Contract #"}</TableHead>
-                <TableHead>{lang === "ar" ? "العميل" : "Client"}</TableHead>
-                <TableHead>{lang === "ar" ? "العقار" : "Property"}</TableHead>
-                <TableHead>{lang === "ar" ? "المبلغ" : "Amount (SAR)"}</TableHead>
-                <TableHead>{lang === "ar" ? "الحالة" : "Status"}</TableHead>
-                <TableHead>{lang === "ar" ? "تاريخ التوقيع" : "Signed Date"}</TableHead>
-                <TableHead>{lang === "ar" ? "الإجراءات" : "Actions"}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.map((c) => (
-                <TableRow key={c.id}>
-                  <TableCell className="font-mono text-xs text-muted-foreground">
-                    {c.contractNumber ?? "—"}
-                  </TableCell>
-                  <TableCell className="font-medium">{c.customer.name}</TableCell>
-                  <TableCell>
-                    <div className="text-sm">
-                      <p className="font-medium">{lang === "ar" ? "وحدة" : "Unit"} {c.unit.number}</p>
-                      <p className="text-muted-foreground text-xs">{(c.unit as any).buildingName ?? (c.unit as any).city ?? "—"}</p>
-                    </div>
-                  </TableCell>
-                  <TableCell>{SAR(Number(c.amount))}</TableCell>
-                  <TableCell>
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${CONTRACT_STATUS_COLORS[c.status]}`}>
-                      {lang === "ar" ? (CONTRACT_STATUS_LABELS[c.status]?.ar ?? c.status) : (CONTRACT_STATUS_LABELS[c.status]?.en ?? c.status)}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    {c.signedAt
-                      ? new Date(c.signedAt).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-SA")
-                      : <span className="text-muted-foreground/70">—</span>}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <IconButton
-                        icon={Eye}
-                        aria-label={lang === "ar" ? "عرض التفاصيل" : "View details"}
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setDetailContract(c)}
-                        className="h-8 w-8"
-                      />
-                      {(c.status === "DRAFT" || c.status === "SENT") && (
-                        <Button
-                          variant="success"
-                          size="sm"
-                          onClick={() => handleSignContract(c.id)}
-                          style={{ display: "inline-flex" }}
-                        >
-                          {lang === "ar" ? "توقيع" : "Sign"}
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <DataTable
+            columns={saleColumns}
+            data={filtered}
+            getRowId={(r) => r.id}
+            locale={lang === "ar" ? "ar" : "en"}
+            pagination
+            pageSize={10}
+            mobileCard={(row) => (
+              <DataCard
+                icon={Home}
+                iconTone="purple"
+                divider={false}
+                title={
+                  <span className="flex items-center gap-2">
+                    <span className="truncate">{row.customer.name}</span>
+                    {row.contractNumber ? (
+                      <span className="font-mono text-xs text-muted-foreground truncate">
+                        #{row.contractNumber}
+                      </span>
+                    ) : null}
+                  </span>
+                }
+                subtitle={[
+                  `${lang === "ar" ? "وحدة" : "Unit"} ${row.unit.number}`,
+                  <SARAmount key="amount" value={Number(row.amount)} size={12} compact className="tabular-nums" />,
+                ]}
+                trailing={
+                  <StatusBadge
+                    entityType="contract"
+                    status={row.status}
+                    label={
+                      lang === "ar"
+                        ? CONTRACT_STATUS_LABELS[row.status]?.ar ?? row.status
+                        : CONTRACT_STATUS_LABELS[row.status]?.en ?? row.status
+                    }
+                  />
+                }
+                onClick={() => setDetailContract(row)}
+              />
+            )}
+            emptyTitle={lang === "ar" ? "لا توجد عقود بيع" : "No sale contracts"}
+            emptyDescription={lang === "ar" ? "جرّب تعديل البحث." : "Try adjusting your search."}
+          />
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{lang === "ar" ? "رقم العقد" : "Contract #"}</TableHead>
-                <TableHead>{lang === "ar" ? "المستأجر" : "Tenant"}</TableHead>
-                <TableHead>{lang === "ar" ? "العقار" : "Property"}</TableHead>
-                <TableHead>{lang === "ar" ? "الإيجار السنوي" : "Annual Rent (SAR)"}</TableHead>
-                <TableHead>{lang === "ar" ? "تاريخ البداية" : "Start Date"}</TableHead>
-                <TableHead>{lang === "ar" ? "تاريخ النهاية" : "End Date"}</TableHead>
-                <TableHead>{lang === "ar" ? "الحالة" : "Status"}</TableHead>
-                <TableHead>{lang === "ar" ? "الإجراءات" : "Actions"}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.map((c) => (
-                <TableRow key={c.id}>
-                  <TableCell className="font-mono text-xs text-muted-foreground">
-                    {c.contractNumber ?? "—"}
-                  </TableCell>
-                  <TableCell className="font-medium">{c.customer.name}</TableCell>
-                  <TableCell>
-                    <div className="text-sm">
-                      <p className="font-medium">{lang === "ar" ? "وحدة" : "Unit"} {c.unit.number}</p>
-                      <p className="text-muted-foreground text-xs">{(c.unit as any).buildingName ?? (c.unit as any).city ?? "—"}</p>
-                    </div>
-                  </TableCell>
-                  <TableCell>{SAR(Number(c.amount))}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    {c.lease?.startDate
-                      ? new Date(c.lease.startDate).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-SA")
-                      : <span className="text-muted-foreground/70">—</span>}
-                  </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    {c.lease?.endDate
-                      ? new Date(c.lease.endDate).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-SA")
-                      : <span className="text-muted-foreground/70">—</span>}
-                  </TableCell>
-                  <TableCell>
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${CONTRACT_STATUS_COLORS[c.status]}`}>
-                      {lang === "ar" ? (CONTRACT_STATUS_LABELS[c.status]?.ar ?? c.status) : (CONTRACT_STATUS_LABELS[c.status]?.en ?? c.status)}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <IconButton
-                        icon={Eye}
-                        aria-label={lang === "ar" ? "عرض التفاصيل" : "View details"}
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setDetailContract(c)}
-                        className="h-8 w-8"
-                      />
-                      {(c.status === "DRAFT" || c.status === "SENT") && (
-                        <Button
-                          variant="success"
-                          size="sm"
-                          onClick={() => handleSignContract(c.id)}
-                          style={{ display: "inline-flex" }}
-                        >
-                          {lang === "ar" ? "توقيع" : "Sign"}
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <DataTable
+            columns={leaseColumns}
+            data={filtered}
+            getRowId={(r) => r.id}
+            locale={lang === "ar" ? "ar" : "en"}
+            pagination
+            pageSize={10}
+            mobileCard={(row) => (
+              <DataCard
+                icon={Key}
+                iconTone="purple"
+                divider={false}
+                title={
+                  <span className="flex items-center gap-2">
+                    <span className="truncate">{row.customer.name}</span>
+                    {row.contractNumber ? (
+                      <span className="font-mono text-xs text-muted-foreground truncate">
+                        #{row.contractNumber}
+                      </span>
+                    ) : null}
+                  </span>
+                }
+                subtitle={[
+                  `${lang === "ar" ? "وحدة" : "Unit"} ${row.unit.number}`,
+                  <SARAmount key="amount" value={Number(row.amount)} size={12} compact className="tabular-nums" />,
+                ]}
+                trailing={
+                  <StatusBadge
+                    entityType="contract"
+                    status={row.status}
+                    label={
+                      lang === "ar"
+                        ? CONTRACT_STATUS_LABELS[row.status]?.ar ?? row.status
+                        : CONTRACT_STATUS_LABELS[row.status]?.en ?? row.status
+                    }
+                  />
+                }
+                onClick={() => setDetailContract(row)}
+              />
+            )}
+            emptyTitle={lang === "ar" ? "لا توجد عقود إيجار" : "No lease contracts"}
+            emptyDescription={lang === "ar" ? "جرّب تعديل البحث." : "Try adjusting your search."}
+          />
         )}
       </Card>
 
@@ -952,9 +1107,9 @@ export default function ContractsPage() {
               </div>
               <div>
                 <p className="text-muted-foreground text-xs">{lang === "ar" ? "الحالة" : "Status"}</p>
-                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${CONTRACT_STATUS_COLORS[detailContract.status]}`}>
+                <Badge variant={CONTRACT_STATUS_VARIANT[detailContract.status] ?? "default"} size="sm">
                   {lang === "ar" ? (CONTRACT_STATUS_LABELS[detailContract.status]?.ar ?? detailContract.status) : (CONTRACT_STATUS_LABELS[detailContract.status]?.en ?? detailContract.status)}
-                </span>
+                </Badge>
               </div>
               {detailContract.signedAt && (
                 <div className="col-span-2">
@@ -1053,7 +1208,7 @@ export default function ContractsPage() {
         title={lang === "ar" ? "عقد بيع جديد" : "New Sale Contract"}
         footer={
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-            <Button variant="outline" onClick={() => setSaleModalOpen(false)} style={{ display: "inline-flex" }}>
+            <Button variant="ghost" onClick={() => setSaleModalOpen(false)} style={{ display: "inline-flex" }}>
               {lang === "ar" ? "إلغاء" : "Cancel"}
             </Button>
             <Button type="submit" form="sale-contract-form" disabled={submitting} style={{ display: "inline-flex" }} className="gap-2">
@@ -1174,7 +1329,7 @@ export default function ContractsPage() {
         contentClassName="sm:max-w-[640px]"
         footer={
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-            <Button variant="outline" onClick={() => setLeaseModalOpen(false)} style={{ display: "inline-flex" }}>
+            <Button variant="ghost" onClick={() => setLeaseModalOpen(false)} style={{ display: "inline-flex" }}>
               {lang === "ar" ? "إلغاء" : "Cancel"}
             </Button>
             <Button type="submit" form="lease-contract-form" disabled={submitting} style={{ display: "inline-flex" }} className="gap-2">

@@ -14,13 +14,11 @@ import {
 } from "lucide-react";
 import {
   Button,
+  Badge,
   Card,
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
+  DataTable,
+  type ColumnDef,
+  IconButton,
   EmptyState,
   Skeleton,
   ResponsiveDialog,
@@ -51,16 +49,6 @@ type ModerationListing = {
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
-const STATUS_STYLES: Record<string, string> = {
-  DRAFT: "bg-muted text-muted-foreground",
-  PUBLISHED: "bg-success/15 text-success",
-  UNDER_CONTRACT: "bg-info/15 text-info",
-  SOLD_TRANSFERRED: "bg-primary/15 text-primary",
-  UNPUBLISHED: "bg-warning/15 text-warning",
-  EXPIRED: "bg-destructive/15 text-destructive",
-  SUSPENDED: "bg-destructive/15 text-destructive",
-};
-
 const STATUS_LABELS: Record<string, string> = {
   DRAFT: "Draft",
   PUBLISHED: "Published",
@@ -71,10 +59,20 @@ const STATUS_LABELS: Record<string, string> = {
   SUSPENDED: "Suspended",
 };
 
-const COMPLIANCE_STYLES: Record<string, string> = {
-  APPROVED: "bg-success/15 text-success",
-  PENDING_REVIEW: "bg-warning/15 text-warning",
-  REJECTED: "bg-destructive/15 text-destructive",
+const STATUS_VARIANT: Record<string, "default" | "success" | "info" | "sold" | "warning" | "error"> = {
+  DRAFT: "default",
+  PUBLISHED: "success",
+  UNDER_CONTRACT: "info",
+  SOLD_TRANSFERRED: "sold",
+  UNPUBLISHED: "warning",
+  EXPIRED: "error",
+  SUSPENDED: "error",
+};
+
+const COMPLIANCE_VARIANT: Record<string, "success" | "warning" | "error"> = {
+  APPROVED: "success",
+  PENDING_REVIEW: "warning",
+  REJECTED: "error",
 };
 
 // ─── Page ────────────────────────────────────────────────────────────────────
@@ -136,6 +134,188 @@ export default function AdminMarketplacePage() {
     } finally {
       setSuspending(false);
     }
+  }
+
+  // ── Columns ───────────────────────────────────────────────────────────────
+
+  const columns: ColumnDef<ModerationListing>[] = [
+    {
+      accessorKey: "listingNumber",
+      header: lang === "ar" ? "رقم القائمة" : "Listing #",
+      cell: ({ row }) => (
+        <span className="font-mono text-xs text-muted-foreground">
+          {row.original.listingNumber}
+        </span>
+      ),
+      enableSorting: true,
+      enableHiding: true,
+    },
+    {
+      accessorKey: "title",
+      header: lang === "ar" ? "العنوان" : "Title",
+      cell: ({ row }) => (
+        <span className="text-sm font-medium text-foreground line-clamp-1">
+          {row.original.title ?? "—"}
+        </span>
+      ),
+      enableSorting: true,
+      enableHiding: true,
+    },
+    {
+      id: "sellerOrg",
+      header: lang === "ar" ? "المنظمة البائعة" : "Seller Org",
+      cell: ({ row }) => (
+        <div className="flex flex-col gap-0.5">
+          <span className="text-sm font-medium text-foreground">
+            {row.original.sellerOrg.nameEnglish ?? row.original.sellerOrg.name}
+          </span>
+          {row.original.sellerOrg.nameEnglish && (
+            <span className="text-xs text-muted-foreground">
+              {row.original.sellerOrg.name}
+            </span>
+          )}
+        </div>
+      ),
+      enableSorting: false,
+      enableHiding: true,
+    },
+    {
+      accessorKey: "status",
+      header: lang === "ar" ? "الحالة" : "Status",
+      cell: ({ row }) => (
+        <Badge variant={STATUS_VARIANT[row.original.status] ?? "default"} size="sm">
+          {STATUS_LABELS[row.original.status] ?? row.original.status}
+        </Badge>
+      ),
+      enableSorting: true,
+      enableHiding: true,
+    },
+    {
+      accessorKey: "complianceStatus",
+      header: lang === "ar" ? "الامتثال" : "Compliance",
+      cell: ({ row }) => (
+        <Badge variant={COMPLIANCE_VARIANT[row.original.complianceStatus] ?? "default"} size="sm">
+          <Shield className="h-3 w-3" aria-hidden="true" />
+          {row.original.complianceStatus}
+        </Badge>
+      ),
+      enableSorting: true,
+      enableHiding: true,
+    },
+    {
+      id: "inquiries",
+      header: lang === "ar" ? "الاستفسارات" : "Inquiries",
+      cell: ({ row }) => (
+        <div className="flex items-center gap-1.5 text-sm text-foreground">
+          <Users className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+          {row.original._count.inquiries}
+        </div>
+      ),
+      enableSorting: false,
+      enableHiding: true,
+      meta: { numeric: true },
+    },
+    {
+      accessorKey: "publishedAt",
+      header: lang === "ar" ? "تاريخ النشر" : "Published",
+      cell: ({ row }) => (
+        <span className="text-xs text-muted-foreground">
+          {row.original.publishedAt
+            ? new Date(row.original.publishedAt).toLocaleDateString("en-GB")
+            : "—"}
+        </span>
+      ),
+      enableSorting: true,
+      enableHiding: true,
+    },
+    {
+      id: "actions",
+      header: "",
+      enableSorting: false,
+      enableHiding: false,
+      cell: ({ row }) => {
+        const listing = row.original;
+        if (listing.status === "SUSPENDED") {
+          return (
+            <span className="text-xs text-muted-foreground italic">
+              {lang === "ar" ? "موقوف" : "Suspended"}
+            </span>
+          );
+        }
+        if (listing.status === "SOLD_TRANSFERRED") {
+          return null;
+        }
+        return (
+          <div className="flex items-center gap-1">
+            <IconButton
+              icon={Ban}
+              aria-label={lang === "ar" ? "إيقاف" : "Suspend"}
+              onClick={() => openSuspend(listing)}
+              className="text-destructive hover:text-destructive"
+              size="sm"
+            />
+          </div>
+        );
+      },
+    },
+  ];
+
+  // ── Mobile card ───────────────────────────────────────────────────────────
+
+  function mobileCard(listing: ModerationListing) {
+    return (
+      <div className="flex flex-col gap-2 p-3">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex flex-col gap-0.5 min-w-0">
+            <span className="text-sm font-medium text-foreground line-clamp-1">
+              {listing.title ?? "—"}
+            </span>
+            <span className="font-mono text-xs text-muted-foreground">
+              {listing.listingNumber}
+            </span>
+          </div>
+          <div className="flex items-center gap-1 shrink-0">
+            {listing.status !== "SUSPENDED" && listing.status !== "SOLD_TRANSFERRED" && (
+              <IconButton
+                icon={Ban}
+                aria-label={lang === "ar" ? "إيقاف" : "Suspend"}
+                onClick={() => openSuspend(listing)}
+                className="text-destructive hover:text-destructive"
+                size="sm"
+              />
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Badge variant={STATUS_VARIANT[listing.status] ?? "default"} size="sm">
+            {STATUS_LABELS[listing.status] ?? listing.status}
+          </Badge>
+          <Badge variant={COMPLIANCE_VARIANT[listing.complianceStatus] ?? "default"} size="sm">
+            <Shield className="h-3 w-3" aria-hidden="true" />
+            {listing.complianceStatus}
+          </Badge>
+        </div>
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <span>{listing.sellerOrg.nameEnglish ?? listing.sellerOrg.name}</span>
+          <div className="flex items-center gap-1">
+            <Users className="h-3 w-3" aria-hidden="true" />
+            {listing._count.inquiries}
+          </div>
+        </div>
+        {listing.publishedAt && (
+          <span className="text-xs text-muted-foreground">
+            {new Date(listing.publishedAt).toLocaleDateString("en-GB")}
+          </span>
+        )}
+      </div>
+    );
+  }
+
+  // ── Row class ────────────────────────────────────────────────────────────
+
+  function rowClassName(listing: ModerationListing) {
+    if (listing.status === "SUSPENDED") return "opacity-60";
+    return undefined;
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -200,98 +380,18 @@ export default function AdminMarketplacePage() {
         />
       ) : (
         <Card className="overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Listing #</TableHead>
-                <TableHead>Title</TableHead>
-                <TableHead>Seller Org</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Compliance</TableHead>
-                <TableHead>Inquiries</TableHead>
-                <TableHead>Published</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {listings.map((listing) => (
-                <TableRow key={listing.id}>
-                  <TableCell>
-                    <span className="font-mono text-xs text-muted-foreground">
-                      {listing.listingNumber}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-sm font-medium text-foreground line-clamp-1">
-                      {listing.title ?? "—"}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-col gap-0.5">
-                      <span className="text-sm font-medium text-foreground">
-                        {listing.sellerOrg.nameEnglish ?? listing.sellerOrg.name}
-                      </span>
-                      {listing.sellerOrg.nameEnglish && (
-                        <span className="text-xs text-muted-foreground">
-                          {listing.sellerOrg.name}
-                        </span>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <span
-                      className={cn(
-                        "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
-                        STATUS_STYLES[listing.status] ?? "bg-muted text-muted-foreground"
-                      )}
-                    >
-                      {STATUS_LABELS[listing.status] ?? listing.status}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <span
-                      className={cn(
-                        "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium",
-                        COMPLIANCE_STYLES[listing.complianceStatus] ?? "bg-muted text-muted-foreground"
-                      )}
-                    >
-                      <Shield className="h-3 w-3" aria-hidden="true" />
-                      {listing.complianceStatus}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1.5 text-sm text-foreground">
-                      <Users className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
-                      {listing._count.inquiries}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-xs text-muted-foreground">
-                      {listing.publishedAt
-                        ? new Date(listing.publishedAt).toLocaleDateString("en-GB")
-                        : "—"}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    {listing.status !== "SUSPENDED" && listing.status !== "SOLD_TRANSFERRED" && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => openSuspend(listing)}
-                        aria-label={`Suspend listing ${listing.listingNumber}`}
-                      >
-                        <Ban className="h-4 w-4 text-destructive" aria-hidden="true" />
-                        <span className="ms-1.5 text-destructive">Suspend</span>
-                      </Button>
-                    )}
-                    {listing.status === "SUSPENDED" && (
-                      <span className="text-xs text-muted-foreground italic">Suspended</span>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <DataTable
+            columns={columns}
+            data={listings}
+            mobileCard={mobileCard}
+            rowClassName={rowClassName}
+            locale={lang === "ar" ? "ar" : "en"}
+            pagination
+            pageSize={10}
+            getRowId={(r) => r.id}
+            emptyTitle={lang === "ar" ? "لا توجد قوائم" : "No listings"}
+            emptyDescription={lang === "ar" ? "لا توجد قوائم سوق للمراجعة." : "No marketplace listings to review."}
+          />
         </Card>
       )}
 

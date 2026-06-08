@@ -1574,10 +1574,8 @@ function KanbanCard({
         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <IconButton
             icon={Eye}
-            aria-label={lang === "ar" ? "عرض الملف" : "View Profile"}
+            aria-label={lang === "ar" ? "عرض" : "View"}
             variant="ghost"
-            size="icon"
-            className="h-6 w-6 border border-border bg-background hover:text-primary hover:border-primary/30"
             onClick={() => onViewProfile(customer)}
           />
           {canDelete && (
@@ -1585,8 +1583,7 @@ function KanbanCard({
               icon={Trash2}
               aria-label={lang === "ar" ? "حذف" : "Delete"}
               variant="ghost"
-              size="icon"
-              className="h-6 w-6 border border-border bg-background hover:text-destructive hover:border-destructive/30"
+              className="text-destructive"
               onClick={() => onDelete(customer)}
             />
           )}
@@ -1979,13 +1976,11 @@ export default function CRMPage() {
         cell: ({ row }) => {
           const c = row.original;
           return (
-            <div className="flex items-center justify-end gap-2">
+            <div className="flex items-center justify-end gap-1">
               <IconButton
                 icon={Eye}
-                aria-label={lang === "ar" ? "عرض الملف" : "View profile"}
+                aria-label={lang === "ar" ? "عرض" : "View"}
                 variant="ghost"
-                size="icon"
-                className="h-7 w-7 border border-border bg-background hover:text-primary hover:border-primary/30"
                 onClick={(e) => {
                   e.stopPropagation();
                   setDrawerCustomer(c);
@@ -1996,8 +1991,7 @@ export default function CRMPage() {
                   icon={Trash2}
                   aria-label={lang === "ar" ? "حذف" : "Delete"}
                   variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 border border-border bg-background hover:text-destructive hover:border-destructive/30"
+                  className="text-destructive"
                   onClick={(e) => {
                     e.stopPropagation();
                     openDelete(c);
@@ -2524,10 +2518,11 @@ export default function CRMPage() {
             <div className="flex flex-wrap gap-2">
               <Button
                 type="button"
-                variant={!statusFilter && !showLost ? "primary" : "outline"}
+                variant={!statusFilter && !showLost ? "primary" : "subtle"}
                 size="sm"
                 style={{ display: "inline-flex" }}
-                className="rounded-full px-3 py-1.5 text-xs h-auto"
+                className="rounded-full"
+                aria-pressed={!statusFilter && !showLost}
                 onClick={() => {
                   setStatusFilter("");
                   setShowLost(false);
@@ -2539,10 +2534,11 @@ export default function CRMPage() {
                 <Button
                   key={s.key}
                   type="button"
-                  variant={statusFilter === s.key ? "primary" : "outline"}
+                  variant={statusFilter === s.key ? "primary" : "subtle"}
                   size="sm"
                   style={{ display: "inline-flex" }}
-                  className="rounded-full px-3 py-1.5 text-xs h-auto"
+                  className="rounded-full"
+                  aria-pressed={statusFilter === s.key}
                   onClick={() => {
                     setStatusFilter(statusFilter === s.key ? "" : s.key);
                     setShowLost(false);
@@ -2553,10 +2549,11 @@ export default function CRMPage() {
               ))}
               <Button
                 type="button"
-                variant={showLost ? "destructive" : "outline"}
+                variant={showLost ? "primary" : "subtle"}
                 size="sm"
                 style={{ display: "inline-flex" }}
-                className="rounded-full px-3 py-1.5 text-xs h-auto"
+                className="rounded-full"
+                aria-pressed={showLost}
                 onClick={() => {
                   setShowLost((v) => !v);
                   setStatusFilter("");
@@ -2730,15 +2727,11 @@ export default function CRMPage() {
           {/* Status filters */}
           <div className="flex flex-wrap gap-2">
             <Button
-              variant={!statusFilter && !showLost ? "subtle" : "outline"}
+              variant={!statusFilter && !showLost ? "primary" : "subtle"}
               size="sm"
               style={{ display: "inline-flex" }}
-              className={cn(
-                "rounded-full px-3.5 py-2 text-sm h-auto",
-                !statusFilter && !showLost
-                  ? "border-primary/30 bg-primary/15 text-foreground hover:bg-primary/20"
-                  : ""
-              )}
+              className="rounded-full"
+              aria-pressed={!statusFilter && !showLost}
               onClick={() => { setStatusFilter(""); setShowLost(false); }}
             >
               {lang === "ar" ? "الكل" : "All"} {customers.filter(c => c.status !== "LOST").length}
@@ -2748,15 +2741,11 @@ export default function CRMPage() {
               return (
                 <Button
                   key={s.key}
-                  variant={statusFilter === s.key ? "subtle" : "outline"}
+                  variant={statusFilter === s.key ? "primary" : "subtle"}
                   size="sm"
                   style={{ display: "inline-flex" }}
-                  className={cn(
-                    "rounded-full px-3.5 py-2 text-sm h-auto",
-                    statusFilter === s.key
-                      ? "border-primary/30 bg-primary/15 text-foreground hover:bg-primary/20"
-                      : ""
-                  )}
+                  className="rounded-full"
+                  aria-pressed={statusFilter === s.key}
                   onClick={() => { setStatusFilter(statusFilter === s.key ? "" : s.key); setShowLost(false); }}
                 >
                   {s.label[lang]} {count}
@@ -2765,15 +2754,11 @@ export default function CRMPage() {
             })}
             {/* Lost toggle */}
             <Button
-              variant={showLost ? "outline" : "outline"}
+              variant={showLost ? "primary" : "subtle"}
               size="sm"
               style={{ display: "inline-flex" }}
-              className={cn(
-                "rounded-full px-3.5 py-2 text-sm h-auto",
-                showLost
-                  ? "border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/15"
-                  : ""
-              )}
+              className="rounded-full"
+              aria-pressed={showLost}
               onClick={() => { setShowLost((v) => !v); setStatusFilter(""); }}
             >
               {lang === "ar" ? "خسائر" : "Lost"} {kpis.lost}
@@ -2783,29 +2768,21 @@ export default function CRMPage() {
           {/* View toggle */}
           <div className="flex gap-2">
             <Button
-              variant={viewMode === "kanban" ? "subtle" : "outline"}
+              variant={viewMode === "kanban" ? "primary" : "subtle"}
               size="sm"
               style={{ display: "inline-flex" }}
-              className={cn(
-                "rounded-full px-3 py-2 text-sm h-auto",
-                viewMode === "kanban"
-                  ? "border-primary/30 bg-primary/15 text-foreground hover:bg-primary/20"
-                  : ""
-              )}
+              className="rounded-full"
+              aria-pressed={viewMode === "kanban"}
               onClick={() => setViewMode("kanban")}
             >
               {lang === "ar" ? "كانبان" : "Kanban"}
             </Button>
             <Button
-              variant={viewMode === "list" ? "subtle" : "outline"}
+              variant={viewMode === "list" ? "primary" : "subtle"}
               size="sm"
               style={{ display: "inline-flex" }}
-              className={cn(
-                "rounded-full px-3 py-2 text-sm h-auto",
-                viewMode === "list"
-                  ? "border-primary/30 bg-primary/15 text-foreground hover:bg-primary/20"
-                  : ""
-              )}
+              className="rounded-full"
+              aria-pressed={viewMode === "list"}
               onClick={() => setViewMode("list")}
             >
               {lang === "ar" ? "قائمة" : "List"}

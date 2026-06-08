@@ -15,7 +15,6 @@ import {
 } from "lucide-react";
 import {
   Button,
-  Card,
   Table,
   TableHeader,
   TableBody,
@@ -32,6 +31,8 @@ import {
   DirectionalIcon,
   IconButton,
   ActionLink,
+  DataTable,
+  type ColumnDef,
 } from "@repo/ui";
 import Link from "next/link";
 import { PageHeader } from "@repo/ui/components/PageHeader";
@@ -140,6 +141,157 @@ export default function InvoicesPage() {
     return data.invoices.filter((inv: any) => inv.status === mobileFilter);
   }, [data.invoices, mobileFilter]);
 
+  // ─── DataTable columns ──────────────────────────────────────────────────────
+
+  const invoiceColumns = React.useMemo<ColumnDef<any>[]>(
+    () => [
+      {
+        accessorKey: "invoiceNumber",
+        header: t.invoiceNumber,
+        cell: ({ row }: any) => (
+          <span className="font-mono text-xs font-medium text-foreground">
+            {row.original.invoiceNumber}
+          </span>
+        ),
+        enableSorting: true,
+        enableHiding: false,
+      },
+      {
+        accessorKey: "issuedAt",
+        header: t.date,
+        cell: ({ row }: any) =>
+          row.original.issuedAt
+            ? new Date(row.original.issuedAt).toLocaleDateString(
+                lang === "ar" ? "ar-SA" : "en-US",
+              )
+            : "—",
+        enableSorting: true,
+      },
+      {
+        accessorKey: "status",
+        header: t.status,
+        cell: ({ row }: any) => {
+          const status = statusConfig[row.original.status] ?? statusConfig.DRAFT!;
+          return (
+            <Badge variant={badgeVariant(row.original.status)} size="sm">
+              {lang === "ar" ? status.labelAr : status.labelEn}
+            </Badge>
+          );
+        },
+        enableSorting: true,
+      },
+      {
+        accessorKey: "subtotal",
+        header: t.subtotal,
+        cell: ({ row }: any) => (
+          <span className="tabular-nums">
+            {Number(row.original.subtotal).toLocaleString()} {t.sar}
+          </span>
+        ),
+        enableSorting: true,
+        meta: { numeric: true },
+      },
+      {
+        accessorKey: "vatAmount",
+        header: t.vat,
+        cell: ({ row }: any) => (
+          <span className="tabular-nums">
+            {Number(row.original.vatAmount).toLocaleString()} {t.sar}
+          </span>
+        ),
+        enableSorting: true,
+        meta: { numeric: true },
+      },
+      {
+        accessorKey: "total",
+        header: t.total,
+        cell: ({ row }: any) => (
+          <span className="font-semibold tabular-nums">
+            {Number(row.original.total).toLocaleString()} {t.sar}
+          </span>
+        ),
+        enableSorting: true,
+        meta: { numeric: true },
+      },
+      {
+        id: "actions",
+        header: "",
+        enableSorting: false,
+        enableHiding: false,
+        cell: ({ row }: any) => {
+          const inv = row.original;
+          return (
+            <div className="flex items-center justify-end gap-1">
+              <IconButton
+                icon={Eye}
+                aria-label={lang === "ar" ? "عرض" : "View"}
+                variant="ghost"
+                onClick={() => handleViewInvoice(inv.id)}
+                disabled={loadingInvoice}
+              />
+              <IconButton
+                icon={downloadingId === inv.id ? Loader2 : Download}
+                aria-label={lang === "ar" ? "تنزيل" : "Download"}
+                variant="ghost"
+                onClick={() => handleDownloadInvoice(inv.id)}
+                disabled={downloadingId === inv.id}
+                className={downloadingId === inv.id ? "animate-spin" : undefined}
+              />
+            </div>
+          );
+        },
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [lang, t, loadingInvoice, downloadingId],
+  );
+
+  function renderMobileInvoiceCard(inv: any) {
+    const status = statusConfig[inv.status] ?? statusConfig.DRAFT!;
+    return (
+      <DataCard
+        icon={Receipt}
+        iconTone="purple"
+        divider={false}
+        onClick={() => handleViewInvoice(inv.id)}
+        title={
+          <span className="font-mono text-xs text-foreground">
+            {inv.invoiceNumber}
+          </span>
+        }
+        subtitle={[
+          <span key="issued" className="tabular-nums">
+            {inv.issuedAt
+              ? new Date(inv.issuedAt).toLocaleDateString(
+                  lang === "ar" ? "ar-SA" : "en-US",
+                )
+              : "—"}
+          </span>,
+          inv.dueDate ? (
+            <span key="due" className="tabular-nums">
+              {lang === "ar" ? "استحقاق" : "Due"}:{" "}
+              {new Date(inv.dueDate).toLocaleDateString(
+                lang === "ar" ? "ar-SA" : "en-US",
+              )}
+            </span>
+          ) : null,
+        ]}
+        trailing={
+          <div className="flex flex-col items-end gap-1">
+            <SARAmount
+              value={Number(inv.total)}
+              size={13}
+              className="font-semibold text-foreground tabular-nums"
+            />
+            <Badge variant={badgeVariant(inv.status)} size="sm">
+              {lang === "ar" ? status.labelAr : status.labelEn}
+            </Badge>
+          </div>
+        }
+      />
+    );
+  }
+
   return (
     <>
     {/* ─── Mobile (< md) ─────────────────────────────────────────────── */}
@@ -214,52 +366,14 @@ export default function InvoicesPage() {
           )
         ) : (
           <div className="rounded-xl border border-border bg-card px-4">
-            {filteredMobile.map((inv: any, idx: number) => {
-              const status = statusConfig[inv.status] ?? statusConfig.DRAFT!;
-              return (
-                <DataCard
-                  key={inv.id}
-                  icon={Receipt}
-                  iconTone="purple"
-                  divider={idx !== filteredMobile.length - 1}
-                  onClick={() => handleViewInvoice(inv.id)}
-                  title={
-                    <span className="font-mono text-xs text-foreground">
-                      {inv.invoiceNumber}
-                    </span>
-                  }
-                  subtitle={[
-                    <span key="issued" className="tabular-nums">
-                      {inv.issuedAt
-                        ? new Date(inv.issuedAt).toLocaleDateString(
-                            lang === "ar" ? "ar-SA" : "en-US",
-                          )
-                        : "—"}
-                    </span>,
-                    inv.dueDate ? (
-                      <span key="due" className="tabular-nums">
-                        {lang === "ar" ? "استحقاق" : "Due"}:{" "}
-                        {new Date(inv.dueDate).toLocaleDateString(
-                          lang === "ar" ? "ar-SA" : "en-US",
-                        )}
-                      </span>
-                    ) : null,
-                  ]}
-                  trailing={
-                    <div className="flex flex-col items-end gap-1">
-                      <SARAmount
-                        value={Number(inv.total)}
-                        size={13}
-                        className="font-semibold text-foreground tabular-nums"
-                      />
-                      <Badge variant={badgeVariant(inv.status)} size="sm">
-                        {lang === "ar" ? status.labelAr : status.labelEn}
-                      </Badge>
-                    </div>
-                  }
-                />
-              );
-            })}
+            {filteredMobile.map((inv: any, idx: number) => (
+              <React.Fragment key={inv.id}>
+                {renderMobileInvoiceCard(inv)}
+                {idx !== filteredMobile.length - 1 && (
+                  <div className="border-b border-border" />
+                )}
+              </React.Fragment>
+            ))}
           </div>
         )}
 
@@ -488,112 +602,22 @@ export default function InvoicesPage() {
       </div>
 
       {/* Invoices Table */}
-      <Card className="rounded-xl shadow-sm overflow-hidden">
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-          </div>
-        ) : data.invoices.length === 0 ? (
-          <EmptyState
-            variant="first-time"
-            icon={<Receipt className="h-12 w-12" />}
-            title={t.noInvoices}
-            description={
-              lang === "ar"
-                ? "ستظهر فواتيرك هنا بمجرد إصدار أول اشتراك."
-                : "Your invoices appear here once your first subscription is billed."
-            }
-          />
-        ) : (
-          <>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t.invoiceNumber}</TableHead>
-                  <TableHead>{t.date}</TableHead>
-                  <TableHead>{t.status}</TableHead>
-                  <TableHead>{t.subtotal}</TableHead>
-                  <TableHead>{t.vat}</TableHead>
-                  <TableHead>{t.total}</TableHead>
-                  <TableHead>{t.actions}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.invoices.map((inv: any) => {
-                  const status = statusConfig[inv.status] ?? statusConfig.DRAFT!;
-                  return (
-                    <TableRow key={inv.id}>
-                      <TableCell className="font-medium">{inv.invoiceNumber}</TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {inv.issuedAt
-                          ? new Date(inv.issuedAt).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-US")
-                          : "—"}
-                      </TableCell>
-                      <TableCell>
-                        <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${status.color}`}>
-                          {lang === "ar" ? status.labelAr : status.labelEn}
-                        </span>
-                      </TableCell>
-                      <TableCell>{Number(inv.subtotal).toLocaleString()} {t.sar}</TableCell>
-                      <TableCell>{Number(inv.vatAmount).toLocaleString()} {t.sar}</TableCell>
-                      <TableCell className="font-semibold">{Number(inv.total).toLocaleString()} {t.sar}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <IconButton
-                            icon={Eye}
-                            aria-label={t.view}
-                            variant="ghost"
-                            onClick={() => handleViewInvoice(inv.id)}
-                            disabled={loadingInvoice}
-                          />
-                          <IconButton
-                            icon={downloadingId === inv.id ? Loader2 : Download}
-                            aria-label={t.download}
-                            variant="ghost"
-                            onClick={() => handleDownloadInvoice(inv.id)}
-                            disabled={downloadingId === inv.id}
-                            className={downloadingId === inv.id ? "animate-spin" : undefined}
-                          />
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-
-            {/* Pagination */}
-            {data.totalPages > 1 && (
-              <div className="flex items-center justify-between px-4 py-3 border-t">
-                <p className="text-sm text-muted-foreground">
-                  {t.showing} {(page - 1) * 20 + 1}–{Math.min(page * 20, data.total)} {t.of} {data.total}
-                </p>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    disabled={page <= 1}
-                    onClick={() => setPage(page - 1)}
-                    aria-label={lang === "ar" ? "السابق" : "Previous"}
-                  >
-                    <DirectionalIcon icon={ChevronLeft} className="w-4 h-4" />
-                  </Button>
-                  <span className="text-sm">{page} / {data.totalPages}</span>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    disabled={page >= data.totalPages}
-                    onClick={() => setPage(page + 1)}
-                    aria-label={lang === "ar" ? "التالي" : "Next"}
-                  >
-                    <DirectionalIcon icon={ChevronRight} className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            )}
-          </>
-        )}
-      </Card>
+      <DataTable
+        columns={invoiceColumns}
+        data={data.invoices}
+        loading={loading}
+        locale={lang === "ar" ? "ar" : "en"}
+        pagination
+        pageSize={10}
+        getRowId={(r: any) => r.id}
+        mobileCard={renderMobileInvoiceCard}
+        emptyTitle={t.noInvoices}
+        emptyDescription={
+          lang === "ar"
+            ? "ستظهر فواتيرك هنا بمجرد إصدار أول اشتراك."
+            : "Your invoices appear here once your first subscription is billed."
+        }
+      />
 
       {/* Invoice Detail Modal */}
       {viewInvoice && (

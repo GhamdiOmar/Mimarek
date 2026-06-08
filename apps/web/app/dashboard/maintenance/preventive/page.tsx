@@ -570,7 +570,7 @@ export default function PreventiveMaintenancePage() {
                     <p className="text-[10px] text-muted-foreground mt-0.5">{plan.description || "—"}</p>
                   </div>
                   <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="sm" onClick={() => handleToggle(plan.id)}>
+                    <Button variant="ghost" size="sm" onClick={() => handleToggle(plan.id)} aria-label={plan.isActive ? (lang === "ar" ? "إيقاف مؤقت" : "Pause") : (lang === "ar" ? "تشغيل" : "Resume")}>
                       {plan.isActive ? <Pause className="h-3.5 w-3.5 text-warning" /> : <Play className="h-3.5 w-3.5 text-secondary" />}
                     </Button>
                     <Button variant="ghost" size="sm" onClick={() => openEdit(plan)} aria-label={lang === "ar" ? "تعديل" : "Edit"}>

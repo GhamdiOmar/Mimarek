@@ -15,7 +15,7 @@ import {
   Loader2,
   MessageSquare,
 } from "lucide-react";
-import { Button, IconButton, AppBar, BottomSheet, Textarea, DirectionalIcon, EmptyState } from "@repo/ui";
+import { Button, IconButton, AppBar, BottomSheet, Textarea, DirectionalIcon, EmptyState, Badge } from "@repo/ui";
 import { cn } from "@repo/ui/lib/utils";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -126,12 +126,12 @@ export default function TicketDetailPage() {
   }
 
   function statusBadge(status: string) {
-    const map: Record<string, string> = {
-      OPEN: "bg-muted text-muted-foreground",
-      IN_PROGRESS: "bg-info/10 text-info",
-      WAITING_ON_USER: "bg-warning/10 text-warning",
-      RESOLVED: "bg-success/10 text-success",
-      CLOSED: "bg-primary/10 text-primary",
+    const variantMap: Record<string, "default" | "info" | "warning" | "success"> = {
+      OPEN: "default",
+      IN_PROGRESS: "info",
+      WAITING_ON_USER: "warning",
+      RESOLVED: "success",
+      CLOSED: "default",
     };
     const labels: Record<string, { ar: string; en: string }> = {
       OPEN: { ar: "مفتوحة", en: "Open" },
@@ -142,9 +142,9 @@ export default function TicketDetailPage() {
     };
     const label = labels[status] ?? { ar: status, en: status };
     return (
-      <span className={cn("px-2 py-0.5 rounded-full text-xs font-medium", map[status] ?? "bg-muted text-muted-foreground")}>
+      <Badge variant={variantMap[status] ?? "default"} size="sm">
         {lang === "ar" ? label.ar : label.en}
-      </span>
+      </Badge>
     );
   }
 

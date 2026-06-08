@@ -24,19 +24,15 @@ import {
 import {
   Button,
   IconButton,
-  Card,
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
   AppBar,
   DataCard,
   EmptyState,
   FAB,
   Skeleton,
   Badge,
+  Switch,
+  DataTable,
+  type ColumnDef,
 } from "@repo/ui";
 import { PageHeader } from "@repo/ui/components/PageHeader";
 import Link from "next/link";
@@ -403,6 +399,200 @@ export default function CouponManagementPage() {
     return `${used} / ${max}`;
   };
 
+  // ── Column definitions ────────────────────────────────────────────────────
+
+  const columns: ColumnDef<Coupon>[] = React.useMemo(
+    () => [
+      {
+        accessorKey: "code",
+        header: labels.code,
+        enableSorting: true,
+        cell: ({ row }) => {
+          const coupon = row.original;
+          return (
+            <div>
+              <span className="font-mono font-bold text-foreground bg-muted px-2 py-0.5 rounded text-xs tracking-wider">
+                {coupon.code}
+              </span>
+              {coupon.descriptionEn && lang === "en" && (
+                <p className="text-xs text-muted-foreground mt-1 max-w-[200px] truncate">
+                  {coupon.descriptionEn}
+                </p>
+              )}
+              {coupon.descriptionAr && lang === "ar" && (
+                <p className="text-xs text-muted-foreground mt-1 max-w-[200px] truncate">
+                  {coupon.descriptionAr}
+                </p>
+              )}
+            </div>
+          );
+        },
+      },
+      {
+        accessorKey: "type",
+        header: labels.type,
+        enableSorting: true,
+        cell: ({ row }) => {
+          const coupon = row.original;
+          return (
+            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+              {coupon.type === "PERCENTAGE" ? (
+                <Percent className="h-3.5 w-3.5" />
+              ) : (
+                <CircleDollarSign className="h-3.5 w-3.5" />
+              )}
+              {coupon.type === "PERCENTAGE"
+                ? labels.percentage
+                : labels.fixedAmount}
+            </span>
+          );
+        },
+      },
+      {
+        accessorKey: "value",
+        header: labels.value,
+        enableSorting: true,
+        meta: { numeric: true },
+        cell: ({ row }) => (
+          <span className="font-semibold text-foreground">
+            {formatValue(row.original)}
+          </span>
+        ),
+      },
+      {
+        id: "status",
+        header: labels.status,
+        enableSorting: false,
+        cell: ({ row }) => {
+          const coupon = row.original;
+          const isExpired =
+            coupon.validUntil && new Date(coupon.validUntil) < new Date();
+          const isMaxedOut =
+            coupon.maxRedemptions !== null &&
+            coupon.currentUses >= coupon.maxRedemptions;
+          return (
+            <div className="flex items-center gap-1.5">
+              <Switch
+                checked={coupon.isActive}
+                onCheckedChange={() =>
+                  handleToggle(coupon.id, coupon.isActive)
+                }
+                disabled={togglingId === coupon.id}
+                aria-label={coupon.isActive ? labels.active : labels.inactive}
+              />
+              <span
+                className={`text-xs font-medium ${
+                  coupon.isActive ? "text-success" : "text-muted-foreground"
+                }`}
+              >
+                {coupon.isActive ? labels.active : labels.inactive}
+              </span>
+              {(isExpired || isMaxedOut) && (
+                <span className="text-xs text-warning">
+                  {isExpired
+                    ? lang === "ar"
+                      ? "(منتهي)"
+                      : "(Expired)"
+                    : lang === "ar"
+                      ? "(مكتمل)"
+                      : "(Maxed)"}
+                </span>
+              )}
+            </div>
+          );
+        },
+      },
+      {
+        id: "redemptions",
+        header: labels.redemptions,
+        enableSorting: false,
+        meta: { numeric: true },
+        cell: ({ row }) => (
+          <div className="flex items-center gap-1.5 text-muted-foreground">
+            <Users className="h-3.5 w-3.5" />
+            <span>{formatRedemptions(row.original)}</span>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "validUntil",
+        header: labels.validUntil,
+        enableSorting: true,
+        cell: ({ row }) => (
+          <div className="flex items-center gap-1.5 text-muted-foreground">
+            <Calendar className="h-3.5 w-3.5" />
+            <span>{formatDate(row.original.validUntil)}</span>
+          </div>
+        ),
+      },
+      {
+        id: "plans",
+        header: labels.plans,
+        enableSorting: false,
+        enableHiding: true,
+        cell: ({ row }) => {
+          const coupon = row.original;
+          return coupon.plans.length === 0 ? (
+            <span className="text-xs text-muted-foreground">{labels.allPlans}</span>
+          ) : (
+            <div className="flex flex-wrap gap-1">
+              {coupon.plans.map((plan) => (
+                <span
+                  key={plan.id}
+                  className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-primary/10 text-primary font-medium"
+                >
+                  {plan.nameEn}
+                </span>
+              ))}
+            </div>
+          );
+        },
+      },
+      {
+        id: "actions",
+        header: "",
+        enableSorting: false,
+        enableHiding: false,
+        cell: () => (
+          // No per-row view/edit/delete actions exist on this page —
+          // the only row action is the Switch (already in the status column).
+          // Return null to satisfy the actions column slot without adding phantom buttons.
+          null
+        ),
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [lang, labels, togglingId]
+  );
+
+  // ── Mobile card renderer ───────────────────────────────────────────────────
+
+  const renderMobileCard = (coupon: Coupon) => {
+    const isExpired =
+      coupon.validUntil && new Date(coupon.validUntil) < new Date();
+    const isMaxedOut =
+      coupon.maxRedemptions !== null &&
+      coupon.currentUses >= coupon.maxRedemptions;
+    const inactive = !coupon.isActive || isExpired || isMaxedOut;
+    return (
+      <DataCard
+        icon={Tag}
+        iconTone="purple"
+        title={<span className="font-mono tracking-wider">{coupon.code}</span>}
+        subtitle={[
+          formatValue(coupon),
+          formatRedemptions(coupon),
+          formatDate(coupon.validUntil),
+        ]}
+        trailing={
+          <Badge variant={inactive ? "default" : "success"} size="sm">
+            {inactive ? labels.inactive : labels.active}
+          </Badge>
+        }
+      />
+    );
+  };
+
   // ── Render ─────────────────────────────────────────────────────────────────
 
   const BackArrow = lang === "ar" ? ArrowRight : ArrowLeft;
@@ -501,40 +691,17 @@ export default function CouponManagementPage() {
                 />
               )
             ) : (
-              <div className="rounded-2xl border border-border bg-card px-4">
-                {filteredMobileCoupons.map((coupon, idx) => {
-                  const isExpired =
-                    coupon.validUntil && new Date(coupon.validUntil) < new Date();
-                  const isMaxedOut =
-                    coupon.maxRedemptions !== null &&
-                    coupon.currentUses >= coupon.maxRedemptions;
-                  const inactive = !coupon.isActive || isExpired || isMaxedOut;
-                  return (
-                    <DataCard
-                      key={coupon.id}
-                      icon={Tag}
-                      iconTone="purple"
-                      title={<span className="font-mono tracking-wider">{coupon.code}</span>}
-                      subtitle={[
-                        formatValue(coupon),
-                        formatRedemptions(coupon),
-                        formatDate(coupon.validUntil),
-                      ]}
-                      trailing={
-                        <Badge
-                          variant={inactive ? "default" : "success"}
-                          size="sm"
-                        >
-                          {inactive
-                            ? labels.inactive
-                            : labels.active}
-                        </Badge>
-                      }
-                      divider={idx !== filteredMobileCoupons.length - 1}
-                    />
-                  );
-                })}
-              </div>
+              <DataTable
+                columns={columns}
+                data={filteredMobileCoupons}
+                locale={lang === "ar" ? "ar" : "en"}
+                pagination
+                pageSize={10}
+                getRowId={(r) => r.id}
+                mobileCard={renderMobileCard}
+                emptyTitle={labels.noCoupons}
+                emptyDescription={labels.noCouponsDesc}
+              />
             )}
           </div>
 
@@ -622,187 +789,17 @@ export default function CouponManagementPage() {
       </div>
 
       {/* Coupons Table */}
-      {coupons.length === 0 ? (
-        <EmptyState
-          icon={<Ticket className="h-12 w-12" aria-hidden="true" />}
-          title={labels.noCoupons}
-          description={labels.noCouponsDesc}
-          action={
-            <Button
-              onClick={() => {
-                resetForm();
-                setShowModal(true);
-              }}
-              style={{ display: "inline-flex" }}
-              className="gap-2"
-            >
-              <Plus className="h-[18px] w-[18px]" />
-              {labels.createCoupon}
-            </Button>
-          }
-          helpHref="/dashboard/help#coupons"
-          helpLabel={lang === "ar" ? "تعرّف على كوبونات الخصم" : "Learn about coupons"}
-        />
-      ) : (
-        <Card className="overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{labels.code}</TableHead>
-                <TableHead>{labels.type}</TableHead>
-                <TableHead>{labels.value}</TableHead>
-                <TableHead>{labels.status}</TableHead>
-                <TableHead>{labels.redemptions}</TableHead>
-                <TableHead>{labels.validUntil}</TableHead>
-                <TableHead>{labels.plans}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {coupons.map((coupon) => {
-                const isExpired =
-                  coupon.validUntil &&
-                  new Date(coupon.validUntil) < new Date();
-                const isMaxedOut =
-                  coupon.maxRedemptions !== null &&
-                  coupon.currentUses >= coupon.maxRedemptions;
-
-                return (
-                  <TableRow key={coupon.id}>
-                    {/* Code */}
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono font-bold text-foreground bg-muted px-2 py-0.5 rounded text-xs tracking-wider">
-                          {coupon.code}
-                        </span>
-                      </div>
-                      {coupon.descriptionEn && lang === "en" && (
-                        <p className="text-xs text-muted-foreground mt-1 max-w-[200px] truncate">
-                          {coupon.descriptionEn}
-                        </p>
-                      )}
-                      {coupon.descriptionAr && lang === "ar" && (
-                        <p className="text-xs text-muted-foreground mt-1 max-w-[200px] truncate">
-                          {coupon.descriptionAr}
-                        </p>
-                      )}
-                    </TableCell>
-
-                    {/* Type */}
-                    <TableCell>
-                      <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                        {coupon.type === "PERCENTAGE" ? (
-                          <Percent className="h-3.5 w-3.5" />
-                        ) : (
-                          <CircleDollarSign className="h-3.5 w-3.5" />
-                        )}
-                        {coupon.type === "PERCENTAGE"
-                          ? labels.percentage
-                          : labels.fixedAmount}
-                      </span>
-                    </TableCell>
-
-                    {/* Value */}
-                    <TableCell className="font-semibold text-foreground">
-                      {formatValue(coupon)}
-                    </TableCell>
-
-                    {/* Status Toggle */}
-                    <TableCell>
-                      {/* eslint-disable-next-line react/forbid-elements -- semantic toggle switch (role=switch); see AGENTS.md §6.6 */}
-                      <button
-                        onClick={() =>
-                          handleToggle(coupon.id, coupon.isActive)
-                        }
-                        disabled={togglingId === coupon.id}
-                        className="group relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                        style={{
-                          backgroundColor: coupon.isActive
-                            ? "hsl(var(--success))"
-                            : "hsl(var(--muted-foreground) / 0.4)",
-                        }}
-                        role="switch"
-                        aria-checked={coupon.isActive}
-                        aria-label={
-                          coupon.isActive ? labels.active : labels.inactive
-                        }
-                      >
-                        <span
-                          className="pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-sm ring-0 transition-transform duration-200"
-                          style={{
-                            transform: coupon.isActive
-                              ? lang === "ar"
-                                ? "translateX(-0.25rem)"
-                                : "translateX(1.25rem)"
-                              : lang === "ar"
-                                ? "translateX(-1.25rem)"
-                                : "translateX(0.25rem)",
-                          }}
-                        />
-                      </button>
-                      <span
-                        className={`ms-2 text-xs font-medium ${
-                          coupon.isActive
-                            ? "text-success"
-                            : "text-muted-foreground"
-                        }`}
-                      >
-                        {coupon.isActive ? labels.active : labels.inactive}
-                      </span>
-                      {(isExpired || isMaxedOut) && (
-                        <span className="ms-1 text-xs text-warning">
-                          {isExpired
-                            ? lang === "ar"
-                              ? "(منتهي)"
-                              : "(Expired)"
-                            : lang === "ar"
-                              ? "(مكتمل)"
-                              : "(Maxed)"}
-                        </span>
-                      )}
-                    </TableCell>
-
-                    {/* Redemptions */}
-                    <TableCell>
-                      <div className="flex items-center gap-1.5 text-muted-foreground">
-                        <Users className="h-3.5 w-3.5" />
-                        <span>{formatRedemptions(coupon)}</span>
-                      </div>
-                    </TableCell>
-
-                    {/* Valid Until */}
-                    <TableCell>
-                      <div className="flex items-center gap-1.5 text-muted-foreground">
-                        <Calendar className="h-3.5 w-3.5" />
-                        <span>{formatDate(coupon.validUntil)}</span>
-                      </div>
-                    </TableCell>
-
-                    {/* Plans */}
-                    <TableCell>
-                      {coupon.plans.length === 0 ? (
-                        <span className="text-xs text-muted-foreground">
-                          {labels.allPlans}
-                        </span>
-                      ) : (
-                        <div className="flex flex-wrap gap-1">
-                          {coupon.plans.map((plan) => (
-                            <span
-                              key={plan.id}
-                              className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-primary/10 text-primary font-medium"
-                            >
-                              {plan.nameEn}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </Card>
-      )}
+      <DataTable
+        columns={columns}
+        data={coupons}
+        locale={lang === "ar" ? "ar" : "en"}
+        pagination
+        pageSize={10}
+        getRowId={(r) => r.id}
+        mobileCard={renderMobileCard}
+        emptyTitle={labels.noCoupons}
+        emptyDescription={labels.noCouponsDesc}
+      />
 
       {/* ── Create Coupon Modal ─────────────────────────────────────────────── */}
       {showModal && (

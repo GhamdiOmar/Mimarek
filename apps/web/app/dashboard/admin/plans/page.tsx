@@ -14,7 +14,17 @@ import {
   AlertTriangle,
   CheckCircle2,
 } from "lucide-react";
-import { Button, Card, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, ResponsiveDialog, DirectionalIcon, EmptyState } from "@repo/ui";
+import {
+  Button,
+  Card,
+  ResponsiveDialog,
+  DirectionalIcon,
+  EmptyState,
+  Switch,
+  DataTable,
+  IconButton,
+  type ColumnDef,
+} from "@repo/ui";
 import { PageHeader } from "@repo/ui/components/PageHeader";
 import Link from "next/link";
 import { adminGetAllPlans, adminUpsertPlan } from "../../../actions/billing";
@@ -286,6 +296,182 @@ export default function AdminPlansPage() {
     }
   }
 
+  // ── Column definitions ────────────────────────────────────────────────
+  const columns: ColumnDef<Plan>[] = [
+    {
+      accessorKey: "nameAr",
+      header: lang === "ar" ? t.planName : t.planName,
+      enableSorting: true,
+      cell: ({ row }) => {
+        const plan = row.original;
+        return (
+          <div className="flex flex-col gap-0.5">
+            <span className="text-sm font-semibold text-foreground">
+              {plan.nameAr}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              {plan.nameEn}
+            </span>
+            {plan.isDefault && (
+              <span className="mt-1 inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-info/15 text-info">
+                {t.default}
+              </span>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "slug",
+      header: t.slug,
+      enableSorting: true,
+      cell: ({ row }) => (
+        <code className="text-xs font-mono bg-muted px-2 py-1 rounded text-muted-foreground">
+          {row.original.slug}
+        </code>
+      ),
+    },
+    {
+      accessorKey: "priceMonthly",
+      header: t.monthlyPrice,
+      enableSorting: true,
+      meta: { numeric: true },
+      cell: ({ row }) => (
+        <span className="font-variant-numeric-tabular">
+          <span className="text-sm font-medium text-foreground">
+            {formatPrice(row.original.priceMonthly)}
+          </span>
+          <span className="text-xs text-muted-foreground ms-1">
+            {t.sar}
+          </span>
+        </span>
+      ),
+    },
+    {
+      accessorKey: "priceAnnual",
+      header: t.annualPrice,
+      enableSorting: true,
+      meta: { numeric: true },
+      cell: ({ row }) => (
+        <span className="font-variant-numeric-tabular">
+          <span className="text-sm font-medium text-foreground">
+            {formatPrice(row.original.priceAnnual)}
+          </span>
+          <span className="text-xs text-muted-foreground ms-1">
+            {t.sar}
+          </span>
+        </span>
+      ),
+    },
+    {
+      accessorKey: "trialDays",
+      header: t.trialDays,
+      enableSorting: true,
+      meta: { numeric: true },
+      cell: ({ row }) => (
+        <span className="text-sm text-foreground">
+          {row.original.trialDays}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "isPublic",
+      header: t.status,
+      enableSorting: false,
+      cell: ({ row }) => {
+        const plan = row.original;
+        return plan.isPublic ? (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-success/15 text-success">
+            <Eye className="w-3.5 h-3.5" />
+            {t.public}
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-muted text-muted-foreground">
+            <EyeOff className="w-3.5 h-3.5" />
+            {t.draft}
+          </span>
+        );
+      },
+    },
+    {
+      id: "actions",
+      header: "",
+      enableSorting: false,
+      enableHiding: false,
+      cell: ({ row }) => (
+        <div className="flex items-center gap-1">
+          <IconButton
+            icon={Pencil}
+            aria-label={lang === "ar" ? "تعديل" : "Edit"}
+            tooltip={lang === "ar" ? "تعديل" : "Edit"}
+            variant="ghost"
+            size="icon"
+            onClick={() => openEdit(row.original)}
+          />
+        </div>
+      ),
+    },
+  ];
+
+  // ── Mobile card renderer ──────────────────────────────────────────────
+  function mobileCard(plan: Plan) {
+    return (
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex flex-col gap-1 min-w-0">
+          <span className="text-sm font-semibold text-foreground truncate">
+            {lang === "ar" ? plan.nameAr : plan.nameEn}
+          </span>
+          <span className="text-xs text-muted-foreground">
+            {lang === "ar" ? plan.nameEn : plan.nameAr}
+          </span>
+          <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground w-fit">
+            {plan.slug}
+          </code>
+          <div className="flex items-center gap-2 mt-1 flex-wrap">
+            <span className="text-xs text-muted-foreground">
+              {t.monthlyPrice}:{" "}
+              <span className="font-medium text-foreground">
+                {formatPrice(plan.priceMonthly)} {t.sar}
+              </span>
+            </span>
+            <span className="text-xs text-muted-foreground">
+              {t.trialDays}:{" "}
+              <span className="font-medium text-foreground">
+                {plan.trialDays}
+              </span>
+            </span>
+          </div>
+          {plan.isDefault && (
+            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-info/15 text-info w-fit">
+              {t.default}
+            </span>
+          )}
+        </div>
+        <div className="flex flex-col items-end gap-2 shrink-0">
+          {plan.isPublic ? (
+            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold bg-success/15 text-success">
+              <Eye className="w-3 h-3" />
+              {t.public}
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold bg-muted text-muted-foreground">
+              <EyeOff className="w-3 h-3" />
+              {t.draft}
+            </span>
+          )}
+          <IconButton
+            icon={Pencil}
+            aria-label={lang === "ar" ? "تعديل" : "Edit"}
+            tooltip={lang === "ar" ? "تعديل" : "Edit"}
+            variant="ghost"
+            size="icon"
+            onClick={() => openEdit(plan)}
+          />
+        </div>
+      </div>
+    );
+  }
+
   // ── Render: Loading ───────────────────────────────────────────────────
   if (loading) {
     return (
@@ -355,120 +541,17 @@ export default function AdminPlansPage() {
         />
       ) : (
         <Card className="overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>
-                    {t.planName}
-                  </TableHead>
-                  <TableHead>
-                    {t.slug}
-                  </TableHead>
-                  <TableHead>
-                    {t.monthlyPrice}
-                  </TableHead>
-                  <TableHead>
-                    {t.annualPrice}
-                  </TableHead>
-                  <TableHead className="text-center">
-                    {t.trialDays}
-                  </TableHead>
-                  <TableHead className="text-center">
-                    {t.status}
-                  </TableHead>
-                  <TableHead className="text-center">
-                    {t.actions}
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {plans.map((plan) => (
-                  <TableRow
-                    key={plan.id}
-                    className="group"
-                  >
-                    {/* Plan Name */}
-                    <TableCell>
-                      <div className="flex flex-col gap-0.5">
-                        <span className="text-sm font-semibold text-foreground">
-                          {plan.nameAr}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {plan.nameEn}
-                        </span>
-                      </div>
-                      {plan.isDefault && (
-                        <span className="mt-1 inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-info/15 text-info">
-                          {t.default}
-                        </span>
-                      )}
-                    </TableCell>
-
-                    {/* Slug */}
-                    <TableCell>
-                      <code className="text-xs font-mono bg-muted px-2 py-1 rounded text-muted-foreground">
-                        {plan.slug}
-                      </code>
-                    </TableCell>
-
-                    {/* Monthly Price */}
-                    <TableCell>
-                      <span className="text-sm font-medium text-foreground">
-                        {formatPrice(plan.priceMonthly)}
-                      </span>
-                      <span className="text-xs text-muted-foreground ms-1">
-                        {t.sar}
-                      </span>
-                    </TableCell>
-
-                    {/* Annual Price */}
-                    <TableCell>
-                      <span className="text-sm font-medium text-foreground">
-                        {formatPrice(plan.priceAnnual)}
-                      </span>
-                      <span className="text-xs text-muted-foreground ms-1">
-                        {t.sar}
-                      </span>
-                    </TableCell>
-
-                    {/* Trial Days */}
-                    <TableCell className="text-center">
-                      <span className="text-sm text-foreground">
-                        {plan.trialDays}
-                      </span>
-                    </TableCell>
-
-                    {/* Status */}
-                    <TableCell className="text-center">
-                      {plan.isPublic ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-success/15 text-success">
-                          <Eye className="w-3.5 h-3.5" />
-                          {t.public}
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-muted text-muted-foreground">
-                          <EyeOff className="w-3.5 h-3.5" />
-                          {t.draft}
-                        </span>
-                      )}
-                    </TableCell>
-
-                    {/* Actions */}
-                    <TableCell className="text-center">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => openEdit(plan)}
-
-                      >
-                        <Pencil className="w-4 h-4" />
-                        <span className="ms-1">{t.edit}</span>
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+          <DataTable
+            columns={columns}
+            data={plans}
+            mobileCard={mobileCard}
+            locale={lang === "ar" ? "ar" : "en"}
+            pagination
+            pageSize={10}
+            getRowId={(r) => r.id}
+            emptyTitle={t.noPlans}
+            emptyDescription={t.noPlansDesc}
+          />
         </Card>
       )}
 
@@ -693,28 +776,11 @@ export default function AdminPlansPage() {
                 </p>
               </div>
             </div>
-            {/* eslint-disable-next-line react/forbid-elements -- semantic toggle switch (role=switch); see AGENTS.md §6.6 */}
-            <button
-              type="button"
-              role="switch"
-              aria-checked={form.isPublic}
-              onClick={() => updateField("isPublic", !form.isPublic)}
-              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
-                form.isPublic
-                  ? "bg-success"
-                  : "bg-muted-foreground/30"
-              }`}
-            >
-              <span
-                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
-                  form.isPublic
-                    ? lang === "ar"
-                      ? "-translate-x-5"
-                      : "translate-x-5"
-                    : "translate-x-0"
-                }`}
-              />
-            </button>
+            <Switch
+              checked={form.isPublic}
+              onCheckedChange={(v) => updateField("isPublic", v)}
+              aria-label={t.isPublic}
+            />
           </div>
         </form>
       </ResponsiveDialog>

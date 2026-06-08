@@ -311,7 +311,7 @@ export default function AdminEmailSettingsPage() {
             </div>
 
             <div className="flex flex-wrap items-center gap-2 border-t border-border pt-4">
-              <Button type="button" variant="secondary" onClick={save} loading={saving} style={{ display: "inline-flex" }}>
+              <Button type="button" variant="primary" onClick={save} loading={saving} style={{ display: "inline-flex" }}>
                 <Save className="h-4 w-4" />
                 {t.save}
               </Button>

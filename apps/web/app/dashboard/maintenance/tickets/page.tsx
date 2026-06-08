@@ -26,14 +26,9 @@ import {
   Button,
   IconButton,
   ResponsiveDialog,
-  Card,
   KPICard,
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
+  DataTable,
+  type ColumnDef,
   PageIntro,
   FilterBar,
   StatusBadge,
@@ -389,6 +384,137 @@ export default function MaintenancePage() {
     });
   }
 
+  // ─── DataTable column definitions ────────────────────────────
+  const columns: ColumnDef<any, any>[] = [
+    {
+      accessorKey: "title",
+      header: lang === "ar" ? "العنوان" : "Title",
+      cell: ({ row }) => {
+        const r = row.original;
+        return (
+          <Link
+            href={`/dashboard/maintenance/${r.id}`}
+            className="text-sm font-semibold text-foreground hover:text-primary transition-colors"
+          >
+            {r.title}
+            {r.isPreventive && (
+              <span className="text-[9px] text-success me-1">[{lang === "ar" ? "وقائي" : "Preventive"}]</span>
+            )}
+          </Link>
+        );
+      },
+      enableSorting: true,
+    },
+    {
+      accessorKey: "unit",
+      header: lang === "ar" ? "الوحدة" : "Unit",
+      cell: ({ row }) => {
+        const r = row.original;
+        return (
+          <span className="text-sm text-foreground">
+            {r.unit?.number ?? "—"}{r.unit?.building?.name ? ` — ${r.unit.building.name}` : ""}
+          </span>
+        );
+      },
+      enableSorting: false,
+    },
+    {
+      accessorKey: "category",
+      header: lang === "ar" ? "التصنيف" : "Category",
+      cell: ({ row }) => {
+        const cat = categoryLabels[row.original.category] ?? { ar: row.original.category, en: row.original.category };
+        return <span className="text-xs text-muted-foreground">{cat[lang]}</span>;
+      },
+      enableSorting: true,
+    },
+    {
+      accessorKey: "priority",
+      header: lang === "ar" ? "الأولوية" : "Priority",
+      cell: ({ row }) => {
+        const priority = priorityLabels[row.original.priority] ?? { ar: row.original.priority, en: row.original.priority, color: "text-muted-foreground" };
+        return <span className={`text-xs font-semibold ${priority.color}`}>{priority[lang]}</span>;
+      },
+      enableSorting: true,
+    },
+    {
+      accessorKey: "status",
+      header: lang === "ar" ? "الحالة" : "Status",
+      cell: ({ row }) => {
+        const r = row.original;
+        const statusLabel = statusLabels[r.status] ?? { ar: r.status, en: r.status };
+        return (
+          <StatusBadge
+            entityType="maintenance"
+            status={r.status}
+            label={statusLabel[lang]}
+            className="text-[10px]"
+          />
+        );
+      },
+      enableSorting: true,
+    },
+    {
+      accessorKey: "assignedTo",
+      header: lang === "ar" ? "المُعيَّن" : "Assigned",
+      cell: ({ row }) => (
+        <span className="text-xs text-muted-foreground">
+          {row.original.assignedTo?.name ?? "—"}
+        </span>
+      ),
+      enableSorting: false,
+    },
+    {
+      accessorKey: "dueDate",
+      header: lang === "ar" ? "الاستحقاق" : "Due",
+      cell: ({ row }) => {
+        const r = row.original;
+        const isOverdue = r.dueDate && new Date(r.dueDate) < new Date() && !["RESOLVED", "CLOSED"].includes(r.status);
+        return r.dueDate ? (
+          <span className={`text-xs ${isOverdue ? "text-destructive font-semibold" : "text-muted-foreground"}`}>
+            {new Date(r.dueDate).toLocaleDateString("en-SA")}
+            {isOverdue && <AlertTriangle className="inline h-3 w-3 me-1" />}
+          </span>
+        ) : (
+          <span className="text-xs text-muted-foreground">{"—"}</span>
+        );
+      },
+      enableSorting: true,
+    },
+    {
+      id: "actions",
+      header: "",
+      enableSorting: false,
+      enableHiding: false,
+      cell: ({ row }) => {
+        const r = row.original;
+        return (
+          <div className="flex items-center gap-1">
+            <Link href={`/dashboard/maintenance/${r.id}`}>
+              <IconButton
+                icon={Eye}
+                aria-label={lang === "ar" ? "عرض" : "View"}
+                variant="ghost"
+              />
+            </Link>
+            <IconButton
+              icon={Pencil}
+              aria-label={lang === "ar" ? "تعديل" : "Edit"}
+              variant="ghost"
+              onClick={() => openEdit(r)}
+            />
+            <IconButton
+              icon={Trash2}
+              aria-label={lang === "ar" ? "حذف" : "Delete"}
+              variant="ghost"
+              className="text-destructive hover:text-destructive/80"
+              onClick={() => handleDelete(r.id)}
+            />
+          </div>
+        );
+      },
+    },
+  ];
+
   return (
     <>
     <div className="md:hidden -m-4 sm:-m-6 min-h-dvh flex flex-col bg-background">
@@ -687,7 +813,7 @@ export default function MaintenancePage() {
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         <KPICard
           label={lang === "ar" ? "مفتوحة" : "Open"}
-          value={stats?.open ?? "\u2014"}
+          value={stats?.open ?? "—"}
           subtitle={lang === "ar" ? "طلبات بانتظار التعيين" : "Awaiting assignment"}
           icon={<AlertTriangle className="h-5 w-5" />}
           accentColor="warning"
@@ -696,7 +822,7 @@ export default function MaintenancePage() {
         />
         <KPICard
           label={lang === "ar" ? "معيّنة" : "Assigned"}
-          value={stats?.assigned ?? "\u2014"}
+          value={stats?.assigned ?? "—"}
           subtitle={lang === "ar" ? "تم تعيين فني" : "Technician assigned"}
           icon={<UserCircle className="h-5 w-5" />}
           accentColor="info"
@@ -705,7 +831,7 @@ export default function MaintenancePage() {
         />
         <KPICard
           label={lang === "ar" ? "قيد التنفيذ" : "In Progress"}
-          value={stats?.inProgress ?? "\u2014"}
+          value={stats?.inProgress ?? "—"}
           subtitle={lang === "ar" ? "جارٍ العمل عليها" : "Work underway"}
           icon={<Clock className="h-5 w-5" />}
           accentColor="primary"
@@ -714,7 +840,7 @@ export default function MaintenancePage() {
         />
         <KPICard
           label={lang === "ar" ? "متأخرة" : "Overdue"}
-          value={stats?.overdue ?? "\u2014"}
+          value={stats?.overdue ?? "—"}
           subtitle={lang === "ar" ? "تجاوزت الموعد المحدد" : "Past due date"}
           icon={<AlertTriangle className="h-5 w-5" />}
           accentColor="destructive"
@@ -723,7 +849,7 @@ export default function MaintenancePage() {
         />
         <KPICard
           label={lang === "ar" ? "مكتملة هذا الشهر" : "Completed (Month)"}
-          value={stats?.completedThisMonth ?? "\u2014"}
+          value={stats?.completedThisMonth ?? "—"}
           subtitle={lang === "ar" ? "تم الحل هذا الشهر" : "Resolved this month"}
           icon={<CheckCircle className="h-5 w-5" />}
           accentColor="success"
@@ -767,152 +893,58 @@ export default function MaintenancePage() {
       />
 
       {/* Table */}
-      <Card className="overflow-hidden">
-        {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        ) : requests.length === 0 ? (
-          filterStatus || search || filterPriority || filterCategory ? (
-            <EmptyState
-              variant="filtered"
-              icon={<Search className="h-12 w-12" />}
-              title={lang === "ar" ? "لا توجد نتائج مطابقة" : "No matching requests"}
-              description={
-                lang === "ar"
-                  ? "جرّب تعديل الفلاتر أو البحث بكلمات أخرى."
-                  : "Try adjusting the filters or search terms."
+      <DataTable
+        columns={columns}
+        data={visibleRequests}
+        loading={loading}
+        locale={lang === "ar" ? "ar" : "en"}
+        pagination
+        pageSize={10}
+        getRowId={(r) => r.id}
+        rowClassName={(r) => {
+          const tone = toneForTicket(r);
+          if (tone === "red") return "border-s-2 border-destructive/60 bg-destructive/5";
+          if (tone === "amber") return "border-s-2 border-warning/60 bg-warning/5";
+          if (tone === "green") return "border-s-2 border-success/30";
+          return undefined;
+        }}
+        mobileCard={(r) => {
+          const statusLabel = statusLabels[r.status] ?? { ar: r.status, en: r.status };
+          const priorityLabel = priorityLabels[r.priority] ?? { ar: r.priority, en: r.priority };
+          return (
+            <DataCard
+              key={r.id}
+              icon={iconForTicket(r)}
+              iconTone={toneForTicket(r)}
+              title={r.title}
+              subtitle={[
+                r.unit?.number,
+                formatShortDate(r.scheduledDate ?? r.dueDate),
+                priorityLabel[lang],
+              ]}
+              trailing={
+                <StatusBadge
+                  entityType="maintenance"
+                  status={r.status}
+                  label={statusLabel[lang]}
+                  className="text-[10px]"
+                />
               }
-              action={
-                <Button
-                  variant="outline"
-                  size="sm"
-                  style={{ display: "inline-flex" }}
-                  onClick={() => {
-                    setFilterStatus("");
-                    setFilterPriority("");
-                    setFilterCategory("");
-                    setSearch("");
-                  }}
-                >
-                  {lang === "ar" ? "مسح الفلاتر" : "Clear filters"}
-                </Button>
-              }
+              href={`/dashboard/maintenance/${r.id}`}
             />
-          ) : (
-            <EmptyState
-              variant="first-time"
-              icon={<Wrench className="h-12 w-12" />}
-              title={lang === "ar" ? "لا توجد طلبات صيانة بعد" : "No maintenance requests yet"}
-              description={
-                lang === "ar"
-                  ? "أنشئ طلبات صيانة وتابع حالتها حتى الإغلاق."
-                  : "Log maintenance requests and track them through to resolution."
-              }
-              action={
-                <Button size="sm" onClick={openCreate} style={{ display: "inline-flex" }}>
-                  <Plus className="h-4 w-4 me-1.5" />
-                  {lang === "ar" ? "طلب جديد" : "New request"}
-                </Button>
-              }
-              helpHref="/dashboard/help#maintenance"
-              helpLabel={lang === "ar" ? "تعرّف على الصيانة" : "Learn about maintenance"}
-            />
-          )
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{lang === "ar" ? "العنوان" : "Title"}</TableHead>
-                <TableHead>{lang === "ar" ? "الوحدة" : "Unit"}</TableHead>
-                <TableHead>{lang === "ar" ? "التصنيف" : "Category"}</TableHead>
-                <TableHead>{lang === "ar" ? "الأولوية" : "Priority"}</TableHead>
-                <TableHead>{lang === "ar" ? "الحالة" : "Status"}</TableHead>
-                <TableHead>{lang === "ar" ? "المُعيَّن" : "Assigned"}</TableHead>
-                <TableHead>{lang === "ar" ? "الاستحقاق" : "Due"}</TableHead>
-                <TableHead>{lang === "ar" ? "الإجراءات" : "Actions"}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {requests.map((r: any) => {
-                const priority = priorityLabels[r.priority] ?? { ar: r.priority, en: r.priority, color: "text-muted-foreground" };
-                const cat = categoryLabels[r.category] ?? { ar: r.category, en: r.category };
-                const statusLabel = statusLabels[r.status] ?? { ar: r.status, en: r.status };
-                const isOverdue = r.dueDate && new Date(r.dueDate) < new Date() && !["RESOLVED", "CLOSED"].includes(r.status);
-
-                return (
-                  <TableRow key={r.id}>
-                    <TableCell>
-                      <Link
-                        href={`/dashboard/maintenance/${r.id}`}
-                        className="text-sm font-semibold text-foreground hover:text-primary transition-colors"
-                      >
-                        {r.title}
-                        {r.isPreventive && (
-                          <span className="text-[9px] text-success me-1">[{lang === "ar" ? "وقائي" : "Preventive"}]</span>
-                        )}
-                      </Link>
-                    </TableCell>
-                    <TableCell className="text-sm text-foreground">
-                      {r.unit?.number ?? "\u2014"} \u2014 {r.unit?.building?.name ?? ""}
-                    </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{cat[lang]}</TableCell>
-                    <TableCell>
-                      <span className={`text-xs font-semibold ${priority.color}`}>{priority[lang]}</span>
-                    </TableCell>
-                    <TableCell>
-                      <StatusBadge
-                        entityType="maintenance"
-                        status={r.status}
-                        label={statusLabel[lang]}
-                        className="text-[10px]"
-                      />
-                    </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{r.assignedTo?.name ?? "\u2014"}</TableCell>
-                    <TableCell>
-                      {r.dueDate ? (
-                        <span className={`text-xs ${isOverdue ? "text-destructive font-semibold" : "text-muted-foreground"}`}>
-                          {new Date(r.dueDate).toLocaleDateString("en-SA")}
-                          {isOverdue && <AlertTriangle className="inline h-3 w-3 me-1" />}
-                        </span>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">{"\u2014"}</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        <Link href={`/dashboard/maintenance/${r.id}`}>
-                          <IconButton
-                            icon={Eye}
-                            aria-label={lang === "ar" ? "عرض" : "View"}
-                            variant="ghost"
-                            size="sm"
-                          />
-                        </Link>
-                        <IconButton
-                          icon={Pencil}
-                          aria-label={lang === "ar" ? "تعديل" : "Edit"}
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => openEdit(r)}
-                        />
-                        <IconButton
-                          icon={Trash2}
-                          aria-label={lang === "ar" ? "حذف" : "Delete"}
-                          variant="ghost"
-                          size="sm"
-                          className="text-destructive hover:text-destructive/80"
-                          onClick={() => handleDelete(r.id)}
-                        />
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        )}
-      </Card>
+          );
+        }}
+        emptyTitle={
+          filterStatus || search || filterPriority || filterCategory
+            ? (lang === "ar" ? "لا توجد نتائج مطابقة" : "No matching requests")
+            : (lang === "ar" ? "لا توجد طلبات صيانة بعد" : "No maintenance requests yet")
+        }
+        emptyDescription={
+          filterStatus || search || filterPriority || filterCategory
+            ? (lang === "ar" ? "جرّب تعديل الفلاتر أو البحث بكلمات أخرى." : "Try adjusting the filters or search terms.")
+            : (lang === "ar" ? "أنشئ طلبات صيانة وتابع حالتها حتى الإغلاق." : "Log maintenance requests and track them through to resolution.")
+        }
+      />
 
       {/* Create/Edit Modal */}
       <ResponsiveDialog

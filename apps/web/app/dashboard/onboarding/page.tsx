@@ -9,7 +9,7 @@ import {
   Check,
   Loader2,
 } from "lucide-react";
-import { Button, Input, AppBar, DirectionalIcon } from "@repo/ui";
+import { Button, Input, AppBar, DirectionalIcon, PageIntro } from "@repo/ui";
 import { cn } from "@repo/ui/lib/utils";
 import { useRouter } from "next/navigation";
 import { updateOrganization } from "../../actions/organization";
@@ -395,17 +395,14 @@ export default function OnboardingPage() {
       className="min-h-screen bg-muted/30"
     >
       <div className="max-w-3xl mx-auto px-4 py-10 space-y-8 animate-in fade-in duration-500">
-        {/* Header */}
-        <div>
-          <h1 className="text-2xl font-bold text-primary">
-            {lang === "ar" ? "إعداد حسابك" : "Set Up Your Account"}
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            {lang === "ar"
+        <PageIntro
+          title={lang === "ar" ? "إعداد حسابك" : "Set Up Your Account"}
+          description={
+            lang === "ar"
               ? "أكمل الخطوات التالية لتفعيل حسابك على ميماريك."
-              : "Complete the following steps to activate your Mimaric account."}
-          </p>
-        </div>
+              : "Complete the following steps to activate your Mimaric account."
+          }
+        />
 
         {/* Stepper */}
         <div className="relative h-1 bg-muted rounded-full mx-8">

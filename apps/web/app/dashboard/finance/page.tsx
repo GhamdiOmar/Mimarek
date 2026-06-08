@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import {
   KPICard,
+  PageIntro,
   SARAmount,
   Card,
   CardHeader,
@@ -135,22 +136,20 @@ export default function FinanceDashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">
-            {lang === "ar" ? "المالية" : "Finance"}
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            {lang === "ar"
-              ? "التحصيل وأعمار المستحقات"
-              : "Collections and AR aging"}
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <DateRangePicker locale={lang} />
-          <LastUpdatedAgo timestamp={lastLoaded} locale={lang} onRefresh={load} />
-        </div>
-      </div>
+      <PageIntro
+        title={lang === "ar" ? "المالية" : "Finance"}
+        description={
+          lang === "ar"
+            ? "التحصيل وأعمار المستحقات"
+            : "Collections and AR aging"
+        }
+        actions={
+          <div className="flex flex-wrap items-center gap-3">
+            <DateRangePicker locale={lang} />
+            <LastUpdatedAgo timestamp={lastLoaded} locale={lang} onRefresh={load} />
+          </div>
+        }
+      />
 
       {error && (
         <div className="flex items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/10 p-4">
