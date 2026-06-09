@@ -335,11 +335,15 @@ export default function AdminMarketplacePage() {
 
       {/* Header */}
       <PageHeader
-        title="Marketplace Moderation"
-        description="Review, monitor and moderate all marketplace listings across tenant organizations"
+        title={lang === "ar" ? "إدارة السوق" : "Marketplace Moderation"}
+        description={
+          lang === "ar"
+            ? "مراجعة جميع إعلانات السوق عبر مؤسسات المستأجرين ومتابعتها والإشراف عليها"
+            : "Review, monitor and moderate all marketplace listings across tenant organizations"
+        }
         actions={
           <Button variant="outline" size="sm" onClick={loadListings}>
-            Refresh
+            {lang === "ar" ? "تحديث" : "Refresh"}
           </Button>
         }
       />
@@ -403,12 +407,16 @@ export default function AdminMarketplacePage() {
       <ResponsiveDialog
         open={!!suspendTarget}
         onOpenChange={(open) => { if (!open && !suspending) setSuspendTarget(null); }}
-        title="Suspend Listing"
-        description={`Suspend listing "${suspendTarget?.title ?? suspendTarget?.listingNumber}" from ${suspendTarget?.sellerOrg.nameEnglish ?? suspendTarget?.sellerOrg.name}? The seller will be notified with the reason.`}
+        title={lang === "ar" ? "تعليق الإعلان" : "Suspend Listing"}
+        description={
+          lang === "ar"
+            ? `تعليق الإعلان «${suspendTarget?.title ?? suspendTarget?.listingNumber}» الخاص بـ${suspendTarget?.sellerOrg.name}؟ سيُخطَر البائع بالسبب.`
+            : `Suspend listing "${suspendTarget?.title ?? suspendTarget?.listingNumber}" from ${suspendTarget?.sellerOrg.nameEnglish ?? suspendTarget?.sellerOrg.name}? The seller will be notified with the reason.`
+        }
         footer={
           <div className="flex justify-end gap-2">
             <Button variant="ghost" onClick={() => setSuspendTarget(null)} disabled={suspending}>
-              Cancel
+              {lang === "ar" ? "إلغاء" : "Cancel"}
             </Button>
             <Button
               variant="destructive"
@@ -416,7 +424,7 @@ export default function AdminMarketplacePage() {
               disabled={suspending || !suspendReason.trim()}
             >
               {suspending && <Loader2 className="h-4 w-4 animate-spin me-1.5" aria-hidden="true" />}
-              Confirm Suspension
+              {lang === "ar" ? "تأكيد التعليق" : "Confirm Suspension"}
             </Button>
           </div>
         }
@@ -430,14 +438,20 @@ export default function AdminMarketplacePage() {
           )}
           <div className="space-y-1">
             <label className="text-xs font-medium text-muted-foreground">
-              Suspension reason (required — shown to seller)
+              {lang === "ar"
+                ? "سبب التعليق (إلزامي — يظهر للبائع)"
+                : "Suspension reason (required — shown to seller)"}
             </label>
             <textarea
-              aria-label="Suspension reason"
+              aria-label={lang === "ar" ? "سبب التعليق" : "Suspension reason"}
               value={suspendReason}
               onChange={(e) => setSuspendReason(e.target.value)}
               rows={3}
-              placeholder="Enter a clear reason for suspension…"
+              placeholder={
+                lang === "ar"
+                  ? "أدخل سبباً واضحاً للتعليق…"
+                  : "Enter a clear reason for suspension…"
+              }
               className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
             />
           </div>

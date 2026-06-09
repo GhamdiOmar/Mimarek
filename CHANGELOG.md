@@ -1,5 +1,10 @@
 # Changelog — Mimaric PropTech
 
+## [4.15.1] — 2026-06-09 — Fixes: RTL theme-toggle thumb + admin marketplace i18n
+
+- **Theme toggle (RTL):** the sun/moon thumb hung ~14px off the leading edge of its track in Arabic (RTL) because it mixed a logical `ms-1` margin with a physical `translate-x` slide. Reworked to position the thumb via the logical `inset-inline-start` property (RTL-safe by construction) with `-translate-y-1/2` for vertical centering only. Verified inside-track + vertically centered in LTR + RTL × light + dark.
+- **Admin marketplace moderation i18n:** the `/dashboard/admin/marketplace` page header (H1 + subtitle), the Refresh button, and the suspend-listing dialog (title, description, buttons, reason label/placeholder) were hardcoded English. Now bilingual — H1 renders «إدارة السوق» under `lang === "ar"`.
+
 ## [4.15.0] — 2026-06-09 — Security & integrity remediation + performance + polish
 
 Closes the confirmed Critical/High findings from the QA/code audit (which returned a **No-Go**), plus contained performance wins, v4.11 polish follow-ups, and a CRM enrichment. Every finding was re-verified against the codebase before fixing. Decisions: Postgres-backed rate limiting (no Redis), keyed-HMAC PII blind index with reseed (pre-prod), all in one pass.
