@@ -733,10 +733,10 @@ export default function HelpPage() {
           )}
         </div>
 
-        {/* Permission request quick link */}
+        {/* Permission request quick link — DataCard is its own surface (no card-in-card) */}
         <div className="px-4 pb-6">
-          <div className="rounded-2xl border border-border bg-card">
-            <div className="px-4">
+          <div>
+            <div>
               <DataCard
                 title={lang === "ar" ? "طلب ترقية صلاحيات" : "Request Permission Upgrade"}
                 subtitle={
