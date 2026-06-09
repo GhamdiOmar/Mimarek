@@ -9,7 +9,7 @@ import { logAuditEvent } from "../../lib/audit";
 // UploadThing CDN origins for this app (app ID: c5k2lwc5ws).
 // utfs.io  — legacy shared CDN (still serves files from v6 era and older uploads)
 // *.ufs.sh — new app-scoped CDN introduced in UploadThing v6+ (app-specific subdomain)
-// Source: UPLOADTHING_APP_ID env var + UploadThing v7 SDK behaviour confirmed via package.json
+// Source: UPLOADTHING_APP_ID env var + UploadThing v7 SDK behavior confirmed via package.json
 // Module-private — NOT exported (this is a "use server" file)
 const UPLOADTHING_ALLOWED_ORIGINS = new Set([
   "https://utfs.io",
