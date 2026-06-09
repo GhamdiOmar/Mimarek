@@ -4,17 +4,21 @@ import * as React from "react";
 import {
   flexRender,
   getCoreRowModel,
+  getExpandedRowModel,
   getFilteredRowModel,
+  getGroupedRowModel,
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
   type ColumnDef,
   type ColumnFiltersState,
+  type ExpandedState,
+  type GroupingState,
   type RowSelectionState,
   type SortingState,
   type VisibilityState,
 } from "@tanstack/react-table";
-import { ArrowUpDown, ChevronDown, ChevronUp, Filter, RowsIcon, X } from "lucide-react";
+import { ArrowUpDown, ChevronDown, ChevronRight, ChevronUp, Filter, Layers, RowsIcon, X } from "lucide-react";
 import { cn } from "../lib/utils";
 import { Button } from "./Button";
 import { Input } from "./Input";
@@ -78,6 +82,14 @@ export interface DataTableProps<TData, TValue> {
   mobileCard?: (row: TData) => React.ReactNode;
   /** Optional per-row className (desktop row + mobile card) — e.g. status-keyed start-border accents. */
   rowClassName?: (row: TData) => string | undefined;
+  /**
+   * Columns the user can cluster rows by (collapsible grouped rows). When provided,
+   * a "Group by" control renders in the toolbar. Each `id` must match a column id
+   * with an accessor. Pass `defaultGroupBy` to group on first render.
+   */
+  groupableColumns?: { id: string; label: string }[];
+  /** Initial group-by column id (must be one of `groupableColumns`). */
+  defaultGroupBy?: string;
   /** Initial sort. */
   initialSorting?: SortingState;
   /** URL-sync — stores sort/filter/page state in query params. Requires caller to pass the current searchParams-like pair. */
@@ -109,6 +121,8 @@ function DataTableInner<TData, TValue>({
   getRowId,
   mobileCard,
   rowClassName,
+  groupableColumns,
+  defaultGroupBy,
   initialSorting = [],
   urlState,
   className,
@@ -133,6 +147,8 @@ function DataTableInner<TData, TValue>({
         default: "افتراضي",
         comfortable: "مريح",
         all: "كل الأعمدة",
+        groupBy: "تجميع حسب",
+        none: "بدون",
       }
     : {
         search: "Search",
@@ -151,6 +167,8 @@ function DataTableInner<TData, TValue>({
         default: "Default",
         comfortable: "Comfortable",
         all: "All columns",
+        groupBy: "Group by",
+        none: "None",
       };
 
   /* ── state — sort / filter / page / selection / visibility / density ── */
@@ -168,6 +186,12 @@ function DataTableInner<TData, TValue>({
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
   const [density, setDensity] = React.useState<DataTableDensity>("default");
+  const [grouping, setGrouping] = React.useState<GroupingState>(
+    defaultGroupBy ? [defaultGroupBy] : [],
+  );
+  const [expanded, setExpanded] = React.useState<ExpandedState>(
+    defaultGroupBy ? true : {},
+  );
   const [pageIndex, setPageIndex] = React.useState<number>(() => {
     const p = Number(urlState?.value.get("page") ?? "1");
     return Number.isFinite(p) && p > 0 ? p - 1 : 0;
@@ -232,6 +256,8 @@ function DataTableInner<TData, TValue>({
       globalFilter,
       rowSelection,
       columnVisibility,
+      grouping,
+      expanded,
       ...(pagination ? { pagination: { pageIndex, pageSize } } : {}),
     },
     enableRowSelection: enableSelection,
@@ -240,6 +266,8 @@ function DataTableInner<TData, TValue>({
     onGlobalFilterChange: setGlobalFilter,
     onRowSelectionChange: setRowSelection,
     onColumnVisibilityChange: setColumnVisibility,
+    onGroupingChange: setGrouping,
+    onExpandedChange: setExpanded,
     onPaginationChange: (updater) => {
       const next =
         typeof updater === "function"
@@ -251,6 +279,8 @@ function DataTableInner<TData, TValue>({
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    getGroupedRowModel: getGroupedRowModel(),
+    getExpandedRowModel: getExpandedRowModel(),
     ...(pagination ? { getPaginationRowModel: getPaginationRowModel() } : {}),
   });
 
@@ -299,6 +329,44 @@ function DataTableInner<TData, TValue>({
 
         <div className="flex items-center gap-2 ms-auto">
           {toolbarTrailing}
+
+          {/* Group by (clustering) */}
+          {groupableColumns && groupableColumns.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" style={{ display: "inline-flex" }}>
+                  <Layers className="h-3.5 w-3.5 me-1" />
+                  {grouping.length
+                    ? groupableColumns.find((g) => g.id === grouping[0])?.label ?? t.groupBy
+                    : t.groupBy}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>{t.groupBy}</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuRadioGroup
+                  value={grouping[0] ?? "__none"}
+                  onValueChange={(v) => {
+                    if (v === "__none") {
+                      setGrouping([]);
+                      setExpanded({});
+                    } else {
+                      setGrouping([v]);
+                      setExpanded(true);
+                      setPageIndex(0);
+                    }
+                  }}
+                >
+                  <DropdownMenuRadioItem value="__none">{t.none}</DropdownMenuRadioItem>
+                  {groupableColumns.map((g) => (
+                    <DropdownMenuRadioItem key={g.id} value={g.id}>
+                      {g.label}
+                    </DropdownMenuRadioItem>
+                  ))}
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
 
           {/* Density */}
           <DropdownMenu>
@@ -461,29 +529,61 @@ function DataTableInner<TData, TValue>({
                   </TableCell>
                 </TableRow>
               ) : (
-                table.getRowModel().rows.map((row) => (
-                  <TableRow
-                    key={row.id}
-                    data-state={row.getIsSelected() ? "selected" : undefined}
-                    onClick={onRowClick ? () => onRowClick(row.original) : undefined}
-                    className={cn(onRowClick && "cursor-pointer", rowClassName?.(row.original))}
-                  >
-                    {row.getVisibleCells().map((cell) => {
-                      const meta = (cell.column.columnDef.meta ?? {}) as { align?: "start" | "end" | "center"; numeric?: boolean };
-                      const alignCls =
-                        meta.align === "end" || meta.numeric
-                          ? "text-end tabular-nums"
-                          : meta.align === "center"
-                            ? "text-center"
-                            : "";
-                      return (
-                        <TableCell key={cell.id} className={alignCls}>
-                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                table.getRowModel().rows.map((row) => {
+                  // Collapsible group header row (clustering)
+                  if (row.getIsGrouped()) {
+                    const groupCol = row.groupingColumnId as string;
+                    return (
+                      <TableRow key={row.id} className="bg-muted/40 hover:bg-muted/40">
+                        <TableCell
+                          colSpan={table.getVisibleLeafColumns().length}
+                          className="py-2"
+                        >
+                          <button
+                            type="button"
+                            onClick={row.getToggleExpandedHandler()}
+                            aria-expanded={row.getIsExpanded()}
+                            className="inline-flex items-center gap-2 text-sm font-semibold text-foreground"
+                            style={{ display: "inline-flex" }}
+                          >
+                            {row.getIsExpanded() ? (
+                              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4 text-muted-foreground icon-directional" />
+                            )}
+                            <span>{String(row.getValue(groupCol) ?? "—")}</span>
+                            <span className="rounded-full bg-background px-2 py-0.5 text-[11px] font-medium text-muted-foreground tabular-nums">
+                              {row.subRows.length}
+                            </span>
+                          </button>
                         </TableCell>
-                      );
-                    })}
-                  </TableRow>
-                ))
+                      </TableRow>
+                    );
+                  }
+                  return (
+                    <TableRow
+                      key={row.id}
+                      data-state={row.getIsSelected() ? "selected" : undefined}
+                      onClick={onRowClick ? () => onRowClick(row.original) : undefined}
+                      className={cn(onRowClick && "cursor-pointer", rowClassName?.(row.original))}
+                    >
+                      {row.getVisibleCells().map((cell) => {
+                        const meta = (cell.column.columnDef.meta ?? {}) as { align?: "start" | "end" | "center"; numeric?: boolean };
+                        const alignCls =
+                          meta.align === "end" || meta.numeric
+                            ? "text-end tabular-nums"
+                            : meta.align === "center"
+                              ? "text-center"
+                              : "";
+                        return (
+                          <TableCell key={cell.id} className={alignCls}>
+                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                          </TableCell>
+                        );
+                      })}
+                    </TableRow>
+                  );
+                })
               )}
             </TableBody>
           </Table>

@@ -386,6 +386,14 @@ export default function PaymentsPage() {
         ),
         enableSorting: false,
         enableHiding: true,
+        getGroupingValue: (row: PaymentEntry) =>
+          row.type === "rent"
+            ? lang === "ar"
+              ? "إيجار"
+              : "Rent"
+            : lang === "ar"
+              ? "بيع"
+              : "Sale",
       },
       {
         accessorKey: "amount",
@@ -430,6 +438,10 @@ export default function PaymentsPage() {
         ),
         enableSorting: true,
         enableHiding: true,
+        getGroupingValue: (row: PaymentEntry) =>
+          lang === "ar"
+            ? STATUS_LABELS[row.status]?.ar ?? row.status
+            : STATUS_LABELS[row.status]?.en ?? row.status,
       },
       {
         id: "actions",
@@ -812,6 +824,10 @@ export default function PaymentsPage() {
           mobileCard={renderMobileCard}
           rowClassName={(r) => getPaymentTone(r).rowClass}
           locale={lang === "ar" ? "ar" : "en"}
+          groupableColumns={[
+            { id: "status", label: lang === "ar" ? "الحالة" : "Status" },
+            { id: "type", label: lang === "ar" ? "النوع" : "Type" },
+          ]}
           pagination
           pageSize={10}
           getRowId={(r) => r.id}
