@@ -2,7 +2,7 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { db } from "@repo/db";
-import bcrypt from "bcryptjs";
+import { compare as bcryptCompare } from "@node-rs/bcrypt";
 import { authConfig } from "./auth.config";
 import { logAuditEvent } from "./lib/audit";
 import { checkRateLimit, peekRateLimit } from "./lib/rate-limit";
@@ -104,7 +104,7 @@ const result = NextAuth({
             throw new Error("INVALID_CREDENTIALS");
           }
 
-          const isValid = await bcrypt.compare(credentials.password as string, user.password);
+          const isValid = await bcryptCompare(credentials.password as string, user.password);
           if (!isValid) {
             await recordLoginFailure(email);
             throw new Error("INVALID_CREDENTIALS");

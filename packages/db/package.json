@@ -11,9 +11,8 @@
     "seed:demo": "npx tsx prisma/seed-demo.ts"
   },
   "devDependencies": {
-    "@types/bcryptjs": "^2.4.6",
+    "@node-rs/bcrypt": "^1.10.7",
     "@types/pg": "^8.18.0",
-    "bcryptjs": "^3.0.3",
     "prisma": "^7.4.2",
     "tsx": "^4.21.0"
   },

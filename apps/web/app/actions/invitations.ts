@@ -2,7 +2,7 @@
 
 import { db } from "@repo/db";
 import crypto from "crypto";
-import bcrypt from "bcryptjs";
+import { hash as bcryptHash } from "@node-rs/bcrypt";
 import { revalidatePath } from "next/cache";
 import { requirePermission } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
@@ -187,7 +187,7 @@ export async function acceptInvitation(data: {
     }
 
     // Hash password OUTSIDE transaction (CPU-intensive)
-    const hashedPassword = await bcrypt.hash(data.password, 12);
+    const hashedPassword = await bcryptHash(data.password, 12);
 
     // Atomic: create user + update invitation status
     let user: any;

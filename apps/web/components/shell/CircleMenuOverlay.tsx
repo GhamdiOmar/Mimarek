@@ -294,6 +294,11 @@ export default function CircleMenuOverlay({ onClose, userRole }: OverlayProps) {
                           nodeRefs.current[i] = el;
                         }}
                         href={child.href}
+                        // Don't prefetch every dashboard the moment the radial nav
+                        // opens — sibling dashboards each fire real DB work against
+                        // the remote pooler and compete for connections (prefetch
+                        // storm). Navigation still loads on click.
+                        prefetch={false}
                         data-radial-child={child.href}
                         aria-current={active ? "page" : undefined}
                         aria-label={label}

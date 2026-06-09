@@ -23,10 +23,13 @@ const pool =
   globalForPrisma.pgPool ??
   new pg.Pool({
     connectionString,
-    // Conservative caps for Supabase pooler — dev mode spawns many
-    // short-lived requests; idle connections recycle quickly.
+    // Conservative caps for the Supabase pooler.
     max: 10,
-    idleTimeoutMillis: 10_000,
+    // Keep idle connections alive for 60s. In interactive use, clicks are often
+    // >10s apart; a short idle timeout forced re-paying the ~900ms TLS+auth
+    // handshake to the (remote) DB on nearly every action. 60s keeps the pool
+    // warm across a normal click cadence without holding connections forever.
+    idleTimeoutMillis: 60_000,
     connectionTimeoutMillis: 8_000,
   });
 
