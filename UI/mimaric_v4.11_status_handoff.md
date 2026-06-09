@@ -45,28 +45,33 @@ Commits on `feat/v4.11-ui-overhaul`:
 ## 4. Phase plan & progress
 - **Phase 0 — Foundation:** ✅ done.
 - **Phase 1 — Three named asks + clustering:** ✅ Kanban / Units / Maintenance / DataTable grouping (payments) done. ⏳ grouping rollout to units/contracts/reservations/reports/marketplace pending (decision: broad).
-- **Phase 2 — Navigation (radial replaces sidebar + cmdk):** ⏳ **next**. Backbone (cmdk palette) already exists.
+- **Phase 2 — Navigation (radial replaces sidebar + cmdk):** ✅ **done.** `CircleMenu` two-level hub→spoke wheel replaces the sidebar **and** mobile bottom-tabs, launched from a **floating bottom-center pill on every breakpoint** (desktop/tablet/mobile — no topbar corner button, per Omar's call). Desktop = 360° wheel; mobile = 180° half-wheel. cmdk retained as the always-available fallback/twin. RTL angular mirroring, reduced-motion = instant, focus-trap + **return-focus-to-launcher**, Escape ladder, arrow-key ring nav. **ARIA model corrected** vs. the written plan: the plan said `role=menu/menuitem`, but APG/Roselli are explicit that menu roles are wrong for site navigation (they impose application-menu semantics) — implemented the correct `role=dialog`+`aria-modal` wrapping a real `<nav><ul>` of links, hubs as disclosure buttons (`aria-expanded`). Taxonomy (`radial-groups.ts`) references `nav-items.ts` by href (single SoT) + re-applies the §8.3 audience filter. Orphan fix: removing the bottom-tabs "More" tab cut the only path to `/dashboard/more/profile` → re-wired via the mobile avatar sheet. Verified live on a **prod build** (light/dark × AR/EN desktop wheel + L2 children + mobile half-wheel, focus-return, zero console errors).
 - **Phase 3 — Credibility & swaps:** ⬜ chart axis formatters (replace `W-2/D-5`); Alert variant model + notification category filter + theme-toggle pill (retokenized, no new deps); ZATCA compliance-module treatment; actionable empty states.
 - **Phase 4 — Sweeps:** ⬜ side-shading sweep (rows + NextActionPanel → pills/dots); 8 raw chevron/arrow → `DirectionalIcon`; number-format lint; Arabic domain terms (e.g. «مسار الفرص العقارية»); card-in-card de-nesting.
 - **Phase 5 — Release gate (§3.9):** ⬜ full `next build` + prod-server preview, 4 screenshots/route × light/dark × AR/EN, console zero-errors, keyboard tab, mobile 375×812, axe; then CHANGELOG + tag `v4.11.0` + GitHub release.
 
 ---
 
-## 5. Next steps (immediate — Phase 2)
-1. Add **framer-motion** (`LazyMotion`/`domAnimation`).
-2. **`radial-groups.ts`** — map ~20 nav items (3 sections) into radial hubs.
-3. **`CircleMenu`** — two-level hub; desktop 360° / mobile 180° half-wheel; `role=menu` + roving tabindex + focus trap + Escape ladder + reduced-motion; RTL angular mirroring; active state from `usePathname`.
-4. **Integrate** in `apps/web/app/dashboard/DashboardClientLayout.tsx`: remove `AppSidebar` + `MobileBottomTabs`, mount `CircleMenu`, rewire topbar menu button, **keep `CommandPalette`** as the guaranteed fallback. Build behind the palette so nav never fails.
-5. First-run coach-mark; 44×44 wedge targets.
-6. Verify: typecheck/lint/axe + **prod-build** screenshots.
+## 5. Phase 2 — DONE (2026-06-09). Next: Phase 3
 
-Key files: `components/CommandPalette.tsx` (exists — extend), `components/shell/nav-items.ts` (nav model), `components/shell/AppSidebar.tsx` (filter logic to reuse, then remove), `DashboardClientLayout.tsx` (shell).
+**Shipped (feature branch, typecheck + lint green, verified on a prod build):**
+- `framer-motion@11.18.2` (LazyMotion + domAnimation, code-split via `next/dynamic` so it never enters the initial dashboard bundle).
+- `components/shell/radial-geometry.ts` — pure layout math (full 360° / half 180°, RTL mirroring, y-down handling, responsive radius ≥44px nodes).
+- `components/shell/radial-groups.ts` — 6-hub taxonomy referencing `nav-items.ts` by href (single SoT) + §8.3 audience filter; empty hubs drop, single-hub roles auto-open.
+- `components/shell/CircleMenuOverlay.tsx` — the wheel (lazy chunk): two-level hub→spoke, dialog+nav+links ARIA, focus-trap + return-focus, Escape ladder, arrow-ring nav, first-run coachmark, body-scroll lock.
+- `components/shell/CircleMenu.tsx` — controlled launcher; **universal floating bottom-center pill** (all breakpoints).
+- Integrated in `DashboardClientLayout.tsx`: `AppSidebar` + `MobileBottomTabs` unmounted (files kept for rollback), `CommandPalette` retained as fallback. `AppTopbar` corner button removed. `MobileUserMenuSheet` profile header re-wired to `/dashboard/more/profile`.
+
+**Deviations from the written plan (deliberate, justified):** (1) ARIA `dialog`+`nav`+links instead of `role=menu` (APG: menu roles are wrong for site nav). (2) Launcher = floating overlay pill on desktop/tablet too (Omar: no topbar corner button) — same affordance as mobile.
+
+**Open follow-ups:** `/dashboard/more` (the mobile nav aggregator) is now superseded by the radial — its nav-list is dead; left in place (deep-link only) pending a deliberate retire. Verified screenshots were captured live via the preview browser (Bash/Playwright are network-isolated from the host localhost in this env — only the preview MCP browser reaches the server; the dev server also OOM/hangs on route compile, so all verification ran against `next build && next start`).
 
 ---
 
 ## 6. Decisions still needed / open
 - **Pre-existing SoT drifts** — reconcile or leave? (a) AGENTS.md §6.4.4 radius `10/16px` vs globals `8/12px`; (b) §6.4.2 sidebar `256/68` vs code `240/64` (becomes moot when radial replaces the sidebar). *Default if no answer: leave (b), align (a) to code during Phase 4.*
-- **Mobile radial risk acceptance** — half-wheel on mobile is the bold choice; if first-run testing shows discoverability issues, fallback is to keep BottomNav on mobile only. *Flag for review after the Phase 2 prototype.*
+- **Mobile radial risk acceptance** — ✅ resolved: half-wheel built + verified; thumb-anchored floating launcher, ≥44px wedges, first-run coachmark, cmdk fallback. Label spacing tuned (half-wheel radius `0.34→0.42`) after Omar flagged top-arc label crowding.
+- **Launcher placement** — ✅ resolved: floating bottom-center pill on all breakpoints (no topbar corner button).
 - Everything else is locked (§2).
 
 ---

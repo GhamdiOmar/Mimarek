@@ -76,8 +76,13 @@ export function MobileUserMenuSheet({ open, onOpenChange, orgName }: MobileUserM
   return (
     <BottomSheet open={open} onOpenChange={onOpenChange}>
       <div className="space-y-4">
-        {/* Profile header */}
-        <div className="flex items-center gap-3 pb-3 border-b border-border">
+        {/* Profile header → profile page (the only path to it since the bottom-tabs "More" was retired) */}
+        <Link
+          href="/dashboard/more/profile"
+          onClick={() => onOpenChange(false)}
+          aria-label={lang === "ar" ? "الملف الشخصي" : "Profile"}
+          className="-mx-1 flex items-center gap-3 rounded-xl border-b border-border px-1 pb-3 transition-colors hover:bg-muted/30 active:bg-muted/50"
+        >
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 ring-2 ring-primary/20">
             <User className="h-5 w-5 text-primary" />
           </div>
@@ -93,7 +98,8 @@ export function MobileUserMenuSheet({ open, onOpenChange, orgName }: MobileUserM
               </p>
             )}
           </div>
-        </div>
+          <DirectionalIcon icon={ChevronRight} className="h-4 w-4 shrink-0 text-muted-foreground" />
+        </Link>
 
         {/* Navigation rows */}
         <div className="space-y-1">

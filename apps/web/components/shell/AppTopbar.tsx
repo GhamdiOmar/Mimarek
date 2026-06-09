@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Menu, Search, Bell, Globe, User, Settings, ShieldCheck, HelpCircle, LogOut } from "lucide-react";
+import { Search, Bell, Globe, User, Settings, ShieldCheck, HelpCircle, LogOut } from "lucide-react";
 import { cn } from "@repo/ui/lib/utils";
 import { Popover, PopoverTrigger, PopoverContent, DirectionalIcon, Button, IconButton } from "@repo/ui";
 import Link from "next/link";
@@ -15,7 +15,7 @@ import { globalSearch } from "../../app/actions/search";
 import { getOrgName } from "../../app/actions/organization";
 import { breadcrumbLabels, roleLabels } from "./nav-items";
 
-export function AppTopbar({ onMenuClick }: { onMenuClick: () => void }) {
+export function AppTopbar() {
   const pathname = usePathname();
   const router = useRouter();
   const { data: session } = useSession();
@@ -86,14 +86,6 @@ export function AppTopbar({ onMenuClick }: { onMenuClick: () => void }) {
   return (
     <header className="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-border bg-card/90 backdrop-blur-md px-4 sm:px-6">
       <div className="flex items-center gap-3">
-        {/* Mobile hamburger */}
-        <IconButton
-          icon={Menu}
-          aria-label={lang === "ar" ? "فتح القائمة" : "Open menu"}
-          onClick={onMenuClick}
-          variant="ghost"
-          className="md:hidden"
-        />
         {/* Breadcrumbs */}
         <nav className="hidden sm:flex items-center text-xs text-muted-foreground font-medium" aria-label="Breadcrumb">
           {crumbs.map((crumb, i) => (
