@@ -2443,7 +2443,7 @@ export default function CRMPage() {
                 children:
                   stageCustomers.length === 0 ? (
                     <p className="py-4 text-center text-xs text-muted-foreground">
-                      {lang === "ar" ? "لا يوجد" : "Empty"}
+                      {lang === "ar" ? "لا توجد صفقات في هذه المرحلة" : "No deals in this stage"}
                     </p>
                   ) : (
                     stageCustomers.map((c) => (
