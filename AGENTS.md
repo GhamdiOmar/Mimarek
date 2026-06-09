@@ -512,6 +512,8 @@ Every per-row action is an **icon-only `IconButton`** — including "forward" ac
 
 Never use ad-hoc variants for the same action ("View Profile" / "View Details" / "View profile" are all just **View**).
 
+**One action = one affordance (learned 2026-06-09).** A single card/row/cell must expose each action through exactly ONE control. Two or more controls that fire the same handler — or navigate to the same destination — inside one card/row are a violation (clutter + ambiguity). Incident: the CRM Kanban card had THREE view-profile triggers (`Eye` icon + "View Profile" footer link + `ExternalLink` icon), and the Units row had `onRowClick` + `Eye` + `Pencil` all opening the same detail drawer (the `Pencil` even mislabeled "Edit"/تعديل). Rules: **(1)** if a row/card is itself clickable (`onRowClick` or a `role="button"` card) and that opens the record, do NOT also add an `Eye` "view" button — the click IS the view affordance; **(2)** never label a control for an action it does not perform (a `Pencil`/"Edit" must open edit, not a read-only view); **(3)** when auditing UI, grep each card/row component for the same handler invoked by 2+ controls and collapse to one.
+
 #### 6.6.8 Filter / segment pill standard
 
 Interactive filter, segment, and view-toggle pills use one mapping everywhere — **mobile and desktop identical**:
