@@ -797,8 +797,22 @@ export default function CouponManagementPage() {
         pageSize={10}
         getRowId={(r) => r.id}
         mobileCard={renderMobileCard}
+        emptyIcon={<Tag className="h-12 w-12" aria-hidden="true" />}
         emptyTitle={labels.noCoupons}
         emptyDescription={labels.noCouponsDesc}
+        emptyAction={
+          <Button
+            onClick={() => {
+              resetForm();
+              setShowModal(true);
+            }}
+            style={{ display: "inline-flex" }}
+            className="gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            {labels.createCoupon}
+          </Button>
+        }
       />
 
       {/* ── Create Coupon Modal ─────────────────────────────────────────────── */}

@@ -1184,11 +1184,24 @@ function AdvancedUnitMatrixPage() {
                   </div>
                 );
               }}
+              emptyIcon={<Building2 className="h-12 w-12" aria-hidden="true" />}
               emptyTitle={lang === "ar" ? "لا توجد وحدات" : "No units"}
               emptyDescription={
                 lang === "ar"
                   ? "جرّب تعديل البحث أو الفلاتر."
                   : "Try adjusting your search or filters."
+              }
+              emptyAction={
+                !unitSearch && !statusFilter ? (
+                  <Button
+                    onClick={() => setShowAddModal(true)}
+                    style={{ display: "inline-flex" }}
+                    className="gap-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    {lang === "ar" ? "إضافة وحدة" : "Add unit"}
+                  </Button>
+                ) : undefined
               }
             />
           )}

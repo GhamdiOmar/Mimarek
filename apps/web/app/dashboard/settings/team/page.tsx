@@ -270,7 +270,7 @@ export default function TeamManagementPage() {
           </Card>
         )}
 
-        <TeamList members={members} lang={lang} onRemove={(member) => setRemoveCandidate(member)} busyId={busyId} loading={loading} />
+        <TeamList members={members} lang={lang} onRemove={(member) => setRemoveCandidate(member)} busyId={busyId} loading={loading} onInvite={() => setShowInvite(true)} />
         <InvitationList invitations={pendingInvitations} lang={lang} onResend={handleResend} onRevoke={handleRevoke} busyId={busyId} />
       </div>
 
@@ -323,6 +323,7 @@ function TeamList({
   busyId,
   loading = false,
   compact = false,
+  onInvite,
 }: {
   members: TeamMember[];
   lang: "ar" | "en";
@@ -330,6 +331,7 @@ function TeamList({
   busyId: string | null;
   loading?: boolean;
   compact?: boolean;
+  onInvite?: () => void;
 }) {
   const columns = React.useMemo<ColumnDef<TeamMember>[]>(
     () => [
@@ -428,8 +430,21 @@ function TeamList({
       pagination
       pageSize={10}
       getRowId={(r) => r.id}
+      emptyIcon={<UserPlus className="h-12 w-12" aria-hidden="true" />}
       emptyTitle={lang === "ar" ? "لا يوجد أعضاء" : "No team members"}
       emptyDescription={lang === "ar" ? "ابدأ بإرسال دعوة." : "Start by sending an invitation."}
+      emptyAction={
+        onInvite ? (
+          <Button
+            onClick={onInvite}
+            style={{ display: "inline-flex" }}
+            className="gap-2"
+          >
+            <UserPlus className="h-4 w-4" />
+            {lang === "ar" ? "دعوة عضو" : "Invite member"}
+          </Button>
+        ) : undefined
+      }
       mobileCard={(member) => (
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">

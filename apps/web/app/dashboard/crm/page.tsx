@@ -2406,7 +2406,7 @@ export default function CRMPage() {
           active={mobileTab}
           onChange={(k) => setMobileTab(k as "pipeline" | "leads" | "customers")}
           items={[
-            { key: "pipeline", label: lang === "ar" ? "خط الأنابيب" : "Pipeline" },
+            { key: "pipeline", label: lang === "ar" ? "مسار الفرص العقارية" : "Pipeline" },
             {
               key: "leads",
               label: `${lang === "ar" ? "العملاء المحتملون" : "Leads"} (${mobileLeads.length})`,
@@ -2612,7 +2612,7 @@ export default function CRMPage() {
             <Handshake className="h-4 w-4 shrink-0" aria-hidden="true" />
             <span>
               {lang === "ar"
-                ? "تسحب البطاقات في خط الأنابيب على النسخة الكاملة."
+                ? "سحب البطاقات بين مراحل مسار الفرص متاح على سطح المكتب."
                 : "Drag-and-drop pipeline available on desktop."}
             </span>
             <Building2 className="hidden h-4 w-4 shrink-0" aria-hidden="true" />
@@ -2718,7 +2718,7 @@ export default function CRMPage() {
           loading={loading}
         />
         <KPICard
-          label={lang === "ar" ? "في خط الأنابيب" : "In Pipeline"}
+          label={lang === "ar" ? "في مسار الفرص" : "In Pipeline"}
           value={kpis.inProgress}
           subtitle={lang === "ar" ? "في مراحل متقدمة" : "Contacted through Negotiation"}
           icon={<TrendingUp className="h-[18px] w-[18px]" />}
@@ -2931,11 +2931,24 @@ export default function CRMPage() {
           locale={lang}
           getRowId={(c) => c.id}
           pageSize={25}
+          emptyIcon={<Users className="h-12 w-12" aria-hidden="true" />}
           emptyTitle={lang === "ar" ? "لا توجد نتائج" : "No contacts found"}
           emptyDescription={
             lang === "ar"
               ? "حاول تعديل خيارات البحث أو الفلتر، أو أضف عميلاً جديداً."
               : "Try adjusting your search or filter, or add a new contact."
+          }
+          emptyAction={
+            !search.trim() && !statusFilter ? (
+              <Button
+                onClick={openAddCustomerModal}
+                style={{ display: "inline-flex" }}
+                className="gap-2"
+              >
+                <UserPlus className="h-4 w-4" />
+                {lang === "ar" ? "إضافة عميل" : "Add contact"}
+              </Button>
+            ) : undefined
           }
           mobileCard={(c) => {
             const statusCfg = getStatusConfig(c.status);

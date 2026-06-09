@@ -11,6 +11,11 @@ import {
   markAsRead,
   markAllAsRead,
 } from "../../app/actions/notifications";
+import {
+  type NotifCategory,
+  categorizeNotification,
+  NOTIF_CATEGORIES,
+} from "./notification-categories";
 
 interface MobileNotificationsSheetProps {
   open: boolean;
@@ -38,6 +43,7 @@ export function MobileNotificationsSheet({
   const router = useRouter();
   const [notifs, setNotifs] = React.useState<Notif[]>([]);
   const [loading, setLoading] = React.useState(false);
+  const [notifCategory, setNotifCategory] = React.useState<NotifCategory>("all");
 
   React.useEffect(() => {
     if (!open) return;
@@ -49,6 +55,16 @@ export function MobileNotificationsSheet({
   }, [open]);
 
   const unread = notifs.filter((n) => !n.read).length;
+
+  const visibleNotifs =
+    notifCategory === "all"
+      ? notifs
+      : notifs.filter((n) => categorizeNotification((n as any).type) === notifCategory);
+
+  // Reset category filter when sheet is closed
+  React.useEffect(() => {
+    if (!open) setNotifCategory("all");
+  }, [open]);
 
   async function handleTap(n: Notif) {
     if (!n.read) {
@@ -73,6 +89,25 @@ export function MobileNotificationsSheet({
       title={lang === "ar" ? "الإشعارات" : "Notifications"}
     >
       <div className="space-y-3">
+        {/* Category filter pills — §6.6.6 pill standard (desktop/mobile parity §6.14.4) */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+          {NOTIF_CATEGORIES.map((cat) => {
+            const active = notifCategory === cat.key;
+            return (
+              <Button
+                key={cat.key}
+                onClick={() => setNotifCategory(cat.key)}
+                variant={active ? "primary" : "subtle"}
+                size="sm"
+                aria-pressed={active}
+                className="rounded-full shrink-0"
+              >
+                {cat.label[lang]}
+              </Button>
+            );
+          })}
+        </div>
+
         {unread > 0 && (
           <div className="flex items-center justify-between rounded-lg bg-primary/5 px-3 py-2">
             <span className="text-xs font-medium text-foreground tabular-nums">
@@ -98,25 +133,27 @@ export function MobileNotificationsSheet({
           </div>
         )}
 
-        {!loading && notifs.length === 0 && (
+        {!loading && visibleNotifs.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
               <Bell className="h-7 w-7 text-primary" />
             </div>
             <p className="mt-4 text-sm font-semibold text-foreground">
-              {lang === "ar" ? "لا توجد إشعارات" : "No notifications"}
+              {notifCategory === "all"
+                ? lang === "ar" ? "لا توجد إشعارات" : "No notifications"
+                : lang === "ar" ? "لا توجد إشعارات في هذه الفئة" : "No notifications in this category"}
             </p>
             <p className="mt-1.5 text-xs text-muted-foreground">
-              {lang === "ar"
-                ? "ستظهر الإشعارات الجديدة هنا"
-                : "New notifications will appear here"}
+              {notifCategory === "all"
+                ? lang === "ar" ? "ستظهر الإشعارات الجديدة هنا" : "New notifications will appear here"
+                : lang === "ar" ? "جرّب فئة أخرى" : "Try a different category"}
             </p>
           </div>
         )}
 
-        {!loading && notifs.length > 0 && (
+        {!loading && visibleNotifs.length > 0 && (
           <div className="space-y-2">
-            {notifs.map((n) => (
+            {visibleNotifs.map((n) => (
               <Button
                 key={n.id}
                 onClick={() => handleTap(n)}
