@@ -34,16 +34,24 @@ export async function createReservation(data: {
     throw new Error("This customer already has an active reservation for this unit. Please cancel the existing reservation first or choose a different unit.");
   }
 
-  // RED: Race condition guard — use transaction with unit status check
+  // RED: Race condition guard — CAS (compare-and-swap) on unit status inside transaction.
+  // A plain findFirst+update races; updateMany with a WHERE status="AVAILABLE" is atomic.
   const reservation = await db.$transaction(async (tx) => {
-    // Check unit availability inside transaction
+    // Verify the unit exists and belongs to the org (needed for the not-found error).
     const unit = await tx.unit.findFirst({
       where: { id: data.unitId, organizationId: session.organizationId },
     });
     if (!unit) {
       throw new Error("Unit not found or you don't have access. Please verify the unit exists in your organization.");
     }
-    if (unit.status !== "AVAILABLE") {
+
+    // CAS: claim the unit only if it is still AVAILABLE.
+    // count === 0 means another request won the race (or the unit was already non-AVAILABLE).
+    const claim = await tx.unit.updateMany({
+      where: { id: data.unitId, organizationId: session.organizationId, status: "AVAILABLE" },
+      data: { status: "RESERVED" },
+    });
+    if (claim.count === 0) {
       throw new Error("This unit is no longer available for reservation. It may have been reserved or sold. Please select another unit.");
     }
 
@@ -59,12 +67,6 @@ export async function createReservation(data: {
         depositRequired: data.depositRequired ?? false,
         depositAmount: data.depositAmount,
       },
-    });
-
-    // Update unit status atomically
-    await tx.unit.update({
-      where: { id: data.unitId },
-      data: { status: "RESERVED" },
     });
 
     return res;

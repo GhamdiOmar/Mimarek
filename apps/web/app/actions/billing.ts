@@ -1,12 +1,13 @@
 "use server";
 
-import { db } from "@repo/db";
+import { db, type Prisma } from "@repo/db";
 import { revalidatePath } from "next/cache";
 import { requirePermission, getSessionOrThrow } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
 import { createSubscription, transitionSubscription } from "../../lib/payment/subscription-machine";
 import { invalidateEntitlements } from "../../lib/entitlements";
 import { unstable_cache } from "next/cache";
+import { getNextSequenceValue, GLOBAL_SEQUENCE_SCOPE } from "../../lib/sequence";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Plans (Public)
@@ -262,24 +263,21 @@ export async function getInvoiceById(invoiceId: string) {
 }
 
 /**
- * Generate a sequential invoice number.
+ * Generate a sequential invoice number atomically inside an existing transaction.
+ *
+ * `invoiceNumber` is GLOBALLY unique (`INV-YYYY-NNNNN`, no org partition) and the
+ * issuing entity is the single Mimaric platform — so the counter is GLOBAL, not
+ * per-org. A per-org counter would let two tenants both mint `INV-2026-00001` and
+ * collide on the global unique index. This preserves the original global-max semantics.
+ *
+ * Preserved format: `INV-${year}-${5-digit-padded-seq}`  e.g. INV-2026-00001
  */
-async function generateInvoiceNumber(): Promise<string> {
+async function generateInvoiceNumber(
+  tx: Prisma.TransactionClient,
+): Promise<string> {
   const year = new Date().getFullYear();
-  const lastInvoice = await db.invoice.findFirst({
-    where: {
-      invoiceNumber: { startsWith: `INV-${year}-` },
-    },
-    orderBy: { invoiceNumber: "desc" },
-  });
-
-  let seq = 1;
-  if (lastInvoice) {
-    const parts = lastInvoice.invoiceNumber.split("-");
-    seq = parseInt(parts[2] ?? "0", 10) + 1;
-  }
-
-  return `INV-${year}-${String(seq).padStart(5, "0")}`;
+  const seqValue = await getNextSequenceValue(tx, GLOBAL_SEQUENCE_SCOPE, "INVOICE", year);
+  return `INV-${year}-${String(seqValue).padStart(5, "0")}`;
 }
 
 /**
@@ -310,44 +308,48 @@ export async function generateSubscriptionInvoice(params: {
   const vatAmount = priceNum * vatRate;
   const total = priceNum + vatAmount;
 
-  const invoiceNumber = await generateInvoiceNumber();
+  // Generate invoice number and create the invoice atomically so the sequence
+  // bump and the invoice row are committed together (or both roll back).
+  const invoice = await db.$transaction(async (tx) => {
+    const invoiceNumber = await generateInvoiceNumber(tx);
 
-  const invoice = await db.invoice.create({
-    data: {
-      invoiceNumber,
-      organizationId: subscription.organizationId,
-      subscriptionId: subscription.id,
-      status: "ISSUED",
-      billingCycle: subscription.billingCycle,
-      subtotal: priceNum,
-      vatRate,
-      vatAmount,
-      total,
-      currency: "SAR",
-      issuedAt: new Date(),
-      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Due in 7 days
-      lineItems: {
-        create: [
-          {
-            description: `${subscription.plan.nameEn} - ${subscription.billingCycle} subscription`,
-            descriptionAr: `${subscription.plan.nameAr} - اشتراك ${getBillingCycleAr(subscription.billingCycle)}`,
-            quantity: 1,
-            unitPrice: priceNum,
-            vatRate,
-            vatAmount,
-            total,
-            sortOrder: 0,
-          },
-        ],
+    return tx.invoice.create({
+      data: {
+        invoiceNumber,
+        organizationId: subscription.organizationId,
+        subscriptionId: subscription.id,
+        status: "ISSUED",
+        billingCycle: subscription.billingCycle,
+        subtotal: priceNum,
+        vatRate,
+        vatAmount,
+        total,
+        currency: "SAR",
+        issuedAt: new Date(),
+        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Due in 7 days
+        lineItems: {
+          create: [
+            {
+              description: `${subscription.plan.nameEn} - ${subscription.billingCycle} subscription`,
+              descriptionAr: `${subscription.plan.nameAr} - اشتراك ${getBillingCycleAr(subscription.billingCycle)}`,
+              quantity: 1,
+              unitPrice: priceNum,
+              vatRate,
+              vatAmount,
+              total,
+              sortOrder: 0,
+            },
+          ],
+        },
       },
-    },
-    include: { lineItems: true },
+      include: { lineItems: true },
+    });
   });
 
   logAuditEvent({
     userId: session.userId, userEmail: session.email, userRole: session.role,
     action: "CREATE", resource: "Invoice", resourceId: invoice.id,
-    metadata: { invoiceNumber, total, subscriptionId: subscription.id },
+    metadata: { invoiceNumber: invoice.invoiceNumber, total, subscriptionId: subscription.id },
     organizationId: session.organizationId,
   });
 

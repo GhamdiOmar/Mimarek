@@ -480,29 +480,32 @@ function DataTableInner<TData, TValue>({
                     return (
                       <TableHead key={header.id} className={alignCls}>
                         <div className={cn("inline-flex items-center gap-1", alignCls === "text-end" && "flex-row-reverse")}>
-                          <span
-                            className={cn(canSort && "cursor-pointer select-none hover:text-foreground")}
-                            onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
-                          >
-                            {header.isPlaceholder
-                              ? null
-                              : flexRender(header.column.columnDef.header, header.getContext())}
-                          </span>
-                          {canSort && (
+                          {canSort ? (
                             <button
                               type="button"
                               onClick={header.column.getToggleSortingHandler()}
                               aria-label={locale === "ar" ? "فرز" : "Sort"}
-                              className="text-muted-foreground hover:text-foreground"
+                              className="inline-flex items-center gap-1 cursor-pointer select-none hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 rounded-sm"
                             >
-                              {sort === "asc" ? (
-                                <ChevronUp className="h-3 w-3" />
-                              ) : sort === "desc" ? (
-                                <ChevronDown className="h-3 w-3" />
-                              ) : (
-                                <ArrowUpDown className="h-3 w-3 opacity-60" />
-                              )}
+                              {header.isPlaceholder
+                                ? null
+                                : flexRender(header.column.columnDef.header, header.getContext())}
+                              <span className="text-muted-foreground">
+                                {sort === "asc" ? (
+                                  <ChevronUp className="h-3 w-3" />
+                                ) : sort === "desc" ? (
+                                  <ChevronDown className="h-3 w-3" />
+                                ) : (
+                                  <ArrowUpDown className="h-3 w-3 opacity-60" />
+                                )}
+                              </span>
                             </button>
+                          ) : (
+                            <span>
+                              {header.isPlaceholder
+                                ? null
+                                : flexRender(header.column.columnDef.header, header.getContext())}
+                            </span>
                           )}
                           {canFilter && (
                             <ColumnFilterPopover

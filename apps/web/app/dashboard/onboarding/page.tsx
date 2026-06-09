@@ -107,7 +107,6 @@ export default function OnboardingPage() {
         number: unitForm.number.trim(),
         type: unitForm.type as any,
         price: unitForm.price ? Number(unitForm.price) : undefined,
-        status: "AVAILABLE" as any,
       });
       goNext();
     } catch (err: any) {

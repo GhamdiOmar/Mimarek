@@ -253,6 +253,37 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     "marketplace:inquiry:read", "marketplace:inquiry:write",
   ],
 
+  LEASING: [
+    "dashboard:read",
+    "crm:read", "crm:write", "crm:export",
+    "customers:read", "customers:read_pii", "customers:write",
+    "properties:read",
+    "deals:read", "deals:write",
+    "contracts:read", "contracts:write",
+    "leases:read", "leases:write",
+    "reservations:read", "reservations:write",
+    "payments:read",
+    "documents:read", "documents:write",
+    "notifications:read",
+    "help:read", "help:create_ticket",
+    "marketplace:read",
+    "marketplace:inquiry:read", "marketplace:inquiry:write",
+  ],
+
+  FINANCE: [
+    "dashboard:read",
+    "payments:read", "payments:write",
+    "billing:read",
+    "reports:read", "reports:export",
+    "contracts:read",
+    "leases:read",
+    "customers:read",
+    "finance:read", "finance:write",
+    "documents:read",
+    "notifications:read",
+    "help:read", "help:create_ticket",
+  ],
+
   TECHNICIAN: [
     "dashboard:read",
     "properties:read",
@@ -277,7 +308,7 @@ export const SYSTEM_ROLES: string[] = ["SYSTEM_ADMIN", "SYSTEM_SUPPORT"];
 
 /** Roles that customers can assign to their team members */
 export const CUSTOMER_ASSIGNABLE_ROLES: string[] = [
-  "ADMIN", "MANAGER", "AGENT", "TECHNICIAN", "USER",
+  "ADMIN", "MANAGER", "AGENT", "LEASING", "FINANCE", "TECHNICIAN", "USER",
 ];
 
 /** Check if a role is a system (Mimaric platform) role */

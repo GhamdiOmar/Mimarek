@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { snapshotMrrForMonth } from "../../../actions/admin-analytics/snapshotMrrForMonth";
+import { isAuthorizedCronRequest } from "../../../../lib/cron-auth";
 
 /**
  * Every-6-hours cron — upserts the CURRENT-month snapshot rows so the
@@ -8,19 +9,13 @@ import { snapshotMrrForMonth } from "../../../actions/admin-analytics/snapshotMr
  *
  * Idempotent — the upsert pattern means re-runs are safe.
  *
- * GET /api/cron/refresh-current-month-snapshot?secret=$CRON_SECRET
+ * Vercel Cron sends:  Authorization: Bearer $CRON_SECRET
+ * Manual trigger:     GET /api/cron/refresh-current-month-snapshot?secret=$CRON_SECRET
  */
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const secret = searchParams.get("secret");
-
-  const cronSecret = process.env.CRON_SECRET;
-  if (!cronSecret) {
-    console.error("[Cron] CRON_SECRET is not configured — refusing to run");
-    return NextResponse.json({ error: "Cron not configured" }, { status: 500 });
-  }
-  if (secret !== cronSecret) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = isAuthorizedCronRequest(request);
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.reason }, { status: auth.status });
   }
 
   try {

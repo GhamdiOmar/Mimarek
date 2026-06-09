@@ -14,38 +14,27 @@ import { getAppUrl } from "../../lib/app-url";
 import { sendTransactionalEmail } from "../../lib/email";
 import { invitationEmail } from "../../lib/email-templates";
 import { checkLimit, FEATURE_KEYS } from "../../lib/entitlements";
+import { checkRateLimit, peekRateLimit } from "../../lib/rate-limit";
 
 // ─── Invitation Rate Limiter ─────────────────────────────────────────────────
 
 /**
- * In-memory rate limiter for invitation creation.
+ * Postgres-backed invitation rate limiter.
  * Limit: 10 invitations per organization per hour.
- *
- * NOTE: This Map is per-process and resets on deploy. For multi-instance
- * deployments, replace with Redis-backed rate limiting (@upstash/ratelimit).
+ * Fails open on DB error — a Postgres hiccup never blocks legitimate invites.
  */
-const inviteAttempts = new Map<string, { count: number; firstAttempt: number }>();
 const INVITE_RATE_LIMIT = 10;
 const INVITE_WINDOW_MS = 60 * 60 * 1000; // 1 hour
 
-function checkInviteRateLimit(orgId: string): boolean {
-  const entry = inviteAttempts.get(orgId);
-  if (!entry) return false;
-  if (Date.now() - entry.firstAttempt > INVITE_WINDOW_MS) {
-    inviteAttempts.delete(orgId);
-    return false;
-  }
-  return entry.count >= INVITE_RATE_LIMIT;
+/** Read-only gate — returns true if the org is already over the limit. */
+async function checkInviteRateLimit(orgId: string): Promise<boolean> {
+  const result = await peekRateLimit(`invite:${orgId}`, INVITE_RATE_LIMIT);
+  return !result.allowed;
 }
 
-function recordInviteAttempt(orgId: string) {
-  const entry = inviteAttempts.get(orgId);
-  const now = Date.now();
-  if (!entry || now - entry.firstAttempt > INVITE_WINDOW_MS) {
-    inviteAttempts.set(orgId, { count: 1, firstAttempt: now });
-  } else {
-    entry.count += 1;
-  }
+/** Increment the counter after a successful invite creation. */
+async function recordInviteAttempt(orgId: string): Promise<void> {
+  await checkRateLimit(`invite:${orgId}`, INVITE_RATE_LIMIT, INVITE_WINDOW_MS);
 }
 
 // ─── Create Invitation ────────────────────────────────────────────────────────
@@ -54,8 +43,8 @@ export async function createInvitation(data: { email: string; role?: string }) {
   try {
     const session = await requirePermission("team:write");
 
-    // Rate limit check
-    if (checkInviteRateLimit(session.organizationId)) {
+    // Rate limit check (Postgres-backed; fails open on DB error)
+    if (await checkInviteRateLimit(session.organizationId)) {
       return { success: false, error: "Too many invitations. Please try again later." };
     }
 
@@ -115,7 +104,7 @@ export async function createInvitation(data: { email: string; role?: string }) {
       },
     });
 
-    recordInviteAttempt(session.organizationId);
+    await recordInviteAttempt(session.organizationId);
     const inviteUrl = `${getAppUrl()}/auth/invite/${token}`;
     const template = invitationEmail({
       inviteUrl,
@@ -389,8 +378,8 @@ export async function resendInvitation(invitationId: string) {
   try {
     const session = await requirePermission("team:write");
 
-    // Rate limit check
-    if (checkInviteRateLimit(session.organizationId)) {
+    // Rate limit check (Postgres-backed; fails open on DB error)
+    if (await checkInviteRateLimit(session.organizationId)) {
       return { success: false, error: "Too many invitations. Please try again later." };
     }
 
@@ -421,7 +410,7 @@ export async function resendInvitation(invitationId: string) {
       },
     });
 
-    recordInviteAttempt(session.organizationId);
+    await recordInviteAttempt(session.organizationId);
     const inviteUrl = `${getAppUrl()}/auth/invite/${newToken}`;
     const template = invitationEmail({
       inviteUrl,

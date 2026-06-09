@@ -5,41 +5,57 @@ import { db } from "@repo/db";
 import bcrypt from "bcryptjs";
 import { authConfig } from "./auth.config";
 import { logAuditEvent } from "./lib/audit";
+import { checkRateLimit, peekRateLimit } from "./lib/rate-limit";
+
+// Login rate-limit tier definitions — preserved from the original in-memory limiter.
+const LOGIN_TIERS = [
+  { limit: 5,  windowMs: 30  * 1000        }, // Tier 1: 5 fails → 30 s cooldown
+  { limit: 10, windowMs: 5   * 60 * 1000   }, // Tier 2: 10 fails → 5 min cooldown
+  { limit: 20, windowMs: 15  * 60 * 1000   }, // Tier 3: 20 fails → 15 min cooldown
+] as const;
 
 /**
- * In-memory rate limiter for login attempts.
- * Thresholds:  5 fails → 30s,  10 fails → 5min,  20 fails → 15min
- *
- * NOTE: This Map is per-process and resets on deploy. For multi-instance
- * deployments, replace with Redis-backed rate limiting (@upstash/ratelimit).
+ * Pre-flight gate — reads current counters WITHOUT incrementing.
+ * Returns blocked=true if any tier has already been exhausted.
+ * Fails open on DB error.
  */
-const loginAttempts = new Map<string, { count: number; lastAttempt: number }>();
+async function gateLoginRateLimit(
+  email: string,
+): Promise<{ blocked: boolean; retryAfterSeconds: number }> {
+  const results = await Promise.all(
+    LOGIN_TIERS.map((tier, i) =>
+      peekRateLimit(`login:t${i + 1}:${email}`, tier.limit),
+    ),
+  );
 
-function checkRateLimit(email: string): { blocked: boolean; retryAfterSeconds: number } {
-  const entry = loginAttempts.get(email);
-  if (!entry) return { blocked: false, retryAfterSeconds: 0 };
-
-  const now = Date.now();
-  const elapsed = (now - entry.lastAttempt) / 1000;
-
-  let cooldown = 0;
-  if (entry.count >= 20) cooldown = 900; // 15 minutes
-  else if (entry.count >= 10) cooldown = 300; // 5 minutes
-  else if (entry.count >= 5) cooldown = 30; // 30 seconds
-
-  if (cooldown > 0 && elapsed < cooldown) {
-    return { blocked: true, retryAfterSeconds: Math.ceil(cooldown - elapsed) };
+  let maxRetryAfterMs = 0;
+  let blocked = false;
+  for (const result of results) {
+    if (!result.allowed && result.retryAfterMs !== undefined) {
+      blocked = true;
+      if (result.retryAfterMs > maxRetryAfterMs) {
+        maxRetryAfterMs = result.retryAfterMs;
+      }
+    }
   }
-  return { blocked: false, retryAfterSeconds: 0 };
+
+  return {
+    blocked,
+    retryAfterSeconds: blocked ? Math.ceil(maxRetryAfterMs / 1000) : 0,
+  };
 }
 
-function recordFailedAttempt(email: string) {
-  const entry = loginAttempts.get(email);
-  loginAttempts.set(email, { count: (entry?.count ?? 0) + 1, lastAttempt: Date.now() });
-}
-
-function clearAttempts(email: string) {
-  loginAttempts.delete(email);
+/**
+ * Increment all three tier counters after a failed credential check.
+ * Counters expire naturally after their window — no active reset on success.
+ * Fails open on DB error.
+ */
+async function recordLoginFailure(email: string): Promise<void> {
+  await Promise.all(
+    LOGIN_TIERS.map((tier, i) =>
+      checkRateLimit(`login:t${i + 1}:${email}`, tier.limit, tier.windowMs),
+    ),
+  );
 }
 
 /**
@@ -61,8 +77,9 @@ const result = NextAuth({
 
         const email = (credentials.email as string).toLowerCase().trim();
 
-        // Rate limit check
-        const rateCheck = checkRateLimit(email);
+        // Pre-flight gate — read-only check; does NOT increment counters.
+        // Fails open on DB error (a Postgres hiccup must never lock users out).
+        const rateCheck = await gateLoginRateLimit(email);
         if (rateCheck.blocked) {
           throw new Error(`RATE_LIMITED:${rateCheck.retryAfterSeconds}`);
         }
@@ -78,23 +95,22 @@ const result = NextAuth({
           });
 
           if (!user) {
-            recordFailedAttempt(email);
+            await recordLoginFailure(email);
             throw new Error("INVALID_CREDENTIALS");
           }
 
           if (!user.password) {
-            recordFailedAttempt(email);
+            await recordLoginFailure(email);
             throw new Error("INVALID_CREDENTIALS");
           }
 
           const isValid = await bcrypt.compare(credentials.password as string, user.password);
           if (!isValid) {
-            recordFailedAttempt(email);
+            await recordLoginFailure(email);
             throw new Error("INVALID_CREDENTIALS");
           }
 
-          // Success — clear rate limit counter
-          clearAttempts(email);
+          // Success — counters expire naturally; no active clear needed.
 
           // Log successful login
           logAuditEvent({

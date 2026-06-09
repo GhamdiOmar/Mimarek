@@ -585,8 +585,23 @@ export async function convertMarketplaceInquiryToDeal(inquiryId: string) {
       where: { id: inquiry.listing.unitId, organizationId: session.organizationId },
     });
     if (!unit) throw new Error("Underlying unit not found in your organization.");
-    if (unit.status !== "AVAILABLE") {
+
+    // CAS: claim the unit only if still AVAILABLE, and the inquiry only if still OPEN.
+    // Both checks are atomic within the transaction — concurrent converts both lose the race.
+    const unitClaim = await tx.unit.updateMany({
+      where: { id: unit.id, organizationId: session.organizationId, status: "AVAILABLE" },
+      data: { status: "RESERVED", marketplaceStatus: "UNDER_CONTRACT" },
+    });
+    if (unitClaim.count === 0) {
       throw new Error("Unit is no longer available to convert.");
+    }
+
+    const inquiryClaim = await tx.marketplaceInquiry.updateMany({
+      where: { id: inquiryId, status: "OPEN" },
+      data: { status: "CONVERTED_TO_DEAL" },
+    });
+    if (inquiryClaim.count === 0) {
+      throw new Error("Only open inquiries can be converted to a deal.");
     }
 
     // Cross-org-aware reservation (seller org owns it; buyer org tracked).
@@ -604,10 +619,6 @@ export async function convertMarketplaceInquiryToDeal(inquiryId: string) {
       },
     });
 
-    await tx.unit.update({
-      where: { id: unit.id },
-      data: { status: "RESERVED", marketplaceStatus: "UNDER_CONTRACT" },
-    });
     await tx.customer.update({
       where: { id: inquiry.sellerCrmCustomerId },
       data: { status: "RESERVED" },
@@ -616,10 +627,9 @@ export async function convertMarketplaceInquiryToDeal(inquiryId: string) {
       where: { id: inquiry.listingId },
       data: { status: "UNDER_CONTRACT" },
     });
-    const updatedInquiry = await tx.marketplaceInquiry.update({
-      where: { id: inquiryId },
-      data: { status: "CONVERTED_TO_DEAL" },
-    });
+    // updatedInquiry is no longer fetched via a separate update — reconstruct from the
+    // original inquiry object with the new status so the return value stays consistent.
+    const updatedInquiry = { ...inquiry, status: "CONVERTED_TO_DEAL" as const };
     const transfer = await tx.unitTransferTransaction.create({
       data: {
         inquiryId: inquiry.id,
@@ -791,8 +801,14 @@ export async function settleMarketplaceTransfer(transferId: string) {
         where: { id: transfer.inquiryId },
         data: { status: "CLOSED_WON" },
       });
-      const completed = await tx.unitTransferTransaction.update({
-        where: { id: transferId },
+
+      // CAS: transition the transfer PENDING_SETTLEMENT → COMPLETED atomically.
+      // The sellerUnit.transferredToOrgId sentinel (checked above) is the primary
+      // idempotency guard; this CAS adds a second DB-level lock so a concurrent
+      // settle attempt that passed the sentinel check before the tx committed will
+      // also fail cleanly rather than double-completing.
+      const transferClaim = await tx.unitTransferTransaction.updateMany({
+        where: { id: transferId, status: "PENDING_SETTLEMENT" },
         data: {
           status: "COMPLETED",
           buyerUnitId: buyerUnit.id,
@@ -800,6 +816,13 @@ export async function settleMarketplaceTransfer(transferId: string) {
           settledAt: new Date(),
           completedAt: new Date(),
         },
+      });
+      if (transferClaim.count === 0) {
+        throw new Error("This transfer has already been completed.");
+      }
+      // Re-fetch for the return value (updateMany does not return the record).
+      const completed = await tx.unitTransferTransaction.findUniqueOrThrow({
+        where: { id: transferId },
       });
 
       // Transactional audit (NOT fire-and-forget) — ownership transfer is legal/financial.

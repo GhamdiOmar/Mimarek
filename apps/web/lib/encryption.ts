@@ -1,4 +1,4 @@
-import { createCipheriv, createDecipheriv, randomBytes, createHash } from "crypto";
+import { createCipheriv, createDecipheriv, randomBytes, createHmac } from "crypto";
 
 const ALGORITHM = "aes-256-gcm";
 const IV_LENGTH = 12;
@@ -59,9 +59,19 @@ export function decrypt(encryptedValue: string): string {
   }
 }
 
+function getPepper(): string {
+  const pepper = process.env.PII_HASH_PEPPER;
+  if (!pepper) {
+    throw new Error("PII_HASH_PEPPER environment variable is not set");
+  }
+  return pepper;
+}
+
 /**
- * SHA-256 hash for exact-match search on encrypted fields.
+ * Keyed HMAC-SHA256 blind index for exact-match search on encrypted fields.
+ * Output is prefixed with "v1:" to allow future key rotation.
+ * Fails closed if PII_HASH_PEPPER is unset.
  */
 export function hashForSearch(value: string): string {
-  return createHash("sha256").update(value.trim().toLowerCase()).digest("hex");
+  return "v1:" + createHmac("sha256", getPepper()).update(value.trim().toLowerCase()).digest("hex");
 }
