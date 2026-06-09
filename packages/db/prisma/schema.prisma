@@ -238,6 +238,10 @@ model Customer {
   activities           CustomerActivity[]
   propertyInterests    Deal[]
   marketplaceInquiries MarketplaceInquiry[]       @relation("MarketplaceInquiryCustomer")
+  // Timestamp the customer entered its CURRENT pipeline stage (status). Distinct from
+  // updatedAt (which any edit bumps). Set on status change in updateCustomerStatus.
+  // @default(now()) safely backfills existing rows on `db push` (nullable + defaulted).
+  stageEnteredAt      DateTime?                  @default(now())
   createdAt            DateTime                   @default(now())
   updatedAt            DateTime                   @updatedAt
 

@@ -75,7 +75,12 @@ export async function updateCustomerStatus(customerId: string, status: any, lost
       });
       await tx.customer.update({
         where: { id: existing.id },
-        data: { status: validatedStatus as CustomerStatus, ...(resolvedLostReason !== undefined ? { lostReason: resolvedLostReason } : {}) },
+        data: {
+          status: validatedStatus as CustomerStatus,
+          // Status is definitionally changing here (LOST branch) — stamp the stage entry time.
+          stageEnteredAt: new Date(),
+          ...(resolvedLostReason !== undefined ? { lostReason: resolvedLostReason } : {}),
+        },
       });
     });
 
@@ -84,9 +89,15 @@ export async function updateCustomerStatus(customerId: string, status: any, lost
     return JSON.parse(JSON.stringify({ ...existing, status: validatedStatus, lostReason: resolvedLostReason }));
   }
 
+  // Only stamp stageEnteredAt when the status genuinely changes.
+  const statusChanged = validatedStatus !== existing.status;
   const customer = await db.customer.update({
     where: { id: customerId, organizationId: session.organizationId },
-    data: { status: validatedStatus as CustomerStatus, ...(resolvedLostReason !== undefined ? { lostReason: resolvedLostReason } : {}) },
+    data: {
+      status: validatedStatus as CustomerStatus,
+      ...(statusChanged ? { stageEnteredAt: new Date() } : {}),
+      ...(resolvedLostReason !== undefined ? { lostReason: resolvedLostReason } : {}),
+    },
   });
 
   logAuditEvent({ userId: session.userId, userEmail: session.email, userRole: session.role, action: "UPDATE", resource: "Customer", resourceId: customerId, metadata: { field: "status", newStatus: validatedStatus }, organizationId: session.organizationId });

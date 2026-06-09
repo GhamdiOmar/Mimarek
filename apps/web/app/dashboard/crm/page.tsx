@@ -1561,6 +1561,44 @@ function KanbanCard({
       .join("")
       .toUpperCase() || "؟";
 
+  // Owner avatar — agent initials using the same helper pattern
+  const agentInitials = customer.agent?.name
+    ? (customer.agent.name as string)
+        .trim()
+        .split(/\s+/)
+        .map((w: string) => w.charAt(0))
+        .filter(Boolean)
+        .slice(0, 2)
+        .join("")
+        .toUpperCase() || "؟"
+    : null;
+
+  // Time-in-stage chip — days since stageEnteredAt (fall back to createdAt, crash-safe)
+  const stageRefDate: Date | null = (() => {
+    const raw = customer.stageEnteredAt ?? customer.createdAt ?? null;
+    if (!raw) return null;
+    const d = new Date(raw);
+    return isNaN(d.getTime()) ? null : d;
+  })();
+  const daysInStage: number | null = stageRefDate
+    ? Math.floor((Date.now() - stageRefDate.getTime()) / 86_400_000)
+    : null;
+  // Threshold coloring via CSS variable tokens only — no dark: utilities, no hardcoded hex
+  const stageDayClass =
+    daysInStage === null
+      ? null
+      : daysInStage <= 7
+        ? "bg-muted text-muted-foreground"
+        : daysInStage <= 14
+          ? "bg-warning/15 text-warning"
+          : "bg-destructive/15 text-destructive";
+  const stageDayLabel =
+    daysInStage === null
+      ? null
+      : lang === "ar"
+        ? `${daysInStage} يوم`
+        : `${daysInStage}d`;
+
   const openProfile = () => onViewProfile(customer);
   const viewLabel =
     lang === "ar" ? `عرض ملف ${customer.name}` : `View ${customer.name}`;
@@ -1648,6 +1686,52 @@ function KanbanCard({
           </span>
         )}
       </div>
+
+      {/* Premium signals row: time-in-stage chip + owner avatar */}
+      {(stageDayLabel !== null || agentInitials !== null) && (
+        <div className="mt-2 flex items-center justify-between gap-2">
+          {/* Time-in-stage chip */}
+          {stageDayLabel !== null && stageDayClass !== null ? (
+            <span
+              dir="ltr"
+              className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums ${stageDayClass}`}
+              title={
+                lang === "ar"
+                  ? `الوقت في هذه المرحلة: ${stageDayLabel}`
+                  : `Time in stage: ${stageDayLabel}`
+              }
+              aria-label={
+                lang === "ar"
+                  ? `الوقت في المرحلة ${stageDayLabel}`
+                  : `Time in stage ${stageDayLabel}`
+              }
+            >
+              {stageDayLabel}
+            </span>
+          ) : (
+            <span />
+          )}
+
+          {/* Owner (agent) avatar */}
+          {agentInitials !== null && (
+            <span
+              aria-label={
+                lang === "ar"
+                  ? `المسؤول: ${customer.agent.name}`
+                  : `Owner: ${customer.agent.name}`
+              }
+              title={
+                lang === "ar"
+                  ? `المسؤول: ${customer.agent.name}`
+                  : `Owner: ${customer.agent.name}`
+              }
+              className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-secondary/20 text-secondary text-[9px] font-semibold"
+            >
+              {agentInitials}
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Quick-contact rail — distinct actions, revealed on hover, layered above the card click */}
       {(hasPhone || hasEmail) && (
