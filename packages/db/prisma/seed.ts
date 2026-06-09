@@ -196,6 +196,17 @@ async function main() {
     update: {},
     create: { email: "user@mimaric.sa", name: "Lama Al-Jaber", password: testPassword, role: "USER", organizationId: org.id, onboardingCompleted: true, accountType: "company" },
   });
+  // Dedicated LEASING and FINANCE role users (for testing the v4.15.0 role permission sets)
+  await prisma.user.upsert({
+    where: { email: "leasing@mimaric.sa" },
+    update: { role: "LEASING", organizationId: org.id },
+    create: { email: "leasing@mimaric.sa", name: "Sara Al-Dossari", password: testPassword, role: "LEASING", organizationId: org.id, onboardingCompleted: true, accountType: "company" },
+  });
+  await prisma.user.upsert({
+    where: { email: "finance@mimaric.sa" },
+    update: { role: "FINANCE", organizationId: org.id },
+    create: { email: "finance@mimaric.sa", name: "Yousef Al-Qahtani", password: testPassword, role: "FINANCE", organizationId: org.id, onboardingCompleted: true, accountType: "company" },
+  });
   // System Admin — Mimaric platform admin (for testing system-level ticket management)
   await prisma.user.upsert({
     where: { email: "system@mimaric.sa" },
@@ -208,7 +219,7 @@ async function main() {
     update: { role: "SYSTEM_SUPPORT", organizationId: null },
     create: { email: "support@mimaric.sa", name: "Mimaric Support Agent", password: testPassword, role: "SYSTEM_SUPPORT", organizationId: null, onboardingCompleted: true, accountType: "company" },
   });
-  console.log("Created 9 role test users (7 operational + 2 system)");
+  console.log("Created 11 role test users (9 operational + 2 system)");
 
 
   // ═══════════════════════════════════════════════════════════════════════════
