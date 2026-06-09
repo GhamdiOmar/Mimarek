@@ -15,6 +15,23 @@ import { globalSearch } from "../../app/actions/search";
 import { getOrgName } from "../../app/actions/organization";
 import { breadcrumbLabels, roleLabels } from "./nav-items";
 
+type NotifCategory = "all" | "alerts" | "reminders" | "updates";
+
+/** Map a notification `type` string to a coarse filter category (v4.11 Phase 3). */
+function categorizeNotification(type?: string): Exclude<NotifCategory, "all"> {
+  const t = (type ?? "").toUpperCase();
+  if (/OVERDUE|REJECT|FAIL|ALERT|EXPIRED|BREACH|CANCEL|ERROR/.test(t)) return "alerts";
+  if (/DUE|EXPIRY|REMIND|RENEWAL|UPCOMING|SCHEDULE/.test(t)) return "reminders";
+  return "updates";
+}
+
+const NOTIF_CATEGORIES: { key: NotifCategory; label: { ar: string; en: string } }[] = [
+  { key: "all", label: { ar: "الكل", en: "All" } },
+  { key: "alerts", label: { ar: "تنبيهات", en: "Alerts" } },
+  { key: "reminders", label: { ar: "تذكيرات", en: "Reminders" } },
+  { key: "updates", label: { ar: "تحديثات", en: "Updates" } },
+];
+
 export function AppTopbar() {
   const pathname = usePathname();
   const router = useRouter();
@@ -24,6 +41,7 @@ export function AppTopbar() {
   const [unreadCount, setUnreadCount] = React.useState(0);
   const [notifications, setNotifications] = React.useState<any[]>([]);
   const [showNotifs, setShowNotifs] = React.useState(false);
+  const [notifCategory, setNotifCategory] = React.useState<NotifCategory>("all");
   const [searchQuery, setSearchQuery] = React.useState("");
   const [searchResults, setSearchResults] = React.useState<any>(null);
   const [showSearch, setShowSearch] = React.useState(false);
@@ -82,6 +100,11 @@ export function AppTopbar() {
     crumbs.push({ label: breadcrumbLabels[seg]?.[lang] || seg, href: path });
   });
   if (crumbs.length === 1) crumbs.push({ label: lang === "ar" ? "نظرة عامة" : "Overview", href: "/dashboard" });
+
+  const visibleNotifs =
+    notifCategory === "all"
+      ? notifications
+      : notifications.filter((n) => categorizeNotification(n.type) === notifCategory);
 
   return (
     <header className="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-border bg-card/90 backdrop-blur-md px-4 sm:px-6">
@@ -179,15 +202,37 @@ export function AppTopbar() {
                 </Button>
               )}
             </div>
+            {/* Category filter pills (§6.6.6 pill standard) */}
+            <div className="flex items-center gap-1.5 overflow-x-auto px-3 py-2 border-b border-border">
+              {NOTIF_CATEGORIES.map((cat) => {
+                const active = notifCategory === cat.key;
+                return (
+                  <Button
+                    key={cat.key}
+                    onClick={() => setNotifCategory(cat.key)}
+                    variant={active ? "primary" : "subtle"}
+                    size="sm"
+                    aria-pressed={active}
+                    className="rounded-full shrink-0"
+                  >
+                    {cat.label[lang]}
+                  </Button>
+                );
+              })}
+            </div>
             {/* Notification list */}
             <div className="overflow-y-auto max-h-[420px]">
-              {notifications.length === 0 ? (
+              {visibleNotifs.length === 0 ? (
                 <div className="px-4 py-12 text-center">
                   <Bell className="h-6 w-6 mx-auto text-muted-foreground/30 mb-2" />
-                  <p className="text-sm text-muted-foreground">{lang === "ar" ? "لا توجد إشعارات" : "No notifications"}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {notifCategory === "all"
+                      ? lang === "ar" ? "لا توجد إشعارات" : "No notifications"
+                      : lang === "ar" ? "لا توجد إشعارات في هذه الفئة" : "No notifications in this category"}
+                  </p>
                 </div>
               ) : (
-                notifications.map((n) => (
+                visibleNotifs.map((n) => (
                   <Button
                     key={n.id}
                     onClick={() => handleNotifClick(n)}

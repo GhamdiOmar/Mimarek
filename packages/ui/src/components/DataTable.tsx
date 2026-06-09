@@ -100,6 +100,10 @@ export interface DataTableProps<TData, TValue> {
   className?: string;
   emptyTitle?: string;
   emptyDescription?: string;
+  /** Optional primary CTA rendered in the no-data empty state (§6.12.1) — e.g. a <Button onClick>. */
+  emptyAction?: React.ReactNode;
+  /** Optional icon rendered above the empty-state title. */
+  emptyIcon?: React.ReactNode;
 }
 
 /* ─────────────────────────────────────────────────────────────────────────── */
@@ -128,6 +132,8 @@ function DataTableInner<TData, TValue>({
   className,
   emptyTitle,
   emptyDescription,
+  emptyAction,
+  emptyIcon,
 }: DataTableProps<TData, TValue>) {
   const t = locale === "ar"
     ? {
@@ -429,8 +435,10 @@ function DataTableInner<TData, TValue>({
             ))
           ) : table.getRowModel().rows.length === 0 ? (
             <div className="rounded-lg border border-border bg-card py-10 text-center">
+              {emptyIcon && <div className="mb-3 flex justify-center text-muted-foreground/60">{emptyIcon}</div>}
               <p className="text-sm font-medium text-foreground">{t.noResults}</p>
               <p className="mt-1 text-xs text-muted-foreground">{t.noResultsDesc}</p>
+              {emptyAction && <div className="mt-4 flex justify-center">{emptyAction}</div>}
             </div>
           ) : (
             table.getRowModel().rows.map((row) => (
@@ -524,8 +532,10 @@ function DataTableInner<TData, TValue>({
               ) : table.getRowModel().rows.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={columns.length} className="py-16 text-center">
+                    {emptyIcon && <div className="mb-3 flex justify-center text-muted-foreground/60">{emptyIcon}</div>}
                     <p className="text-sm font-medium text-foreground">{t.noResults}</p>
                     <p className="mt-1 text-xs text-muted-foreground">{t.noResultsDesc}</p>
+                    {emptyAction && <div className="mt-4 flex justify-center">{emptyAction}</div>}
                   </TableCell>
                 </TableRow>
               ) : (

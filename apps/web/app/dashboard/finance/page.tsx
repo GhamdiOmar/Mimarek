@@ -303,6 +303,9 @@ export default function FinanceDashboardPage() {
                     <YAxis
                       stroke="hsl(var(--muted-foreground))"
                       fontSize={12}
+                      tickFormatter={(v) =>
+                        v >= 1000 ? `${Math.round(v / 1000)}k` : String(v)
+                      }
                     />
                     <Tooltip
                       contentStyle={{
@@ -348,6 +351,10 @@ export default function FinanceDashboardPage() {
                       dataKey="week"
                       stroke="hsl(var(--muted-foreground))"
                       fontSize={11}
+                      tickFormatter={(v) => {
+                        const n = String(v).match(/(\d+)/)?.[1] ?? v;
+                        return lang === "ar" ? `أسبوع ${n}` : `Wk ${n}`;
+                      }}
                     />
                     <YAxis
                       domain={[0, 100]}
