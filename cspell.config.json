@@ -161,7 +161,11 @@
     "Roselli",
     "retokenize",
     "retokenized",
-    "coachmark"
+    "coachmark",
+    "utfs",
+    "ufs",
+    "pgcrypto",
+    "creds"
   ],
   "ignoreRegExpList": [
     "[\\u0600-\\u06FF\\u0750-\\u077F\\uFB50-\\uFDFF\\uFE70-\\uFEFF]+",

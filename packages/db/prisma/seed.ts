@@ -2,7 +2,7 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
-import bcrypt from "bcryptjs";
+import { hash as bcryptHash } from "@node-rs/bcrypt";
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) throw new Error("DATABASE_URL is not defined");
@@ -96,7 +96,7 @@ async function main() {
   console.log("Organization:", org.name);
 
   // 2. Company Admin User (customer admin test account)
-  const hashedPassword = await bcrypt.hash("mimaric2026", 12);
+  const hashedPassword = await bcryptHash("mimaric2026", 12);
   const admin = await prisma.user.upsert({
     where: { email: "admin@mimaric.sa" },
     update: { password: hashedPassword, role: "ADMIN" },
@@ -113,8 +113,8 @@ async function main() {
   console.log("Company Admin user:", admin.email);
 
   // 3. Team members
-  const salesPassword = await bcrypt.hash("sales2026", 12);
-  const financePassword = await bcrypt.hash("finance2026", 12);
+  const salesPassword = await bcryptHash("sales2026", 12);
+  const financePassword = await bcryptHash("finance2026", 12);
 
   await prisma.user.upsert({
     where: { email: "ahmed@mimaric.sa" },
@@ -159,7 +159,7 @@ async function main() {
   });
 
   // 3b. Additional role users (one per role for access testing)
-  const testPassword = await bcrypt.hash("mimaric2026", 12);
+  const testPassword = await bcryptHash("mimaric2026", 12);
 
   await prisma.user.upsert({
     where: { email: "dev_admin@mimaric.sa" },
@@ -196,6 +196,17 @@ async function main() {
     update: {},
     create: { email: "user@mimaric.sa", name: "Lama Al-Jaber", password: testPassword, role: "USER", organizationId: org.id, onboardingCompleted: true, accountType: "company" },
   });
+  // Dedicated LEASING and FINANCE role users (for testing the v4.15.0 role permission sets)
+  await prisma.user.upsert({
+    where: { email: "leasing@mimaric.sa" },
+    update: { role: "LEASING", organizationId: org.id },
+    create: { email: "leasing@mimaric.sa", name: "Sara Al-Dossari", password: testPassword, role: "LEASING", organizationId: org.id, onboardingCompleted: true, accountType: "company" },
+  });
+  await prisma.user.upsert({
+    where: { email: "finance@mimaric.sa" },
+    update: { role: "FINANCE", organizationId: org.id },
+    create: { email: "finance@mimaric.sa", name: "Yousef Al-Qahtani", password: testPassword, role: "FINANCE", organizationId: org.id, onboardingCompleted: true, accountType: "company" },
+  });
   // System Admin — Mimaric platform admin (for testing system-level ticket management)
   await prisma.user.upsert({
     where: { email: "system@mimaric.sa" },
@@ -208,7 +219,7 @@ async function main() {
     update: { role: "SYSTEM_SUPPORT", organizationId: null },
     create: { email: "support@mimaric.sa", name: "Mimaric Support Agent", password: testPassword, role: "SYSTEM_SUPPORT", organizationId: null, onboardingCompleted: true, accountType: "company" },
   });
-  console.log("Created 9 role test users (7 operational + 2 system)");
+  console.log("Created 11 role test users (9 operational + 2 system)");
 
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -243,7 +254,7 @@ async function main() {
   console.log("Dummy Org:", dummyOrg.name);
 
   // Dummy Org users (4 roles)
-  const dummyPw = await bcrypt.hash("mimaric2026", 12);
+  const dummyPw = await bcryptHash("mimaric2026", 12);
 
   await prisma.user.upsert({
     where: { email: "dummy@demo.sa" },

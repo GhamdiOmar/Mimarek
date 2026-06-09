@@ -25,6 +25,7 @@ import { exportToExcel } from "../../../../lib/export";
 import {
   Button,
   IconButton,
+  ConfirmDialog,
   ResponsiveDialog,
   KPICard,
   DataTable,
@@ -96,6 +97,10 @@ export default function MaintenancePage() {
 
   // Mobile filter sheet
   const [showFilters, setShowFilters] = React.useState(false);
+
+  // Delete confirmation
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = React.useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = React.useState<string | null>(null);
 
   // Modal
   const [showModal, setShowModal] = React.useState(false);
@@ -258,16 +263,20 @@ export default function MaintenancePage() {
     }
   }
 
-  async function handleDelete(id: string) {
-    const msg = lang === "ar"
-      ? "هل أنت متأكد من حذف طلب الصيانة هذا؟"
-      : "Are you sure you want to delete this request?";
-    if (!confirm(msg)) return;
+  function handleDelete(id: string) {
+    setPendingDeleteId(id);
+    setConfirmDeleteOpen(true);
+  }
+
+  async function executeDelete() {
+    if (!pendingDeleteId) return;
     try {
-      await deleteMaintenanceRequest(id);
+      await deleteMaintenanceRequest(pendingDeleteId);
       await load();
     } catch (e) {
       console.error(e);
+    } finally {
+      setPendingDeleteId(null);
     }
   }
 
@@ -1117,6 +1126,17 @@ export default function MaintenancePage() {
         </form>
       </ResponsiveDialog>
     </div>
+
+      {/* Delete confirmation dialog */}
+      <ConfirmDialog
+        open={confirmDeleteOpen}
+        onOpenChange={setConfirmDeleteOpen}
+        title={lang === "ar" ? "هل أنت متأكد من حذف طلب الصيانة هذا؟" : "Are you sure you want to delete this request?"}
+        confirmLabel={lang === "ar" ? "حذف" : "Delete"}
+        cancelLabel={lang === "ar" ? "إلغاء" : "Cancel"}
+        onConfirm={executeDelete}
+        variant="destructive"
+      />
     </>
   );
 }

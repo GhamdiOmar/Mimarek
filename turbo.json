@@ -1,7 +1,7 @@
 {
   "$schema": "https://turborepo.dev/schema.json",
   "ui": "tui",
-  "globalEnv": ["DATABASE_URL", "AUTH_SECRET", "AUTH_TRUST_HOST", "AUTH_URL", "APP_URL", "NEXT_PUBLIC_APP_URL", "NEXTAUTH_URL", "PII_ENCRYPTION_KEY"],
+  "globalEnv": ["DATABASE_URL", "AUTH_SECRET", "AUTH_TRUST_HOST", "AUTH_URL", "APP_URL", "NEXT_PUBLIC_APP_URL", "NEXTAUTH_URL", "PII_ENCRYPTION_KEY", "PII_HASH_PEPPER"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],

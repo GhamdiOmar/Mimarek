@@ -37,6 +37,14 @@ export class BillingPage {
   async gotoInvoices() {
     await this.page.goto('/dashboard/billing/invoices');
     await this.page.waitForLoadState('networkidle');
+    // The invoices page is a client component that fetches in an effect, so
+    // `networkidle` can resolve while the desktop subtree still shows the
+    // skeleton. Wait for the explicit data-loaded hook to flip true so
+    // assertions don't race the client load (fixes the flaky billing spec).
+    await this.page
+      .locator('#main-content .hidden.md\\:block[data-loaded="true"]')
+      .first()
+      .waitFor({ state: 'attached', timeout: 15_000 });
   }
 
   // ─── Billing Dashboard ──────────────────────────────────────────────────

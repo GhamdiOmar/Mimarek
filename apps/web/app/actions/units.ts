@@ -2,9 +2,30 @@
 
 import { db } from "@repo/db";
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 import { requirePermission } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
 import { checkLimit, FEATURE_KEYS } from "../../lib/entitlements";
+
+// Module-private — NOT exported (this is a "use server" file; only async functions may be exported)
+const CreateUnitSchema = z.object({
+  number: z.string().min(1, "Unit number is required"),
+  type: z.enum(["APARTMENT", "VILLA", "OFFICE", "RETAIL", "WAREHOUSE", "PARKING"], {
+    errorMap: () => ({ message: "Invalid unit type" }),
+  }),
+  area: z.number().positive().optional(),
+  price: z.number().nonnegative().optional(),
+  markupPrice: z.number().nonnegative().optional(),
+  rentalPrice: z.number().nonnegative().optional(),
+  floor: z.number().int().optional(),
+  buildingName: z.string().optional(),
+  addressLine: z.string().optional(),
+  city: z.string().optional(),
+  district: z.string().optional(),
+  bedrooms: z.number().int().nonnegative().optional(),
+  bathrooms: z.number().int().nonnegative().optional(),
+  commercialStrategy: z.enum(["SELL", "LEASE", "HOLD", "TRANSFER", "COMMUNITY"]).optional(),
+});
 
 type UpdateUnitInput = {
   number?: string;
@@ -113,14 +134,30 @@ export async function getUnitsWithBuildings(filters?: {
 
 export async function createUnit(data: {
   number: string;
-  type: any;
+  type: string;
   area?: number;
   price?: number;
   markupPrice?: number;
   rentalPrice?: number;
-  status?: any;
+  floor?: number;
+  buildingName?: string;
+  addressLine?: string;
+  city?: string;
+  district?: string;
+  bedrooms?: number;
+  bathrooms?: number;
+  commercialStrategy?: string;
 }) {
   const session = await requirePermission("units:write");
+
+  // Validate and whitelist caller input — reject unknown/extra fields, enforce type safety
+  const parsed = CreateUnitSchema.safeParse(data);
+  if (!parsed.success) {
+    throw new Error(
+      "Invalid unit data: " + parsed.error.issues.map((i) => i.message).join(", ")
+    );
+  }
+  const safe = parsed.data;
 
   // Entitlement check: units.max
   const unitCount = await db.unit.count({
@@ -131,13 +168,25 @@ export async function createUnit(data: {
     throw new Error(entitlement.reason ?? "Unit limit reached. Please upgrade your plan.");
   }
 
+  // Explicit field mapping — no ...spread; status is always AVAILABLE on create
   const unit = await db.unit.create({
     data: {
-      ...data,
+      number: safe.number,
+      type: safe.type,
+      status: "AVAILABLE",
       organizationId: session.organizationId,
-      price: data.price ? Number(data.price) : undefined,
-      markupPrice: data.markupPrice ? Number(data.markupPrice) : undefined,
-      rentalPrice: data.rentalPrice ? Number(data.rentalPrice) : undefined,
+      area: safe.area,
+      price: safe.price !== undefined ? Number(safe.price) : undefined,
+      markupPrice: safe.markupPrice !== undefined ? Number(safe.markupPrice) : undefined,
+      rentalPrice: safe.rentalPrice !== undefined ? Number(safe.rentalPrice) : undefined,
+      floor: safe.floor,
+      buildingName: safe.buildingName,
+      addressLine: safe.addressLine,
+      city: safe.city,
+      district: safe.district,
+      bedrooms: safe.bedrooms,
+      bathrooms: safe.bathrooms,
+      commercialStrategy: safe.commercialStrategy,
     },
   });
 

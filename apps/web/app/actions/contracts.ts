@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requirePermission } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
 import { syncDealStageForUnit } from "./customer-interests";
+import { getNextSequenceValue, GLOBAL_SEQUENCE_SCOPE } from "../../lib/sequence";
 
 const VALID_TRANSITIONS: Record<string, string[]> = {
   DRAFT: ["SENT", "SIGNED", "CANCELLED"],
@@ -97,12 +98,14 @@ export async function createContract(data: {
     const installmentAmount = data.amount / installmentCount;
 
     contract = await db.$transaction(async (tx) => {
-      // Generate contract number atomically (count + create in same tx)
+      // Generate contract number atomically via sequence counter (race-safe)
       const year = new Date().getFullYear();
-      const count = await tx.contract.count({
-        where: { type: data.type, createdAt: { gte: new Date(`${year}-01-01`) } },
-      });
-      const seq = String(count + 1).padStart(4, "0");
+      // Global per-type sequence (matches the original global count semantics):
+      // contractNumber is globally @unique and its 4-char org prefix can repeat
+      // across orgs, so the numeric tail must be globally monotonic per type.
+      const counterType = `CONTRACT_${data.type}` as const; // e.g. "CONTRACT_LEASE"
+      const seqValue = await getNextSequenceValue(tx, GLOBAL_SEQUENCE_SCOPE, counterType, year);
+      const seq = String(seqValue).padStart(4, "0");
       const orgPrefix = session.organizationId.slice(0, 4).toUpperCase();
       const contractNumber = `${orgPrefix}-${data.type}-${year}-${seq}`;
 
@@ -158,12 +161,11 @@ export async function createContract(data: {
   } else {
     // SALE contract (or LEASE without dates as fallback)
     contract = await db.$transaction(async (tx) => {
-      // Generate contract number atomically (count + create in same tx)
+      // Generate contract number atomically via sequence counter (race-safe)
       const year = new Date().getFullYear();
-      const count = await tx.contract.count({
-        where: { type: data.type, createdAt: { gte: new Date(`${year}-01-01`) } },
-      });
-      const seq = String(count + 1).padStart(4, "0");
+      const counterType = `CONTRACT_${data.type}` as const; // e.g. "CONTRACT_SALE"
+      const seqValue = await getNextSequenceValue(tx, session.organizationId, counterType, year);
+      const seq = String(seqValue).padStart(4, "0");
       const orgPrefix = session.organizationId.slice(0, 4).toUpperCase();
       const contractNumber = `${orgPrefix}-${data.type}-${year}-${seq}`;
 

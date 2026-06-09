@@ -582,7 +582,7 @@ export default function InvoicesPage() {
     </div>
 
     {/* ─── Desktop (≥ md) ─ unchanged ───────────────────────────────── */}
-    <div className="hidden md:block">
+    <div className="hidden md:block" data-loaded={loading ? "false" : "true"}>
     <div className="space-y-6" dir={lang === "ar" ? "rtl" : "ltr"}>
       {/* Header */}
       <div>

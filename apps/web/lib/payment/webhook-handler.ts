@@ -140,10 +140,44 @@ async function routeWebhookEvent(
     return;
   }
 
+  // Payable (non-terminal) invoice states — invoices only move forward from these.
+  const PAYABLE_STATUSES = ["DRAFT", "ISSUED", "PARTIALLY_PAID", "OVERDUE"] as const;
+  // Refundable states — a refund is only valid on a PAID invoice.
+  const REFUNDABLE_STATUSES = ["PAID"] as const;
+
   switch (eventType) {
     case "payment.paid":
     case "payment.captured":
     case "payment_completed": {
+      // ── Guard 1: payable-state check ──────────────────────────────────────
+      const isPayable = (PAYABLE_STATUSES as readonly string[]).includes(invoice.status);
+      if (!isPayable) {
+        console.warn(
+          `[Webhook] Skipping PAID write — invoice ${invoice.id} is already in terminal state: ${invoice.status}`
+        );
+        break;
+      }
+
+      // ── Guard 2: currency check ───────────────────────────────────────────
+      if (paymentData.currency !== "SAR") {
+        console.warn(
+          `[Webhook] Skipping PAID write — unexpected currency for invoice ${invoice.id}: ` +
+          `expected "SAR", got "${paymentData.currency}"`
+        );
+        break;
+      }
+
+      // ── Guard 3: amount check (halalas → SAR, ±0.01 tolerance) ───────────
+      const receivedSAR = paymentData.amount / 100;
+      const invoiceSAR = Number(invoice.total);
+      if (Math.abs(receivedSAR - invoiceSAR) > 0.01) {
+        console.warn(
+          `[Webhook] Skipping PAID write — amount mismatch for invoice ${invoice.id}: ` +
+          `received ${receivedSAR} SAR, invoice total ${invoiceSAR} SAR`
+        );
+        break;
+      }
+
       // Update payment transaction
       await db.paymentTransaction.updateMany({
         where: {
@@ -157,14 +191,26 @@ async function routeWebhookEvent(
         },
       });
 
-      // Update invoice
-      await db.invoice.update({
-        where: { id: invoice.id },
+      // ── Conditional PAID write (atomic — races can't double-write) ────────
+      const paidAt = new Date();
+      const paidResult = await db.invoice.updateMany({
+        where: {
+          id: invoice.id,
+          status: { in: [...PAYABLE_STATUSES] },
+        },
         data: {
           status: "PAID",
-          paidAt: new Date(),
+          paidAt,
         },
       });
+
+      if (paidResult.count !== 1) {
+        // Another process beat us to it — not an error, just a harmless race.
+        console.warn(
+          `[Webhook] PAID write no-op for invoice ${invoice.id} — concurrent update (count=${paidResult.count})`
+        );
+        break;
+      }
 
       // Transition subscription to ACTIVE
       if (invoice.subscriptionId) {
@@ -212,6 +258,15 @@ async function routeWebhookEvent(
 
     case "payment.refunded":
     case "refund.created": {
+      // ── Guard: only refund invoices currently in PAID ─────────────────────
+      const isRefundable = (REFUNDABLE_STATUSES as readonly string[]).includes(invoice.status);
+      if (!isRefundable) {
+        console.warn(
+          `[Webhook] Skipping REFUNDED write — invoice ${invoice.id} is not in a refundable state: ${invoice.status}`
+        );
+        break;
+      }
+
       await db.paymentTransaction.updateMany({
         where: {
           invoiceId: invoice.id,
@@ -225,10 +280,19 @@ async function routeWebhookEvent(
         },
       });
 
-      await db.invoice.update({
-        where: { id: invoice.id },
+      const refundResult = await db.invoice.updateMany({
+        where: {
+          id: invoice.id,
+          status: { in: [...REFUNDABLE_STATUSES] },
+        },
         data: { status: "REFUNDED" },
       });
+
+      if (refundResult.count !== 1) {
+        console.warn(
+          `[Webhook] REFUNDED write no-op for invoice ${invoice.id} — concurrent update (count=${refundResult.count})`
+        );
+      }
 
       break;
     }

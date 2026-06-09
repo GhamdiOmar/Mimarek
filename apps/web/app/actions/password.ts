@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@repo/db";
-import bcrypt from "bcryptjs";
+import { hash as bcryptHash, compare as bcryptCompare } from "@node-rs/bcrypt";
 import { randomBytes } from "crypto";
 import { getSessionOrThrow } from "../../lib/auth-helpers";
 import { validatePassword } from "../../lib/password-policy";
@@ -54,13 +54,13 @@ export async function changePassword(data: {
   }
 
   // Verify current password
-  const isValid = await bcrypt.compare(data.currentPassword, user.password);
+  const isValid = await bcryptCompare(data.currentPassword, user.password);
   if (!isValid) {
     return { error: "WRONG_PASSWORD" };
   }
 
   // Check new password is different
-  const isSame = await bcrypt.compare(data.newPassword, user.password);
+  const isSame = await bcryptCompare(data.newPassword, user.password);
   if (isSame) {
     return { error: "SAME_PASSWORD" };
   }
@@ -72,7 +72,7 @@ export async function changePassword(data: {
   }
 
   // Hash and save
-  const hashed = await bcrypt.hash(data.newPassword, 12);
+  const hashed = await bcryptHash(data.newPassword, 12);
   await db.user.update({ where: { id: user.id }, data: { password: hashed } });
 
   logAuditEvent({
@@ -165,7 +165,7 @@ export async function resetPassword(token: string, newPassword: string) {
   }
 
   // Hash and save
-  const hashed = await bcrypt.hash(newPassword, 12);
+  const hashed = await bcryptHash(newPassword, 12);
   await db.user.update({ where: { id: resetToken.userId }, data: { password: hashed } });
 
   // Mark token as used

@@ -1561,6 +1561,44 @@ function KanbanCard({
       .join("")
       .toUpperCase() || "؟";
 
+  // Owner avatar — agent initials using the same helper pattern
+  const agentInitials = customer.agent?.name
+    ? (customer.agent.name as string)
+        .trim()
+        .split(/\s+/)
+        .map((w: string) => w.charAt(0))
+        .filter(Boolean)
+        .slice(0, 2)
+        .join("")
+        .toUpperCase() || "؟"
+    : null;
+
+  // Time-in-stage chip — days since stageEnteredAt (fall back to createdAt, crash-safe)
+  const stageRefDate: Date | null = (() => {
+    const raw = customer.stageEnteredAt ?? customer.createdAt ?? null;
+    if (!raw) return null;
+    const d = new Date(raw);
+    return isNaN(d.getTime()) ? null : d;
+  })();
+  const daysInStage: number | null = stageRefDate
+    ? Math.floor((Date.now() - stageRefDate.getTime()) / 86_400_000)
+    : null;
+  // Threshold coloring via CSS variable tokens only — no dark: utilities, no hardcoded hex
+  const stageDayClass =
+    daysInStage === null
+      ? null
+      : daysInStage <= 7
+        ? "bg-muted text-muted-foreground"
+        : daysInStage <= 14
+          ? "bg-warning/15 text-warning"
+          : "bg-destructive/15 text-destructive";
+  const stageDayLabel =
+    daysInStage === null
+      ? null
+      : lang === "ar"
+        ? `${daysInStage} يوم`
+        : `${daysInStage}d`;
+
   const openProfile = () => onViewProfile(customer);
   const viewLabel =
     lang === "ar" ? `عرض ملف ${customer.name}` : `View ${customer.name}`;
@@ -1648,6 +1686,52 @@ function KanbanCard({
           </span>
         )}
       </div>
+
+      {/* Premium signals row: time-in-stage chip + owner avatar */}
+      {(stageDayLabel !== null || agentInitials !== null) && (
+        <div className="mt-2 flex items-center justify-between gap-2">
+          {/* Time-in-stage chip */}
+          {stageDayLabel !== null && stageDayClass !== null ? (
+            <span
+              dir="ltr"
+              className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums ${stageDayClass}`}
+              title={
+                lang === "ar"
+                  ? `الوقت في هذه المرحلة: ${stageDayLabel}`
+                  : `Time in stage: ${stageDayLabel}`
+              }
+              aria-label={
+                lang === "ar"
+                  ? `الوقت في المرحلة ${stageDayLabel}`
+                  : `Time in stage ${stageDayLabel}`
+              }
+            >
+              {stageDayLabel}
+            </span>
+          ) : (
+            <span />
+          )}
+
+          {/* Owner (agent) avatar */}
+          {agentInitials !== null && (
+            <span
+              aria-label={
+                lang === "ar"
+                  ? `المسؤول: ${customer.agent.name}`
+                  : `Owner: ${customer.agent.name}`
+              }
+              title={
+                lang === "ar"
+                  ? `المسؤول: ${customer.agent.name}`
+                  : `Owner: ${customer.agent.name}`
+              }
+              className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-secondary/20 text-secondary text-[9px] font-semibold"
+            >
+              {agentInitials}
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Quick-contact rail — distinct actions, revealed on hover, layered above the card click */}
       {(hasPhone || hasEmail) && (
@@ -2406,7 +2490,7 @@ export default function CRMPage() {
           active={mobileTab}
           onChange={(k) => setMobileTab(k as "pipeline" | "leads" | "customers")}
           items={[
-            { key: "pipeline", label: lang === "ar" ? "خط الأنابيب" : "Pipeline" },
+            { key: "pipeline", label: lang === "ar" ? "مسار الفرص العقارية" : "Pipeline" },
             {
               key: "leads",
               label: `${lang === "ar" ? "العملاء المحتملون" : "Leads"} (${mobileLeads.length})`,
@@ -2612,7 +2696,7 @@ export default function CRMPage() {
             <Handshake className="h-4 w-4 shrink-0" aria-hidden="true" />
             <span>
               {lang === "ar"
-                ? "تسحب البطاقات في خط الأنابيب على النسخة الكاملة."
+                ? "سحب البطاقات بين مراحل مسار الفرص متاح على سطح المكتب."
                 : "Drag-and-drop pipeline available on desktop."}
             </span>
             <Building2 className="hidden h-4 w-4 shrink-0" aria-hidden="true" />
@@ -2718,7 +2802,7 @@ export default function CRMPage() {
           loading={loading}
         />
         <KPICard
-          label={lang === "ar" ? "في خط الأنابيب" : "In Pipeline"}
+          label={lang === "ar" ? "في مسار الفرص" : "In Pipeline"}
           value={kpis.inProgress}
           subtitle={lang === "ar" ? "في مراحل متقدمة" : "Contacted through Negotiation"}
           icon={<TrendingUp className="h-[18px] w-[18px]" />}
@@ -2931,11 +3015,24 @@ export default function CRMPage() {
           locale={lang}
           getRowId={(c) => c.id}
           pageSize={25}
+          emptyIcon={<Users className="h-12 w-12" aria-hidden="true" />}
           emptyTitle={lang === "ar" ? "لا توجد نتائج" : "No contacts found"}
           emptyDescription={
             lang === "ar"
               ? "حاول تعديل خيارات البحث أو الفلتر، أو أضف عميلاً جديداً."
               : "Try adjusting your search or filter, or add a new contact."
+          }
+          emptyAction={
+            !search.trim() && !statusFilter ? (
+              <Button
+                onClick={openAddCustomerModal}
+                style={{ display: "inline-flex" }}
+                className="gap-2"
+              >
+                <UserPlus className="h-4 w-4" />
+                {lang === "ar" ? "إضافة عميل" : "Add contact"}
+              </Button>
+            ) : undefined
           }
           mobileCard={(c) => {
             const statusCfg = getStatusConfig(c.status);

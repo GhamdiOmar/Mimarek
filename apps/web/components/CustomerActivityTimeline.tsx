@@ -12,7 +12,7 @@ import {
   Plus,
   Loader2,
 } from "lucide-react";
-import { Button, IconButton } from "@repo/ui";
+import { Button, IconButton, ConfirmDialog } from "@repo/ui";
 import { useLanguage } from "./LanguageProvider";
 import {
   addCustomerActivity,
@@ -93,6 +93,8 @@ export default function CustomerActivityTimeline({ customerId }: CustomerActivit
   const [note, setNote] = useState("");
   const [submitError, setSubmitError] = useState("");
   const [isPending, startTransition] = useTransition();
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   const loadActivities = async () => {
     setFetchLoading(true);
@@ -140,19 +142,21 @@ export default function CustomerActivityTimeline({ customerId }: CustomerActivit
     });
   };
 
-  const handleDelete = async (activityId: string) => {
-    const confirmed = window.confirm(
-      lang === "ar"
-        ? "هل أنت متأكد من حذف هذا النشاط؟"
-        : "Are you sure you want to delete this activity?"
-    );
-    if (!confirmed) return;
+  const handleDelete = (activityId: string) => {
+    setPendingDeleteId(activityId);
+    setConfirmOpen(true);
+  };
+
+  const executeDelete = async () => {
+    if (!pendingDeleteId) return;
     try {
-      await deleteCustomerActivity(activityId);
+      await deleteCustomerActivity(pendingDeleteId);
       await loadActivities();
     } catch {
       // Show inline feedback via reload (silently reload to reflect state)
       await loadActivities();
+    } finally {
+      setPendingDeleteId(null);
     }
   };
 
@@ -319,6 +323,17 @@ export default function CustomerActivityTimeline({ customerId }: CustomerActivit
           })}
         </div>
       )}
+
+      {/* Delete confirmation dialog */}
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title={lang === "ar" ? "هل أنت متأكد من حذف هذا النشاط؟" : "Are you sure you want to delete this activity?"}
+        confirmLabel={lang === "ar" ? "حذف" : "Delete"}
+        cancelLabel={lang === "ar" ? "إلغاء" : "Cancel"}
+        onConfirm={executeDelete}
+        variant="destructive"
+      />
     </div>
   );
 }

@@ -1,5 +1,54 @@
 # Changelog — Mimaric PropTech
 
+## [4.15.0] — 2026-06-09 — Security & integrity remediation + performance + polish
+
+Closes the confirmed Critical/High findings from the QA/code audit (which returned a **No-Go**), plus contained performance wins, v4.11 polish follow-ups, and a CRM enrichment. Every finding was re-verified against the codebase before fixing. Decisions: Postgres-backed rate limiting (no Redis), keyed-HMAC PII blind index with reseed (pre-prod), all in one pass.
+
+### Security & integrity (the No-Go blockers)
+
+- **Reservation & marketplace concurrency (C1, H4)** — replaced read-then-update with **compare-and-swap** (`updateMany` + count guard) inside the existing transactions: unit `AVAILABLE→RESERVED`, inquiry `OPEN→CONVERTED_TO_DEAL`, transfer `PENDING_SETTLEMENT→COMPLETED`. Added a **partial unique index** `uniq_unit_active_reservation` as a DB backstop. Existing `transferredToOrgId` sentinel + SIGNED-contract gate retained.
+- **Payment webhook hardening (C2)** — before marking an invoice PAID: payable-state guard (`DRAFT/ISSUED/PARTIALLY_PAID/OVERDUE`), currency = SAR, and amount match (Moyasar halalas ÷100 vs `Decimal` total, ±0.01). Conditional `updateMany` write; subscription transition only on `count === 1`; refunds restricted to PAID. Fail-closed + logged, no throw (200 already returned). Signature + idempotency unchanged.
+- **Cron authentication (C3)** — new `lib/cron-auth.ts` accepts the `Authorization: Bearer ${CRON_SECRET}` Vercel sends, with `?secret=` fallback, **fail-closed** when the secret is unset; applied to all three cron routes.
+- **Role permissions (H1)** — defined `ROLE_PERMISSIONS` for `LEASING` and `FINANCE` (previously absent → those users had zero access) and added both to `CUSTOMER_ASSIGNABLE_ROLES`.
+- **Distributed rate limiting (H5)** — new Postgres `RateLimitCounter` (atomic upsert, **fail-open** on DB error) replaces the per-process in-memory `Map`s for login and invitations; thresholds preserved. No new infra.
+- **PII blind index (H6)** — `hashForSearch` is now keyed **HMAC-SHA256** with a new `PII_HASH_PEPPER` (fail-closed), `v1:` prefix for rotation. Replaces brute-forceable unkeyed SHA-256.
+- **Input DTOs (H3, H2)** — `createUnit` uses a strict module-private schema with explicit field mapping and forced `status: AVAILABLE`; `registerFileInDb` adds an UploadThing URL-origin allowlist, org-ownership checks for `customerId`/`unitId`, and persists the previously-dropped `unitId`.
+- **Atomic numbering (H7)** — contract & invoice numbers now come from an atomic `SequenceCounter` (`INSERT … ON CONFLICT … RETURNING`) inside the create transaction, replacing `count()+1` / max-lookup races. Global scope preserves the existing global-unique numbering; idempotent backfill SQL seeds counters from existing maxes on populated DBs.
+- **a11y/UX (M1, M2)** — native `confirm()` replaced with a bilingual `ConfirmDialog` (on `ResponsiveDialog`); the DataTable sort header is now a single semantic `<button>` (dropped the redundant non-semantic `<span onClick>`). Plus 5 high-value composite indexes (M3).
+
+### Performance
+
+- **Native bcrypt** — swapped pure-JS `bcryptjs` → `@node-rs/bcrypt` (Rust/NAPI, prebuilt win32+linux, on Next's auto-external list). Hashing leaves the JS event loop, so a login spike no longer freezes signed-in users. Existing hashes verify unchanged (no re-seed).
+- **Warm connection pool** — `pg.Pool` `idleTimeoutMillis` 10s → 60s, so interactive clicks stop re-paying the TLS+auth handshake to the remote DB.
+- **Prefetch storm** — `prefetch={false}` on the radial-nav links; opening the nav no longer prefetches every sibling dashboard's DB work.
+
+### Polish
+
+- **Empty-state CTAs** — wired `DataTable` `emptyAction`/`emptyIcon` on units, CRM, admin/coupons, settings/team (suppressed when a filter is active).
+- **Mobile notification filter** — ported the All/Alerts/Reminders/Updates category pills to the mobile sheet for desktop parity (§6.14.4) via a shared categorization module.
+- **Arabic terms** — CRM «خط الأنابيب» → «مسار الفرص العقارية» (+ related KPI/instruction copy).
+- **Accessibility CI** — added `@axe-core/playwright` and an `accessibility.admin.spec.ts` scanning key dashboard routes for WCAG 2.0/2.1 A/AA (critical+serious gate), auto-included in the existing CI Playwright run.
+- **GitGuardian** — `.gitguardian.yaml` ignores the documented seed/test credentials so the PR check stops flagging non-production fixtures.
+
+### CRM kanban enrichment
+
+- New `Customer.stageEnteredAt` (nullable, `@default(now())` — backfills existing rows non-destructively). `updateCustomerStatus` stamps it only when the status changes. The Kanban card now shows the assigned **owner avatar** (agent initials, nothing when unassigned) and a **threshold-colored time-in-stage chip** (≤7d muted · 8–14d warning · >14d destructive), western digits, RTL-safe, both themes.
+
+### Deferred (with rationale)
+
+- **Server-component dashboard conversion** — every dashboard is blocked by client-context i18n; a true RSC conversion requires reworking the LanguageProvider into a server dictionary across 7 pages. Too large/risky to bundle with a security release; its own epic. The dominant latency lever is the DB region move (ops).
+- **Permission-denial → HTTP 403** — in Next's server-action model a thrown denial surfaces as 500 regardless of type; a real 403 needs an action-wide contract change. Deferred.
+- **ZATCA module** — still blocked on the e-invoicing clearance pipeline; building it now = empty UI over absent data.
+- **Decommission unmounted shell** (`AppSidebar`/`MobileBottomTabs`/`/dashboard/more`) — gated on the radial nav being proven in production (shipped 2026-06-09, too soon).
+- **DB region migration (Sydney → Bahrain)** — the single biggest latency lever, but an ops/runbook task (data migration + downtime), not code.
+
+### Verification
+
+- **Full production build** (`turbo run build`) + `check-types` green.
+- **Runtime (production server, reseeded DB):** login verified through the new native bcrypt; admin dashboard + CRM kanban (owner avatar + time-in-stage chip + masked PII) confirmed **light and dark**; Arabic term «مسار الفرص العقارية» rendered; **role-separation matrix** confirmed — `LEASING` lands on its dashboard and reaches CRM but is redirected away from `/dashboard/admin`; `FINANCE` reaches `/dashboard/finance` and is blocked from admin; `SYSTEM_ADMIN` reaches admin and is redirected away from `/dashboard/crm`; mobile (375×812) notification sheet shows the category pills; cron auth is **fail-closed** (no 200 without a valid Bearer). **Console error-free across the sweep.**
+- The full Playwright suite (incl. the deterministic billing-invoices fix and the new axe spec) runs in CI (this environment is network-isolated from localhost).
+- **Upgrade notes:** set the new **`PII_HASH_PEPPER`** env var (added to `.env.example`, `turbo.json` globalEnv, CI); **reseed** so blind-index hashes regenerate; on populated DBs run `packages/db/sql/2026-06-partial-indexes.sql` and `…/2026-06-sequence-backfill.sql` once after `prisma db push`.
+
 ## [4.11.0] — 2026-06-09 — UI overhaul: radial navigation + de-slop credibility pass
 
 The "make Mimaric feel authored, not AI-template slop" release. It replaces the linear sidebar and mobile bottom-tabs with a two-level **radial navigation** (CircleMenu), adapts four reference UI components to the Mimaric design system (theme toggle, alerts, notification filter, date picker) **with no new dependencies**, and sweeps the credibility "tells" flagged by two UI audits. Direction and decisions are recorded in `UI/mimaric_v4.11_*.md`.

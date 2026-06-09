@@ -3,7 +3,7 @@
 import { signIn } from "../../auth";
 import { AuthError } from "next-auth";
 import { db } from "@repo/db";
-import bcrypt from "bcryptjs";
+import { hash as bcryptHash } from "@node-rs/bcrypt";
 import { validatePassword } from "../../lib/password-policy";
 import { logAuditEvent } from "../../lib/audit";
 
@@ -94,7 +94,7 @@ export async function registerUser(data: {
   }
 
   // Hash password before transaction (bcrypt is CPU-intensive, keep outside tx)
-  const hashedPassword = await bcrypt.hash(data.password, 12);
+  const hashedPassword = await bcryptHash(data.password, 12);
   const normalizedEmail = data.email.toLowerCase().trim();
   const orgName = accountType === "company" ? data.name : `${data.name}'s Workspace`;
 

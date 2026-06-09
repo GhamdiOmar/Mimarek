@@ -27,6 +27,7 @@ export * from "./components/IconButton";
 export * from "./components/ActionLink";
 export * from "./components/DateRangePicker";
 export * from "./components/LastUpdatedAgo";
+export * from "./components/ConfirmDialog";
 
 /* ─── Journey Layer ────────────────────────────────────────── */
 export * from "./components/LifecycleRail";

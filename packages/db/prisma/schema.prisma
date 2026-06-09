@@ -194,6 +194,7 @@ model Unit {
 
   @@index([organizationId])
   @@index([transferredFromUnitId])
+  @@index([organizationId, status])
 }
 
 // ─── Customer (Absher individual data aligned) ────────────────────────────────
@@ -237,6 +238,10 @@ model Customer {
   activities           CustomerActivity[]
   propertyInterests    Deal[]
   marketplaceInquiries MarketplaceInquiry[]       @relation("MarketplaceInquiryCustomer")
+  // Timestamp the customer entered its CURRENT pipeline stage (status). Distinct from
+  // updatedAt (which any edit bumps). Set on status change in updateCustomerStatus.
+  // @default(now()) safely backfills existing rows on `db push` (nullable + defaulted).
+  stageEnteredAt      DateTime?                  @default(now())
   createdAt            DateTime                   @default(now())
   updatedAt            DateTime                   @updatedAt
 
@@ -300,6 +305,7 @@ model Reservation {
   @@index([customerId])
   @@index([unitId])
   @@index([userId])
+  @@index([expiresAt, status])
 }
 
 // RED: Reservation extension requests
@@ -1558,6 +1564,8 @@ model MarketplaceListing {
   @@index([sellerOrgId])
   @@index([status])
   @@index([unitId])
+  @@index([status, expiresAt])
+  @@index([status, city])
 }
 
 model MarketplaceInquiry {
@@ -1582,6 +1590,7 @@ model MarketplaceInquiry {
   @@index([buyerOrgId])
   @@index([sellerOrgId])
   @@index([listingId])
+  @@index([status])
 }
 
 model UnitTransferTransaction {
@@ -1608,4 +1617,34 @@ model UnitTransferTransaction {
   @@index([sellerOrgId])
   @@index([buyerOrgId])
   @@index([status])
+}
+
+// ─── SequenceCounter ──────────────────────────────────────────────────────────
+// Atomic per-org/per-type/per-year counter for collision-free contract & invoice
+// numbering. Read+bumped via `UPDATE ... RETURNING` inside the same transaction as
+// the entity create (replaces count()+1 / max-lookup races). See lib/sequence.ts.
+model SequenceCounter {
+  id             String   @id @default(cuid())
+  organizationId String
+  counterType    String // e.g. "CONTRACT_SALE", "CONTRACT_LEASE", "INVOICE"
+  year           Int
+  value          Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([organizationId, counterType, year])
+}
+
+// ─── RateLimitCounter ─────────────────────────────────────────────────────────
+// Postgres-backed fixed-window rate limiter (replaces per-process in-memory Maps so
+// limits hold across multiple instances). Atomic upsert/increment with a TTL window;
+// callers fail-open on DB error. See lib/rate-limit.ts.
+model RateLimitCounter {
+  key         String   @id // e.g. "login:user@example.com", "invite:<orgId>"
+  count       Int      @default(0)
+  windowStart DateTime @default(now())
+  expiresAt   DateTime
+  updatedAt   DateTime @updatedAt
+
+  @@index([expiresAt])
 }
