@@ -44,8 +44,8 @@ test.describe('Billing Dashboard — Admin', () => {
     await billing.expectRecentInvoicesSection();
   });
 
-  test('sidebar billing link navigates to billing page', async () => {
-    await billing.navigateToBillingViaSidebar();
+  test('nav link navigates to billing page', async () => {
+    await billing.navigateToBillingViaNav();
     await billing.expectBillingPageLoaded();
   });
 
