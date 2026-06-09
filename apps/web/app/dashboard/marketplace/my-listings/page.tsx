@@ -23,6 +23,7 @@ import {
   Skeleton,
   DataTable,
   IconButton,
+  DirectionalIcon,
   type ColumnDef,
 } from "@repo/ui";
 import { useLanguage } from "../../../../components/LanguageProvider";
@@ -478,7 +479,7 @@ export default function MyListingsPage() {
                 size="sm"
                 onClick={() => openConvert(row.original)}
               >
-                <ArrowRight className="h-3.5 w-3.5 me-1" aria-hidden="true" />
+                <DirectionalIcon icon={ArrowRight} className="h-3.5 w-3.5 me-1" aria-hidden="true" />
                 {lang === "ar" ? "تحويل لصفقة" : "Convert to Deal"}
               </Button>
             )}
@@ -685,7 +686,7 @@ export default function MyListingsPage() {
                       className="min-h-[44px]"
                       onClick={() => openConvert(inq)}
                     >
-                      <ArrowRight className="h-3.5 w-3.5 me-1" aria-hidden="true" />
+                      <DirectionalIcon icon={ArrowRight} className="h-3.5 w-3.5 me-1" aria-hidden="true" />
                       {lang === "ar" ? "تحويل لصفقة" : "Convert to Deal"}
                     </Button>
                   )}

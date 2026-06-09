@@ -25,6 +25,7 @@ import {
   ResponsiveDialog,
   EmptyState,
   Skeleton,
+  DirectionalIcon,
 } from "@repo/ui";
 import { cn } from "@repo/ui/lib/utils";
 import { useLanguage } from "../../../../components/LanguageProvider";
@@ -170,7 +171,7 @@ export default function ListingDetailPage() {
         href="/dashboard/marketplace"
         className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
       >
-        <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+        <DirectionalIcon icon={ArrowLeft} className="h-4 w-4" aria-hidden="true" />
         {lang === "ar" ? "العودة إلى السوق" : "Back to marketplace"}
       </Link>
 

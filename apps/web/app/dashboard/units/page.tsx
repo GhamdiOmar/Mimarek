@@ -1155,8 +1155,8 @@ function AdvancedUnitMatrixPage() {
               )}
               onRowClick={(row) => openUnitDetail(row)}
               rowClassName={(row) => {
-                if (row.status === "MAINTENANCE") return "border-s-2 border-s-warning/60";
-                if (row.status === "AVAILABLE") return "border-s-2 border-s-success/60";
+                // v4.11: alerting tint only — the status pill carries the rest (no side stripe).
+                if (row.status === "MAINTENANCE") return "bg-warning/5";
                 return undefined;
               }}
               mobileCard={(row) => {

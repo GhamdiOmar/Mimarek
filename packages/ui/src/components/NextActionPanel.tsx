@@ -102,7 +102,6 @@ function NextActionPanel({
     <section
       className={cn(
         "rounded-lg border border-border bg-card p-4 shadow-card",
-        "border-s-4 border-s-primary",
         className,
       )}
       aria-label={head}

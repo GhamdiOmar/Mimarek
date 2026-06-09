@@ -902,10 +902,10 @@ export default function MaintenancePage() {
         pageSize={10}
         getRowId={(r) => r.id}
         rowClassName={(r) => {
+          // v4.11: full-row tint instead of a start-edge stripe; pill carries status.
           const tone = toneForTicket(r);
-          if (tone === "red") return "border-s-2 border-destructive/60 bg-destructive/5";
-          if (tone === "amber") return "border-s-2 border-warning/60 bg-warning/5";
-          if (tone === "green") return "border-s-2 border-success/30";
+          if (tone === "red") return "bg-destructive/5";
+          if (tone === "amber") return "bg-warning/5";
           return undefined;
         }}
         mobileCard={(r) => {

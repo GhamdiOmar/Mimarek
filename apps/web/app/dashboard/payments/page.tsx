@@ -90,10 +90,11 @@ function getPaymentTone(entry: {
   const msPerDay = 24 * 60 * 60 * 1000;
   const daysUntilDue = Math.floor((due.getTime() - now.getTime()) / msPerDay);
 
-  // Collected / Paid — green start-border, strike-through due-by
+  // Collected / Paid — no side-shading (v4.11): the strike-through due-by + the
+  // status pill carry it; a paid row needs no alerting tint.
   if (entry.status === "PAID") {
     return {
-      rowClass: "border-s-4 border-s-secondary",
+      rowClass: "",
       amountClass: "text-foreground",
       dueDateClass: "line-through text-muted-foreground",
     };
@@ -107,7 +108,7 @@ function getPaymentTone(entry: {
 
   if (isPastDue) {
     return {
-      rowClass: "border-s-4 border-s-destructive",
+      rowClass: "bg-destructive/5",
       amountClass: "text-destructive font-semibold",
       dueDateClass: "text-destructive",
     };
@@ -122,7 +123,7 @@ function getPaymentTone(entry: {
 
   if (isAging) {
     return {
-      rowClass: "border-s-4 border-s-warning",
+      rowClass: "bg-warning/5",
       amountClass: "text-warning",
       dueDateClass: "text-warning",
     };
