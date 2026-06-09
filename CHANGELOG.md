@@ -3,7 +3,7 @@
 ## [4.15.1] — 2026-06-09 — Fixes: RTL theme-toggle thumb + admin marketplace i18n
 
 - **Theme toggle (RTL):** the sun/moon thumb hung ~14px off the leading edge of its track in Arabic (RTL) because it mixed a logical `ms-1` margin with a physical `translate-x` slide. Reworked to position the thumb via the logical `inset-inline-start` property (RTL-safe by construction) with `-translate-y-1/2` for vertical centering only. Verified inside-track + vertically centered in LTR + RTL × light + dark.
-- **Admin marketplace moderation i18n:** the `/dashboard/admin/marketplace` page header (H1 + subtitle), the Refresh button, and the suspend-listing dialog (title, description, buttons, reason label/placeholder) were hardcoded English. Now bilingual — H1 renders «إدارة السوق» under `lang === "ar"`.
+- **Admin marketplace moderation i18n:** the `/dashboard/admin/marketplace` page header (H1 + subtitle), the "Back to Admin" link, the Refresh button, and the suspend-listing dialog (title, description, buttons, reason label/placeholder) were hardcoded English. Now bilingual — H1 renders «إدارة السوق» under `lang === "ar"`.
 
 ## [4.15.0] — 2026-06-09 — Security & integrity remediation + performance + polish
 

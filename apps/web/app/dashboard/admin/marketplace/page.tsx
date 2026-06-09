@@ -329,7 +329,7 @@ export default function AdminMarketplacePage() {
           className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1 mb-4 transition-colors"
         >
           <DirectionalIcon icon={ArrowLeft} className="w-4 h-4" />
-          Back to Admin
+          {lang === "ar" ? "العودة إلى لوحة الإدارة" : "Back to Admin"}
         </Link>
       </div>
 
