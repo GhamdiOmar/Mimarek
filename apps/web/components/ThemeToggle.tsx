@@ -49,13 +49,20 @@ export function ThemeToggle({ className }: { className?: string }) {
         className,
       )}
     >
-      {/* Faint track icons signal the two states */}
-      <Moon className="pointer-events-none absolute start-2 h-4 w-4 text-muted-foreground/50" aria-hidden="true" />
-      <Sun className="pointer-events-none absolute end-2 h-4 w-4 text-muted-foreground/50" aria-hidden="true" />
+      {/* Faint track icons signal the two states (centered on the inline edges) */}
+      <Moon className="pointer-events-none absolute start-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" aria-hidden="true" />
+      <Sun className="pointer-events-none absolute end-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" aria-hidden="true" />
+      {/*
+        Thumb is absolutely positioned and slid via the LOGICAL `inset-inline-start`
+        property so it stays inside the track in BOTH LTR and RTL — the previous
+        `ms-1` + physical `translate-x` approach left the thumb hanging ~14px off the
+        leading edge in RTL. `-translate-y-1/2` handles vertical centering only.
+        Dark → start edge (4px); light → trailing edge (track 4rem − thumb 1.5rem − 4px).
+      */}
       <SwitchPrimitive.Thumb
+        style={{ insetInlineStart: isDark ? "0.25rem" : "calc(100% - 1.75rem)" }}
         className={cn(
-          "z-10 ms-1 flex h-6 w-6 items-center justify-center rounded-full bg-card text-foreground shadow-sm ring-1 ring-border transition-transform duration-300",
-          isDark ? "translate-x-0" : lang === "ar" ? "-translate-x-8" : "translate-x-8",
+          "absolute top-1/2 z-10 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full bg-card text-foreground shadow-sm ring-1 ring-border transition-[inset-inline-start] duration-300",
         )}
       >
         {isDark ? (
