@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Menu, Search, Bell, Globe, User, Settings, ShieldCheck, HelpCircle, LogOut } from "lucide-react";
+import { Search, Bell, Globe, User, Settings, ShieldCheck, HelpCircle, LogOut } from "lucide-react";
 import { cn } from "@repo/ui/lib/utils";
 import { Popover, PopoverTrigger, PopoverContent, DirectionalIcon, Button, IconButton } from "@repo/ui";
 import Link from "next/link";
@@ -15,7 +15,24 @@ import { globalSearch } from "../../app/actions/search";
 import { getOrgName } from "../../app/actions/organization";
 import { breadcrumbLabels, roleLabels } from "./nav-items";
 
-export function AppTopbar({ onMenuClick }: { onMenuClick: () => void }) {
+type NotifCategory = "all" | "alerts" | "reminders" | "updates";
+
+/** Map a notification `type` string to a coarse filter category (v4.11 Phase 3). */
+function categorizeNotification(type?: string): Exclude<NotifCategory, "all"> {
+  const t = (type ?? "").toUpperCase();
+  if (/OVERDUE|REJECT|FAIL|ALERT|EXPIRED|BREACH|CANCEL|ERROR/.test(t)) return "alerts";
+  if (/DUE|EXPIRY|REMIND|RENEWAL|UPCOMING|SCHEDULE/.test(t)) return "reminders";
+  return "updates";
+}
+
+const NOTIF_CATEGORIES: { key: NotifCategory; label: { ar: string; en: string } }[] = [
+  { key: "all", label: { ar: "الكل", en: "All" } },
+  { key: "alerts", label: { ar: "تنبيهات", en: "Alerts" } },
+  { key: "reminders", label: { ar: "تذكيرات", en: "Reminders" } },
+  { key: "updates", label: { ar: "تحديثات", en: "Updates" } },
+];
+
+export function AppTopbar() {
   const pathname = usePathname();
   const router = useRouter();
   const { data: session } = useSession();
@@ -24,6 +41,7 @@ export function AppTopbar({ onMenuClick }: { onMenuClick: () => void }) {
   const [unreadCount, setUnreadCount] = React.useState(0);
   const [notifications, setNotifications] = React.useState<any[]>([]);
   const [showNotifs, setShowNotifs] = React.useState(false);
+  const [notifCategory, setNotifCategory] = React.useState<NotifCategory>("all");
   const [searchQuery, setSearchQuery] = React.useState("");
   const [searchResults, setSearchResults] = React.useState<any>(null);
   const [showSearch, setShowSearch] = React.useState(false);
@@ -83,17 +101,14 @@ export function AppTopbar({ onMenuClick }: { onMenuClick: () => void }) {
   });
   if (crumbs.length === 1) crumbs.push({ label: lang === "ar" ? "نظرة عامة" : "Overview", href: "/dashboard" });
 
+  const visibleNotifs =
+    notifCategory === "all"
+      ? notifications
+      : notifications.filter((n) => categorizeNotification(n.type) === notifCategory);
+
   return (
     <header className="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-border bg-card/90 backdrop-blur-md px-4 sm:px-6">
       <div className="flex items-center gap-3">
-        {/* Mobile hamburger */}
-        <IconButton
-          icon={Menu}
-          aria-label={lang === "ar" ? "فتح القائمة" : "Open menu"}
-          onClick={onMenuClick}
-          variant="ghost"
-          className="md:hidden"
-        />
         {/* Breadcrumbs */}
         <nav className="hidden sm:flex items-center text-xs text-muted-foreground font-medium" aria-label="Breadcrumb">
           {crumbs.map((crumb, i) => (
@@ -187,15 +202,37 @@ export function AppTopbar({ onMenuClick }: { onMenuClick: () => void }) {
                 </Button>
               )}
             </div>
+            {/* Category filter pills (§6.6.6 pill standard) */}
+            <div className="flex items-center gap-1.5 overflow-x-auto px-3 py-2 border-b border-border">
+              {NOTIF_CATEGORIES.map((cat) => {
+                const active = notifCategory === cat.key;
+                return (
+                  <Button
+                    key={cat.key}
+                    onClick={() => setNotifCategory(cat.key)}
+                    variant={active ? "primary" : "subtle"}
+                    size="sm"
+                    aria-pressed={active}
+                    className="rounded-full shrink-0"
+                  >
+                    {cat.label[lang]}
+                  </Button>
+                );
+              })}
+            </div>
             {/* Notification list */}
             <div className="overflow-y-auto max-h-[420px]">
-              {notifications.length === 0 ? (
+              {visibleNotifs.length === 0 ? (
                 <div className="px-4 py-12 text-center">
                   <Bell className="h-6 w-6 mx-auto text-muted-foreground/30 mb-2" />
-                  <p className="text-sm text-muted-foreground">{lang === "ar" ? "لا توجد إشعارات" : "No notifications"}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {notifCategory === "all"
+                      ? lang === "ar" ? "لا توجد إشعارات" : "No notifications"
+                      : lang === "ar" ? "لا توجد إشعارات في هذه الفئة" : "No notifications in this category"}
+                  </p>
                 </div>
               ) : (
-                notifications.map((n) => (
+                visibleNotifs.map((n) => (
                   <Button
                     key={n.id}
                     onClick={() => handleNotifClick(n)}

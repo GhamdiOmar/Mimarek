@@ -20,7 +20,8 @@ function PageIntro({
   return (
     <div
       className={cn(
-        "glass rounded-xl p-8 relative overflow-hidden",
+        // v4.11 "Outlined Precision": flat enterprise header — no glass.
+        "rounded-lg border border-border bg-card card-quiet p-6 relative",
         className
       )}
       {...props}

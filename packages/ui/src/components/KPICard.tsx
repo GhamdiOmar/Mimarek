@@ -5,8 +5,6 @@ import Link from "next/link";
 import { ArrowUpRight, ArrowDownRight, Minus, Info } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "../lib/utils";
-import { formatDistanceToNow } from "date-fns";
-import { arSA, enUS } from "date-fns/locale";
 import {
   Tooltip,
   TooltipContent,
@@ -89,7 +87,7 @@ export interface KPICardProps {
   href?: string;
   /** Controls click handler when href is not used. */
   onClick?: () => void;
-  /** Last-refresh timestamp — renders "X ago". */
+  /** @deprecated v4.11 — per-card freshness removed; show data freshness once at page level via `<LastUpdatedAgo>`. Prop retained for call-site compatibility; ignored. */
   lastUpdated?: Date | string | number;
   /** Locale for the "ago" phrase and delta tooltip. */
   locale?: "ar" | "en";
@@ -99,14 +97,15 @@ export interface KPICardProps {
   className?: string;
 }
 
-const BORDER: Record<KPIAccent, string> = {
-  primary: "border-s-primary",
-  secondary: "border-s-secondary",
-  success: "border-s-success",
-  warning: "border-s-warning",
-  destructive: "border-s-destructive",
-  info: "border-s-info",
-  accent: "border-s-accent",
+/**
+ * v4.11 "Outlined Precision": tier rank is carried by an inset TOP rule
+ * (RTL-safe — top/bottom never mirror), NOT a colored inline-start side bar.
+ * Status/category color now lives in the icon chip + delta pill only.
+ */
+const TOP_RULE: Record<KPITier, string> = {
+  hero: "border-t-2 border-t-primary/70",
+  standard: "",
+  utility: "",
 };
 
 const ICON_BG: Record<KPIAccent, string> = {
@@ -178,7 +177,6 @@ export function KPICard({
   comparisonPeriod,
   href,
   onClick,
-  lastUpdated,
   locale,
   loading = false,
   compact = false,
@@ -208,18 +206,13 @@ export function KPICard({
   const IconNode = isLucide ? (icon as LucideIcon) : null;
 
   const padding = isHero ? "p-7" : isUtility ? "p-3" : "p-6";
-  const borderSide = isUtility
-    ? ""
-    : isHero
-      ? "border-s-[6px]"
-      : "border-s-4";
 
   if (loading) {
     return (
       <div
         className={cn(
-          "rounded-lg border border-border bg-card shadow-card",
-          borderSide,
+          "rounded-lg border border-border bg-card card-quiet",
+          TOP_RULE[resolvedTier],
           padding,
           className,
         )}
@@ -240,14 +233,6 @@ export function KPICard({
     (typeof document !== "undefined" && document.documentElement.lang === "ar"
       ? "ar"
       : "en");
-
-  const ago =
-    lastUpdated != null
-      ? formatDistanceToNow(new Date(lastUpdated), {
-          addSuffix: true,
-          locale: effLocale === "ar" ? arSA : enUS,
-        })
-      : null;
 
   const deltaIcon =
     direction === "up" ? (
@@ -402,18 +387,16 @@ export function KPICard({
         </svg>
       )}
 
-      {ago && !isUtility && (
-        <div className="mt-2 text-[11px] text-muted-foreground">{ago}</div>
-      )}
     </>
   );
 
   const classes = cn(
-    "block rounded-lg border border-border bg-card transition-shadow duration-200",
-    isHero ? "shadow-md" : "shadow-card",
-    borderSide,
-    !isUtility && BORDER[resolvedAccent],
-    interactive && "hover:shadow-elevation-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+    "group block rounded-lg border border-border bg-card overflow-hidden",
+    "transition-[background-color,border-color,transform,box-shadow] duration-200",
+    isHero ? "shadow-sm" : "card-quiet",
+    TOP_RULE[resolvedTier],
+    interactive &&
+      "hover:border-primary/30 hover:-translate-y-px hover:bg-card-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
     padding,
     className,
   );

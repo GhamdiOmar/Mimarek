@@ -13,7 +13,6 @@ import {
   FileDown,
   UserPlus,
   TrendingUp,
-  Star,
   Phone,
   Mail,
   MessageCircle,
@@ -31,7 +30,6 @@ import {
   Handshake,
   Building2,
   User,
-  ExternalLink,
 } from "lucide-react";
 import {
   Button,
@@ -1553,15 +1551,47 @@ function KanbanCard({
   const email = typeof customer.email === "string" ? customer.email : "";
   const hasEmail = email.length > 0 && email.includes("@") && !email.startsWith("*");
 
+  const initials =
+    (typeof customer.name === "string" ? customer.name : "")
+      .trim()
+      .split(/\s+/)
+      .map((w: string) => w.charAt(0))
+      .filter(Boolean)
+      .slice(0, 2)
+      .join("")
+      .toUpperCase() || "؟";
+
+  const openProfile = () => onViewProfile(customer);
+  const viewLabel =
+    lang === "ar" ? `عرض ملف ${customer.name}` : `View ${customer.name}`;
+
   return (
+    // v4.11: the card itself is the single "view profile" affordance —
+    // replaces the former Eye + footer link + ExternalLink (audit §3.4).
     <div
       draggable
       onDragStart={(e) => onDragStart(e, customer.id)}
-      className="group relative bg-card border border-border rounded-xl p-4 cursor-grab active:cursor-grabbing hover:border-primary/20 hover:shadow-sm transition-all"
+      role="button"
+      tabIndex={0}
+      aria-label={viewLabel}
+      onClick={openProfile}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          openProfile();
+        }
+      }}
+      className="group relative rounded-lg border border-border bg-card card-quiet p-3.5 cursor-grab active:cursor-grabbing hover:border-primary/30 hover:bg-card-hover transition-[background-color,border-color] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
     >
-      {/* Name + actions */}
-      <div className="flex items-start justify-between gap-2 mb-3">
-        <div className="flex-1 min-w-0">
+      {/* Name + avatar + delete */}
+      <div className="flex items-start gap-2.5">
+        <span
+          aria-hidden="true"
+          className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-semibold"
+        >
+          {initials}
+        </span>
+        <div className="min-w-0 flex-1">
           <p className="font-semibold text-sm text-foreground truncate">
             {customer.name}
           </p>
@@ -1571,110 +1601,94 @@ function KanbanCard({
             </p>
           )}
         </div>
-        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        {canDelete && (
           <IconButton
-            icon={Eye}
-            aria-label={lang === "ar" ? "عرض" : "View"}
+            icon={Trash2}
+            aria-label={lang === "ar" ? "حذف" : "Delete"}
             variant="ghost"
-            onClick={() => onViewProfile(customer)}
+            className="relative z-10 -me-1.5 -mt-1.5 shrink-0 text-destructive opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(customer);
+            }}
           />
-          {canDelete && (
-            <IconButton
-              icon={Trash2}
-              aria-label={lang === "ar" ? "حذف" : "Delete"}
-              variant="ghost"
-              className="text-destructive"
-              onClick={() => onDelete(customer)}
-            />
-          )}
-        </div>
+        )}
       </div>
 
-      {/* Contact */}
-      <div className="space-y-1.5">
-        {customer.phone && (
-          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-            <Phone className="h-3 w-3 shrink-0" />
+      {/* Deal value — the prominence anchor */}
+      {customer.budget ? (
+        <p
+          dir="ltr"
+          className="number-ltr mt-2.5 text-base font-bold tabular-nums text-foreground"
+        >
+          {Number(customer.budget).toLocaleString(
+            lang === "ar" ? "ar-SA" : "en-SA",
+          )}
+          <span className="ms-1 text-xs font-normal text-muted-foreground">
+            {lang === "ar" ? "ر.س" : "SAR"}
+          </span>
+        </p>
+      ) : null}
+
+      {/* Meta: phone + source */}
+      <div className="mt-2.5 flex items-center justify-between gap-2">
+        {customer.phone ? (
+          <span className="inline-flex min-w-0 items-center gap-1.5 text-[11px] text-muted-foreground">
+            <Phone className="h-3 w-3 shrink-0" aria-hidden="true" />
             <span className="truncate font-mono" dir="ltr">
               {showPii ? customer.phone : maskPhone(customer.phone)}
             </span>
-          </div>
+          </span>
+        ) : (
+          <span />
         )}
-        {customer.budget && (
-          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-            <Star className="h-3 w-3 shrink-0" />
-            <span className="truncate">
-              {Number(customer.budget).toLocaleString(lang === "ar" ? "ar-SA" : "en-SA")} {lang === "ar" ? "ر.س" : "SAR"}
-            </span>
-          </div>
-        )}
-      </div>
-
-      {/* Footer */}
-      <div className="mt-3 pt-3 border-t border-border/50 flex items-center justify-between gap-2">
         {customer.source && SOURCE_LABELS[customer.source] && (
-          <span className="text-[10px] text-muted-foreground">
+          <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
             {(SOURCE_LABELS[customer.source] as { ar: string; en: string })[lang]}
           </span>
         )}
-        <Button
-          variant="link"
-          size="sm"
-          style={{ display: "inline-flex" }}
-          className="ms-auto gap-1 text-[10px] h-auto p-0"
-          onClick={() => onViewProfile(customer)}
-        >
-          {lang === "ar" ? "عرض الملف" : "View Profile"}
-          <DirectionalIcon icon={ChevronRight} className="h-3 w-3" />
-        </Button>
       </div>
 
-      {/* Hover quick-actions — revealed on card hover only */}
-      <div
-        className="mt-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {hasPhone && (
-          <a
-            href={`tel:${rawPhone}`}
-            aria-label={lang === "ar" ? "اتصال هاتفي" : "Call phone"}
-            title={lang === "ar" ? "اتصال" : "Call"}
-            className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-          >
-            <Phone className="h-3.5 w-3.5" />
-          </a>
-        )}
-        {hasPhone && (
-          <a
-            href={`https://wa.me/${phoneDigits}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={lang === "ar" ? "فتح واتساب" : "Open WhatsApp"}
-            title={lang === "ar" ? "واتساب" : "WhatsApp"}
-            className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-          >
-            <MessageCircle className="h-3.5 w-3.5" />
-          </a>
-        )}
-        {hasEmail && (
-          <a
-            href={`mailto:${email}`}
-            aria-label={lang === "ar" ? "إرسال بريد إلكتروني" : "Send email"}
-            title={lang === "ar" ? "بريد إلكتروني" : "Email"}
-            className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-          >
-            <Mail className="h-3.5 w-3.5" />
-          </a>
-        )}
-        <IconButton
-          icon={ExternalLink}
-          aria-label={lang === "ar" ? "فتح الملف الشخصي" : "Open profile"}
-          variant="ghost"
-          size="icon"
-          className="ms-auto h-7 w-7"
-          onClick={() => onViewProfile(customer)}
-        />
-      </div>
+      {/* Quick-contact rail — distinct actions, revealed on hover, layered above the card click */}
+      {(hasPhone || hasEmail) && (
+        <div
+          className="relative z-10 mt-2.5 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {hasPhone && (
+            <a
+              href={`tel:${rawPhone}`}
+              aria-label={lang === "ar" ? "اتصال هاتفي" : "Call phone"}
+              title={lang === "ar" ? "اتصال" : "Call"}
+              className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              <Phone className="h-3.5 w-3.5" />
+            </a>
+          )}
+          {hasPhone && (
+            <a
+              href={`https://wa.me/${phoneDigits}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={lang === "ar" ? "فتح واتساب" : "Open WhatsApp"}
+              title={lang === "ar" ? "واتساب" : "WhatsApp"}
+              className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              <MessageCircle className="h-3.5 w-3.5" />
+            </a>
+          )}
+          {hasEmail && (
+            <a
+              href={`mailto:${email}`}
+              aria-label={lang === "ar" ? "إرسال بريد إلكتروني" : "Send email"}
+              title={lang === "ar" ? "بريد إلكتروني" : "Email"}
+              className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              <Mail className="h-3.5 w-3.5" />
+            </a>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -2429,7 +2443,7 @@ export default function CRMPage() {
                 children:
                   stageCustomers.length === 0 ? (
                     <p className="py-4 text-center text-xs text-muted-foreground">
-                      {lang === "ar" ? "لا يوجد" : "Empty"}
+                      {lang === "ar" ? "لا توجد صفقات في هذه المرحلة" : "No deals in this stage"}
                     </p>
                   ) : (
                     stageCustomers.map((c) => (
@@ -2823,6 +2837,10 @@ export default function CRMPage() {
             );
             const isDragOver = dragOverStatus === status.key;
             const stageHue = STAGE_HUES[status.key];
+            const colValue = colCustomers.reduce(
+              (sum, c) => sum + (Number(c.budget) || 0),
+              0,
+            );
 
             return (
               <div
@@ -2843,19 +2861,30 @@ export default function CRMPage() {
                 onDrop={() => handleDrop(status.key)}
               >
                 {/* Column header */}
-                <div className="flex items-center justify-between mb-1 px-1">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className="h-2 w-2 rounded-full"
-                      style={stageHue ? { backgroundColor: stageHue } : undefined}
-                    />
-                    <span className="text-xs font-bold text-foreground">
-                      {status.label[lang]}
+                <div className="mb-2 px-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span
+                        className="h-2 w-2 rounded-full shrink-0"
+                        style={stageHue ? { backgroundColor: stageHue } : undefined}
+                      />
+                      <span className="text-xs font-bold text-foreground truncate">
+                        {status.label[lang]}
+                      </span>
+                    </div>
+                    <span className="shrink-0 rounded-full bg-muted/60 px-2 py-0.5 text-[11px] font-bold tabular-nums text-muted-foreground">
+                      {colCustomers.length}
                     </span>
                   </div>
-                  <span className="text-xs font-bold text-muted-foreground bg-muted/40 rounded-full px-2 py-0.5">
-                    {colCustomers.length}
-                  </span>
+                  {colValue > 0 && (
+                    <p
+                      dir="ltr"
+                      className="number-ltr mt-1 text-[11px] font-medium tabular-nums text-muted-foreground"
+                    >
+                      {colValue.toLocaleString(lang === "ar" ? "ar-SA" : "en-SA")}{" "}
+                      {lang === "ar" ? "ر.س" : "SAR"}
+                    </p>
+                  )}
                 </div>
 
                 {/* Cards */}

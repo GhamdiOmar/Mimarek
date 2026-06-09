@@ -512,6 +512,8 @@ Every per-row action is an **icon-only `IconButton`** — including "forward" ac
 
 Never use ad-hoc variants for the same action ("View Profile" / "View Details" / "View profile" are all just **View**).
 
+**One action = one affordance (learned 2026-06-09).** A single card/row/cell must expose each action through exactly ONE control. Two or more controls that fire the same handler — or navigate to the same destination — inside one card/row are a violation (clutter + ambiguity). Incident: the CRM Kanban card had THREE view-profile triggers (`Eye` icon + "View Profile" footer link + `ExternalLink` icon), and the Units row had `onRowClick` + `Eye` + `Pencil` all opening the same detail drawer (the `Pencil` even mislabeled "Edit"/تعديل). Rules: **(1)** if a row/card is itself clickable (`onRowClick` or a `role="button"` card) and that opens the record, do NOT also add an `Eye` "view" button — the click IS the view affordance; **(2)** never label a control for an action it does not perform (a `Pencil`/"Edit" must open edit, not a read-only view); **(3)** when auditing UI, grep each card/row component for the same handler invoked by 2+ controls and collapse to one.
+
 #### 6.6.8 Filter / segment pill standard
 
 Interactive filter, segment, and view-toggle pills use one mapping everywhere — **mobile and desktop identical**:
@@ -570,6 +572,8 @@ This taxonomy codifies established button-vs-link and target-size guidance — n
 
 ### 6.8 KPI Cards
 
+> **v4.11 "Outlined Precision" (2026-06-09):** KPI cards no longer use a colored inline-start accent bar. Hierarchy = surface + hairline border + type scale; hero tier adds a **2px inset TOP rule** in `--primary` (RTL-safe). Status/category = tinted icon chip + delta-pill color. Depth = `.card-quiet` (faint shadow, light) / hairline-only (dark). Glass is marketing/auth-splash only. See `UI/mimaric_v4.11_design_direction.md`. The tables below are reconciled to this.
+
 #### 6.8.1 Mandatory Anatomy (all 8 fields)
 
 ```tsx
@@ -594,9 +598,9 @@ Every dashboard has one North Star metric (§ 6.9.1). The `tier` prop tells the 
 
 | Tier | When | Visual |
 |---|---|---|
-| `hero` | **Exactly one per dashboard.** The North Star metric. | Value `clamp(36px → 48px)`. Left accent bar 6px. Taller sparkline (48px). Optional `secondaryInsight` one-liner under the value (e.g. "+12 leases vs. same week last year"). `shadow-md` instead of `shadow-card`. |
-| `standard` | Default. Primary KPIs beside the hero. | Value 30px. Left accent bar 4px. Sparkline 32px. Eight-field anatomy unchanged. |
-| `utility` | Secondary / metadata / filter-panel metrics. | Value 20px. No accent bar. No sparkline. No icon. Used in rows below the hero + primary row. |
+| `hero` | **Exactly one per dashboard.** The North Star metric. | Value `clamp(36px → 48px)`. **2px inset TOP rule in `--primary` (RTL-safe; not a side bar).** Taller sparkline (48px). Optional `secondaryInsight` one-liner under the value. `shadow-sm` (light) / hairline-only (dark). |
+| `standard` | Default. Primary KPIs beside the hero. | Value 30px. **No accent bar** — rank via type scale + padding. Sparkline 32px. `.card-quiet` (light) / no-shadow (dark). Eight-field anatomy unchanged. |
+| `utility` | Secondary / metadata / filter-panel metrics. | Value 20px. No top rule. No sparkline. No icon. Used in rows below the hero + primary row. |
 
 **Hard rule:** exactly one `tier="hero"` per dashboard — that's the North Star. More than one hero defeats the tiering.
 
@@ -609,7 +613,7 @@ The legacy `compact` prop maps to `tier="utility"` for back-compat and is deprec
 - **Max 8 KPIs above the fold.** Force prioritization.
 - **Never repeat the same KPI** twice on the same page.
 - Grid gap `16px` or `24px` — CSS grid, not margins.
-- Left accent bar (4px standard / 6px hero / none on utility) for category cue.
+- **No colored inline-start accent bar (removed v4.11 "Outlined Precision").** Category/status cue = tinted icon chip + delta-pill color, never an edge stripe. Hero tier rank = a 2px inset TOP rule in `--primary`.
 
 #### 6.8.4 States
 

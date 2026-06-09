@@ -123,10 +123,12 @@ export function DateRangePicker({
       <PopoverContent className="flex w-auto flex-col gap-0 p-0 md:flex-row" align="start">
         <div className="flex flex-row flex-wrap gap-1 border-b p-2 md:w-44 md:flex-col md:border-b-0 md:border-e">
           {presets.map((p) => (
-            <button
+            <Button
               key={p.key}
               type="button"
-              className="rounded-sm px-2 py-1.5 text-start text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              variant="ghost"
+              size="sm"
+              className="w-full justify-start font-normal text-muted-foreground hover:text-foreground"
               onClick={() => {
                 const r = presetRange(p.key);
                 onChange?.(r, p.key);
@@ -134,7 +136,7 @@ export function DateRangePicker({
               }}
             >
               {p.label}
-            </button>
+            </Button>
           ))}
         </div>
         <Calendar

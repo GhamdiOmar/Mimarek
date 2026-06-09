@@ -90,10 +90,11 @@ function getPaymentTone(entry: {
   const msPerDay = 24 * 60 * 60 * 1000;
   const daysUntilDue = Math.floor((due.getTime() - now.getTime()) / msPerDay);
 
-  // Collected / Paid — green start-border, strike-through due-by
+  // Collected / Paid — no side-shading (v4.11): the strike-through due-by + the
+  // status pill carry it; a paid row needs no alerting tint.
   if (entry.status === "PAID") {
     return {
-      rowClass: "border-s-4 border-s-secondary",
+      rowClass: "",
       amountClass: "text-foreground",
       dueDateClass: "line-through text-muted-foreground",
     };
@@ -107,7 +108,7 @@ function getPaymentTone(entry: {
 
   if (isPastDue) {
     return {
-      rowClass: "border-s-4 border-s-destructive",
+      rowClass: "bg-destructive/5",
       amountClass: "text-destructive font-semibold",
       dueDateClass: "text-destructive",
     };
@@ -122,7 +123,7 @@ function getPaymentTone(entry: {
 
   if (isAging) {
     return {
-      rowClass: "border-s-4 border-s-warning",
+      rowClass: "bg-warning/5",
       amountClass: "text-warning",
       dueDateClass: "text-warning",
     };
@@ -386,6 +387,14 @@ export default function PaymentsPage() {
         ),
         enableSorting: false,
         enableHiding: true,
+        getGroupingValue: (row: PaymentEntry) =>
+          row.type === "rent"
+            ? lang === "ar"
+              ? "إيجار"
+              : "Rent"
+            : lang === "ar"
+              ? "بيع"
+              : "Sale",
       },
       {
         accessorKey: "amount",
@@ -430,6 +439,10 @@ export default function PaymentsPage() {
         ),
         enableSorting: true,
         enableHiding: true,
+        getGroupingValue: (row: PaymentEntry) =>
+          lang === "ar"
+            ? STATUS_LABELS[row.status]?.ar ?? row.status
+            : STATUS_LABELS[row.status]?.en ?? row.status,
       },
       {
         id: "actions",
@@ -812,6 +825,10 @@ export default function PaymentsPage() {
           mobileCard={renderMobileCard}
           rowClassName={(r) => getPaymentTone(r).rowClass}
           locale={lang === "ar" ? "ar" : "en"}
+          groupableColumns={[
+            { id: "status", label: lang === "ar" ? "الحالة" : "Status" },
+            { id: "type", label: lang === "ar" ? "النوع" : "Type" },
+          ]}
           pagination
           pageSize={10}
           getRowId={(r) => r.id}

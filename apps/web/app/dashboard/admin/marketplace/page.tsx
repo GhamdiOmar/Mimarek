@@ -375,8 +375,12 @@ export default function AdminMarketplacePage() {
         <EmptyState
           variant="default"
           icon={<Store className="h-12 w-12" aria-hidden="true" />}
-          title="No listings to moderate"
-          description="No marketplace listings exist yet across any tenant organizations."
+          title={lang === "ar" ? "لا توجد إعلانات للمراجعة" : "No listings to moderate"}
+          description={
+            lang === "ar"
+              ? "لا توجد إعلانات في السوق عبر أي مؤسسة حتى الآن."
+              : "No marketplace listings exist yet across any tenant organizations."
+          }
         />
       ) : (
         <Card className="overflow-hidden">

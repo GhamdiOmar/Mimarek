@@ -373,37 +373,119 @@ export default function MaintenanceOverviewPage() {
         </Card>
       </div>
 
-      {stats && stats.byPriority.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-semibold">
-              {lang === "ar" ? "حسب الأولوية" : "By Priority"}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              {stats.byPriority.map((p) => (
+      {stats && stats.byPriority.length > 0 && (() => {
+        // Severity order — highest first
+        const SEVERITY_ORDER = ["URGENT", "HIGH", "MEDIUM", "LOW"] as const;
+
+        // Bilingual priority labels
+        const PRIORITY_LABELS: Record<string, { ar: string; en: string }> = {
+          URGENT: { ar: "عاجل",   en: "Urgent" },
+          HIGH:   { ar: "عالية",  en: "High" },
+          MEDIUM: { ar: "متوسطة", en: "Medium" },
+          LOW:    { ar: "منخفضة", en: "Low" },
+        };
+
+        // Bilingual urgency sub-labels (shown only on the dominant tile)
+        const URGENCY_LABEL: Record<string, { ar: string; en: string }> = {
+          URGENT: { ar: "بحاجة إلى استجابة فورية", en: "Needs immediate dispatch" },
+          HIGH:   { ar: "يتطلب متابعة سريعة",       en: "Requires prompt follow-up" },
+        };
+
+        // Sort the incoming array by severity
+        const sorted = [...stats.byPriority].sort(
+          (a, b) =>
+            (SEVERITY_ORDER.indexOf(a.priority as typeof SEVERITY_ORDER[number]) === -1
+              ? 999
+              : SEVERITY_ORDER.indexOf(a.priority as typeof SEVERITY_ORDER[number])) -
+            (SEVERITY_ORDER.indexOf(b.priority as typeof SEVERITY_ORDER[number]) === -1
+              ? 999
+              : SEVERITY_ORDER.indexOf(b.priority as typeof SEVERITY_ORDER[number])),
+        );
+
+        // Dominant = highest-severity tile with count > 0; fall back to URGENT (even at 0)
+        const dominantEntry =
+          sorted.find((p) => (p.priority === "URGENT" || p.priority === "HIGH") && p.count > 0) ??
+          sorted.find((p) => p.priority === "URGENT") ??
+          sorted[0];
+
+        if (!dominantEntry) return null;
+
+        const secondaryEntries = sorted.filter((p) => p !== dominantEntry);
+
+        // Semantic tint + text color per dominant priority
+        const dominantTintClass =
+          dominantEntry.priority === "URGENT"
+            ? "bg-destructive/5"
+            : dominantEntry.priority === "HIGH"
+            ? "bg-warning/5"
+            : "";
+
+        const dominantTextClass =
+          dominantEntry.priority === "URGENT"
+            ? "text-destructive"
+            : dominantEntry.priority === "HIGH"
+            ? "text-warning"
+            : "text-foreground";
+
+        const urgencyLabel =
+          URGENCY_LABEL[dominantEntry.priority]?.[lang];
+
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-semibold">
+                {lang === "ar" ? "حسب الأولوية" : "By Priority"}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {/* Dominant block — spans 2 columns, elevated visual weight */}
                 <div
-                  key={p.priority}
-                  className="rounded-lg border border-border p-4"
-                  style={{
-                    borderInlineStartWidth: 4,
-                    borderInlineStartColor:
-                      PRIORITY_COLORS[p.priority] ?? "hsl(var(--chart-1))",
-                  }}
+                  className={[
+                    "col-span-2 sm:col-span-2 rounded-lg border border-border card-quiet p-5 flex flex-col gap-2",
+                    dominantTintClass,
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
                 >
-                  <p className="text-xs text-muted-foreground">
-                    {p.priority}
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle
+                      className={["h-5 w-5 shrink-0", dominantTextClass].join(" ")}
+                      aria-hidden="true"
+                    />
+                    <span className={["text-sm font-semibold", dominantTextClass].join(" ")}>
+                      {PRIORITY_LABELS[dominantEntry.priority]?.[lang] ?? dominantEntry.priority}
+                    </span>
+                  </div>
+                  <p className={["text-4xl font-bold tabular-nums leading-none", dominantTextClass].join(" ")}>
+                    {fmt(dominantEntry.count)}
                   </p>
-                  <p className="text-2xl font-bold text-foreground mt-1 tabular-nums">
-                    {fmt(p.count)}
-                  </p>
+                  {urgencyLabel && (
+                    <p className="text-xs text-muted-foreground leading-snug">
+                      {urgencyLabel}
+                    </p>
+                  )}
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+
+                {/* Secondary tiles — compact, muted */}
+                {secondaryEntries.map((p) => (
+                  <div
+                    key={p.priority}
+                    className="rounded-lg border border-border card-quiet p-4 flex flex-col gap-1"
+                  >
+                    <p className="text-xs text-muted-foreground">
+                      {PRIORITY_LABELS[p.priority]?.[lang] ?? p.priority}
+                    </p>
+                    <p className="text-xl font-bold text-foreground tabular-nums">
+                      {fmt(p.count)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })()}
     </div>
   );
 }

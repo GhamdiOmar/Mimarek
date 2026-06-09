@@ -1,5 +1,52 @@
 # Changelog — Mimaric PropTech
 
+## [4.11.0] — 2026-06-09 — UI overhaul: radial navigation + de-slop credibility pass
+
+The "make Mimaric feel authored, not AI-template slop" release. It replaces the linear sidebar and mobile bottom-tabs with a two-level **radial navigation** (CircleMenu), adapts four reference UI components to the Mimaric design system (theme toggle, alerts, notification filter, date picker) **with no new dependencies**, and sweeps the credibility "tells" flagged by two UI audits. Direction and decisions are recorded in `UI/mimaric_v4.11_*.md`.
+
+### Added — radial navigation (Phase 2)
+
+- **`CircleMenu`** — a two-level hub→spoke radial menu that replaces the sidebar (desktop 360° wheel) and the mobile bottom-tabs (180° bottom half-wheel), launched from a single **floating bottom-center pill on every breakpoint**. Six category hubs (Dashboard, Properties, CRM & Contracts, Finance, Operations, System), each expanding to its child routes. `cmdk` command palette retained as the always-available keyboard/SR twin so navigation can never fail.
+  - A11y per W3C APG (site nav is **not** an ARIA menu): `role="dialog"` + `aria-modal` wrapping a real `<nav>` of links; category hubs are disclosure buttons (`aria-expanded`); DOM-order Tab with focus-trap + **return-focus-to-launcher**; Escape ladder (child → hub → close); arrow-key ring navigation as an enhancement; `aria-current` on the active route.
+  - RTL angular mirroring; `prefers-reduced-motion` → instant positions; first-run coachmark; framer-motion via `LazyMotion`+`domAnimation`, code-split so it never enters the initial dashboard bundle.
+- **`radial-groups.ts`** taxonomy references `nav-items.ts` by href (single source of truth) and re-applies the §8.3 audience filter, so tenant/platform separation is preserved automatically.
+- `AppTopbar` corner launcher removed; the mobile avatar sheet's profile header re-wired to `/dashboard/more/profile` (orphaned when the bottom-tabs "More" tab was removed).
+
+### Changed — credibility & component swaps (Phase 3)
+
+- **Theme toggle** → sliding sun/moon **pill** built on the Radix Switch (real `role="switch"` + keyboard, §6.6.6), RTL-correct thumb, `resolvedTheme`-aware. Retokenized — no `zinc-*` literals.
+- **Alert primitive** → `variant × appearance` model: variant (neutral/primary/destructive/success/info/warning) × appearance (solid/outline/light), mapped to Mimaric semantic tokens; `light` is the default and matches the §6.11.2 banner taxonomy. Alert icon moved to logical `start-4`/`ps-7` for RTL. Back-compat preserved for existing `destructive` consumers.
+- **Notification center** → category filter pills (All/Alerts/Reminders/Updates) on the topbar popover, mapped from the notification `type` (§6.6.6 pill standard).
+- **Chart axes** → localized `tickFormatter`s replace the raw `W-2` collection-trend labels with `Wk 12` / `أسبوع 12`, plus a compact-`k` amount axis.
+- **DataTable** → `emptyAction`/`emptyIcon` slot so desktop empty states can meet the §6.12.1 CTA formula.
+- **Date-range picker** → restyled (preset rows now use the Button primitive instead of raw `<button>`); kept on the existing `react-day-picker` engine — **no new dependency**, RTL/Hijri intent preserved.
+
+### Changed — sweeps (Phase 4)
+
+- **Side-shading swept** — every `border-s-*` status stripe removed from payments / units / maintenance rows and `NextActionPanel`; status now reads from a faint full-row tint on alerting states + the existing status pill. Positive/neutral stripes dropped entirely.
+- **RTL arrows** — 3 raw directional icons (marketplace back-link + Convert-to-Deal ×2) wrapped in `DirectionalIcon` (§6.15.4).
+- **Numbers** — marketplace listing stats LTR-wrapped + `tabular-nums` (§6.15.3).
+- **Empty states** — admin/marketplace bilingualized (§6.15); CRM Kanban column "Empty" → "No deals in this stage" (§6.12); one card-in-card de-nested on `help`.
+
+### Deferred (with rationale)
+
+- **ZATCA compliance module — intentionally not built.** The e-invoicing pipeline does not exist yet: `billing.ts` never sets any ZATCA field, so every invoice defaults to `zatcaStatus = NOT_APPLICABLE` and no clearance / QR / XML is ever populated. Building the module now would render empty UI over absent data — the exact "slop" this release removes. Build it when the clearance pipeline lands. (The platform-admin ZATCA-clearance KPI already exists.)
+- Micro-polish kept as follow-ups: wiring `DataTable emptyAction` on the ~10 desktop lists, the mobile notification-sheet category filter (desktop popover has it), and an Arabic domain-term pass.
+
+### Verification
+
+- **Full production build** (`turbo run build`) green at every wave; `check-types` + ESLint (0 errors) forced green on all changed files.
+- **Runtime (production server):** Phase 2 verified across light/dark × AR/EN on desktop (360° wheel + level-2 children) and mobile (180° half-wheel), with focus-return, Escape ladder, and arrow-ring navigation confirmed. Phase 3–4 verified across light+EN, dark+EN, dark+AR (RTL) and mobile 375×812 on the touched routes (dashboard, finance, payments, CRM): theme toggle toggles light↔dark with correct `aria-checked`/label; notification filter pills render EN + AR with `aria-pressed`; chart axis shows `Wk`/`أسبوع`; no `border-s-*` stripes remain (LTR + RTL); tables→cards + FAB + radial launcher on mobile. **Console error-free across the full sweep.** payments confirmed prod-stable (the Turbopack-dev OOM is dev-only).
+- Not exhaustively run for this tag: a per-route axe scan and full keyboard tab-through on every touched route (the reused primitives carry audited a11y; new controls verified structurally).
+
+### Upgrade notes
+
+- **Navigation:** the sidebar and mobile bottom-tabs are gone; the radial `CircleMenu` (floating launcher) + `cmdk` (⌘K) are the navigation surfaces. `AppSidebar`/`MobileBottomTabs` remain in the tree (unmounted) for rollback.
+- **`framer-motion`** added to `@repo/web` (code-split).
+- **Alert:** new `appearance` prop defaults to `light`; existing `variant="destructive"` alerts now render as a soft tint (the §6.11.2 error look) rather than the old outline.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimaric/compare/v4.10.0...v4.11.0
+
 ## [4.10.0] — 2026-06-08 — UI uniformity pass: governed badges, icon-only row actions, one pill standard, Switch migration, 15 tables → DataTable
 
 Builds on the v4.9.0 governed-clickable system by eliminating the *visual* inconsistencies that survived it. A verified audit (`docs/uniformity-audit.md`) catalogued six classes of drift; this release fixes all six and writes the resulting standards back into AGENTS.md §6 so they can't recur. The headline structural change is migrating every hand-rolled data table onto the shared `DataTable` primitive — unlocking sort, per-column filter, column show/hide, density, and mobile-card collapse across the product.

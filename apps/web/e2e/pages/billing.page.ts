@@ -213,13 +213,25 @@ export class BillingPage {
     ).toBeVisible();
   }
 
-  // ─── Sidebar Navigation ─────────────────────────────────────────────────
+  // ─── Navigation (radial CircleMenu — the sidebar was removed in v4.11) ────
 
-  async navigateToBillingViaSidebar() {
+  async navigateToBillingViaNav() {
     await this.page.goto('/dashboard');
     await this.page.waitForLoadState('networkidle');
-    const sidebar = this.page.locator('aside, nav').first();
-    await sidebar.getByText(/الاشتراك والفوترة|Billing/i).first().click();
+    // Suppress the first-run coachmark so it can't overlap the wheel.
+    await this.page.evaluate(() =>
+      localStorage.setItem('mimaric.circlemenu.coachmark.v1', '1'),
+    );
+    // Open the radial launcher → Finance hub → Billing child.
+    await this.page
+      .locator(
+        'button[aria-label="Open navigation menu"]:visible, button[aria-label="فتح قائمة التنقل"]:visible',
+      )
+      .first()
+      .click();
+    await this.page.waitForSelector('[role="dialog"]');
+    await this.page.locator('[data-radial-hub="finance"]').click();
+    await this.page.locator('[data-radial-child="/dashboard/billing"]').click();
     await this.page.waitForLoadState('networkidle');
   }
 }

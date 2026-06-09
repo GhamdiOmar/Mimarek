@@ -14,7 +14,6 @@ import {
   Home,
   Receipt,
   Trash2,
-  Pencil,
   DollarSign,
   FileDown,
   CheckCircle2,
@@ -401,26 +400,12 @@ function AdvancedUnitMatrixPage() {
       enableSorting: false,
       enableHiding: false,
       cell: ({ row }) => (
-        <div className="flex items-center gap-1 justify-end">
-          <IconButton
-            icon={Eye}
-            aria-label={lang === "ar" ? "عرض" : "View"}
-            variant="ghost"
-            size="sm"
-            onClick={(e) => { e.stopPropagation(); openUnitDetail(row.original); }}
-          />
-          <IconButton
-            icon={Pencil}
-            aria-label={lang === "ar" ? "تعديل" : "Edit"}
-            variant="ghost"
-            size="sm"
-            onClick={(e) => { e.stopPropagation(); openUnitDetail(row.original); }}
-          />
+        <div className="flex items-center justify-end gap-1">
           <IconButton
             icon={Trash2}
             aria-label={lang === "ar" ? "حذف" : "Delete"}
             variant="ghost"
-            size="sm"
+            size="icon"
             className="text-destructive hover:text-destructive"
             onClick={(e) => {
               e.stopPropagation();
@@ -1170,8 +1155,8 @@ function AdvancedUnitMatrixPage() {
               )}
               onRowClick={(row) => openUnitDetail(row)}
               rowClassName={(row) => {
-                if (row.status === "MAINTENANCE") return "border-s-2 border-s-warning/60";
-                if (row.status === "AVAILABLE") return "border-s-2 border-s-success/60";
+                // v4.11: alerting tint only — the status pill carries the rest (no side stripe).
+                if (row.status === "MAINTENANCE") return "bg-warning/5";
                 return undefined;
               }}
               mobileCard={(row) => {

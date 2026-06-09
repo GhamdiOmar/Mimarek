@@ -25,6 +25,7 @@ import {
   ResponsiveDialog,
   EmptyState,
   Skeleton,
+  DirectionalIcon,
 } from "@repo/ui";
 import { cn } from "@repo/ui/lib/utils";
 import { useLanguage } from "../../../../components/LanguageProvider";
@@ -170,7 +171,7 @@ export default function ListingDetailPage() {
         href="/dashboard/marketplace"
         className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
       >
-        <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+        <DirectionalIcon icon={ArrowLeft} className="h-4 w-4" aria-hidden="true" />
         {lang === "ar" ? "العودة إلى السوق" : "Back to marketplace"}
       </Link>
 
@@ -225,7 +226,7 @@ export default function ListingDetailPage() {
             <div>
               <p className="text-xs text-muted-foreground">{lang === "ar" ? "المساحة" : "Area"}</p>
               <p className="text-sm font-medium text-foreground">
-                {listing.area} {lang === "ar" ? "م²" : "m²"}
+                <span className="number-ltr tabular-nums">{listing.area}</span> {lang === "ar" ? "م²" : "m²"}
               </p>
             </div>
           </div>
@@ -235,7 +236,7 @@ export default function ListingDetailPage() {
             <BedDouble className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
             <div>
               <p className="text-xs text-muted-foreground">{lang === "ar" ? "غرف النوم" : "Bedrooms"}</p>
-              <p className="text-sm font-medium text-foreground">{listing.bedrooms}</p>
+              <p className="text-sm font-medium text-foreground"><span className="number-ltr tabular-nums">{listing.bedrooms}</span></p>
             </div>
           </div>
         )}
@@ -244,7 +245,7 @@ export default function ListingDetailPage() {
             <Bath className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
             <div>
               <p className="text-xs text-muted-foreground">{lang === "ar" ? "الحمامات" : "Bathrooms"}</p>
-              <p className="text-sm font-medium text-foreground">{listing.bathrooms}</p>
+              <p className="text-sm font-medium text-foreground"><span className="number-ltr tabular-nums">{listing.bathrooms}</span></p>
             </div>
           </div>
         )}
@@ -254,7 +255,7 @@ export default function ListingDetailPage() {
             <div>
               <p className="text-xs text-muted-foreground">{lang === "ar" ? "عمر المبنى" : "Building Age"}</p>
               <p className="text-sm font-medium text-foreground">
-                {listing.buildingAge} {lang === "ar" ? "سنة" : "yrs"}
+                <span className="number-ltr tabular-nums">{listing.buildingAge}</span> {lang === "ar" ? "سنة" : "yrs"}
               </p>
             </div>
           </div>
@@ -263,7 +264,7 @@ export default function ListingDetailPage() {
           <Eye className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden="true" />
           <div>
             <p className="text-xs text-muted-foreground">{lang === "ar" ? "المشاهدات" : "Views"}</p>
-            <p className="text-sm font-medium text-foreground">{listing.viewCount}</p>
+            <p className="text-sm font-medium text-foreground"><span className="number-ltr tabular-nums">{listing.viewCount}</span></p>
           </div>
         </div>
         <div className="flex items-center gap-3 rounded-lg border border-border bg-card p-3">
