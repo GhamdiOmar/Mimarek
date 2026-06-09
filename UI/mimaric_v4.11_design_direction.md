@@ -79,3 +79,10 @@ Full class-level spec (KPI tile, Kanban card, list row, DESIGN.md card section) 
 ## D. Decisions still open
 - **B-Q:** radial fully replaces sidebar, or radial-primary + slim safety-net sidebar (recommended).
 - **Card direction:** confirm "Outlined Precision" (recommended) vs one of the 3 alternatives (Elevated Quiet / Flat Editorial / Data-Dense Terminal).
+
+## E. Decisions locked (2026-06-09)
+- **Card direction:** ✅ Outlined Precision.
+- **Nav model:** ✅ radial CircleMenu **fully replaces** the sidebar (desktop) **and** the mobile BottomNav (mobile = 180° bottom half-wheel). cmdk palette is the mandatory WCAG keyboard/SR twin.
+- **Side-shading:** ✅ **sweep all** — remove every `border-s-*` status stripe (payments/units/tickets rows + `NextActionPanel`); convey status via pills/dots/tint. (Phase 4.)
+- **DataTable grouping rollout:** ✅ broad — payments (done) + units + contracts + reservations/reports/marketplace where grouping helps.
+- **Mobile nav risk mitigations (required for the half-wheel):** thumb-reachable bottom anchor, ≥44×44 wedge targets, first-run coach-mark, cmdk + full keyboard/SR fallback, reduced-motion = instant.
