@@ -5,39 +5,7 @@ import { revalidatePath } from "next/cache";
 import { getTenantSessionOrThrow } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
 import { notifyAdmins } from "../../lib/create-notification";
-
-// ─── CR Lookup Rate Limiter ─────────────────────────────────────────────────
-
-/**
- * In-memory rate limiter for CR number lookups.
- * Limit: 5 lookups per user per 10 minutes.
- *
- * NOTE: This Map is per-process and resets on deploy. For multi-instance
- * deployments, replace with Redis-backed rate limiting (@upstash/ratelimit).
- */
-const crLookupAttempts = new Map<string, { count: number; firstAttempt: number }>();
-const CR_LOOKUP_LIMIT = 5;
-const CR_LOOKUP_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
-
-function checkCRLookupLimit(userId: string): boolean {
-  const entry = crLookupAttempts.get(userId);
-  if (!entry) return false;
-  if (Date.now() - entry.firstAttempt > CR_LOOKUP_WINDOW_MS) {
-    crLookupAttempts.delete(userId);
-    return false;
-  }
-  return entry.count >= CR_LOOKUP_LIMIT;
-}
-
-function recordCRLookupAttempt(userId: string) {
-  const entry = crLookupAttempts.get(userId);
-  const now = Date.now();
-  if (!entry || now - entry.firstAttempt > CR_LOOKUP_WINDOW_MS) {
-    crLookupAttempts.set(userId, { count: 1, firstAttempt: now });
-  } else {
-    entry.count += 1;
-  }
-}
+import { checkRateLimit, peekRateLimit } from "../../lib/rate-limit";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -59,8 +27,9 @@ function isValidVAT(vat: string): boolean {
 export async function lookupOrgByCR(crNumber: string) {
   const session = await getTenantSessionOrThrow();
 
-  // Rate limit check
-  if (checkCRLookupLimit(session.userId)) {
+  // Rate limit check (read-only — an invalid-format CR must consume no quota)
+  const peek = await peekRateLimit(`crlookup:${session.userId}`, 5);
+  if (!peek.allowed) {
     return { found: false, error: "TOO_MANY_LOOKUPS" };
   }
 
@@ -68,7 +37,10 @@ export async function lookupOrgByCR(crNumber: string) {
     return { found: false, error: "INVALID_CR_FORMAT" };
   }
 
-  recordCRLookupAttempt(session.userId);
+  const rl = await checkRateLimit(`crlookup:${session.userId}`, 5, 10 * 60 * 1000);
+  if (!rl.allowed) {
+    return { found: false, error: "TOO_MANY_LOOKUPS" };
+  }
 
   try {
     const org = await db.organization.findUnique({

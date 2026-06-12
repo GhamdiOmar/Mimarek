@@ -9,38 +9,7 @@ import { logAuditEvent } from "../../lib/audit";
 import { getAppUrl } from "../../lib/app-url";
 import { sendTransactionalEmail } from "../../lib/email";
 import { passwordResetEmail } from "../../lib/email-templates";
-
-/**
- * In-memory rate limiter for password reset requests.
- * Limit: 3 requests per email per hour.
- *
- * NOTE: This Map is per-process and resets on deploy. For multi-instance
- * deployments, replace with Redis-backed rate limiting (@upstash/ratelimit).
- */
-const resetAttempts = new Map<string, { count: number; firstAttempt: number }>();
-const RESET_RATE_LIMIT = 3;
-const RESET_WINDOW_MS = 60 * 60 * 1000; // 1 hour
-
-function checkResetRateLimit(email: string): boolean {
-  const entry = resetAttempts.get(email);
-  if (!entry) return false;
-  const now = Date.now();
-  if (now - entry.firstAttempt > RESET_WINDOW_MS) {
-    resetAttempts.delete(email);
-    return false;
-  }
-  return entry.count >= RESET_RATE_LIMIT;
-}
-
-function recordResetAttempt(email: string) {
-  const entry = resetAttempts.get(email);
-  const now = Date.now();
-  if (!entry || now - entry.firstAttempt > RESET_WINDOW_MS) {
-    resetAttempts.set(email, { count: 1, firstAttempt: now });
-  } else {
-    entry.count += 1;
-  }
-}
+import { checkRateLimit } from "../../lib/rate-limit";
 
 export async function changePassword(data: {
   currentPassword: string;
@@ -91,10 +60,10 @@ export async function requestPasswordReset(email: string) {
   const normalizedEmail = email.toLowerCase().trim();
 
   // Rate limit check (before DB lookup to prevent timing-based enumeration)
-  if (checkResetRateLimit(normalizedEmail)) {
+  const rl = await checkRateLimit(`pwreset:${normalizedEmail}`, 3, 60 * 60 * 1000);
+  if (!rl.allowed) {
     return { success: true };
   }
-  recordResetAttempt(normalizedEmail);
 
   const user = await db.user.findUnique({ where: { email: normalizedEmail } });
 
