@@ -1,4 +1,4 @@
-"use server";
+﻿"use server";
 
 import { db } from "@repo/db";
 import { hash as bcryptHash, compare as bcryptCompare } from "@node-rs/bcrypt";
@@ -60,7 +60,7 @@ export async function requestPasswordReset(email: string) {
   const normalizedEmail = email.toLowerCase().trim();
 
   // Rate limit check (before DB lookup to prevent timing-based enumeration)
-  const rl = await checkRateLimit(`pwreset:${normalizedEmail}`, 3, 60 * 60 * 1000);
+  const rl = await checkRateLimit(`password-reset:${normalizedEmail}`, 3, 60 * 60 * 1000);
   if (!rl.allowed) {
     return { success: true };
   }
