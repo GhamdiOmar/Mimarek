@@ -3,10 +3,11 @@ import "@repo/ui/globals.css";
 import { IBM_Plex_Sans_Arabic, DM_Sans } from 'next/font/google';
 import { ThemeProvider } from "../components/ThemeProvider";
 import { Toaster } from "@repo/ui";
-import { AnalyticsProvider } from "../components/AnalyticsProvider";
+import { ConsentProvider } from "../components/ConsentProvider";
 import { AxeDevAudit } from "../components/AxeDevAudit";
 import { db } from "@repo/db";
 import { cache } from "react";
+import { getLang } from "../lib/i18n";
 
 const ibmPlexArabic = IBM_Plex_Sans_Arabic({
   subsets: ['arabic'],
@@ -92,19 +93,23 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const config = await getConfig();
+  const lang = await getLang();
+  const dir = lang === "ar" ? "rtl" : "ltr";
 
   return (
-    <html lang="ar" dir="rtl" className={`${ibmPlexArabic.variable} ${dmSans.variable}`} suppressHydrationWarning>
+    <html lang={lang} dir={dir} className={`${ibmPlexArabic.variable} ${dmSans.variable}`} suppressHydrationWarning>
       <body className="font-ibm-plex-arabic antialiased text-body">
         <ThemeProvider>
-          <AxeDevAudit />
-          {children}
-          <Toaster />
+          <ConsentProvider
+            initialLang={lang}
+            gtmContainerId={config?.gtmContainerId}
+            ga4MeasurementId={config?.ga4MeasurementId}
+          >
+            <AxeDevAudit />
+            {children}
+            <Toaster />
+          </ConsentProvider>
         </ThemeProvider>
-        <AnalyticsProvider
-          gtmContainerId={config?.gtmContainerId}
-          ga4MeasurementId={config?.ga4MeasurementId}
-        />
       </body>
     </html>
   );

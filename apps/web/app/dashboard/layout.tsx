@@ -1,6 +1,7 @@
 import { auth } from "../../auth";
 import { isSystemRole } from "../../lib/permissions";
 import { requireSystem, requireTenant } from "../../lib/auth-helpers";
+import { getLangCookie } from "../../lib/i18n";
 import DashboardClientLayout from "./DashboardClientLayout";
 
 export default async function DashboardLayout({
@@ -19,8 +20,12 @@ export default async function DashboardLayout({
     ? await requireSystem()
     : await requireTenant();
 
+  // Thread the server-read language so the client provider hydrates with the
+  // correct value (no flash). null → undefined for a one-time legacy migration.
+  const initialLang = (await getLangCookie()) ?? undefined;
+
   return (
-    <DashboardClientLayout session={session}>
+    <DashboardClientLayout session={session} initialLang={initialLang}>
       {children}
     </DashboardClientLayout>
   );

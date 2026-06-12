@@ -3,7 +3,7 @@
 import * as React from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { SimpleSessionProvider, useSession } from "../../components/SimpleSessionProvider";
-import { LanguageProvider, useLanguage } from "../../components/LanguageProvider";
+import { LanguageProvider, useLanguage, type Lang } from "../../components/LanguageProvider";
 import { AppTopbar } from "../../components/shell/AppTopbar";
 import { MobileTopbar } from "../../components/shell/MobileTopbar";
 import { CircleMenu } from "../../components/shell/CircleMenu";
@@ -83,13 +83,15 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 export default function DashboardClientLayout({
   children,
   session,
+  initialLang,
 }: {
   children: React.ReactNode;
   session: any;
+  initialLang?: Lang;
 }) {
   return (
     <SimpleSessionProvider session={session}>
-      <LanguageProvider>
+      <LanguageProvider initialLang={initialLang}>
         <DashboardContent>{children}</DashboardContent>
       </LanguageProvider>
     </SimpleSessionProvider>

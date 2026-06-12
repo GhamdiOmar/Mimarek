@@ -763,6 +763,26 @@ model AuditLog {
   @@index([resource, action])
 }
 
+// ─── Cookie consent (PDPL documented-consent audit trail) ───────────────────
+// Server-side record of each cookie-consent choice — defensible proof beyond
+// the client `mimaric-consent` cookie (which can be cleared). No FK to User:
+// like AuditLog, it is an append-only trail that must survive user deletion.
+model ConsentLog {
+  id          String   @id @default(cuid())
+  userId      String? // null for anonymous (pre-login) visitors
+  version     Int // consent policy/banner version at time of choice
+  analytics   Boolean // the opt-in category decision
+  necessary   Boolean  @default(true)
+  locale      String // "ar" | "en" — language the notice was shown in
+  method      String // "banner" | "preferences"
+  ipTruncated String? // IP minimized to /24 (IPv4) for data minimization
+  userAgent   String?
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
 // ─── Commercial Strategy (FR-08/21) ─────────────────────────────────────────
 
 enum CommercialStrategy {

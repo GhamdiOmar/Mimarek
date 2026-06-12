@@ -78,6 +78,7 @@ ALTER TABLE IF EXISTS "PreventiveMaintenancePlan" ENABLE ROW LEVEL SECURITY;
 
 -- ── Platform operations ──────────────────────────────────────────────────────
 ALTER TABLE IF EXISTS "AuditLog"                  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS "ConsentLog"                ENABLE ROW LEVEL SECURITY; -- added 2026-06 (v4.16 cookie consent)
 ALTER TABLE IF EXISTS "Notification"              ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS "PasswordResetToken"        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS "PermissionRequest"         ENABLE ROW LEVEL SECURITY;

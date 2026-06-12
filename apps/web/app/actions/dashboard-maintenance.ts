@@ -1,25 +1,38 @@
 "use server";
 
 import { db } from "@repo/db";
-import { subDays } from "date-fns";
+import { startOfMonth, endOfMonth } from "date-fns";
 import { requirePermission } from "../../lib/auth-helpers";
 
 export type MaintenanceStats = {
   openTickets: number;
   inProgressTickets: number;
   slaBreachCount: number;              // dueDate < now AND not closed
-  avgResolutionHours: number | null;   // last 30d resolved
+  avgResolutionHours: number | null;   // resolved within the reporting window
   byCategory: Array<{ category: string; count: number }>;
   byPriority: Array<{ priority: string; count: number }>;
 };
 
-/** Maintenance dashboard KPIs — ticket volume, SLA, resolution time. */
-export async function getMaintenanceStats(): Promise<MaintenanceStats> {
+/**
+ * Maintenance dashboard KPIs — ticket volume, SLA, resolution time.
+ *
+ * @param range Optional reporting window (from the dashboard date picker). When
+ * provided, `avgResolutionHours` (a flow metric — tickets resolved in the
+ * window) reflects the chosen window; when absent it defaults to month-to-date.
+ * `openTickets`, `inProgressTickets`, `slaBreachCount`, `byCategory`, and
+ * `byPriority` are current-state stock metrics ("open right now") and are
+ * intentionally not window-bound.
+ */
+export async function getMaintenanceStats(range?: {
+  from: Date;
+  to: Date;
+}): Promise<MaintenanceStats> {
   const session = await requirePermission("dashboard:read");
   const orgId = session.organizationId;
 
   const now = new Date();
-  const thirtyDaysAgo = subDays(now, 30);
+  const periodStart = range?.from ?? startOfMonth(now);
+  const periodEnd = range?.to ?? endOfMonth(now);
 
   const [openTickets, inProgressTickets, slaBreachCount, resolved, openRows] =
     await Promise.all([
@@ -39,7 +52,7 @@ export async function getMaintenanceStats(): Promise<MaintenanceStats> {
       db.maintenanceRequest.findMany({
         where: {
           organizationId: orgId,
-          resolvedAt: { gte: thirtyDaysAgo },
+          resolvedAt: { gte: periodStart, lte: periodEnd },
         },
         select: { createdAt: true, resolvedAt: true },
       }),

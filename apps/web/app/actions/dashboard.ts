@@ -127,13 +127,17 @@ export async function getRevenueTimeline() {
   return months;
 }
 
-export async function getDashboardV3Stats() {
+export async function getDashboardV3Stats(range?: { from: Date; to: Date }) {
   const session = await requirePermission("dashboard:read");
   const orgId = session.organizationId;
 
   const now = new Date();
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  // monthlyRevenue is the one period-based (flow) metric on the org-owner
+  // overview — it honours the dashboard date range. Everything else
+  // (properties, deals, contracts, pending payments, open maintenance) is
+  // current-state and intentionally not window-bound.
+  const monthStart = range?.from ?? new Date(now.getFullYear(), now.getMonth(), 1);
+  const monthEnd = range?.to ?? new Date(now.getFullYear(), now.getMonth() + 1, 1);
 
   const [
     totalProperties,
