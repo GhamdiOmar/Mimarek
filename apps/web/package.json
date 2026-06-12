@@ -11,7 +11,8 @@
     "check-types": "next typegen && tsc --noEmit",
     "test": "playwright test",
     "test:unit": "vitest run",
-    "test:unit:watch": "vitest"
+    "test:unit:watch": "vitest",
+    "test:e2e:coverage": "node scripts/check-e2e-coverage.mjs"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",

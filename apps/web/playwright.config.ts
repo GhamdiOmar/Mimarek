@@ -76,6 +76,16 @@ export default defineConfig({
       },
       dependencies: ['auth-tech'],
     },
+
+    // Marketplace cross-org tests — use inline login() (no storageState dep), so
+    // no auth-setup dependency. Previously matched NO project → silently skipped
+    // (v4.18.0 P4-1). The check-e2e-coverage guard now fails CI if any spec is
+    // unmatched, so this can never silently regress again.
+    {
+      name: 'marketplace-tests',
+      testMatch: /marketplace\..*\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'] },
+    },
   ],
 
   webServer: {
