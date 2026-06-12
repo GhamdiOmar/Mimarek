@@ -4,14 +4,13 @@ import { db } from "@repo/db";
 import { revalidatePath } from "next/cache";
 import { requirePermission } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
+import { serialize } from "../../lib/serialize";
 import {
   listPublishedListingsForBuyer,
   getPublishedListingForBuyer,
   listSellerOrgsWithListings,
   type MarketplaceListingFilters,
 } from "../../lib/marketplace/listing-view";
-
-const SERIALIZE = <T>(v: T): T => JSON.parse(JSON.stringify(v));
 
 // Saudi National Address short code: 4 letters + 4 digits (e.g. "RRRA2929").
 const SHORT_ADDRESS_RE = /^[A-Z]{4}\d{4}$/;
@@ -181,7 +180,7 @@ export async function createMarketplaceDraft(unitId: string) {
   });
   revalidatePath("/dashboard/marketplace/my-listings");
   revalidatePath("/dashboard/units");
-  return SERIALIZE(result);
+  return serialize(result);
 }
 
 export type PublishListingPayload = {
@@ -272,7 +271,7 @@ export async function publishMarketplaceListing(
   });
   revalidatePath("/dashboard/marketplace");
   revalidatePath("/dashboard/marketplace/my-listings");
-  return SERIALIZE(updated);
+  return serialize(updated);
 }
 
 export async function updateMarketplaceListing(
@@ -342,7 +341,7 @@ export async function updateMarketplaceListing(
     organizationId: session.organizationId,
   });
   revalidatePath("/dashboard/marketplace/my-listings");
-  return SERIALIZE(updated);
+  return serialize(updated);
 }
 
 export async function unpublishMarketplaceListing(listingId: string, reason: string) {
@@ -379,7 +378,7 @@ export async function unpublishMarketplaceListing(listingId: string, reason: str
   });
   revalidatePath("/dashboard/marketplace/my-listings");
   revalidatePath("/dashboard/marketplace");
-  return SERIALIZE(updated);
+  return serialize(updated);
 }
 
 // ─── Seller: own listings & incoming inquiries ──────────────────────────────
@@ -402,7 +401,7 @@ export async function listMyMarketplaceListings() {
     include: { _count: { select: { inquiries: true } } },
     orderBy: { updatedAt: "desc" },
   });
-  return SERIALIZE(listings);
+  return serialize(listings);
 }
 
 export async function listIncomingMarketplaceInquiries() {
@@ -417,7 +416,7 @@ export async function listIncomingMarketplaceInquiries() {
     },
     orderBy: { createdAt: "desc" },
   });
-  return SERIALIZE(inquiries);
+  return serialize(inquiries);
 }
 
 // ─── Buyer: browse / detail / inquire ───────────────────────────────────────
@@ -425,19 +424,19 @@ export async function listIncomingMarketplaceInquiries() {
 export async function browseMarketplaceListings(filters: MarketplaceListingFilters = {}) {
   const session = await requirePermission("marketplace:read");
   const listings = await listPublishedListingsForBuyer(session.organizationId, filters);
-  return SERIALIZE(listings);
+  return serialize(listings);
 }
 
 export async function getMarketplaceListingDetail(listingId: string) {
   const session = await requirePermission("marketplace:read");
   const listing = await getPublishedListingForBuyer(session.organizationId, listingId);
   if (!listing) throw new Error("Listing not found or no longer available.");
-  return SERIALIZE(listing);
+  return serialize(listing);
 }
 
 export async function getMarketplaceSellerOrgFilters() {
   const session = await requirePermission("marketplace:read");
-  return SERIALIZE(await listSellerOrgsWithListings(session.organizationId));
+  return serialize(await listSellerOrgsWithListings(session.organizationId));
 }
 
 export async function confirmMarketplaceInterest(
@@ -516,7 +515,7 @@ export async function confirmMarketplaceInterest(
     organizationId: session.organizationId,
   });
   revalidatePath("/dashboard/marketplace");
-  return SERIALIZE(result.inquiry);
+  return serialize(result.inquiry);
 }
 
 export async function listMyMarketplaceInquiries() {
@@ -531,7 +530,7 @@ export async function listMyMarketplaceInquiries() {
     },
     orderBy: { createdAt: "desc" },
   });
-  return SERIALIZE(inquiries);
+  return serialize(inquiries);
 }
 
 export async function withdrawMarketplaceInquiry(inquiryId: string) {
@@ -560,7 +559,7 @@ export async function withdrawMarketplaceInquiry(inquiryId: string) {
     organizationId: session.organizationId,
   });
   revalidatePath("/dashboard/marketplace");
-  return SERIALIZE(updated);
+  return serialize(updated);
 }
 
 // ─── Deal bridge: convert inquiry → cross-org reservation ────────────────────
@@ -665,7 +664,7 @@ export async function convertMarketplaceInquiryToDeal(inquiryId: string) {
   });
   revalidatePath("/dashboard/marketplace/my-listings");
   revalidatePath("/dashboard/reservations");
-  return SERIALIZE(result);
+  return serialize(result);
 }
 
 // ─── Settlement & atomic cross-org transfer ─────────────────────────────────
@@ -869,7 +868,7 @@ export async function settleMarketplaceTransfer(transferId: string) {
 
     revalidatePath("/dashboard/marketplace/my-listings");
     revalidatePath("/dashboard/units");
-    return SERIALIZE({ status: "COMPLETED", ...outcome });
+    return serialize({ status: "COMPLETED", ...outcome });
   } catch (err) {
     const reason = err instanceof Error ? err.message : "Unknown transfer failure";
     await db.unitTransferTransaction.update({
@@ -913,7 +912,7 @@ export async function listListingsForModeration() {
     orderBy: { createdAt: "desc" },
     take: 300,
   });
-  return SERIALIZE(listings);
+  return serialize(listings);
 }
 
 export async function moderateSuspendListing(listingId: string, reason: string) {
@@ -957,5 +956,5 @@ export async function moderateSuspendListing(listingId: string, reason: string) 
   });
   revalidatePath("/dashboard/admin/marketplace");
   revalidatePath("/dashboard/marketplace");
-  return SERIALIZE(updated);
+  return serialize(updated);
 }
