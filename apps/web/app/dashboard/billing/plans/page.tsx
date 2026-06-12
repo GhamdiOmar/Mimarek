@@ -17,8 +17,7 @@ import {
 import { Button, AppBar, SARAmount, Skeleton, DirectionalIcon, IconButton, ActionLink } from "@repo/ui";
 import { PageHeader } from "@repo/ui/components/PageHeader";
 import Link from "next/link";
-import { subscribeToPlan, getCurrentSubscription } from "../../../actions/billing";
-import { getPlans } from "../../../../lib/server/plans";
+import { subscribeToPlan, getCurrentSubscription, getPlans } from "../../../actions/billing";
 import { validateCoupon } from "../../../actions/coupons";
 import { toast } from "sonner";
 

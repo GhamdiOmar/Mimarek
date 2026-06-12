@@ -16,8 +16,13 @@ import { serialize } from "../serialize";
  *
  * Cache key ["public-plans"] and tag "plans" are stable for a future
  * migration to the `"use cache"` directive once an app-wide opt-in lands.
+ *
+ * NOTE: client components must NOT import this directly (it pulls @repo/db / pg
+ * into the client bundle). They call the thin async server-action wrapper
+ * `getPlans` re-exported from app/actions/billing.ts, which runs this on the
+ * server and returns the (already-serialized) result over RPC.
  */
-export const getPlans = unstable_cache(
+export const getPublicPlans = unstable_cache(
   async () => {
     const plans = await db.plan.findMany({
       where: { isPublic: true },

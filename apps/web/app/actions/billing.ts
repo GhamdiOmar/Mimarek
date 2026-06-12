@@ -8,14 +8,23 @@ import { ROUTES } from "../../lib/routes";
 import { createSubscription, transitionSubscription } from "../../lib/payment/subscription-machine";
 import { invalidateEntitlements } from "../../lib/entitlements";
 import { getNextSequenceValue, GLOBAL_SEQUENCE_SCOPE } from "../../lib/sequence";
+import { getPublicPlans } from "../../lib/server/plans";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Plans (Public)
 // ═══════════════════════════════════════════════════════════════════════════════
 
-// getPlans has been moved to lib/server/plans.ts — it must NOT live in a
-// "use server" file because unstable_cache returns a non-async-function export,
-// which Next.js rejects at runtime (AGENTS.md §4 landmine).
+/**
+ * Public plans list. The cached query lives in the server-only DAL
+ * (lib/server/plans.ts) — this is a thin async server-action wrapper so CLIENT
+ * components can call it over RPC without pulling @repo/db/pg into their bundle.
+ * As an `async function` export it satisfies the §4 "use server" rule (the
+ * landmine was the old `export const getPlans = unstable_cache(...)` — a
+ * non-async-function export — which is now gone).
+ */
+export async function getPlans() {
+  return getPublicPlans();
+}
 
 /**
  * Get a single plan by slug.
