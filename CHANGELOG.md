@@ -1,5 +1,38 @@
 # Changelog — Mimaric PropTech
 
+## [4.16.1] — 2026-06-12 — Access Denied page + units:read for managers + consent compaction + cleanup
+
+Follow-up to v4.16.0. Replaces the silent permission-denial redirect with a defined in-shell **Access Denied** page, grants `units:read` to the property-managing roles, compacts the cookie-consent banner, and clears three CI lint warnings + two dead shell components.
+
+### Permission-denial UX — defined Access Denied page
+
+- A tenant role hitting a route it lacks permission for (e.g. `FINANCE` → `/dashboard/units` or `/dashboard/crm`) previously redirected silently to `/dashboard` after a momentary error-boundary flash ("undefined" message). It now renders a defined, bilingual **Access Denied** state **in-shell** (nav intact): a clear "you don't have access" message + **"Request access"** (deep-links to the Help "Request permission upgrade" form) + "Back to dashboard".
+- Implemented via a result-returning `getTenantPageAccess()` guard (replaces the redirecting `requireTenantPageAccess`); the `units` + `crm` pages render `<AccessDenied>` inline. **Audience separation unchanged** (§8) — system users still `redirect("/dashboard/admin")`. Adds a `"forbidden"` tone to the shared `EmptyState`.
+- **Status note:** the page returns **HTTP 200, not a true 403** — streaming SSR commits the status before the denial renders. A real 403 status remains the deferred middleware-level "403 contract." (Next's experimental `forbidden()` / `authInterrupts` was trialled for a native 403 but crashed on client hydration inside the provider-wrapped dashboard layout, so it was removed in favour of the stable inline render.)
+
+### RBAC — units:read for property-managing roles
+
+- `MANAGER` (+ `units:write`), `AGENT`, and `LEASING` now hold `units:read` — previously only `ADMIN` did, so property managers / sales / leasing could not open `/dashboard/units`. `units:delete` stays ADMIN-only.
+
+### Consent banner compaction
+
+- The PDPL consent banner was a tall card (title + body + link stacked, `size="md"` buttons). Compacted to a dense single-row bar (`max-w-[920px]`, `size="sm"` buttons, title + body + policy link inline) — ~86px vs ~150px — keeping **equal-prominence Accept/Reject** and the policy link. No API/prop change.
+
+### Cleanup
+
+- **Lint (3):** removed an unused `DateRangeParams` import (`getFailedPaymentArrAtRisk.ts`); `data-`-prefixed the `cmdk-input-wrapper` attribute (`command.tsx`); surfaced `className` on the `TableHead` / `TableCell` types (`table.tsx`). `@repo/ui` lint warnings 8 → 6 (remainder pre-existing, out of scope).
+- **Dead code:** deleted the unmounted `AppSidebar` + `MobileBottomTabs` shell components (radial nav has been live since v4.11; no importers). `/dashboard/more` left intact — still wired into the system-user allowlist.
+
+### Verification (§3.9)
+
+- Full production build + typecheck green; targeted lint clean. Prod server via preview MCP browser: **MANAGER / AGENT / LEASING render `/dashboard/units`**; **FINANCE → Access Denied** (no redirect, no crash, "Request access" navigates to Help); MANAGER happy-path Units intact. Access Denied + consent banner verified across **light/dark × AR/EN + mobile 375×812**; zero browser-console + zero server errors.
+
+### Deferred
+
+- **True HTTP 403 status** (middleware-level "403 contract") — this release ships the defined Access Denied *page*; the *status code* stays 200 under streaming SSR.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimaric/compare/v4.16.0...v4.16.1
+
 ## [4.16.0] — 2026-06-12 — RSC dashboards + t() i18n facade + PDPL cookie consent
 
 Converts all 8 dashboards from client-side mount-fetch to **React Server Components** (server-rendered first paint, no per-mount server-action waterfall), introduces an incremental **`t()` i18n facade** backed by a server-readable language cookie, and ships a **PDPL-compliant cookie-consent manager** that gates GA4/GTM analytics. The dominant remaining latency lever (DB region move) is ops, tracked separately.

@@ -71,6 +71,37 @@ export async function getTenantSessionOrThrow(): Promise<TenantAuthSession> {
 }
 
 /**
+ * Page-level access check for tenant dashboard routes.
+ *
+ * Returns a discriminated result instead of throwing or redirecting on
+ * permission denial. The page renders `<AccessDenied>` inline when `allowed`
+ * is false — a clear "you don't have access" message with a path to request
+ * access via Help, inside the dashboard shell so nav stays intact (§6.11.4
+ * friendly errors, §6.12 blocked states). No silent redirect, no error flash.
+ * (We do NOT use the experimental `forbidden()` boundary — it crashed on client
+ * hydration inside the provider-wrapped dashboard layout. Inline render is the
+ * stable approach; a real HTTP 403 status remains the deferred 403 contract.)
+ *
+ * System users are a different audience (not "forbidden customers") — they have
+ * their own home, so they are redirected to `/dashboard/admin` instead.
+ *
+ * Use ONLY at the top of a tenant `page.tsx`. Server actions keep
+ * `requirePermission` (throwing) as defense-in-depth — they are not in the
+ * render path and should hard-fail if reached without permission.
+ */
+export async function getTenantPageAccess(
+  permission: Permission,
+): Promise<{ allowed: true; session: TenantAuthSession } | { allowed: false }> {
+  const session = await getSessionOrThrow();
+  // System users belong to the platform surface — send them to their home
+  // rather than showing a tenant access-denied page.
+  if (isSystemRole(session.role)) redirect("/dashboard/admin");
+  if (!session.organizationId) return { allowed: false };
+  if (!hasPermission(session.role, permission)) return { allowed: false };
+  return { allowed: true, session: session as TenantAuthSession };
+}
+
+/**
  * Get session and require a specific permission, or throw Forbidden.
  *
  * Also enforces audience separation (CLAUDE.md § 8.3 — Layer 3):

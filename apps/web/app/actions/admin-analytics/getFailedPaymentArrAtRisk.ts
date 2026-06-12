@@ -1,7 +1,7 @@
 "use server";
 
 import { requirePermission } from "../../../lib/auth-helpers";
-import { db, jsonSafe, type DateRangeParams } from "./_shared";
+import { db, jsonSafe } from "./_shared";
 
 /**
  * Annualised recurring revenue from subscriptions currently PAST_DUE or

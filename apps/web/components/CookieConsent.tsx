@@ -115,27 +115,32 @@ export function CookieConsent({
             "pb-[calc(0.75rem+env(safe-area-inset-bottom))]",
           )}
         >
-          <div className="mx-auto max-w-[1100px] rounded-lg border border-border bg-card text-card-foreground shadow-lg">
-            <div className="flex flex-col gap-4 p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
-              <div className="min-w-0 lg:max-w-[60%]">
-                <p className="text-sm font-semibold text-foreground">{tt("title")}</p>
-                <p className="mt-1 text-caption text-muted-foreground">{tt("body")}</p>
-                <Link
-                  href="/cookie-policy"
-                  className="mt-1 inline-block text-caption text-primary underline-offset-4 hover:underline"
-                >
-                  {tt("policyLink")}
-                </Link>
+          <div className="mx-auto max-w-[920px] rounded-lg border border-border bg-card text-card-foreground shadow-lg">
+            <div className="flex flex-col gap-3 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
+              <div className="min-w-0 lg:max-w-[58%]">
+                <p className="text-sm font-semibold text-foreground">
+                  {tt("title")}
+                  {" — "}
+                  <span className="font-normal text-muted-foreground line-clamp-1">
+                    {tt("body")}
+                  </span>{" "}
+                  <Link
+                    href="/cookie-policy"
+                    className="text-primary underline-offset-4 hover:underline"
+                  >
+                    {tt("policyLink")}
+                  </Link>
+                </p>
               </div>
-              <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap lg:justify-end">
+              <div className="flex flex-wrap gap-2 lg:shrink-0 lg:justify-end">
                 {/* Reject given equal prominence to Accept (PDPL) */}
-                <Button variant="secondary" size="md" onClick={onRejectAll}>
+                <Button variant="secondary" size="sm" onClick={onRejectAll}>
                   {tt("rejectNonEssential")}
                 </Button>
-                <Button variant="primary" size="md" onClick={onAcceptAll}>
+                <Button variant="primary" size="sm" onClick={onAcceptAll}>
                   {tt("acceptAll")}
                 </Button>
-                <Button variant="ghost" size="md" onClick={onOpenPreferences}>
+                <Button variant="ghost" size="sm" onClick={onOpenPreferences}>
                   {tt("managePreferences")}
                 </Button>
               </div>
