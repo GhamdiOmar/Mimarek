@@ -8,7 +8,9 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:seed": "npx tsx prisma/seed.ts",
-    "seed:demo": "npx tsx prisma/seed-demo.ts"
+    "seed:demo": "npx tsx prisma/seed-demo.ts",
+    "rls:generate": "tsx scripts/generate-rls.ts --write",
+    "rls:check": "tsx scripts/generate-rls.ts --check"
   },
   "devDependencies": {
     "@node-rs/bcrypt": "^1.10.7",

@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import { cn } from "@repo/ui/lib/utils";
 
 interface MimaricLogoProps {
   variant?: 'light' | 'dark'; // light = transparent, dark = black bg version
@@ -32,9 +33,4 @@ export function MimaricLogo({
       />
     </div>
   );
-}
-
-// Add cn helper if not imported
-function cn(...classes: any[]) {
-  return classes.filter(Boolean).join(' ');
 }

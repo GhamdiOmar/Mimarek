@@ -15,6 +15,7 @@
     "check-types": {
       "dependsOn": ["^check-types", "^db:generate"]
     },
+    "test:unit": {},
     "dev": {
       "cache": false,
       "persistent": true

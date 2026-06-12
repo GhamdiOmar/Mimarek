@@ -4,6 +4,7 @@ import { db } from "@repo/db";
 import { revalidatePath } from "next/cache";
 import { requirePermission, getTenantSessionOrThrow } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
+import { ROUTES } from "../../lib/routes";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Coupon Validation (Customer-facing)
@@ -178,7 +179,7 @@ export async function adminCreateCoupon(data: {
     organizationId: session.organizationId,
   });
 
-  revalidatePath("/admin/coupons");
+  revalidatePath(ROUTES.adminCoupons);
   return JSON.parse(JSON.stringify(coupon));
 }
 
@@ -217,6 +218,6 @@ export async function adminToggleCoupon(couponId: string, isActive: boolean) {
     organizationId: session.organizationId,
   });
 
-  revalidatePath("/admin/coupons");
+  revalidatePath(ROUTES.adminCoupons);
   return { success: true };
 }

@@ -1,5 +1,43 @@
 # Changelog — Mimaric PropTech
 
+## [4.17.0] — 2026-06-12 — Architecture foundations: unit-test harness, durable rate limits, RLS generator
+
+Phase 1 of the architecture required-fixes program (`future-plans/architecture-required-fixes-2026-06-12.md`). Gives the highest-risk business rules a **fast unit-test safety net** (the repo previously had zero unit tests), fixes a **production rate-limiting gap**, fixes **three confirmed bugs**, creates the shared action-layer seams, and makes the RLS coverage script **generated instead of hand-maintained**. No schema changes; UI-invisible except a 2-line logo-component fix.
+
+### Unit-test harness + pure business-rule extraction (F1)
+
+- **Vitest harness**: `test:unit` script in `apps/web`, turbo task, and a CI step between type-checking and build. **92 unit tests across 6 suites** run in <1s.
+- **Six rules extracted from `"use server"` hosts into pure modules** (move-verbatim — behavior byte-identical, each pinned by tests):
+  - `lib/contracts/state-machine.ts` — contract status transitions (terminal states allow nothing).
+  - `lib/payment/subscription-transitions.ts` — subscription status map (incl. CANCELED→ACTIVE resubscribe); `subscription-machine.ts` now imports the predicate.
+  - `lib/maintenance/recurrence.ts` — `computeNextRunDate` (7 recurrence types; JS month-end rollover behavior pinned, not "fixed").
+  - `lib/billing/ar-aging.ts` — AR aging bucket math (30/60/90 boundaries, null-dueDate skip).
+  - `lib/entitlements/evaluator.ts` — pure `evaluateEntitlement` + `resolveEntitlement` (override > plan > deny; LIMIT/BOOLEAN/METERED). The `unstable_cache` wrapper in `lib/entitlements.ts` is untouched.
+  - `lib/payments/recording.ts` — `decidePaymentApplication` (already-paid guard, overpay rejection with ±0.005 tolerance, PAID vs PARTIALLY_PAID threshold). The `recordPayment` transaction machinery — FOR UPDATE lock, idempotency replay, P2002 race handling, audit — is untouched, and the CI money-correctness test passes unchanged.
+
+### Rate limiting now survives deploys (F2 — security)
+
+- Password-reset (3/hour) and CR-lookup (5/10min) limits previously counted attempts in **per-process in-memory Maps** — reset on every cold start/instance, so largely decorative in production. Both now use the existing DB-backed `checkRateLimit()` (atomic UPSERT on `RateLimitCounter`, shared across instances). Contracts preserved exactly: silent success on blocked password reset (anti-enumeration), `TOO_MANY_LOOKUPS` before format validation, invalid CR consumes no quota (via `peekRateLimit`).
+
+### Bug fixes (F3)
+
+- **Stale admin cache refresh**: `adminCreateCoupon`/`adminToggleCoupon` revalidated `/admin/coupons` and `adminUpsertPlan` revalidated `/admin/plans` — routes that don't exist (real: `/dashboard/admin/...`). The revalidation silently no-op'd, so admins could see stale coupon/plan data. Now uses `ROUTES` constants pointing at the real pages.
+- **MimaricLogo `cn()` duplicate**: the component carried a local `filter(Boolean).join(" ")` helper instead of the canonical `cn` (clsx + tailwind-merge) from `@repo/ui` — Tailwind class conflicts wouldn't de-dupe. Now imports the canonical helper.
+
+### Action-layer seams (F6 — adopt opportunistically)
+
+- New `lib/serialize.ts` (one Decimal-safe `serialize<T>()` — replaces marketplace's private `SERIALIZE`, 16 call sites), `lib/action-result.ts` (`ActionResult<T>` discriminated union + `ok`/`fail`), `lib/routes.ts` (route constants for `revalidatePath`). Adoption in existing actions is touched-files-only by design — the 151 `throw` sites are explicitly not mass-migrated.
+
+### RLS coverage script is now generated (F7)
+
+- New `packages/db/scripts/generate-rls.ts` parses `schema.prisma` (handles `@@map`), appends `_CouponPlans` + `_prisma_migrations`, and emits the always-double-quoted `ALTER TABLE … ENABLE ROW LEVEL SECURITY` list (the unquoted-identifier silent-no-op trap is documented in the header). `2026-06-enable-rls.sql` regenerated with **proven 49-table parity** to the hand-maintained version. New CI step `rls:check` fails the build if the SQL drifts from the schema. The manual Supabase apply step per environment is unchanged; no new tables this release.
+
+### Verification (§3.9)
+
+- 92/92 unit tests, lint 0 errors, typecheck green, full production build green, cspell clean on changed files. Prod server via preview MCP browser: **login in light/dark × AR/EN + register + mobile 375×812 MobileTopbar** (the logo-fix surfaces) — rendering identical, keyboard focus ring intact (3px purple), **zero browser-console + zero server errors**. RLS `--check` exit 0 + negative drift test (bogus line → exit 1).
+
+**Full diff:** https://github.com/GhamdiOmar/Mimaric/compare/v4.16.1...v4.17.0
+
 ## [4.16.1] — 2026-06-12 — Access Denied page + units:read for managers + consent compaction + cleanup
 
 Follow-up to v4.16.0. Replaces the silent permission-denial redirect with a defined in-shell **Access Denied** page, grants `units:read` to the property-managing roles, compacts the cookie-consent banner, and clears three CI lint warnings + two dead shell components.

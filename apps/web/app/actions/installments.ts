@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requirePermission } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
+import { decidePaymentApplication } from "../../lib/payments/recording";
 
 const RecordPaymentSchema = z.object({
   paymentMethod: z.string().min(1),
@@ -136,36 +137,30 @@ export async function recordPayment(
         );
       }
 
-      // (3) Already fully paid guard
-      if (row.status === "PAID") {
-        throw new Error(
-          "تم تسديد هذا القسط بالكامل مسبقاً. / This installment is already fully paid."
-        );
-      }
-
-      // (4) Accumulate
-      const installmentAmount = Number(row.amount);
+      // (3)–(6) Pure payment-application decision
       const priorPaid = Number(row.paidAmount ?? 0);
-      const newPaidAmount = priorPaid + safeData.amount;
+      const decision = decidePaymentApplication(
+        { status: row.status, amount: Number(row.amount), paidAmount: priorPaid },
+        safeData.amount
+      );
 
-      // (5) Overpay guard
-      if (newPaidAmount > installmentAmount + 0.005) {
-        const remaining = (installmentAmount - priorPaid).toFixed(2);
+      if (decision.kind === "reject") {
+        if (decision.reason === "ALREADY_PAID") {
+          throw new Error(
+            "تم تسديد هذا القسط بالكامل مسبقاً. / This installment is already fully paid."
+          );
+        }
         throw new Error(
-          `المبلغ يتجاوز المتبقّي المستحق (${remaining} ريال). / Amount exceeds the remaining balance due (${remaining} SAR).`
+          `المبلغ يتجاوز المتبقّي المستحق (${decision.remaining} ريال). / Amount exceeds the remaining balance due (${decision.remaining} SAR).`
         );
       }
-
-      // (6) Determine new status
-      const newStatus =
-        newPaidAmount >= installmentAmount - 0.005 ? "PAID" : "PARTIALLY_PAID";
 
       // (7) Write — paidAmount ALWAYS written with status
       const updated = await tx.rentInstallment.update({
         where: { id: installmentId },
         data: {
-          status: newStatus as any,
-          paidAmount: newPaidAmount,
+          status: decision.newStatus as any,
+          paidAmount: decision.newPaidAmount,
           paidAt: paidAtDate,
           paymentMethod: safeData.paymentMethod,
           referenceNumber: safeData.referenceNumber,
@@ -178,7 +173,7 @@ export async function recordPayment(
         row: updated,
         replayed: false,
         before: { status: row.status, paidAmount: priorPaid },
-        after: { status: newStatus, paidAmount: newPaidAmount },
+        after: { status: decision.newStatus, paidAmount: decision.newPaidAmount },
       };
     });
   } catch (e: any) {

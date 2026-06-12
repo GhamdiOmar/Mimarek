@@ -6,14 +6,7 @@ import { requirePermission } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
 import { syncDealStageForUnit } from "./customer-interests";
 import { getNextSequenceValue, GLOBAL_SEQUENCE_SCOPE } from "../../lib/sequence";
-
-const VALID_TRANSITIONS: Record<string, string[]> = {
-  DRAFT: ["SENT", "SIGNED", "CANCELLED"],
-  SENT: ["SIGNED", "CANCELLED"],
-  SIGNED: ["VOID"],
-  CANCELLED: [],
-  VOID: [],
-};
+import { CONTRACT_TRANSITIONS, isValidContractTransition } from "../../lib/contracts/state-machine";
 
 const FREQUENCY_MONTHS: Record<string, number> = {
   MONTHLY: 1,
@@ -261,8 +254,8 @@ export async function updateContractStatus(
   }
 
   // Enforce state machine
-  const allowed = VALID_TRANSITIONS[contract.status];
-  if (!allowed || !allowed.includes(status)) {
+  const allowed = CONTRACT_TRANSITIONS[contract.status];
+  if (!allowed || !isValidContractTransition(contract.status, status)) {
     throw new Error(`This contract cannot be moved from its current status to the requested status. Please check the allowed workflow transitions.`);
   }
 

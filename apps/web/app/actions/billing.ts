@@ -4,6 +4,7 @@ import { db, type Prisma } from "@repo/db";
 import { revalidatePath } from "next/cache";
 import { requirePermission, getSessionOrThrow } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
+import { ROUTES } from "../../lib/routes";
 import { createSubscription, transitionSubscription } from "../../lib/payment/subscription-machine";
 import { invalidateEntitlements } from "../../lib/entitlements";
 import { unstable_cache } from "next/cache";
@@ -528,7 +529,7 @@ export async function adminUpsertPlan(data: {
     organizationId: session.organizationId,
   });
 
-  revalidatePath("/admin/plans");
+  revalidatePath(ROUTES.adminPlans);
   return JSON.parse(JSON.stringify(plan));
 }
 

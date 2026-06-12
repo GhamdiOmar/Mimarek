@@ -1,45 +1,13 @@
-"use server";
+﻿"use server";
 
 import { db } from "@repo/db";
 import { revalidatePath } from "next/cache";
 import { getTenantSessionOrThrow } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
 import { notifyAdmins } from "../../lib/create-notification";
+import { checkRateLimit, peekRateLimit } from "../../lib/rate-limit";
 
-// ─── CR Lookup Rate Limiter ─────────────────────────────────────────────────
-
-/**
- * In-memory rate limiter for CR number lookups.
- * Limit: 5 lookups per user per 10 minutes.
- *
- * NOTE: This Map is per-process and resets on deploy. For multi-instance
- * deployments, replace with Redis-backed rate limiting (@upstash/ratelimit).
- */
-const crLookupAttempts = new Map<string, { count: number; firstAttempt: number }>();
-const CR_LOOKUP_LIMIT = 5;
-const CR_LOOKUP_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
-
-function checkCRLookupLimit(userId: string): boolean {
-  const entry = crLookupAttempts.get(userId);
-  if (!entry) return false;
-  if (Date.now() - entry.firstAttempt > CR_LOOKUP_WINDOW_MS) {
-    crLookupAttempts.delete(userId);
-    return false;
-  }
-  return entry.count >= CR_LOOKUP_LIMIT;
-}
-
-function recordCRLookupAttempt(userId: string) {
-  const entry = crLookupAttempts.get(userId);
-  const now = Date.now();
-  if (!entry || now - entry.firstAttempt > CR_LOOKUP_WINDOW_MS) {
-    crLookupAttempts.set(userId, { count: 1, firstAttempt: now });
-  } else {
-    entry.count += 1;
-  }
-}
-
-// ─── Helpers ────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function maskOrgName(name: string): string {
   if (name.length <= 6) return name;
@@ -54,13 +22,14 @@ function isValidVAT(vat: string): boolean {
   return /^3\d{13}3$/.test(vat);
 }
 
-// ─── 1. lookupOrgByCR ───────────────────────────────────────────────────────
+// â”€â”€â”€ 1. lookupOrgByCR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function lookupOrgByCR(crNumber: string) {
   const session = await getTenantSessionOrThrow();
 
-  // Rate limit check
-  if (checkCRLookupLimit(session.userId)) {
+  // Rate limit check (read-only â€” an invalid-format CR must consume no quota)
+  const peek = await peekRateLimit(`cr-lookup:${session.userId}`, 5);
+  if (!peek.allowed) {
     return { found: false, error: "TOO_MANY_LOOKUPS" };
   }
 
@@ -68,7 +37,10 @@ export async function lookupOrgByCR(crNumber: string) {
     return { found: false, error: "INVALID_CR_FORMAT" };
   }
 
-  recordCRLookupAttempt(session.userId);
+  const rl = await checkRateLimit(`cr-lookup:${session.userId}`, 5, 10 * 60 * 1000);
+  if (!rl.allowed) {
+    return { found: false, error: "TOO_MANY_LOOKUPS" };
+  }
 
   try {
     const org = await db.organization.findUnique({
@@ -101,7 +73,7 @@ export async function lookupOrgByCR(crNumber: string) {
   }
 }
 
-// ─── 2. createJoinRequest ───────────────────────────────────────────────────
+// â”€â”€â”€ 2. createJoinRequest â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function createJoinRequest(data: {
   targetOrgId: string;
@@ -147,9 +119,9 @@ export async function createJoinRequest(data: {
     // Notify target org admins
     await notifyAdmins({
       type: "JOIN_REQUEST",
-      title: "طلب انضمام جديد",
+      title: "Ø·Ù„Ø¨ Ø§Ù†Ø¶Ù…Ø§Ù… Ø¬Ø¯ÙŠØ¯",
       titleEn: "New Join Request",
-      message: `${session.name ?? session.email} يطلب الانضمام إلى المنشأة`,
+      message: `${session.name ?? session.email} ÙŠØ·Ù„Ø¨ Ø§Ù„Ø§Ù†Ø¶Ù…Ø§Ù… Ø¥Ù„Ù‰ Ø§Ù„Ù…Ù†Ø´Ø£Ø©`,
       messageEn: `${session.name ?? session.email} requested to join the organization`,
       link: "/dashboard/settings/team",
       organizationId: data.targetOrgId,
@@ -174,7 +146,7 @@ export async function createJoinRequest(data: {
   }
 }
 
-// ─── 3. convertPersonalOrg ──────────────────────────────────────────────────
+// â”€â”€â”€ 3. convertPersonalOrg â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function convertPersonalOrg(crNumber: string) {
   const session = await getTenantSessionOrThrow();
@@ -184,7 +156,7 @@ export async function convertPersonalOrg(crNumber: string) {
   }
 
   try {
-    // Attempt update directly — rely on unique constraint for atomicity
+    // Attempt update directly â€” rely on unique constraint for atomicity
     await db.organization.update({
       where: { id: session.organizationId },
       data: { crNumber },
@@ -212,7 +184,7 @@ export async function convertPersonalOrg(crNumber: string) {
   }
 }
 
-// ─── 4. updateOnboardingOrg ─────────────────────────────────────────────────
+// â”€â”€â”€ 4. updateOnboardingOrg â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function updateOnboardingOrg(data: {
   nameArabic?: string;
@@ -235,7 +207,7 @@ export async function updateOnboardingOrg(data: {
       return { success: false, error: "INVALID_VAT_FORMAT" };
     }
 
-    // Attempt update directly — rely on unique constraints for atomicity
+    // Attempt update directly â€” rely on unique constraints for atomicity
     await db.organization.update({
       where: { id: session.organizationId },
       data: {
@@ -272,7 +244,7 @@ export async function updateOnboardingOrg(data: {
   }
 }
 
-// ─── 5. updateOnboardingContact ─────────────────────────────────────────────
+// â”€â”€â”€ 5. updateOnboardingContact â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function updateOnboardingContact(data: {
   mobileNumber?: string;
@@ -328,7 +300,7 @@ export async function updateOnboardingContact(data: {
   }
 }
 
-// ─── 6. completeOnboarding ──────────────────────────────────────────────────
+// â”€â”€â”€ 6. completeOnboarding â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function completeOnboarding() {
   const session = await getTenantSessionOrThrow();
@@ -358,7 +330,7 @@ export async function completeOnboarding() {
   }
 }
 
-// ─── 7. getMyJoinRequests ───────────────────────────────────────────────────
+// â”€â”€â”€ 7. getMyJoinRequests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function getMyJoinRequests() {
   const session = await getTenantSessionOrThrow();
