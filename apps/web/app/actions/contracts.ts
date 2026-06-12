@@ -259,86 +259,149 @@ export async function updateContractStatus(
     throw new Error(`This contract cannot be moved from its current status to the requested status. Please check the allowed workflow transitions.`);
   }
 
-  const data: any = { status };
+  // ── P2-2: single atomic transaction for all lifecycle writes ──────────────
+  // The signing path (SIGNED) previously scattered writes across contract,
+  // unit, customer, and lease without a transaction — a partial failure left
+  // a SIGNED contract with stale unit/lease/customer state.  All writes for
+  // every transition are now wrapped in one db.$transaction so the lifecycle
+  // either commits entirely or rolls back entirely.
+  //
+  // Optimistic concurrency (SIGNED path): instead of a plain update we use
+  // updateMany with the current status in the WHERE clause so that a
+  // concurrent second sign attempt (race condition) produces count=0 and
+  // throws a friendly error rather than silently double-writing.
+  //
+  // Post-tx calls (must stay outside the tx):
+  //   • syncDealStageForUnit — uses the global `db` client directly and would
+  //     create nested-transaction / connection-pool issues inside the tx.
+  //   • logAuditEvent — fire-and-forget on `db`; designed as best-effort;
+  //     consistent with pattern in leases.ts and every other action in this file.
+  //   • revalidatePath — Next.js cache API; not a DB write.
+
+  let updated: typeof contract;
+  // Track whether syncDealStageForUnit needs to be called post-tx and with
+  // which stage, so we can call it cleanly after the tx commits.
+  let postTxSyncStage: "WON" | "QUALIFIED" | null = null;
+
   if (status === "SIGNED") {
-    data.signedAt = new Date();
+    // SIGNED path — optimistic concurrency via updateMany + count check.
+    // expectedFrom: DRAFT | SENT (both are valid predecessors per state machine).
+    updated = await db.$transaction(async (tx) => {
+      // Atomic optimistic-concurrency update — rejects the second concurrent sign.
+      // Contract has no direct organizationId column; org guard was enforced by
+      // the findFirst above (same request).  Here we scope by id + current status
+      // so a concurrent second sign (race) produces count=0 and throws.
+      const res = await tx.contract.updateMany({
+        where: {
+          id: contractId,
+          status: { in: ["DRAFT", "SENT"] },
+        },
+        data: { status: "SIGNED", signedAt: new Date() },
+      });
+      if (res.count !== 1) {
+        throw new Error(
+          "This contract has already been signed or its status changed — please refresh and try again."
+        );
+      }
+
+      // SALE: unit → SOLD
+      if (contract.type === "SALE") {
+        await tx.unit.update({
+          where: { id: contract.unitId },
+          data: { status: "SOLD" },
+        });
+      }
+
+      // LEASE: unit → RENTED, customer → ACTIVE_TENANT, lease → ACTIVE
+      if (contract.type === "LEASE") {
+        await tx.unit.update({
+          where: { id: contract.unitId },
+          data: { status: "RENTED" },
+        });
+        // Tenancy lifecycle — writer of record is Customer.status (not the pipeline; § 4 / R3)
+        await tx.customer.update({
+          where: { id: contract.customerId },
+          data: { status: "ACTIVE_TENANT" },
+        });
+        if (contract.leaseId) {
+          await tx.lease.update({
+            where: { id: contract.leaseId },
+            data: { status: "ACTIVE" },
+          });
+        }
+      }
+
+      // Return the freshly updated contract (re-fetch inside tx so the
+      // returned shape includes signedAt and is consistent with the tx state)
+      const c = await tx.contract.findUniqueOrThrow({ where: { id: contractId } });
+      return c as typeof contract;
+    });
+
+    // syncDealStageForUnit uses the global db client — must be called after tx commits
+    if (contract.type === "SALE") {
+      postTxSyncStage = "WON";
+    }
+    // LEASE signed — tenancy is written via Customer.status inside the tx;
+    // pipeline sync is not needed for the LEASE signing path.
+
+  } else {
+    // NON-SIGNED path (SENT / CANCELLED / VOID) — all writes in one tx.
+    updated = await db.$transaction(async (tx) => {
+      const updateData: any = { status };
+      const c = await tx.contract.update({
+        where: { id: contractId },
+        data: updateData,
+      });
+
+      // CANCELLED or VOID → free unit, terminate lease
+      if (status === "CANCELLED" || status === "VOID") {
+        const currentUnit = await tx.unit.findUnique({ where: { id: contract.unitId } });
+        if (currentUnit && (currentUnit.status === "SOLD" || currentUnit.status === "RENTED")) {
+          await tx.unit.update({
+            where: { id: contract.unitId },
+            data: { status: "AVAILABLE" },
+          });
+        }
+
+        if (contract.leaseId) {
+          await tx.lease.update({
+            where: { id: contract.leaseId },
+            data: { status: "TERMINATED" },
+          });
+        }
+
+        // Check for other active contracts to decide whether to revert the pipeline
+        const otherActive = await tx.contract.count({
+          where: {
+            customerId: contract.customerId,
+            id: { not: contractId },
+            status: { in: ["DRAFT", "SENT", "SIGNED"] },
+          },
+        });
+        if (otherActive === 0) {
+          // Flag for post-tx pipeline revert — syncDealStageForUnit uses global db
+          postTxSyncStage = "QUALIFIED";
+        }
+      }
+
+      return c as typeof contract;
+    });
   }
 
-  const updated = await db.contract.update({
-    where: { id: contractId },
-    data,
-  });
-
-  // SALE contract signed → unit SOLD
-  if (status === "SIGNED" && contract.type === "SALE") {
-    await db.unit.update({
-      where: { id: contract.unitId },
-      data: { status: "SOLD" },
-    });
-    // Pipeline win — owned by the Deal entity now (R3). Set the relevant deal
-    // to WON and recompute Customer.status instead of writing it directly.
+  // ── Post-tx: pipeline sync (uses global db — must be outside the tx) ───────
+  if (postTxSyncStage === "WON") {
+    // Pipeline win — owned by the Deal entity (R3).
     await syncDealStageForUnit(contract.customerId, contract.unitId, "WON");
+  } else if (postTxSyncStage === "QUALIFIED") {
+    // Pipeline revert — derived from the Deal entity (R3).
+    await syncDealStageForUnit(contract.customerId, contract.unitId, "QUALIFIED");
   }
 
-  // LEASE contract signed → unit RENTED, lease ACTIVE
-  if (status === "SIGNED" && contract.type === "LEASE") {
-    await db.unit.update({
-      where: { id: contract.unitId },
-      data: { status: "RENTED" },
-    });
-    // Tenancy lifecycle — KEEP as a direct Customer.status write (this is the
-    // writer of record for tenancy, not the pipeline; § 4 / R3).
-    await db.customer.update({
-      where: { id: contract.customerId },
-      data: { status: "ACTIVE_TENANT" },
-    });
-    // Activate linked lease
-    if (contract.leaseId) {
-      await db.lease.update({
-        where: { id: contract.leaseId },
-        data: { status: "ACTIVE" },
-      });
-    }
-  }
-
-  // CANCELLED or VOID → free unit, revert customer
-  if (status === "CANCELLED" || status === "VOID") {
-    const currentUnit = await db.unit.findUnique({ where: { id: contract.unitId } });
-    if (currentUnit && (currentUnit.status === "SOLD" || currentUnit.status === "RENTED")) {
-      await db.unit.update({
-        where: { id: contract.unitId },
-        data: { status: "AVAILABLE" },
-      });
-    }
-
-    // Terminate linked lease
-    if (contract.leaseId) {
-      await db.lease.update({
-        where: { id: contract.leaseId },
-        data: { status: "TERMINATED" },
-      });
-    }
-
-    const otherActive = await db.contract.count({
-      where: {
-        customerId: contract.customerId,
-        id: { not: contractId },
-        status: { in: ["DRAFT", "SENT", "SIGNED"] },
-      },
-    });
-    if (otherActive === 0) {
-      // Pipeline revert — derived from the Deal entity now (R3). Set the
-      // relevant deal back to QUALIFIED and recompute Customer.status.
-      await syncDealStageForUnit(contract.customerId, contract.unitId, "QUALIFIED");
-    }
-
-  }
-
+  // ── Post-tx: audit log (fire-and-forget on global db — consistent with leases.ts) ──
   logAuditEvent({ userId: session.userId, userEmail: session.email, userRole: session.role, action: "UPDATE", resource: "Contract", resourceId: contractId, metadata: { previousStatus: contract.status, newStatus: status }, organizationId: session.organizationId });
 
   revalidatePath("/dashboard/contracts");
   revalidatePath("/dashboard/units");
-  revalidatePath("/dashboard/contracts");
   return JSON.parse(JSON.stringify(updated));
 }
 

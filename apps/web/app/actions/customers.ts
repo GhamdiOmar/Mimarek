@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requirePermission, getSessionWithPermissions } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
-import { encryptCustomerData, decryptCustomerData, decryptCustomerList } from "../../lib/pii-crypto";
+import { encryptCustomerData, decryptCustomerData, decryptCustomerList, phoneSearchHash } from "../../lib/pii-crypto";
 import { maskCustomerPii } from "../../lib/pii-masking";
 import { hashForSearch } from "../../lib/encryption";
 import { normalizeSaudiPhoneE164 } from "../../lib/phone";
@@ -282,11 +282,14 @@ export async function getCustomers(filters?: {
 
   if (filters?.search) {
     const searchHash = hashForSearch(filters.search);
+    // Phone uses the SAME normalize-then-hash rule as the write path
+    // (phoneSearchHash) so "0551234567" and "+966551234567" both match.
+    const phoneHash = phoneSearchHash(filters.search);
     where.OR = [
       { name: { contains: filters.search, mode: "insensitive" } },
       { nameArabic: { contains: filters.search, mode: "insensitive" } },
-      // Exact match via hash for encrypted fields
-      { phoneHash: searchHash },
+      // Exact match via blind index for encrypted fields
+      { phoneHash },
       { emailHash: searchHash },
       { nationalIdHash: searchHash },
     ];

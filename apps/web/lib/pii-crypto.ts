@@ -1,4 +1,15 @@
 import { encrypt, decrypt, hashForSearch } from "./encryption";
+import { normalizeSaudiPhoneE164 } from "./phone";
+
+/**
+ * Search-key for a phone: HMAC over the E.164-normalized form when the value is
+ * a valid Saudi mobile, else over the raw value. The SEARCH path in customers.ts
+ * MUST mirror this exactly (hashForSearch(normalizeSaudiPhoneE164(x) ?? x)) so a
+ * customer is found whether the query is "0551234567" or "+966551234567".
+ */
+export function phoneSearchHash(phone: string): string {
+  return hashForSearch(normalizeSaudiPhoneE164(phone) ?? phone);
+}
 
 /**
  * Encrypt PII fields in customer data before writing to DB.
@@ -12,8 +23,11 @@ export function encryptCustomerData(data: Record<string, any>): Record<string, a
     encrypted.nationalIdHash = hashForSearch(data.nationalId);
   }
   if (data.phone) {
-    encrypted.phone = encrypt(data.phone);
-    encrypted.phoneHash = hashForSearch(data.phone);
+    // Store the E.164-normalized value for valid Saudi mobiles (consistent display
+    // + search); fall back to the raw value for anything else (no data loss).
+    const phoneForStorage = normalizeSaudiPhoneE164(data.phone) ?? String(data.phone);
+    encrypted.phone = encrypt(phoneForStorage);
+    encrypted.phoneHash = phoneSearchHash(phoneForStorage);
   }
   if (data.email) {
     encrypted.email = encrypt(data.email);
