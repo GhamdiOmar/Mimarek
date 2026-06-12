@@ -3,12 +3,9 @@
  *
  * Manages subscription status transitions with audit trail.
  *
- * State Diagram:
- *   TRIALING → ACTIVE → PAST_DUE → UNPAID → CANCELED
- *                ↑         │                    │
- *                └─────────┘ (retry succeeds)   │
- *                ↑                              │
- *                └──────────────────────────────┘ (user resubscribes)
+ * The valid-transition map + state diagram live in ./subscription-transitions
+ * (pure module, unit-tested). This file owns DB orchestration, the same-state
+ * no-op short-circuit, event logging, and entitlement invalidation.
  *
  * Every transition logs a SubscriptionEvent for audit.
  */
@@ -16,17 +13,7 @@
 import { db } from "@repo/db";
 import type { SubscriptionStatus } from "@prisma/client";
 import { invalidateEntitlements } from "../entitlements";
-
-// ─── Valid Transitions ──────────────────────────────────────────────────────
-
-const VALID_TRANSITIONS: Record<SubscriptionStatus, SubscriptionStatus[]> = {
-  TRIALING: ["ACTIVE", "PAST_DUE", "CANCELED"],
-  ACTIVE: ["PAST_DUE", "PAUSED", "CANCELED"],
-  PAST_DUE: ["ACTIVE", "UNPAID", "CANCELED"],
-  UNPAID: ["ACTIVE", "CANCELED"],
-  PAUSED: ["ACTIVE", "CANCELED"],
-  CANCELED: ["ACTIVE"], // Resubscription
-};
+import { isValidSubscriptionTransition } from "./subscription-transitions";
 
 // ─── State Machine ──────────────────────────────────────────────────────────
 
@@ -62,8 +49,7 @@ export async function transitionSubscription(
     return; // No-op — already in target state
   }
 
-  const allowed = VALID_TRANSITIONS[fromStatus];
-  if (!allowed?.includes(toStatus)) {
+  if (!isValidSubscriptionTransition(fromStatus, toStatus)) {
     throw new Error(
       `Invalid subscription transition: ${fromStatus} → ${toStatus}`
     );
