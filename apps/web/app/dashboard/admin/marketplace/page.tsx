@@ -32,6 +32,10 @@ import {
   moderateSuspendListing,
 } from "../../../actions/marketplace";
 import Link from "next/link";
+import {
+  MARKETPLACE_LISTING_STATUS_LABEL as STATUS_LABELS,
+  MARKETPLACE_LISTING_STATUS_VARIANT as STATUS_VARIANT,
+} from "../../../../lib/domain-labels";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -49,25 +53,6 @@ type ModerationListing = {
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
-const STATUS_LABELS: Record<string, string> = {
-  DRAFT: "Draft",
-  PUBLISHED: "Published",
-  UNDER_CONTRACT: "Under Contract",
-  SOLD_TRANSFERRED: "Transferred",
-  UNPUBLISHED: "Unpublished",
-  EXPIRED: "Expired",
-  SUSPENDED: "Suspended",
-};
-
-const STATUS_VARIANT: Record<string, "default" | "success" | "info" | "sold" | "warning" | "error"> = {
-  DRAFT: "default",
-  PUBLISHED: "success",
-  UNDER_CONTRACT: "info",
-  SOLD_TRANSFERRED: "sold",
-  UNPUBLISHED: "warning",
-  EXPIRED: "error",
-  SUSPENDED: "error",
-};
 
 const COMPLIANCE_VARIANT: Record<string, "success" | "warning" | "error"> = {
   APPROVED: "success",
@@ -184,7 +169,7 @@ export default function AdminMarketplacePage() {
       header: lang === "ar" ? "الحالة" : "Status",
       cell: ({ row }) => (
         <Badge variant={STATUS_VARIANT[row.original.status] ?? "default"} size="sm">
-          {STATUS_LABELS[row.original.status] ?? row.original.status}
+          {STATUS_LABELS[row.original.status]?.[lang] ?? row.original.status}
         </Badge>
       ),
       enableSorting: true,
@@ -288,7 +273,7 @@ export default function AdminMarketplacePage() {
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <Badge variant={STATUS_VARIANT[listing.status] ?? "default"} size="sm">
-            {STATUS_LABELS[listing.status] ?? listing.status}
+            {STATUS_LABELS[listing.status]?.[lang] ?? listing.status}
           </Badge>
           <Badge variant={COMPLIANCE_VARIANT[listing.complianceStatus] ?? "default"} size="sm">
             <Shield className="h-3 w-3" aria-hidden="true" />
