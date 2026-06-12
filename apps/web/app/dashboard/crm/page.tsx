@@ -1,7 +1,8 @@
-import { requirePermission } from "../../../lib/auth-helpers";
+import { getTenantPageAccess } from "../../../lib/auth-helpers";
 import { getCustomers } from "../../actions/customers";
 import { getTeamMembers } from "../../actions/team";
 import { getAvailableUnitsForInterest } from "../../actions/customer-interests";
+import { AccessDenied } from "../_components/AccessDenied";
 import CrmView from "./CrmView";
 
 /**
@@ -12,10 +13,10 @@ import CrmView from "./CrmView";
  * plus team members and available units for the add/link flows.
  *
  * Audience (tenant-only) is already enforced by `dashboard/layout.tsx`
- * → requireTenant; the action-level `requirePermission("crm:read")` here fails
- * fast and matches the permission space the CRM page operates in. The underlying
- * `getCustomers()` action additionally enforces `customers:read_pii` to decide
- * masking — unchanged.
+ * → requireTenant. `getTenantPageAccess("crm:read")` renders an in-shell
+ * AccessDenied message for a tenant role that lacks CRM access (FINANCE /
+ * TECHNICIAN / USER) instead of throwing a generic error. The underlying `getCustomers()` action
+ * additionally enforces `customers:read_pii` to decide masking — unchanged.
  *
  * All interactivity (Kanban + drag-to-change-stage, MobileKanban, customer
  * drawer, add/edit dialogs, search/filters, activity timeline) lives in the
@@ -25,7 +26,8 @@ import CrmView from "./CrmView";
  * NOT apply here, so no range params are read.
  */
 export default async function CRMPage() {
-  await requirePermission("crm:read");
+  const access = await getTenantPageAccess("crm:read");
+  if (!access.allowed) return <AccessDenied />;
 
   const [initialCustomers, members, initialAvailableUnits] = await Promise.all([
     getCustomers(),

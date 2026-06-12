@@ -1,13 +1,14 @@
-import { requirePermission } from "../../../lib/auth-helpers";
+import { getTenantPageAccess } from "../../../lib/auth-helpers";
 import { getUnitsWithBuildings } from "../../actions/units";
+import { AccessDenied } from "../_components/AccessDenied";
 import UnitsView from "./UnitsView";
 
 /**
  * Units — Server Component. Fetches the initial unit list server-side in one
  * render (no client mount-time fetch waterfall). Audience (tenant-only) is
- * already enforced by `dashboard/layout.tsx` → requireTenant; the
- * action-level `requirePermission("units:read")` here fails fast and matches
- * the permission the underlying `getUnitsWithBuildings()` action enforces.
+ * already enforced by `dashboard/layout.tsx` → requireTenant.
+ * `getTenantPageAccess("units:read")` renders an in-shell AccessDenied message
+ * for a tenant role that lacks the permission, instead of throwing a generic error.
  *
  * All interactivity (DataTable, filters, search, create/edit/delete dialogs,
  * bulk actions, density toggle, mobile cards) lives in the `UnitsView` client
@@ -15,7 +16,9 @@ import UnitsView from "./UnitsView";
  * existing optimistic-update mechanism for mutations.
  */
 export default async function UnitsPage() {
-  await requirePermission("units:read");
+  const access = await getTenantPageAccess("units:read");
+  if (!access.allowed) return <AccessDenied />;
+
   const initialUnits = await getUnitsWithBuildings();
 
   return <UnitsView initialUnits={initialUnits} />;

@@ -37,7 +37,7 @@ export interface EmptyStateProps
    * Which § 6.12 state this represents. Used for default icon tint only —
    * caller still supplies the icon + copy.
    */
-  variant?: "default" | "first-time" | "filtered" | "error" | "offline";
+  variant?: "default" | "first-time" | "filtered" | "error" | "offline" | "forbidden";
   compact?: boolean;
 }
 
@@ -47,6 +47,7 @@ const VARIANT_ICON_TONE: Record<NonNullable<EmptyStateProps["variant"]>, string>
   filtered: "text-muted-foreground/40",
   error: "text-destructive/60",
   offline: "text-warning/60",
+  forbidden: "text-warning/60",
 };
 
 function EmptyState({
