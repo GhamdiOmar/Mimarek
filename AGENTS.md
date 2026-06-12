@@ -33,6 +33,7 @@
 - If something goes sideways, STOP and re-plan immediately.
 - Write detailed specs upfront to reduce ambiguity.
 - Use subagents liberally to keep main context window clean — one task per subagent for focused execution.
+- On non-trivial tasks, query the Graphify graph (§ 10.1) before cold-reading files — and pass subagents the relevant graph slice so they read narrowly.
 
 ### 3.3 Self-Improvement Loop
 - After ANY correction from the user, update AGENTS.md with the lesson learned.
@@ -97,6 +98,7 @@ Before `git tag`, `git push origin vX.Y.Z`, or `gh release create`, ALL of the f
    - 4 screenshots: light-LTR, light-RTL, dark-LTR, dark-RTL.
    - `preview_console_logs` → zero errors.
    - Keyboard Tab-through — focus ring visible on every interactive target.
+   - Derive the touched-route list from the Graphify graph (§ 10.3), not by guess — a god-node change has a wider radius than it looks.
 4. Mobile viewport pass (`preview_resize` 375×812) on at least 3 touched routes — tap targets ≥ 44×44 confirmed visually, bottom sheets render correctly, tables → cards.
 5. Any claim-specific verification the plan calls out (e.g., "CRM PII renders as `******4567` in Kanban + drawer + list + picker").
 6. **The screenshots and console output are posted in the chat before the tag command runs.** Not summarized — posted.
@@ -1133,6 +1135,7 @@ All use bilingual labels, native Arabic/English placeholders, full RTL, and serv
 
 ## 7. Release Process (After Every Implementation)
 - After completing any implementation task: commit, update CHANGELOG.md, push to GitHub, verify CI passes.
+- Refresh the Graphify graph (`/graphify . --update`, § 10.2) as part of shipment so the next session's queries reflect what was merged.
 - Tag releases with semantic versioning (major.minor.patch).
 - Create GitHub release with release notes summarizing changes.
 - Never leave uncommitted work at the end of a task session.
@@ -1236,4 +1239,30 @@ When verifying access-control work:
 
 ---
 
-*Last consolidated: 2026-04-17. When this file and `packages/ui/src/globals.css` diverge, reconcile — don't duplicate.*
+## 10. Knowledge Graph (Graphify) — Query Before, Update After
+
+A Graphify knowledge graph of this repo lives at `graphify-out/` (god nodes, community detection, BFS/DFS query). It is a **local, gitignored artifact** — not shared infra; each machine maintains its own. Invocation pipeline + env caveats (uv-tool Python path, UTF-8 BOM gotcha) live in `~/.claude/skills/graphify/SKILL.md` and the `project-graphify-map` memory — reference them, do not duplicate here.
+
+### 10.1 Query before reading (non-trivial tasks)
+- Before cold-reading files for any 3+-step or architectural task, query the graph: `/graphify query "..."`, `/graphify path "A" "B"`, `/graphify explain "X"`.
+- Use it to scope, not to conclude. The graph points you at files to read; it is never the final word (see § 10.4).
+- If `graphify-out/` is missing or stale, skip it — never block work on it.
+
+### 10.2 Update after shipping
+- On any merge/release that changes code, refresh: `/graphify . --update`. Code-only changes skip the LLM step (fast, free); doc/image changes trigger semantic re-extraction. This is a step in § 7, not an afterthought.
+- Prefer `/graphify . --watch` during active dev sessions — it rebuilds on save with no LLM call, so the graph never drifts behind HEAD.
+
+### 10.3 High-value Mimaric uses
+- **§ 8 access-model leak audit.** The graph already holds the permission topology (`requirePermission` ~243 edges, `isSystemRole` ~36, `logAuditEvent` ~91). A `platform`-audience surface that reaches a tenant action, or a tenant action with no edge to a guard, is a structural leak — surface it with `path`/surprising-connections, then verify by Read (§ 3.8).
+- **§ 3.9 release blast-radius.** Before picking "top 6 touched routes" to screenshot, query what actually renders the thing you changed. Changing a god node (`requirePermission`, `useLanguage`) has a large, non-obvious radius.
+- **§ 3.1 orphan detection.** Page nodes with no incoming edge from `nav-items`/sidebar/Cmd-K are discoverability hazards (the `hiddenFromNav` marketplace incident). Un-wired server actions show the same way.
+- **Migrations** (DataTable→TanStack § 6.10, shell decommission, full `t()` rollout): `get_neighbors` on the target node *is* the migration checklist.
+
+### 10.4 Hard limits — do not overrate the graph
+- **Never treat a missing edge as proof of a missing guard, permission, or test.** A "no edge" is a suspect to verify by direct Read/Grep — reporting it as confirmed absence is exactly the false finding § 3.8 forbids.
+- **The graph does not render UI.** It catches zero dark-mode/RTL regressions. The § 3.9 preview walk + 4-theme screenshots remain mandatory and irreplaceable.
+- **A stale graph is confidently wrong.** If `graphify-out/` predates the current branch's commits, its absence-claims and topology are unreliable for the changed areas — refresh (§ 10.2) before relying on it for an audit.
+
+---
+
+*Last consolidated: 2026-04-17 (Graphify § 10 added 2026-06-12). When this file and `packages/ui/src/globals.css` diverge, reconcile — don't duplicate.*
