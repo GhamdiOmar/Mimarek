@@ -70,6 +70,9 @@ jobs:
       - name: Run Type Checking
         run: npm run check-types
 
+      - name: Run Unit Tests (Vitest)
+        run: npx turbo run test:unit
+
       - name: Build Project
         run: npm run build
 
