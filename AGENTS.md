@@ -113,21 +113,9 @@ Before `git tag`, `git push origin vX.Y.Z`, or `gh release create`, ALL of the f
 
 **Violating this rule is worse than missing a feature.** A tagged release the team can't trust is a compounding liability. If in doubt, ship the feature branch as a preview deployment for review and defer the tag.
 
-### 3.9.1 Approved Release-Gating Model (Omar, 2026-05-17)
+### 3.9.1 Release-Gating — historical note (journey-first, v4.3.1–v4.6.0)
 
-**Context:** The journey-first transformation ships one tagged release per phase. The only available database is production Supabase — a local preview would require a destructive `db push` to prod, so the §3.9 preview walk cannot be run per-phase. v4.3.1–v4.6.0 shipped CI-gated *before* this was surfaced and codified; this subsection makes the SoT honest rather than letting process and documentation silently diverge.
-
-**The approved model — supersedes nothing in §3.9; it scopes *when* the full walk is mandatory:**
-
-1. **Per-phase release (`vX.Y.Z` within the transformation): CI is the gate.** Acceptable ONLY because CI runs the *full* path, not a partial one. Before tag/merge, the PR's CI run MUST be genuinely green AND MUST include: production `next build` · full Playwright suite · ephemeral-Postgres `prisma db push --accept-data-loss` + seed · lint · typecheck · cspell · GitGuardian. Read the actual run logs (§3.8), not the badge. A CI run that skipped build or Playwright does NOT satisfy this.
-2. **Disclosure is mandatory.** Every CI-gated release's notes MUST state, in the Verification section, that the UI was **not** preview-verified and the §3.9 walk is deferred to the milestone. No silent substitution — ever.
-3. **Milestone tag: the full §3.9 walk is mandatory and non-deferrable.** Before the designated milestone release (end of the journey-first transformation, or any release explicitly marked a milestone), ALL six §3.9 steps run against a disposable/local DB and the screenshots + console output are posted in chat before the tag command. If preview tooling still cannot run at milestone time → STOP and surface, exactly as §3.9 states. The CI-substitution does NOT extend to the milestone.
-
-**Hard boundaries on this exception:**
-- Applies ONLY to per-phase releases of the journey-first transformation. Any other release, or any change outside the transformation, follows §3.9 in full.
-- Does NOT relax §3.4 (verification before *done*) for non-release work — code must still be §3.8-verified and typecheck-green.
-- Does NOT permit tagging on a partial/failed CI run, or on typecheck-green alone (that was the original v4.1.0 incident — still forbidden).
-- The moment a safe preview DB becomes available, this exception lapses and §3.9 applies per-phase again.
+The "journey-first transformation" CI-as-gate exception that once lived here is **lapsed and removed (2026-06-12).** It scoped a per-phase carve-out — CI-green substituting for the §3.9 preview walk — to releases v4.3.1–v4.6.0, all shipped 2026-05-17. That transformation ended at v4.6.0; we are now at v4.16.x, and the exception's own lapse condition ("the moment a safe preview DB becomes available") has been met — UI is now preview-verified via the MCP browser against a local `next build && next start` (see the `reference_release_screenshot_verification` memory). **§3.9 applies in full to every release; there is no active CI-as-gate exception.** The full prior text is in git history if ever needed.
 
 ---
 
@@ -143,7 +131,7 @@ Before `git tag`, `git push origin vX.Y.Z`, or `gh release create`, ALL of the f
 - **Schema change — `paidAmount Decimal?` on `RentInstallment`**: Added in v4.2.1 stabilization. This field tracks partial payment amounts for installments. It was previously only on `PaymentPlanInstallment`. Any new code that records rent payments must write `paidAmount` alongside `status` updates.
 - **`"use server"` files may ONLY export `async` functions (learned 2026-05-17).** No `export const`/object/schema/`export default` non-function — Next.js throws "can only export async functions, found object" and the whole route's server-action bundle collapses at runtime. `tsc` and Playwright do NOT catch it. Keep constants/zod-schemas module-private (no `export`) or move them to a non-`"use server"` module. Bit `document-requirements.ts` in v4.7.0 (broke the Contracts page); found only by real-DB UI verification — reaffirms §3.9: a green CI does not mean a working UI.
 - Prisma Decimal serialization: use `JSON.parse(JSON.stringify())` in server actions
-- Button component needs inline `style={{ display: "inline-flex" }}` to override Tailwind v4 preflight
+- Buttons need `display: inline-flex` to override Tailwind v4 preflight (which resets `<button>` to `inline-block`). Handled globally by the `@layer base { button { display: inline-flex; align-items: center; justify-content: center; } }` rule in `packages/ui/src/globals.css` — NOT a per-component inline `style` prop.
 - CI needs `DATABASE_URL`, `AUTH_SECRET`, `AUTH_TRUST_HOST` env vars at job level
 - Turbo needs `globalEnv` declaration for env vars to pass through to build tasks
 - **Git worktree / branch / PR setup (env + deps) — learned 2026-05-17.** A git worktree does NOT inherit the gitignored env or its own `node_modules`. When a worktree/branch/PR task needs a DB or a full `build`/`preview`: (1) load env from the **repository root's** `.env.local` (the main checkout *outside* the worktree) into the build/preview *process env* (parse + export it) — do NOT copy it into the worktree or commit it (`.env*` is gitignored; never print or push the secrets); (2) run `npm install` in the worktree first — worktrees start with no/partial `node_modules`, so a declared dependency (e.g. `nodemailer`) can be missing and break `next build` even though `tsc --noEmit` still passes.
@@ -377,7 +365,7 @@ Shadows are purple-deep tinted (not neutral black) to carry brand identity.
 
 **Non-directional (never mirror):** `Heart`, `Star`, `Bell`, `Search`, `X`, `Check`, `Settings`, `Home`, `User`, `AlertTriangle`, media controls (Play/Pause), clocks.
 
-**Pattern — use the `DirectionalIcon` wrapper (to be built):**
+**Pattern — use the `DirectionalIcon` wrapper** (built: `packages/ui/src/components/DirectionalIcon.tsx`):
 ```tsx
 <DirectionalIcon icon={ChevronRight} />
 // Auto-flips via CSS when inside dir="rtl"
@@ -715,7 +703,7 @@ No one-dashboard-fits-all. Users see only their role's metrics by default.
 
 ### 6.10 Tables & Data Grids
 
-**Target primitive:** TanStack Table v8 (planned migration from the current custom `DataTable`).
+**Primitive:** `DataTable` (`packages/ui/src/components/DataTable.tsx`) — built on TanStack Table v8 (`useReactTable`/`getCoreRowModel`/`flexRender`; `@tanstack/react-table` is a declared `@repo/ui` dep). The migration from the old custom table is complete.
 
 #### 6.10.1 Required Features
 
@@ -952,7 +940,7 @@ Use `Intl.DateTimeFormat(locale, { calendar: "islamic" })` for Hijri. See `apps/
 
 #### 6.15.4 Directional Icon Pattern
 
-Build once, use everywhere:
+Built — use everywhere:
 ```tsx
 // packages/ui/src/components/DirectionalIcon.tsx
 export function DirectionalIcon({ icon: Icon, className, ...rest }) {
@@ -1116,9 +1104,9 @@ apps/web/public/assets/brand/
 └── mimaric-favicon.png                     ← 32×32 mark crop
 ```
 
-### 6.19 Saudi-Specific Inputs (to build)
+### 6.19 Saudi-Specific Inputs
 
-These primitives live in `packages/ui/src/components/saudi/`:
+These primitives are **built** in `packages/ui/src/components/saudi/` (barrel-exported via its `index.ts`). Note the `<SARAmount>` input ships as `SARAmountInput.tsx`:
 
 | Component | Spec |
 |---|---|
