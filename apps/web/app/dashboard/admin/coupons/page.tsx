@@ -41,7 +41,7 @@ import {
   adminCreateCoupon,
   adminToggleCoupon,
 } from "../../../actions/coupons";
-import { getPlans } from "../../../actions/billing";
+import { getPlans } from "../../../../lib/server/plans";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 

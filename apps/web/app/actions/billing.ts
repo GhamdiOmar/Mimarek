@@ -7,29 +7,15 @@ import { logAuditEvent } from "../../lib/audit";
 import { ROUTES } from "../../lib/routes";
 import { createSubscription, transitionSubscription } from "../../lib/payment/subscription-machine";
 import { invalidateEntitlements } from "../../lib/entitlements";
-import { unstable_cache } from "next/cache";
 import { getNextSequenceValue, GLOBAL_SEQUENCE_SCOPE } from "../../lib/sequence";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Plans (Public)
 // ═══════════════════════════════════════════════════════════════════════════════
 
-/**
- * Get all public plans with their entitlements.
- * Cached for 5 minutes — plans rarely change.
- */
-export const getPlans = unstable_cache(
-  async () => {
-    const plans = await db.plan.findMany({
-      where: { isPublic: true },
-      include: { entitlements: true },
-      orderBy: { sortOrder: "asc" },
-    });
-    return JSON.parse(JSON.stringify(plans));
-  },
-  ["public-plans"],
-  { tags: ["plans"], revalidate: 300 }
-);
+// getPlans has been moved to lib/server/plans.ts — it must NOT live in a
+// "use server" file because unstable_cache returns a non-async-function export,
+// which Next.js rejects at runtime (AGENTS.md §4 landmine).
 
 /**
  * Get a single plan by slug.

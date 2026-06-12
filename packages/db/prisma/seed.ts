@@ -358,42 +358,47 @@ async function main() {
     priceMonthly: 1499, priceAnnual: 14390, trialDays: 14, isPublic: true, isDefault: false, sortOrder: 2,
   }, enterpriseEntitlements);
 
-  // Subscription for Mimaric org (Professional, ACTIVE)
+  // Subscription for Mimaric org (Professional, ACTIVE).
+  // Idempotent: a prior test run may have mutated the seed subscription's status
+  // (e.g. to PAST_DUE), which the old `findFirst(status in ACTIVE/TRIALING)` guard
+  // would miss — then blindly create a SECOND active sub, drifting billing state
+  // across runs. Find ANY sub for the org and normalize it back to the canonical
+  // ACTIVE state; only create when none exists. Never duplicates.
+  const mimaricSub = {
+    planId: professionalPlan.id,
+    status: "ACTIVE" as const,
+    billingCycle: "ANNUAL" as const,
+    currentPeriodStart: new Date(),
+    currentPeriodEnd: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+    nextBillingDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+    priceAtRenewal: 4790,
+  };
   const existingSub = await prisma.subscription.findFirst({
-    where: { organizationId: org.id, status: { in: ["ACTIVE", "TRIALING"] } },
+    where: { organizationId: org.id },
   });
-  if (!existingSub) {
-    await prisma.subscription.create({
-      data: {
-        organizationId: org.id,
-        planId: professionalPlan.id,
-        status: "ACTIVE",
-        billingCycle: "ANNUAL",
-        currentPeriodStart: new Date(),
-        currentPeriodEnd: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
-        nextBillingDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
-        priceAtRenewal: 4790,
-      },
-    });
+  if (existingSub) {
+    await prisma.subscription.update({ where: { id: existingSub.id }, data: mimaricSub });
+  } else {
+    await prisma.subscription.create({ data: { organizationId: org.id, ...mimaricSub } });
   }
 
-  // Subscription for Dummy org (Starter, ACTIVE)
+  // Subscription for Dummy org (Starter, ACTIVE) — idempotent, same rationale as above.
+  const dummySub = {
+    planId: starterPlan.id,
+    status: "ACTIVE" as const,
+    billingCycle: "ANNUAL" as const,
+    currentPeriodStart: new Date(),
+    currentPeriodEnd: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+    nextBillingDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+    priceAtRenewal: 0,
+  };
   const existingDummySub = await prisma.subscription.findFirst({
-    where: { organizationId: dummyOrg.id, status: { in: ["ACTIVE", "TRIALING"] } },
+    where: { organizationId: dummyOrg.id },
   });
-  if (!existingDummySub) {
-    await prisma.subscription.create({
-      data: {
-        organizationId: dummyOrg.id,
-        planId: starterPlan.id,
-        status: "ACTIVE",
-        billingCycle: "ANNUAL",
-        currentPeriodStart: new Date(),
-        currentPeriodEnd: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
-        nextBillingDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
-        priceAtRenewal: 0,
-      },
-    });
+  if (existingDummySub) {
+    await prisma.subscription.update({ where: { id: existingDummySub.id }, data: dummySub });
+  } else {
+    await prisma.subscription.create({ data: { organizationId: dummyOrg.id, ...dummySub } });
   }
 
   console.log("Created plans (Starter, Professional, Enterprise) & subscriptions");

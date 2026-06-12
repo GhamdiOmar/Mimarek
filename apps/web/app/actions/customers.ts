@@ -8,6 +8,7 @@ import { logAuditEvent } from "../../lib/audit";
 import { encryptCustomerData, decryptCustomerData, decryptCustomerList } from "../../lib/pii-crypto";
 import { maskCustomerPii } from "../../lib/pii-masking";
 import { hashForSearch } from "../../lib/encryption";
+import { normalizeSaudiPhoneE164 } from "../../lib/phone";
 
 const UpdateCustomerStatusSchema = z.object({
   status: z.string().min(1),
@@ -196,9 +197,13 @@ export async function getCustomer(customerId: string) {
   const decrypted = decryptCustomerData(customer);
   const masked = maskCustomerPii(decrypted, hasPiiAccess);
 
+  // Derive a safe, normalized E.164 phone for contact controls.
+  // Masked PII (******4567) and ciphertext both normalize to null → controls are omitted.
+  const contactPhoneE164 = normalizeSaudiPhoneE164(masked.phone as string | null | undefined);
+
   logAuditEvent({ userId: session.userId, userEmail: session.email, userRole: session.role, action: hasPiiAccess ? "READ_PII" : "READ", resource: "Customer", resourceId: customerId, organizationId: session.organizationId });
 
-  return JSON.parse(JSON.stringify(masked));
+  return JSON.parse(JSON.stringify({ ...masked, contactPhoneE164 }));
 }
 
 export async function updateCustomer(
@@ -303,11 +308,16 @@ export async function getCustomers(filters?: {
 
   // Decrypt then mask based on permissions
   const decrypted = decryptCustomerList(results);
-  const masked = decrypted.map((c) => maskCustomerPii(c, hasPiiAccess));
+  const maskedList = decrypted.map((c) => {
+    const masked = maskCustomerPii(c, hasPiiAccess);
+    // Derive safe E.164 for each customer — masked PII normalizes to null.
+    const contactPhoneE164 = normalizeSaudiPhoneE164(masked.phone as string | null | undefined);
+    return { ...masked, contactPhoneE164 };
+  });
 
   logAuditEvent({ userId: session.userId, userEmail: session.email, userRole: session.role, action: hasPiiAccess ? "READ_PII" : "READ", resource: "Customer", metadata: { filters, count: results.length }, organizationId: session.organizationId });
 
-  return JSON.parse(JSON.stringify(masked));
+  return JSON.parse(JSON.stringify(maskedList));
 }
 
 export async function deleteCustomer(customerId: string) {
