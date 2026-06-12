@@ -26,8 +26,15 @@ export function LastUpdatedAgo({
 }: LastUpdatedAgoProps) {
   const [, setTick] = React.useState(0);
   const [refreshing, setRefreshing] = React.useState(false);
+  // Relative-time strings depend on `Date.now()`, which differs between the
+  // server render and client hydration. Gate the "ago" phrase behind a mounted
+  // flag so SSR + first client render are identical (no hydration mismatch);
+  // the live phrase appears post-mount. Required now that timestamps arrive at
+  // SSR time from Server Component dashboards.
+  const [mounted, setMounted] = React.useState(false);
 
   React.useEffect(() => {
+    setMounted(true);
     const id = window.setInterval(() => setTick((n) => n + 1), tickMs);
     return () => window.clearInterval(id);
   }, [tickMs]);
@@ -38,12 +45,21 @@ export function LastUpdatedAgo({
       ? "ar"
       : "en");
 
-  const ago = formatDistanceToNow(new Date(timestamp), {
-    addSuffix: true,
-    locale: effLocale === "ar" ? arSA : enUS,
-  });
+  const ago = mounted
+    ? formatDistanceToNow(new Date(timestamp), {
+        addSuffix: true,
+        locale: effLocale === "ar" ? arSA : enUS,
+      })
+    : null;
 
-  const label = effLocale === "ar" ? `آخر تحديث ${ago}` : `Updated ${ago}`;
+  const label =
+    effLocale === "ar"
+      ? ago
+        ? `آخر تحديث ${ago}`
+        : "آخر تحديث"
+      : ago
+        ? `Updated ${ago}`
+        : "Updated";
 
   const handleClick = async () => {
     if (!onRefresh) return;

@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@repo/db";
-import { startOfMonth, subDays } from "date-fns";
+import { startOfMonth, endOfMonth, subDays } from "date-fns";
 import { requirePermission } from "../../lib/auth-helpers";
 
 export type LeasingStats = {
@@ -12,13 +12,25 @@ export type LeasingStats = {
   pipeline: Array<{ stage: string; count: number; amount: number }>;
 };
 
-/** Leasing dashboard KPIs + pipeline funnel data. */
-export async function getLeasingStats(): Promise<LeasingStats> {
+/**
+ * Leasing dashboard KPIs + pipeline funnel data.
+ *
+ * @param range Optional reporting window (from the dashboard date picker). When
+ * provided, `leasesSignedMTD` (a flow metric — leases created in the window)
+ * reflects the chosen window; when absent it defaults to month-to-date.
+ * `pendingApplications`, `activeLeases`, `expiringSoon`, and the pipeline
+ * funnel are current-state stock metrics and are not window-bound.
+ */
+export async function getLeasingStats(range?: {
+  from: Date;
+  to: Date;
+}): Promise<LeasingStats> {
   const session = await requirePermission("dashboard:read");
   const orgId = session.organizationId;
 
   const now = new Date();
-  const mtdStart = startOfMonth(now);
+  const periodStart = range?.from ?? startOfMonth(now);
+  const periodEnd = range?.to ?? endOfMonth(now);
   const in30Days = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
   const [leasesSignedMTD, pendingApplications, activeLeases, expiringSoon, reservations] =
@@ -27,7 +39,7 @@ export async function getLeasingStats(): Promise<LeasingStats> {
         where: {
           customer: { organizationId: orgId },
           status: "ACTIVE",
-          createdAt: { gte: mtdStart },
+          createdAt: { gte: periodStart, lte: periodEnd },
         },
       }),
       db.reservation.count({

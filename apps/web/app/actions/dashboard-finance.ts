@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@repo/db";
-import { startOfMonth } from "date-fns";
+import { startOfMonth, endOfMonth } from "date-fns";
 import { requirePermission } from "../../lib/auth-helpers";
 
 export type FinanceStats = {
@@ -21,22 +21,35 @@ function effectivePaid(r: { status: string; amount: any; paidAmount: any }): num
     : Number(r.paidAmount ?? 0);
 }
 
-/** Finance dashboard KPIs — rent roll + AR aging. */
-export async function getFinanceStats(): Promise<FinanceStats> {
+/**
+ * Finance dashboard KPIs — rent roll + AR aging.
+ *
+ * @param range Optional reporting window (from the dashboard date picker). When
+ * provided, the collected/expected headline reflects installments due within
+ * the window; when absent it defaults to month-to-date. AR aging + unpaid /
+ * overdue counts are always current-state ("outstanding right now"), so they
+ * are intentionally not window-bound.
+ */
+export async function getFinanceStats(range?: {
+  from: Date;
+  to: Date;
+}): Promise<FinanceStats> {
   const session = await requirePermission("dashboard:read");
   const orgId = session.organizationId;
 
   const now = new Date();
-  const mtdStart = startOfMonth(now);
-  const mtdEnd = new Date(mtdStart.getFullYear(), mtdStart.getMonth() + 1, 1);
+  // Default reporting window = month-to-date; endOfMonth keeps the `lte` upper
+  // bound inclusive-correct (no double-count of next-month's first instant).
+  const periodStart = range?.from ?? startOfMonth(now);
+  const periodEnd = range?.to ?? endOfMonth(now);
 
   const [mtdInstallments, unpaidInstallments, unpaidCount, overdueCount] =
     await Promise.all([
-      // All MTD rows (no status filter) — effectivePaid handles the math
+      // All rows due in the reporting window — effectivePaid handles the math
       db.rentInstallment.findMany({
         where: {
           lease: { customer: { organizationId: orgId } },
-          dueDate: { gte: mtdStart, lt: mtdEnd },
+          dueDate: { gte: periodStart, lte: periodEnd },
         },
         select: { amount: true, paidAmount: true, status: true },
       }),

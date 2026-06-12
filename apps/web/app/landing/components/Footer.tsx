@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Globe } from "lucide-react";
 import { Button } from "@repo/ui";
 import { t as translations } from "../translations";
+import { openCookiePreferences } from "../../../lib/consent";
 
 export default function Footer({
   lang,
@@ -38,6 +39,7 @@ export default function Footer({
       links: [
         { label: t.termsOfService, href: "#" },
         { label: t.privacyPolicy, href: "#" },
+        { label: lang === "ar" ? "سياسة ملفات تعريف الارتباط" : "Cookie Policy", href: "/cookie-policy" },
       ],
     },
     {
@@ -116,10 +118,17 @@ export default function Footer({
         </div>
 
         {/* Bottom bar */}
-        <div className="mt-10 border-t border-border pt-6">
+        <div className="mt-10 flex flex-col items-center gap-3 border-t border-border pt-6 sm:flex-row sm:justify-between">
           <p className="text-center text-xs text-muted-foreground">
             &copy; {new Date().getFullYear()} Mimaric. {t.allRightsReserved}
           </p>
+          <button
+            type="button"
+            onClick={openCookiePreferences}
+            className="text-xs text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
+          >
+            {lang === "ar" ? "إعدادات ملفات تعريف الارتباط" : "Cookie settings"}
+          </button>
         </div>
       </div>
     </footer>

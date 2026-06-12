@@ -1,5 +1,47 @@
 # Changelog — Mimaric PropTech
 
+## [4.16.0] — 2026-06-12 — RSC dashboards + t() i18n facade + PDPL cookie consent
+
+Converts all 8 dashboards from client-side mount-fetch to **React Server Components** (server-rendered first paint, no per-mount server-action waterfall), introduces an incremental **`t()` i18n facade** backed by a server-readable language cookie, and ships a **PDPL-compliant cookie-consent manager** that gates GA4/GTM analytics. The dominant remaining latency lever (DB region move) is ops, tracked separately.
+
+### i18n facade + server-readable language (Stage 0 + 1)
+
+- **Language is now a cookie**, not localStorage-only. `LanguageProvider` writes `mimaric-lang` (functional cookie) + localStorage, and accepts a server-threaded `initialLang` so the client hydrates with the correct value — eliminating the prior AR→EN flash for English users. A one-time localStorage→cookie migration covers existing users (at most one flash, once).
+- **Root layout renders `<html lang dir>` dynamically** from the cookie (was hardcoded `ar`/`rtl`).
+- **`t(ar, en)` facade** — one signature on both runtimes: `useLanguage().t` (client) and `getT()`/`getLang()` from the new `apps/web/lib/i18n.ts` (server). Adopted in touched files only; the 2,000+ inline-ternary sites migrate opportunistically, not in a big bang.
+
+### RSC dashboard conversion (Stage 2 + 3)
+
+- All 8 dashboards split into an `async` Server Component (auth + one server-side `Promise.all` + `searchParams`) and a thin `"use client"` view (charts, picker, refresh). The initial 3–13 server-action POSTs per dashboard collapse to a single server render.
+- **Date picker now filters (URL-synced, §6.10.1).** On the index/finance/leasing/maintenance dashboards the picker was decorative; it now writes `?from=&to=`, the Server Component re-renders, and the range scopes the period (flow) metric while current-state (stock) metrics stay live. The active window is shown in the KPI label (no silent half-filter). Admin keeps its existing URL-sync.
+- **Index role-redirect moved server-side** — `isSystemRole → /dashboard/admin`; `LEASING/AGENT → leasing`, `FINANCE → finance`, `TECHNICIAN → maintenance` via `redirect()`, removing the prior client paint-then-bounce flash.
+- **Manual refresh** = `router.refresh()` in a transition (re-runs the server render). **units/crm** keep their list/Kanban/dialog interactivity + optimistic mutations; only the initial fetch moved server-side. **CRM PII masking unchanged** (same `getCustomers` masked path).
+- Fixed a latent `LastUpdatedAgo` hydration mismatch (relative time now mounted-gated) — surfaced once timestamps arrive at SSR time.
+
+### PDPL cookie consent (Stage 0.5)
+
+- **Block-until-consent**: GA4/GTM is not injected until the user grants Analytics — zero `googletagmanager.com` calls fire pre-consent (advanced Consent Mode v2 default-denied still pings Google, so it was rejected). `AnalyticsProvider` sets Consent Mode v2 signals (`analytics_storage` granted on opt-in; all `ad_*` denied — no ads stack).
+- Granular consent banner (`ResponsiveDialog`, bilingual, equal-prominence Accept/Reject, preferences sheet with Switch toggles), choice persisted as a versioned/timestamped/locale-stamped `mimaric-consent` cookie (documented consent) **and** a server-side `ConsentLog` row (IP minimized to /24) for defensible PDPL auditability. New bilingual `/cookie-policy` page + footer "Cookie settings" re-open.
+
+### Deferred (with rationale)
+
+- **Permission-denial → HTTP 403.** A tenant user direct-URL-navigating to a route they lack permission for (e.g. `FINANCE` → `/dashboard/crm`, which lacks `crm:read`) sees the generic route error boundary rather than a friendly "no access" state. Pre-existing authz behavior; a clean 403 needs the action-wide typed-result contract change. Nav is permission-filtered, so this only affects direct-URL access.
+- **"User has no organization" server-log noise** when a system user (org=null) transiently touches a shared dashboard surface — pre-existing (documented in `e2e/marketplace.cross-org.spec.ts`), unrelated to this release; same 403/typed-result follow-up.
+- **DB region migration (Sydney → Bahrain)** — the dominant felt-latency lever, but an ops/runbook task.
+- Full 65-file `t()` migration (incremental by design).
+
+### Verification (§3.9)
+
+- **Full production build** (`turbo run build`) green.
+- **Runtime (prod server, preview MCP browser):** all 8 dashboards server-render; finance verified across **light/dark × AR/EN** (cookie-driven `<html dir>` flip confirmed); **date filter re-renders server-side** via both direct URL (0 → 48k SAR) and picker click; index picker filters (0 MTD → 3.0M wide); **role-separation matrix (§8)** — system@ → admin and **blocked** from finance/crm; finance@ → finance and **blocked** from admin; admin@ → index; **consent** — zero GA before consent, documented cookie + `ConsentLog` row written, persists across reload; **CRM PII masked** (`***2233`); mobile 375×812 single-column; **browser console error-free** across the sweep.
+
+### Upgrade notes
+
+- **Manual SQL (per AGENTS.md §4):** after deploy, run the `ConsentLog` line in `packages/db/sql/2026-06-enable-rls.sql` in the Supabase SQL Editor — the new table ships RLS-disabled until then (re-triggers the `rls_disabled_in_public` advisor). `prisma db push` already created the table.
+- No new env vars. No breaking changes.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimaric/compare/v4.15.1...v4.16.0
+
 ## [4.15.1] — 2026-06-09 — Fixes: RTL theme-toggle thumb + admin marketplace i18n
 
 - **Theme toggle (RTL):** the sun/moon thumb hung ~14px off the leading edge of its track in Arabic (RTL) because it mixed a logical `ms-1` margin with a physical `translate-x` slide. Reworked to position the thumb via the logical `inset-inline-start` property (RTL-safe by construction) with `-translate-y-1/2` for vertical centering only. Verified inside-track + vertically centered in LTR + RTL × light + dark.
