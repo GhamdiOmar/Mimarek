@@ -202,6 +202,10 @@ test("cross-org marketplace: publish → browse → inquire → convert → sett
   }
 
   await clickVisible(buyer, /إبداء الاهتمام|Express Interest/i);
+  // P1-1 (v4.18.0): the inquiry now requires a valid Saudi mobile — the seller-side
+  // CRM customer is created with an encrypted phone + blind-index hash, no "—"
+  // placeholder. Fill it before confirming, or confirmMarketplaceInterest throws.
+  await buyer.locator('input[type="tel"]').first().fill("0501234567");
   await clickVisible(buyer, /تأكيد الاهتمام|Confirm Interest/i);
   await expect(
     buyer.getByText(/تم إرسال استفسارك بنجاح|inquiry was sent successfully/i).first(),
