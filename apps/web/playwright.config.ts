@@ -85,6 +85,11 @@ export default defineConfig({
       name: 'marketplace-tests',
       testMatch: /marketplace\..*\.spec\.ts/,
       use: { ...devices['Desktop Chrome'] },
+      // The cross-org flow is a single long test (publish + 16 theme screenshots
+      // + inquire + convert + settlement + DB asserts) — far more than the 30s
+      // global per-test timeout. It was silently skipped before P4-1, so this was
+      // never surfaced. Give the project a generous per-test budget.
+      timeout: 180_000,
     },
   ],
 
