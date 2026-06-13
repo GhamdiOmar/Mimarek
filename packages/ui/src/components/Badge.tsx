@@ -16,7 +16,7 @@ const badgeVariants = cva(
         overdue: "bg-destructive/10 text-destructive border-transparent",
         draft: "bg-muted text-muted-foreground border-transparent",
         /* Generic semantic */
-        success: "bg-success/10 text-success border-transparent",
+        success: "bg-success/10 text-success-strong border-transparent",
         info: "bg-info/10 text-info border-transparent",
         warning: "bg-warning/10 text-warning border-transparent",
         pending: "bg-accent/10 text-accent border-transparent",

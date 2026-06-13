@@ -103,7 +103,7 @@ export default function InvoicesPage() {
   const statusConfig: Record<string, { color: string; labelAr: string; labelEn: string }> = {
     DRAFT: { color: "bg-muted text-muted-foreground", labelAr: "مسودة", labelEn: "Draft" },
     ISSUED: { color: "bg-info/15 text-info", labelAr: "صادرة", labelEn: "Issued" },
-    PAID: { color: "bg-success/15 text-success", labelAr: "مدفوعة", labelEn: "Paid" },
+    PAID: { color: "bg-success/15 text-success-strong", labelAr: "مدفوعة", labelEn: "Paid" },
     OVERDUE: { color: "bg-destructive/15 text-destructive", labelAr: "متأخرة", labelEn: "Overdue" },
     CANCELED: { color: "bg-muted text-muted-foreground", labelAr: "ملغاة", labelEn: "Canceled" },
     REFUNDED: { color: "bg-primary/15 text-primary", labelAr: "مستردة", labelEn: "Refunded" },
@@ -162,7 +162,7 @@ export default function InvoicesPage() {
         cell: ({ row }: any) =>
           row.original.issuedAt
             ? new Date(row.original.issuedAt).toLocaleDateString(
-                lang === "ar" ? "ar-SA" : "en-US",
+                lang === "ar" ? "ar-SA-u-nu-latn" : "en-US",
               )
             : "—",
         enableSorting: true,
@@ -263,7 +263,7 @@ export default function InvoicesPage() {
           <span key="issued" className="tabular-nums">
             {inv.issuedAt
               ? new Date(inv.issuedAt).toLocaleDateString(
-                  lang === "ar" ? "ar-SA" : "en-US",
+                  lang === "ar" ? "ar-SA-u-nu-latn" : "en-US",
                 )
               : "—"}
           </span>,
@@ -271,7 +271,7 @@ export default function InvoicesPage() {
             <span key="due" className="tabular-nums">
               {lang === "ar" ? "استحقاق" : "Due"}:{" "}
               {new Date(inv.dueDate).toLocaleDateString(
-                lang === "ar" ? "ar-SA" : "en-US",
+                lang === "ar" ? "ar-SA-u-nu-latn" : "en-US",
               )}
             </span>
           ) : null,
@@ -472,7 +472,7 @@ export default function InvoicesPage() {
                 <p className="font-medium text-foreground mt-0.5 tabular-nums">
                   {viewInvoice.issuedAt
                     ? new Date(viewInvoice.issuedAt).toLocaleDateString(
-                        lang === "ar" ? "ar-SA" : "en-US",
+                        lang === "ar" ? "ar-SA-u-nu-latn" : "en-US",
                       )
                     : "—"}
                 </p>
@@ -484,7 +484,7 @@ export default function InvoicesPage() {
                   </p>
                   <p className="font-medium text-foreground mt-0.5 tabular-nums">
                     {new Date(viewInvoice.dueDate).toLocaleDateString(
-                      lang === "ar" ? "ar-SA" : "en-US",
+                      lang === "ar" ? "ar-SA-u-nu-latn" : "en-US",
                     )}
                   </p>
                 </div>
@@ -644,7 +644,7 @@ export default function InvoicesPage() {
                 <div>
                   <p className="text-muted-foreground">{t.date}</p>
                   <p className="font-semibold text-foreground">
-                    {viewInvoice.issuedAt ? new Date(viewInvoice.issuedAt).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-US") : "—"}
+                    {viewInvoice.issuedAt ? new Date(viewInvoice.issuedAt).toLocaleDateString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-US") : "—"}
                   </p>
                 </div>
                 <div>
@@ -656,7 +656,7 @@ export default function InvoicesPage() {
                 {viewInvoice.dueDate && (
                   <div>
                     <p className="text-muted-foreground">{lang === "ar" ? "تاريخ الاستحقاق" : "Due Date"}</p>
-                    <p className="font-semibold text-foreground">{new Date(viewInvoice.dueDate).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-US")}</p>
+                    <p className="font-semibold text-foreground">{new Date(viewInvoice.dueDate).toLocaleDateString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-US")}</p>
                   </div>
                 )}
               </div>

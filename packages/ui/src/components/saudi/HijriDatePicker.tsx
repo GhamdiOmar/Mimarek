@@ -25,7 +25,7 @@ export interface HijriDatePickerProps {
 type Calendar = "greg" | "hijri";
 
 function formatGreg(d: Date, locale: "ar" | "en"): string {
-  return new Intl.DateTimeFormat(locale === "ar" ? "ar-SA" : "en-GB", {
+  return new Intl.DateTimeFormat(locale === "ar" ? "ar-SA-u-nu-latn" : "en-GB", {
     year: "numeric",
     month: "long",
     day: "numeric",

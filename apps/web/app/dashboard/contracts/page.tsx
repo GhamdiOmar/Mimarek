@@ -411,7 +411,7 @@ export default function ContractsPage() {
       cell: ({ row }) =>
         row.original.signedAt ? (
           <span className="text-sm text-muted-foreground">
-            {new Date(row.original.signedAt).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-SA")}
+            {new Date(row.original.signedAt).toLocaleDateString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-SA")}
           </span>
         ) : (
           <span className="text-muted-foreground/70">—</span>
@@ -495,7 +495,7 @@ export default function ContractsPage() {
       cell: ({ row }) =>
         row.original.lease?.startDate ? (
           <span className="text-sm text-muted-foreground">
-            {new Date(row.original.lease.startDate).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-SA")}
+            {new Date(row.original.lease.startDate).toLocaleDateString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-SA")}
           </span>
         ) : (
           <span className="text-muted-foreground/70">—</span>
@@ -507,7 +507,7 @@ export default function ContractsPage() {
       cell: ({ row }) =>
         row.original.lease?.endDate ? (
           <span className="text-sm text-muted-foreground">
-            {new Date(row.original.lease.endDate).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-SA")}
+            {new Date(row.original.lease.endDate).toLocaleDateString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-SA")}
           </span>
         ) : (
           <span className="text-muted-foreground/70">—</span>
@@ -1104,7 +1104,7 @@ export default function ContractsPage() {
                 <div className="col-span-2">
                   <p className="text-muted-foreground text-xs">{lang === "ar" ? "تاريخ التوقيع" : "Signed Date"}</p>
                   <p className="font-medium">
-                    {new Date(detailContract.signedAt).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-SA")}
+                    {new Date(detailContract.signedAt).toLocaleDateString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-SA")}
                   </p>
                 </div>
               )}

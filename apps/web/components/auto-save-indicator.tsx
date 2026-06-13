@@ -34,7 +34,7 @@ const LABELS = {
 const STATUS_STYLES: Record<SaveStatus, string> = {
   idle: "hidden",
   saving: "text-muted-foreground animate-pulse",
-  saved: "text-green-600 dark:text-green-400",
+  saved: "text-success-strong",
   error: "text-destructive",
 };
 

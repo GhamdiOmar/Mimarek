@@ -907,7 +907,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
           <div className="flex flex-wrap items-center justify-between gap-3 px-1">
             <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
               <span>{lang === "ar" ? "عرض" : "Showing"} <strong className="text-foreground">{filteredUnits.length}</strong> {lang === "ar" ? "وحدة" : "units"}</span>
-              <Badge variant="available" className="bg-success/10 text-success border-success/20">{unitStatusLabels.AVAILABLE?.[lang]} {statusCounts.available}</Badge>
+              <Badge variant="available" className="bg-success/10 text-success-strong border-success/20">{unitStatusLabels.AVAILABLE?.[lang]} {statusCounts.available}</Badge>
               <Badge variant="reserved" className="bg-primary/10 text-primary border-primary/20">{unitStatusLabels.RESERVED?.[lang]} {statusCounts.reserved}</Badge>
               <Badge variant="sold" className="bg-muted text-muted-foreground border-muted">{unitStatusLabels.SOLD?.[lang]}/{unitStatusLabels.RENTED?.[lang]} {statusCounts.sold + statusCounts.rented}</Badge>
               <Badge variant="draft" className="bg-warning/10 text-warning border-warning/20">{unitStatusLabels.MAINTENANCE?.[lang]} {statusCounts.maintenance}</Badge>
@@ -919,7 +919,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {filteredUnits.map((unit: any) => {
                 const statusChipClasses: Record<string, string> = {
-                  AVAILABLE: "bg-success/10 text-success border border-success/20",
+                  AVAILABLE: "bg-success/10 text-success-strong border border-success/20",
                   RESERVED: "bg-info/10 text-info border border-info/20",
                   SOLD: "bg-primary/10 text-primary border border-primary/20",
                   RENTED: "bg-secondary/10 text-secondary border border-secondary/20",

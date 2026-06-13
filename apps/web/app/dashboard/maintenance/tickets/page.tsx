@@ -364,7 +364,7 @@ export default function MaintenancePage() {
 
   function formatShortDate(d: string | Date | null | undefined): string {
     if (!d) return lang === "ar" ? "بدون موعد" : "No date";
-    return new Date(d).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-SA", {
+    return new Date(d).toLocaleDateString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-SA", {
       month: "short",
       day: "numeric",
     });

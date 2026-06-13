@@ -214,7 +214,7 @@ export default function AdminPlansPage() {
   function formatPrice(value: number | string): string {
     const num = Number(value);
     if (isNaN(num)) return "0";
-    return num.toLocaleString(lang === "ar" ? "ar-SA" : "en-US", {
+    return num.toLocaleString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-US", {
       minimumFractionDigits: 0,
       maximumFractionDigits: 2,
     });
@@ -381,7 +381,7 @@ export default function AdminPlansPage() {
       cell: ({ row }) => {
         const plan = row.original;
         return plan.isPublic ? (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-success/15 text-success">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-success/15 text-success-strong">
             <Eye className="w-3.5 h-3.5" />
             {t.public}
           </span>
@@ -449,7 +449,7 @@ export default function AdminPlansPage() {
         </div>
         <div className="flex flex-col items-end gap-2 shrink-0">
           {plan.isPublic ? (
-            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold bg-success/15 text-success">
+            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold bg-success/15 text-success-strong">
               <Eye className="w-3 h-3" />
               {t.public}
             </span>
@@ -512,7 +512,7 @@ export default function AdminPlansPage() {
         <div
           className={`flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium border ${
             feedback.type === "success"
-              ? "bg-success/10 text-success border-success/30"
+              ? "bg-success/10 text-success-strong border-success/30"
               : "bg-destructive/10 text-destructive border-destructive/30"
           }`}
         >
@@ -607,7 +607,7 @@ export default function AdminPlansPage() {
             <div
               className={`flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium border ${
                 feedback.type === "success"
-                  ? "bg-success/10 text-success border-success/30"
+                  ? "bg-success/10 text-success-strong border-success/30"
                   : "bg-destructive/10 text-destructive border-destructive/30"
               }`}
             >

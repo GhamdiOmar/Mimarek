@@ -410,7 +410,7 @@ export default function PaymentsPage() {
           return (
             <span className={`text-sm ${tone.dueDateClass}`}>
               {new Date(row.original.dueDate).toLocaleDateString(
-                lang === "ar" ? "ar-SA" : "en-SA",
+                lang === "ar" ? "ar-SA-u-nu-latn" : "en-SA",
               )}
             </span>
           );
@@ -478,7 +478,7 @@ export default function PaymentsPage() {
         ? STATUS_LABELS[entry.status]?.ar ?? entry.status
         : STATUS_LABELS[entry.status]?.en ?? entry.status;
     const dueLabel = new Date(entry.dueDate).toLocaleDateString(
-      lang === "ar" ? "ar-SA" : "en-SA",
+      lang === "ar" ? "ar-SA-u-nu-latn" : "en-SA",
     );
     const iconTone =
       entry.status === "PAID"

@@ -50,14 +50,14 @@ const PROPERTY_TYPE_LABELS: Record<string, { ar: string; en: string }> = {
 };
 
 const COMPLIANCE_LABELS: Record<string, { ar: string; en: string; cls: string }> = {
-  APPROVED: { ar: "موافق عليه", en: "Approved", cls: "bg-success/15 text-success" },
+  APPROVED: { ar: "موافق عليه", en: "Approved", cls: "bg-success/15 text-success-strong" },
   PENDING_REVIEW: { ar: "قيد المراجعة", en: "Pending Review", cls: "bg-warning/15 text-warning" },
   REJECTED: { ar: "مرفوض", en: "Rejected", cls: "bg-destructive/15 text-destructive" },
 };
 
 function formatSARLocal(amount: number | null, lang: "ar" | "en") {
   if (amount == null) return "—";
-  return new Intl.NumberFormat(lang === "ar" ? "ar-SA" : "en-SA", {
+  return new Intl.NumberFormat(lang === "ar" ? "ar-SA-u-nu-latn" : "en-SA", {
     style: "currency",
     currency: "SAR",
     maximumFractionDigits: 0,
@@ -332,7 +332,7 @@ export default function ListingDetailPage() {
         {listing.publishedAt && (
           <p className="text-xs text-muted-foreground">
             {lang === "ar" ? "تاريخ النشر:" : "Published:"}{" "}
-            {new Date(listing.publishedAt).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-GB")}
+            {new Date(listing.publishedAt).toLocaleDateString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-GB")}
           </p>
         )}
       </Card>

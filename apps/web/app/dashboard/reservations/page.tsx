@@ -419,7 +419,7 @@ export default function ReservationsPage() {
         cell: ({ row }) => (
           <span className="text-sm text-muted-foreground tabular-nums">
             {new Date(row.original.expiresAt).toLocaleDateString(
-              lang === "ar" ? "ar-SA" : "en-SA",
+              lang === "ar" ? "ar-SA-u-nu-latn" : "en-SA",
             )}
           </span>
         ),
@@ -1122,7 +1122,7 @@ export default function ReservationsPage() {
                 <div>
                   <p className="text-muted-foreground text-xs">{lang === "ar" ? "تاريخ الانتهاء" : "Expiry Date"}</p>
                   <p className="font-medium">
-                    {new Date(detailDeal.expiresAt).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-SA")}
+                    {new Date(detailDeal.expiresAt).toLocaleDateString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-SA")}
                   </p>
                 </div>
                 <div>
@@ -1132,7 +1132,7 @@ export default function ReservationsPage() {
                 <div>
                   <p className="text-muted-foreground text-xs">{lang === "ar" ? "تاريخ الإنشاء" : "Created"}</p>
                   <p className="font-medium">
-                    {new Date(detailDeal.createdAt).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-SA")}
+                    {new Date(detailDeal.createdAt).toLocaleDateString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-SA")}
                   </p>
                 </div>
               </div>

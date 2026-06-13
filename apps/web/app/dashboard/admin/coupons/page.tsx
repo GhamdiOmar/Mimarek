@@ -379,7 +379,7 @@ export default function CouponManagementPage() {
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return labels.noExpiry;
     return new Date(dateStr).toLocaleDateString(
-      lang === "ar" ? "ar-SA" : "en-US",
+      lang === "ar" ? "ar-SA-u-nu-latn" : "en-US",
       { year: "numeric", month: "short", day: "numeric" }
     );
   };
@@ -389,7 +389,7 @@ export default function CouponManagementPage() {
     if (coupon.type === "PERCENTAGE") {
       return `${val}%`;
     }
-    return `${val.toLocaleString(lang === "ar" ? "ar-SA" : "en-US")} ${labels.sar}`;
+    return `${val.toLocaleString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-US")} ${labels.sar}`;
   };
 
   const formatRedemptions = (coupon: Coupon) => {

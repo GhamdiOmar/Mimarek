@@ -339,7 +339,7 @@ export default function AdminMarketplacePage() {
           className={cn(
             "flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium border",
             feedback.type === "success"
-              ? "bg-success/10 text-success border-success/30"
+              ? "bg-success/10 text-success-strong border-success/30"
               : "bg-destructive/10 text-destructive border-destructive/30"
           )}
         >

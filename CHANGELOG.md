@@ -1,5 +1,28 @@
 # Changelog — Mimaric PropTech
 
+## [4.20.0] — 2026-06-14 — CX Quick Wins: Western numerals, success contrast, tap targets, Kanban polish
+
+First CX-audit remediation release (Quick Wins). Closes CX-019, CX-016, CX-022, CX-020 from the CX audit (`verification/Mimaric-CX-Audit.html`).
+
+### Western numerals everywhere (CX-019)
+- New `apps/web/lib/format-number.ts` — Latin-digit number/currency/date helpers. Matches the modern Saudi convention (Absher, Aqar, Bayut, and ZATCA/Ejar APIs all use 0–9) and the existing KPI values.
+- Migrated ~78 formatter call sites + `lib/hijri.ts` + the shared `DateRangePicker` and `HijriDatePicker` from `ar-SA` → `ar-SA-u-nu-latn` (keeps Arabic month/weekday names + RTL, forces Western digits). Non-formatter `ar-SA` (hreflang, SchemaMarkup, `<html lang>`) deliberately untouched.
+- Resolves the dashboard inconsistency where dates rendered Arabic-Indic digits (٢٠٢٦) while metrics used Western. Verified: **0** Arabic-Indic digits on the AR dashboard (was 11 — the date-range label).
+
+### Success-badge contrast → WCAG 2.2 AA (CX-016)
+- New `--success-strong` token (light: darker, dark: lighter) so text-on-tint success badges clear 4.5:1 while filled-green stays vivid. Applied across `apps/web` and the shared `Badge` / `KPICard` / mobile primitives (one Badge fix propagates everywhere). Fixed 2 green-on-white violations (`auto-save-indicator`, `CustomerActivityTimeline`).
+
+### Mobile tap targets (CX-022)
+- `mobile/ApprovalRow` + `mobile/CustomerCard` icon buttons 36→44px on mobile (`h-11 w-11 md:h-9 md:w-9`), meeting the WCAG 2.5.8 / mobile minimum.
+
+### Kanban card name (CX-020)
+- Root cause: the global `button { display: inline-flex; justify-content: center }` rule broke Tailwind `truncate` — centered flex overflow clipped the leading glyph ("ohammed Al-Qahta"). Fixed with `block` + a `title` tooltip; names now ellipsize at the end ("Mohammed Al-Q…").
+
+### Gates
+- `npm run build` green; 28 screenshots (CRM / Payments / Finance / Contracts / Dashboard / Billing × light/dark × AR/EN + 375px mobile) in `verification/screenshots-v4.20.0/`; **0** console errors; CX-019 digit-probe = 0.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimaric/compare/v4.19.1...v4.20.0
+
 ## [4.19.1] — 2026-06-14 — Hotfix: platform-admin 500 on every page load
 
 Fixes an HTTP 500 logged on every platform-admin (and mobile-admin) page load. The shared top bar called the tenant-scoped `getOrgName()` on mount for all roles; for org-less system users (`SYSTEM_ADMIN` / `SYSTEM_SUPPORT`) it threw "User has no organization". Invisible to users — the client `.catch` swallowed it — but it flooded server logs and would trip any error-rate alarm.

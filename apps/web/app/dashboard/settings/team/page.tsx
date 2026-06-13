@@ -369,7 +369,7 @@ function TeamList({
         enableSorting: true,
         cell: ({ row }) => (
           <span className="text-sm text-foreground">
-            {new Date(row.original.createdAt).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-US")}
+            {new Date(row.original.createdAt).toLocaleDateString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-US")}
           </span>
         ),
       },
@@ -504,7 +504,7 @@ function InvitationList({
                   <p className="font-medium">{invitation.email}</p>
                   <p className="mt-1 flex items-center gap-2 text-xs text-foreground">
                     <Clock className="h-3.5 w-3.5" />
-                    {lang === "ar" ? "تنتهي في" : "Expires"} {new Date(invitation.expiresAt).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-US")}
+                    {lang === "ar" ? "تنتهي في" : "Expires"} {new Date(invitation.expiresAt).toLocaleDateString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-US")}
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">

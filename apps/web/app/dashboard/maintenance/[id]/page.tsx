@@ -204,7 +204,7 @@ export default function MaintenanceDetailPage() {
     tone?: TLTone;
   }> = [];
   const fmtDT = (d: any) =>
-    d ? new Date(d).toLocaleString(lang === "ar" ? "ar-SA" : "en-US") : "";
+    d ? new Date(d).toLocaleString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-US") : "";
   if (request.createdAt) {
     timelineEvents.push({
       key: "created",
@@ -461,7 +461,7 @@ export default function MaintenanceDetailPage() {
               value={
                 <span className="tabular-nums">
                   {new Date(request.createdAt).toLocaleDateString(
-                    lang === "ar" ? "ar-SA" : "en-US",
+                    lang === "ar" ? "ar-SA-u-nu-latn" : "en-US",
                   )}
                 </span>
               }
@@ -474,7 +474,7 @@ export default function MaintenanceDetailPage() {
                     className={`tabular-nums ${isOverdue ? "text-destructive font-bold" : ""}`}
                   >
                     {new Date(request.dueDate).toLocaleDateString(
-                      lang === "ar" ? "ar-SA" : "en-US",
+                      lang === "ar" ? "ar-SA-u-nu-latn" : "en-US",
                     )}
                   </span>
                 }

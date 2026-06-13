@@ -249,7 +249,7 @@ export function AppTopbar() {
                         </p>
                         <div className="flex items-center gap-2 mt-2">
                           <span className="text-[10px] text-muted-foreground/50 tabular-nums">
-                            {new Date(n.createdAt).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-US", { month: "short", day: "numeric", year: "numeric" })}
+                            {new Date(n.createdAt).toLocaleDateString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-US", { month: "short", day: "numeric", year: "numeric" })}
                           </span>
                           {n.user && (
                             <span className="text-[10px] text-muted-foreground/50">

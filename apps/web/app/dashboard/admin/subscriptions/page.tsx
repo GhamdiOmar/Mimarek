@@ -71,7 +71,7 @@ type SubscriptionsResult = {
 
 const statusColors: Record<string, string> = {
   TRIALING: "bg-info/15 text-info",
-  ACTIVE: "bg-success/15 text-success",
+  ACTIVE: "bg-success/15 text-success-strong",
   PAST_DUE: "bg-warning/15 text-warning",
   CANCELED: "bg-destructive/15 text-destructive",
   UNPAID: "bg-destructive/15 text-destructive",
@@ -221,14 +221,14 @@ export default function AdminSubscriptionsPage() {
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return "--";
     return new Date(dateStr).toLocaleDateString(
-      lang === "ar" ? "ar-SA" : "en-US",
+      lang === "ar" ? "ar-SA-u-nu-latn" : "en-US",
       { year: "numeric", month: "short", day: "numeric" }
     );
   };
 
   const formatPrice = (price: number | string | null) => {
     if (price == null) return "--";
-    return `${Number(price).toLocaleString(lang === "ar" ? "ar-SA" : "en-US")} ${t.sar}`;
+    return `${Number(price).toLocaleString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-US")} ${t.sar}`;
   };
 
   const getOrgDisplayName = (org: Subscription["organization"]) => {

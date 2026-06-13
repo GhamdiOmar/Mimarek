@@ -56,7 +56,7 @@ const statusConfig: Record<
 > = {
   PAID: {
     label: { ar: "مدفوعة", en: "Paid" },
-    className: "bg-success/15 text-success",
+    className: "bg-success/15 text-success-strong",
   },
   ISSUED: {
     label: { ar: "صادرة", en: "Issued" },
@@ -87,7 +87,7 @@ function formatCurrency(amount: number, lang: "ar" | "en"): string {
 function formatDate(dateStr: string | null, lang: "ar" | "en"): string {
   if (!dateStr) return "-";
   const date = new Date(dateStr);
-  return date.toLocaleDateString(lang === "ar" ? "ar-SA" : "en-US", {
+  return date.toLocaleDateString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-US", {
     year: "numeric",
     month: "short",
     day: "numeric",

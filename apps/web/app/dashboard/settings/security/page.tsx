@@ -77,7 +77,7 @@ export default function SecuritySettingsPage() {
         </div>
       )}
       {success && (
-        <div className="p-3 bg-success/10 border border-success/30 text-success text-sm rounded-lg flex items-center gap-2">
+        <div className="p-3 bg-success/10 border border-success/30 text-success-strong text-sm rounded-lg flex items-center gap-2">
           <CheckCircle2 className="h-[18px] w-[18px]" />
           {lang === "ar" ? "تم تحديث كلمة المرور بنجاح." : "Password updated successfully."}
         </div>

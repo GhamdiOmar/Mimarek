@@ -67,7 +67,7 @@ function presetRange(preset: Exclude<DateRangePreset, "custom">): DateRange {
 
 function formatRange(r: DateRange | undefined, locale: "ar" | "en"): string {
   if (!r?.from) return locale === "ar" ? "اختر الفترة" : "Pick a range";
-  const fmt = new Intl.DateTimeFormat(locale === "ar" ? "ar-SA" : "en-GB", {
+  const fmt = new Intl.DateTimeFormat(locale === "ar" ? "ar-SA-u-nu-latn" : "en-GB", {
     year: "numeric",
     month: "short",
     day: "numeric",

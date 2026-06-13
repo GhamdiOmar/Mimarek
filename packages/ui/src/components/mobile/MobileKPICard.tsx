@@ -70,7 +70,7 @@ const TONE_TO_ACCENT: Record<MobileKPITone, KPIAccent> = {
 const ICON_BG: Record<KPIAccent, string> = {
   primary: "bg-primary/10 text-primary",
   secondary: "bg-secondary/10 text-secondary",
-  success: "bg-success/10 text-success",
+  success: "bg-success/10 text-success-strong",
   warning: "bg-warning/10 text-warning",
   destructive: "bg-destructive/10 text-destructive",
   info: "bg-info/10 text-info",
@@ -127,7 +127,7 @@ function deltaTone(direction: "up" | "down" | "flat", isGoodIfUp: boolean) {
     (direction === "up" && isGoodIfUp) ||
     (direction === "down" && !isGoodIfUp);
   return good
-    ? "bg-success/10 text-success"
+    ? "bg-success/10 text-success-strong"
     : "bg-destructive/10 text-destructive";
 }
 

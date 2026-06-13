@@ -97,7 +97,7 @@ const INQUIRY_STATUS_LABELS: Record<string, { ar: string; en: string }> = {
 
 function formatSARLocal(amount: number | null, lang: "ar" | "en") {
   if (amount == null) return "—";
-  return new Intl.NumberFormat(lang === "ar" ? "ar-SA" : "en-SA", {
+  return new Intl.NumberFormat(lang === "ar" ? "ar-SA-u-nu-latn" : "en-SA", {
     style: "currency",
     currency: "SAR",
     maximumFractionDigits: 0,
@@ -336,7 +336,7 @@ function MarketplacePage() {
         cell: ({ row }) => (
           <span className="text-xs text-muted-foreground">
             {new Date(row.original.createdAt).toLocaleDateString(
-              lang === "ar" ? "ar-SA" : "en-GB"
+              lang === "ar" ? "ar-SA-u-nu-latn" : "en-GB"
             )}
           </span>
         ),

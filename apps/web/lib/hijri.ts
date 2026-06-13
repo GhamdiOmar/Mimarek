@@ -7,7 +7,8 @@ export function formatHijri(date: Date | string, lang: "ar" | "en" = "ar"): stri
   const d = typeof date === "string" ? new Date(date) : date;
   if (isNaN(d.getTime())) return "";
   try {
-    const locale = lang === "ar" ? "ar-SA-u-ca-islamic" : "en-US-u-ca-islamic";
+    // -nu-latn pins Western digits (CX-019); keep Arabic month names + Hijri calendar.
+    const locale = lang === "ar" ? "ar-SA-u-ca-islamic-nu-latn" : "en-US-u-ca-islamic";
     return new Intl.DateTimeFormat(locale, {
       year: "numeric",
       month: "long",

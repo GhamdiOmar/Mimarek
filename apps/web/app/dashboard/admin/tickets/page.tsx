@@ -274,7 +274,7 @@ export default function AdminTicketsPage() {
         cell: ({ row }) => (
           <span className="whitespace-nowrap text-xs text-muted-foreground tabular-nums">
             {new Date(row.original.createdAt).toLocaleDateString(
-              lang === "ar" ? "ar-SA" : "en-US",
+              lang === "ar" ? "ar-SA-u-nu-latn" : "en-US",
               { day: "numeric", month: "short", year: "numeric" },
             )}
           </span>
@@ -407,7 +407,7 @@ export default function AdminTicketsPage() {
                       ? tk.organization.nameArabic
                       : tk.organization.name;
                   const dateLabel = new Date(tk.createdAt).toLocaleDateString(
-                    lang === "ar" ? "ar-SA" : "en-US",
+                    lang === "ar" ? "ar-SA-u-nu-latn" : "en-US",
                     { day: "numeric", month: "short" },
                   );
                   const requester = tk.user.name ?? tk.user.email;

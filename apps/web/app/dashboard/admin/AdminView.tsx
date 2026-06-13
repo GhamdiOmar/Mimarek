@@ -363,7 +363,7 @@ export default function AdminView({
     return mrrTrend.map((total, i) => {
       const d = new Date(now.getFullYear(), now.getMonth() - (11 - i), 1);
       return {
-        month: d.toLocaleDateString(lang === "ar" ? "ar-SA" : "en-US", {
+        month: d.toLocaleDateString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-US", {
           month: "short",
         }),
         total,

@@ -118,7 +118,7 @@ function formatRelativeDate(dateStr: string, lang: "ar" | "en"): string {
 
 function formatDueDate(dateStr: string, lang: "ar" | "en"): string {
   const d = new Date(dateStr);
-  return d.toLocaleDateString(lang === "ar" ? "ar-SA" : "en-US", {
+  return d.toLocaleDateString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-US", {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -180,7 +180,7 @@ export default function DashboardView({
     if (!hasCustomRange || !range.from || !range.to) {
       return lang === "ar" ? "هذا الشهر" : "this month";
     }
-    const fmtDate = new Intl.DateTimeFormat(lang === "ar" ? "ar-SA" : "en-GB", {
+    const fmtDate = new Intl.DateTimeFormat(lang === "ar" ? "ar-SA-u-nu-latn" : "en-GB", {
       month: "short",
       day: "numeric",
     });
@@ -196,7 +196,7 @@ export default function DashboardView({
       ? hour < 12 ? "صباح الخير" : "مساء الخير"
       : hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
 
-  const todayLabel = new Date().toLocaleDateString(lang === "ar" ? "ar-SA" : "en-US", {
+  const todayLabel = new Date().toLocaleDateString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-US", {
     weekday: "long",
     year: "numeric",
     month: "long",
@@ -429,7 +429,7 @@ export default function DashboardView({
               {greeting}، {userName || (lang === "ar" ? "مستخدم" : "User")}
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
-              {new Date().toLocaleDateString(lang === "ar" ? "ar-SA" : "en-US", {
+              {new Date().toLocaleDateString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-US", {
                 weekday: "long",
                 year: "numeric",
                 month: "long",
