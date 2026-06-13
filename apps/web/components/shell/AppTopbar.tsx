@@ -13,6 +13,7 @@ import { useLanguage } from "../LanguageProvider";
 import { getUnreadCount, getMyNotifications, markAsRead, markAllAsRead } from "../../app/actions/notifications";
 import { globalSearch } from "../../app/actions/search";
 import { getOrgName } from "../../app/actions/organization";
+import { isSystemRole } from "../../lib/permissions";
 import { breadcrumbLabels, roleLabels } from "./nav-items";
 
 import {
@@ -46,10 +47,13 @@ export function AppTopbar() {
   }, [pathname]);
 
   React.useEffect(() => {
+    // System users have no organization — skip the tenant-scoped lookup
+    // (no tenant action in a platform context, §8; avoids a 500/round-trip — CX-001).
+    if (isSystemRole(userRole)) return;
     getOrgName().then((org) => {
       if (org) setOrgName(org.nameArabic || org.nameEnglish || org.name);
     }).catch(() => {});
-  }, []);
+  }, [userRole]);
 
   function handleSearchInput(value: string) {
     setSearchQuery(value);

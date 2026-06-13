@@ -1,5 +1,18 @@
 # Changelog — Mimaric PropTech
 
+## [4.19.1] — 2026-06-14 — Hotfix: platform-admin 500 on every page load
+
+Fixes an HTTP 500 logged on every platform-admin (and mobile-admin) page load. The shared top bar called the tenant-scoped `getOrgName()` on mount for all roles; for org-less system users (`SYSTEM_ADMIN` / `SYSTEM_SUPPORT`) it threw "User has no organization". Invisible to users — the client `.catch` swallowed it — but it flooded server logs and would trip any error-rate alarm.
+
+### Fixed
+- `getOrgName()` (`apps/web/app/actions/organization.ts`) resolves the session without requiring an organization and returns `null` for org-less sessions (its return type already allowed `null`) — the root fix.
+- The shared top bars (`AppTopbar`, `MobileTopbar`) skip the org-name lookup for system roles (`isSystemRole`) — no tenant action invoked in a platform context (§8), no wasted round-trip.
+
+### Verification
+- System-user probe across all admin routes on a fresh production build: **0** "User has no organization" errors, **0** HTTP 500s, clean server logs; system→tenant redirects intact; tenant org-name path unchanged.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimaric/compare/v4.19.0...v4.19.1
+
 ## [4.19.0] — 2026-06-13 — Help Center refresh + onboarding wizard + planning discipline
 
 Rebuilds the Help Center against current product truth, expands it to the modules it was missing, humanizes the bilingual copy, completes the onboarding wizard, removes placeholder UI, and tightens the desktop help flow (search-first landing, working deep-links, grouped FAQs). Also codifies a planning/approval workflow (new `/plan` skill + AGENTS.md §3.10).

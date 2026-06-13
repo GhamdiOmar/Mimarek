@@ -2,12 +2,19 @@
 
 import { db } from "@repo/db";
 import { revalidatePath } from "next/cache";
-import { requirePermission, getTenantSessionOrThrow } from "../../lib/auth-helpers";
+import { requirePermission, getTenantSessionOrThrow, getSessionOrThrow } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
 
-/** Lightweight org name lookup — any authenticated user can see their own org name */
+/**
+ * Lightweight org name lookup — any authenticated user can see their own org name.
+ * Org-less platform (system) users have no organization, so they get `null`
+ * rather than a thrown error. Using `getTenantSessionOrThrow` here previously
+ * surfaced as an HTTP 500 on every dashboard load for system users (CX-001),
+ * because the shared top bar calls this on mount for all roles.
+ */
 export async function getOrgName(): Promise<{ name: string; nameArabic?: string | null; nameEnglish?: string | null } | null> {
-  const session = await getTenantSessionOrThrow();
+  const session = await getSessionOrThrow();
+  if (!session.organizationId) return null;
   const org = await db.organization.findUnique({
     where: { id: session.organizationId },
     select: { name: true, nameArabic: true, nameEnglish: true },
