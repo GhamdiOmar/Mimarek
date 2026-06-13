@@ -1149,7 +1149,7 @@ All use bilingual labels, native Arabic/English placeholders, full RTL, and serv
 
 ## 7. Release Process (After Every Implementation)
 - After completing any implementation task: commit, update CHANGELOG.md, push to GitHub, verify CI passes.
-- Refresh the Graphify graph (`/graphify . --update`, § 10.2) as part of shipment so the next session's queries reflect what was merged.
+- **Refresh the Graphify graph (`/graphify . --update`, § 10.2) — MANDATORY, never skip (hard rule, learned 2026-06-13).** It is a required step of every shipment, not an optional nicety: the next session's `path`/`query`/leak-audit answers are only trustworthy if the graph matches `main`. Run it after the merge lands, the same as tagging. **Never present it to the user as "optional" and never defer it without doing it** — incident 2026-06-13: I labeled the graphify refresh "optional" and reported the release "complete" without running it; corrected only when the user pushed back. **A release is not done until the graph is refreshed** — treat it as the final, non-negotiable step of the cycle alongside the tag + GitHub release.
 - Tag releases with semantic versioning (major.minor.patch).
 - Create GitHub release with release notes summarizing changes.
 - Never leave uncommitted work at the end of a task session.
@@ -1265,7 +1265,7 @@ A Graphify knowledge graph of this repo lives at `graphify-out/` (god nodes, com
 - If `graphify-out/` is missing or stale, skip it — never block work on it.
 
 ### 10.2 Update after shipping
-- On any merge/release that changes code, refresh: `/graphify . --update`. Code-only changes skip the LLM step (fast, free); doc/image changes trigger semantic re-extraction. This is a step in § 7, not an afterthought.
+- On any merge/release that changes code, refresh: `/graphify . --update`. Code-only changes skip the LLM step (fast, free); doc/image changes trigger semantic re-extraction. **This is a MANDATORY § 7 step, never skipped or called "optional" (hard rule — see § 7).** The release is not done until it runs.
 - Prefer `/graphify . --watch` during active dev sessions — it rebuilds on save with no LLM call, so the graph never drifts behind HEAD.
 
 ### 10.3 High-value Mimaric uses
