@@ -9,16 +9,14 @@ Order: **(0)** must-do prod ops → **(1)** v4.18.0 follow-ups → **(2)** house
 
 ---
 
-## 0. v4.18.0 post-release prod ops — SUPERVISED, NOT YET RUN
+## 0. v4.18.0 DB ops — ✅ DONE (2026-06-13, local DB)
 
-Deploy the v4.18.0 schema + data fixes to **production** (Sydney prod: `aws-1-ap-southeast-2.pooler.supabase.com`). NOT run from the dev session because `.env.local` lacks `PII_ENCRYPTION_KEY` (only `PII_HASH_PEPPER`); both data scripts fail closed without it, and `rehash` would corrupt every `phoneHash` if run with a mismatched key. Run in the real ops env, recording before/after counts:
+**Resolved.** Mimaric is not deployed; the only environment is the local checkout against the Supabase DB in `.env.local`. What was done:
+- **Schema indexes applied** — `prisma db push` synced the v4.18.0 Customer composite `[organizationId, *Hash]` indexes (dropped the dead `nationalId` index). No RLS SQL needed (no new tables).
+- **Encryption key re-established** — the original `PII_ENCRYPTION_KEY` was **lost** (absent from both `.env.local` files; the `.env.example` value is an all-zeros placeholder that decrypts nothing), so the encryption layer was non-functional and the data had drifted (11 plaintext seed phones + 9 ciphertext rows encrypted under the lost key). A fresh 32-byte key was generated and set in `.env.local` + `apps/web/.env.local` (gitignored).
+- **Data normalized** — all 20 (fabricated) customers re-encrypted under the new key with correct HMAC blind-index hashes; the 9 unrecoverable lost-key rows were given fresh fake Saudi mobiles. Verified: 20/20 decrypt, 20/20 hashes consistent, cross-format phone search works (`05…` and `+9665…` both match). The marketplace repair script was a no-op (0 marketplace-source customers).
 
-```bash
-cd packages/db && npx prisma db push          # additive index diff; run PLAIN — self-aborts on destructive diffs (AGENTS.md §4)
-PII_ENCRYPTION_KEY=… PII_HASH_PEPPER=… DATABASE_URL=… npx tsx packages/db/scripts/repair-marketplace-customer-pii.ts
-PII_ENCRYPTION_KEY=… PII_HASH_PEPPER=… DATABASE_URL=… npx tsx packages/db/scripts/rehash-customer-phones.ts
-```
-No RLS SQL needed (no new tables; `rls:check` confirms).
+**Standing note for a future real deployment:** any new environment must set its **own** `PII_ENCRYPTION_KEY` + `PII_HASH_PEPPER` (see `.env.example`), run `prisma db push`, then `packages/db/scripts/repair-marketplace-customer-pii.ts` + `rehash-customer-phones.ts` against that env's data with the env's key. Never rotate `PII_ENCRYPTION_KEY` on an env with live data — existing ciphertext becomes unrecoverable (exactly what happened here).
 
 ---
 
