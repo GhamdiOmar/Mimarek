@@ -570,7 +570,9 @@ This taxonomy codifies established button-vs-link and target-size guidance — n
 
 ### 6.8 KPI Cards
 
-> **v4.11 "Outlined Precision" (2026-06-09):** KPI cards no longer use a colored inline-start accent bar. Hierarchy = surface + hairline border + type scale; hero tier adds a **2px inset TOP rule** in `--primary` (RTL-safe). Status/category = tinted icon chip + delta-pill color. Depth = `.card-quiet` (faint shadow, light) / hairline-only (dark). Glass is marketing/auth-splash only. See `UI/mimaric_v4.11_design_direction.md`. The tables below are reconciled to this.
+> **v4.11 "Outlined Precision" (2026-06-09, locked — the canonical Mimaric card direction).** KPI cards no longer use a colored inline-start accent bar. Hierarchy = surface + hairline border + type scale; hero tier adds a **2px inset TOP rule** in `--primary` (RTL-safe — top/bottom don't mirror). Status/category = tinted icon chip + delta-pill color (never an edge stripe). Depth = `.card-quiet` (faint shadow, light) / hairline-only (dark). Hover (interactive cards): `hover:border-primary/30 -translate-y-px`; dark steps one surface level lighter (`--card-hover`). Glass is marketing/auth-splash only. **This direction governs the whole card family — KPI tile, Kanban card, list row.** Tokens introduced: `--card-hover` (light + dark) and the `.card-quiet` shadow utility (no new colors/radii). The tables below are reconciled to this.
+>
+> **Why (design rationale — the source of truth).** Six premium enterprise design systems were mined (Linear, Stripe, Vercel, Cohere, IBM Carbon, Notion): **not one uses a colored side-accent bar.** They carry hierarchy via *surface ladder + hairline border + type scale*, status via *pill / dot / tinted icon-chip*, and dark-mode depth via *lighter surface + hairline, no shadow* — which is already the §6.13 law, so the old accent bar was fighting our own system. The structural patterns (hairline-over-shadow, pill-status, surface ladder) are consistent across all six, so they generalize safely; treat any specific shadow hex as directional, not a literal product token.
 
 #### 6.8.1 Mandatory Anatomy (all 8 fields)
 
