@@ -130,7 +130,7 @@ test.afterAll(async () => {
 // incoming-inquiries DataTable that needs interactive debugging against the
 // current my-listings UI. That flow is pre-existing and untouched by v4.18.0.
 // Skipped to unblock the v4.18.0 gate; the project + guard stay so it runs once
-// fixed. Tracked in future-plans/v4.18.0-followups.md.
+// fixed. Tracked in future-plans/REMAINING-WORK.md §1.1.
 test.fixme("cross-org marketplace: publish → browse → inquire → convert → settlement gate", async ({
   browser,
 }) => {
