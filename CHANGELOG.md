@@ -1,5 +1,45 @@
 # Changelog — Mimaric PropTech
 
+## [4.18.0] — 2026-06-13 — Stabilization + planned architecture: PII trust, CRM a11y, route-guards SSOT
+
+Closes the post-v4.17.0 QA audit criticals and carries the F4/F5 architecture fixes. Hardens the PII trust boundary (marketplace plaintext leak + blind-index correctness), fixes the failing CRM accessibility and billing E2E specs, makes contract signing atomic, adds registration anti-automation, and collapses three sources of route→permission/audience truth into one. Two new ESLint guards and an E2E coverage guard mechanize the landmines this release fixed.
+
+### Trust & correctness (P0)
+
+- **Marketplace inquiry no longer writes plaintext PII.** `confirmMarketplaceInterest` required a valid Saudi mobile and wrote `phone: contactPhone || "—"` as raw plaintext into the encrypted column with no blind-index hash — invisible to search, breaking the masking model (PDPL/NDMO exposure). It now normalizes + routes through `encryptCustomerData` (AES-256-GCM + HMAC blind index), exactly like the canonical customer path. Idempotent repair script `repair-marketplace-customer-pii.ts` + an ESLint guard banning `customer.create/upsert` outside the canonical modules.
+- **CRM Kanban accessibility.** The draggable card was `<div role="button" tabIndex=0>` wrapping nested buttons/links — a serious axe `nested-interactive` violation (failing spec). Rebuilt as a redundant-click card: plain container, the card title is the single open-profile control, drag has a keyboard/SR-equivalent "Move to <stage>" overflow menu with an `aria-live` announcement. Call/WhatsApp render only from a derived, E.164-normalized `contactPhoneE164` (masked/ciphertext → omitted, never a broken `tel:` link). New `lib/phone.ts` normalizer (26 tests).
+- **`getPlans` out of `"use server"`.** Moved the cached query to a server-only DAL (`lib/server/plans.ts`); a thin async wrapper in `billing.ts` exposes it to client pages over RPC. New custom ESLint rule `no-non-async-export-in-use-server` mechanizes the §4 v4.7.0 landmine.
+- **Maintenance reassignment BOLA.** `updateMaintenanceRequest` now validates the new assignee belongs to the caller's org (OWASP API1:2023), mirroring the create-path guard.
+- **Billing invoices E2E.** Fixed a brittle `isVisible().catch(()=>false)` assertion (→ real `.or()` locator + `waitFor visible`) and made the subscription seed idempotent. No product regression.
+
+### Hardening (P1)
+
+- **Registration rate limiting.** Per-IP (5/hr, skipped on missing header) + per-normalized-email (3/hr, `+alias`-proof) via the durable `checkRateLimit`; `RATE_LIMITED` with bilingual copy.
+- **Contract signing is atomic.** The full SIGNED/CANCELLED/VOID lifecycle (contract + unit + customer + lease) runs in one `db.$transaction` with an optimistic-concurrency `updateMany` count check to reject a double-sign race.
+- **Phone blind-index correctness (schema change).** `phoneHash` is HMAC over the E.164-normalized phone on both write and search sides, so `0551234567` and `+966551234567` match. Added composite `[organizationId, *Hash]` indexes, dropped the dead `@@index([nationalId])` (random-IV ciphertext), corrected the misleading schema comments. Backfill script `rehash-customer-phones.ts`.
+- **Turbo env allow-list.** Declared `CRON_SECRET`, `MOYASAR_API_KEY`, `MOYASAR_WEBHOOK_SECRET`, `NODE_ENV`, `CI` — undeclared-env lint warnings cleared.
+
+### Planned architecture (F4 / F5)
+
+- **Route-guards single source of truth (F4).** New edge-safe `lib/route-guards.ts` (`ROUTE_GUARDS`) replaces three drifting copies of route→permission/audience; `nav-items.ts`, the `auth.config.ts` edge gate (longest-prefix), and `getTenantPageAccess()` all derive from it. Behavior-preserving; Settings gets an explicit `audience: "tenant"` (audit A8). The 403 middleware stays deferred — only the seam is built.
+- **Domain-label registry (F5).** New `lib/domain-labels.ts` centralizes bilingual `{ar,en}` status/category/priority maps typed against the Prisma enums; 7 pages migrated. (5 inferred Arabic marketplace-status strings flagged for native review.)
+
+### Coverage & tooling
+
+- **Marketplace Playwright project + zero-coverage guard.** Two marketplace specs matched no project and were silently skipped; added the `marketplace-tests` project and `check-e2e-coverage.mjs` (fails CI on any unmatched spec).
+
+### Tests & gates
+
+92 → **122 unit tests**; full `next build` green; lint 0 errors; `check-types` 3/3; RLS drift OK (49 tables, no new tables). §3.9 preview walk: CRM verified deeply (a11y structure, dark-LTR + light-RTL, contact-link safety, console-clean); contracts/billing/register/F4-audience verified rendering error-free.
+
+### Upgrade notes (supervised ops steps)
+
+1. `cd packages/db && npx prisma db push` — additive index-only diff (run plain first; it self-reports blockers). No RLS change (no new tables).
+2. `PII_ENCRYPTION_KEY=… PII_HASH_PEPPER=… DATABASE_URL=… npx tsx packages/db/scripts/repair-marketplace-customer-pii.ts` — encrypt/repair marketplace customer phones.
+3. `… npx tsx packages/db/scripts/rehash-customer-phones.ts` — re-hash all phones to the normalized HMAC blind index. Record before/after counts.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimaric/compare/v4.17.0...v4.18.0
+
 ## [4.17.0] — 2026-06-12 — Architecture foundations: unit-test harness, durable rate limits, RLS generator
 
 Phase 1 of the architecture required-fixes program (`future-plans/architecture-required-fixes-2026-06-12.md`). Gives the highest-risk business rules a **fast unit-test safety net** (the repo previously had zero unit tests), fixes a **production rate-limiting gap**, fixes **three confirmed bugs**, creates the shared action-layer seams, and makes the RLS coverage script **generated instead of hand-maintained**. No schema changes; UI-invisible except a 2-line logo-component fix.
