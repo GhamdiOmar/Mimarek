@@ -82,7 +82,7 @@ export default function LeasingView({
     if (!hasCustomRange || !range.from || !range.to) {
       return t("هذا الشهر", "this month");
     }
-    const fmtDate = new Intl.DateTimeFormat(lang === "ar" ? "ar-SA" : "en-GB", {
+    const fmtDate = new Intl.DateTimeFormat(lang === "ar" ? "ar-SA-u-nu-latn" : "en-GB", {
       month: "short",
       day: "numeric",
     });

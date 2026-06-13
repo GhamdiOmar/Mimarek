@@ -49,6 +49,9 @@
 
   --success: 158 50% 32%;
   --success-foreground: 0 0% 100%;
+  /* Text-on-tint success (CX-016): darker than the fill so `text-success-strong`
+     on `bg-success/10` clears WCAG AA 4.5:1. The fill `--success` stays vivid. */
+  --success-strong: 158 60% 24%;
 
   --warning: 28 72% 50%;
   --warning-foreground: 0 0% 100%;
@@ -151,6 +154,8 @@
 
   --success: 160 45% 42%;
   --success-foreground: 0 0% 100%;
+  /* Dark: lighter than the fill so text-on-dark-tint clears AA (CX-016). */
+  --success-strong: 158 55% 64%;
 
   --warning: 28 72% 55%;
   --warning-foreground: 0 0% 100%;
@@ -257,6 +262,7 @@
   /* Semantic Status */
   --color-success: hsl(var(--success));
   --color-success-foreground: hsl(var(--success-foreground));
+  --color-success-strong: hsl(var(--success-strong));
 
   --color-warning: hsl(var(--warning));
   --color-warning-foreground: hsl(var(--warning-foreground));

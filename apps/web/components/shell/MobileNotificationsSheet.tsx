@@ -178,7 +178,7 @@ export function MobileNotificationsSheet({
                       {lang === "ar" ? n.message : (n.messageEn || n.message)}
                     </p>
                     <span className="mt-2 block text-[10px] text-muted-foreground/60 tabular-nums">
-                      {new Date(n.createdAt).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-US", {
+                      {new Date(n.createdAt).toLocaleDateString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-US", {
                         month: "short",
                         day: "numeric",
                         year: "numeric",

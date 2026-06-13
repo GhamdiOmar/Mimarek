@@ -65,7 +65,7 @@ const STATUS_STYLE: Record<
   { cls: string; label: { ar: string; en: string } }
 > = {
   available: {
-    cls: "bg-success/10 text-success",
+    cls: "bg-success/10 text-success-strong",
     label: { ar: "متاحة", en: "Available" },
   },
   reserved: {

@@ -83,7 +83,7 @@ function ApprovalRow({
   );
 
   const buttonBase =
-    "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-colors active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--primary))] disabled:opacity-50 disabled:pointer-events-none";
+    "inline-flex h-11 w-11 md:h-9 md:w-9 shrink-0 items-center justify-center rounded-full transition-colors active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--primary))] disabled:opacity-50 disabled:pointer-events-none";
 
   let trailing: React.ReactNode;
   if (state === "pending") {

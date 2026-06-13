@@ -47,7 +47,7 @@ type AuditLog = {
 };
 
 const actionColors: Record<string, string> = {
-  CREATE: "bg-success/10 text-success",
+  CREATE: "bg-success/10 text-success-strong",
   READ: "bg-info/10 text-info",
   UPDATE: "bg-warning/10 text-warning",
   DELETE: "bg-destructive/10 text-destructive",
@@ -166,7 +166,7 @@ export default function AuditLogPage() {
 
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr);
-    return d.toLocaleString(lang === "ar" ? "ar-SA" : "en-US", {
+    return d.toLocaleString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-US", {
       year: "numeric",
       month: "short",
       day: "numeric",
@@ -178,7 +178,7 @@ export default function AuditLogPage() {
 
   const formatRelative = (dateStr: string) => {
     const d = new Date(dateStr);
-    return d.toLocaleString(lang === "ar" ? "ar-SA" : "en-US", {
+    return d.toLocaleString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-US", {
       month: "short",
       day: "numeric",
       hour: "2-digit",

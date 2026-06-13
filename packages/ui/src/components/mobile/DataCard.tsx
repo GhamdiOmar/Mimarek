@@ -32,7 +32,7 @@ export interface DataCardProps {
 const TONE_CLASSES: Record<DataCardTone, string> = {
   default: "bg-muted text-muted-foreground",
   blue: "bg-info/10 text-info dark:bg-info/15",
-  green: "bg-success/10 text-success dark:bg-success/15",
+  green: "bg-success/10 text-success-strong dark:bg-success/15",
   amber: "bg-warning/10 text-warning dark:bg-warning/15",
   red: "bg-destructive/10 text-destructive dark:bg-destructive/15",
   purple: "bg-primary/10 text-primary dark:bg-primary/15",

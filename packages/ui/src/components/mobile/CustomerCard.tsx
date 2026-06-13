@@ -47,7 +47,7 @@ const STATUS: Record<
     label: { ar: "عميل بارد", en: "Cold" },
   },
   converted: {
-    cls: "bg-success/10 text-success",
+    cls: "bg-success/10 text-success-strong",
     label: { ar: "محوّل", en: "Converted" },
   },
   churned: {
@@ -164,7 +164,7 @@ function CustomerCard({
   );
 
   const iconBtn =
-    "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted/70 text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--primary))]";
+    "inline-flex h-11 w-11 md:h-9 md:w-9 shrink-0 items-center justify-center rounded-full bg-muted/70 text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--primary))]";
 
   return (
     <div className={rowClasses}>

@@ -43,7 +43,7 @@ const STATUS_BADGE: Record<
 };
 
 const STEP_DOT: Record<StageStatus, string> = {
-  done: "bg-success/15 text-success",
+  done: "bg-success/15 text-success-strong",
   current: "bg-primary/15 text-primary ring-2 ring-primary/40",
   upcoming: "bg-muted text-muted-foreground",
   blocked: "bg-warning/15 text-warning",

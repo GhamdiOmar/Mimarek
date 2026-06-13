@@ -124,7 +124,7 @@ const PIPELINE_STAGES = [
   {
     key: "NEGOTIATION",
     label: { ar: "تفاوض", en: "Negotiation" },
-    color: "bg-success/10 text-success border-success/30",
+    color: "bg-success/10 text-success-strong border-success/30",
     dotColor: "bg-success",
   },
 ];
@@ -173,7 +173,7 @@ const ALL_STATUS_CONFIGS = [
   {
     key: "CONVERTED",
     label: { ar: "تم التحويل", en: "Converted" },
-    color: "bg-success/10 text-success border-success/30",
+    color: "bg-success/10 text-success-strong border-success/30",
     dotColor: "bg-success",
   },
   {
@@ -235,7 +235,7 @@ function formatSAR(amount: number | string | null | undefined, locale: string) {
   if (!amount) return "—";
   const num = typeof amount === "string" ? parseFloat(amount) : amount;
   if (isNaN(num)) return "—";
-  return new Intl.NumberFormat(locale === "ar" ? "ar-SA" : "en-SA", {
+  return new Intl.NumberFormat(locale === "ar" ? "ar-SA-u-nu-latn" : "en-SA", {
     style: "currency",
     currency: "SAR",
     maximumFractionDigits: 0,
@@ -604,7 +604,7 @@ function CustomerDrawer({
 
         {/* Toast */}
         {drawerToast && (
-          <div className="mx-4 mt-3 flex items-center gap-2 px-3 py-2 rounded-lg bg-success/10 border border-success/30 text-success text-xs font-medium animate-in fade-in duration-200">
+          <div className="mx-4 mt-3 flex items-center gap-2 px-3 py-2 rounded-lg bg-success/10 border border-success/30 text-success-strong text-xs font-medium animate-in fade-in duration-200">
             <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
             {drawerToast}
           </div>
@@ -715,7 +715,7 @@ function CustomerDrawer({
                       {lang === "ar" ? "الميزانية" : "Budget"}
                     </p>
                     <p className="text-sm font-semibold text-foreground">
-                      {Number(customer.budget).toLocaleString(lang === "ar" ? "ar-SA" : "en-SA")} {lang === "ar" ? "ريال" : "SAR"}
+                      {Number(customer.budget).toLocaleString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-SA")} {lang === "ar" ? "ريال" : "SAR"}
                     </p>
                   </div>
                 )}
@@ -818,7 +818,7 @@ function CustomerDrawer({
                     <p className="text-sm font-semibold text-foreground flex items-center gap-1.5">
                       <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
                       {new Date(customer.dateOfBirth).toLocaleDateString(
-                        lang === "ar" ? "ar-SA" : "en-SA"
+                        lang === "ar" ? "ar-SA-u-nu-latn" : "en-SA"
                       )}
                     </p>
                   </div>
@@ -918,7 +918,7 @@ function CustomerDrawer({
                               className={cn(
                                 "text-[10px] font-semibold px-2 py-0.5 rounded-full border",
                                 interest.status === "ACTIVE"
-                                  ? "bg-success/10 text-success border-success/30"
+                                  ? "bg-success/10 text-success-strong border-success/30"
                                   : interest.status === "CONVERTED"
                                     ? "bg-warning/10 text-warning border-warning/30"
                                     : "bg-muted text-muted-foreground border-border"
@@ -1026,7 +1026,7 @@ function CustomerDrawer({
                             className={cn(
                               "text-[10px] font-semibold px-2 py-0.5 rounded-full border",
                               item.status === "CONFIRMED" || item.status === "SIGNED" || item.status === "ACTIVE"
-                                ? "bg-success/10 text-success border-success/30"
+                                ? "bg-success/10 text-success-strong border-success/30"
                                 : "bg-warning/10 text-warning border-warning/30"
                             )}
                           >
@@ -1264,7 +1264,7 @@ function CustomerDrawer({
             </p>
           )}
           {editSuccess && (
-            <p className="text-sm text-success bg-success/10 border border-success/30 rounded-lg px-3 py-2 flex items-center gap-2">
+            <p className="text-sm text-success-strong bg-success/10 border border-success/30 rounded-lg px-3 py-2 flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4 shrink-0" />
               {lang === "ar" ? "تم الحفظ بنجاح" : "Saved successfully"}
             </p>
@@ -1652,8 +1652,9 @@ function KanbanCard({
               e.stopPropagation();
               openProfile();
             }}
-            className="w-full text-start font-semibold text-sm text-foreground truncate hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 rounded-sm"
+            className="block w-full text-start font-semibold text-sm text-foreground truncate hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 rounded-sm"
             aria-label={viewLabel}
+            title={customer.name}
           >
             {customer.name}
           </button>
@@ -1715,7 +1716,7 @@ function KanbanCard({
           className="number-ltr mt-2.5 text-base font-bold tabular-nums text-foreground"
         >
           {Number(customer.budget).toLocaleString(
-            lang === "ar" ? "ar-SA" : "en-SA",
+            lang === "ar" ? "ar-SA-u-nu-latn" : "en-SA",
           )}
           <span className="ms-1 text-xs font-normal text-muted-foreground">
             {lang === "ar" ? "ر.س" : "SAR"}
@@ -2005,7 +2006,7 @@ export default function CrmView({
     };
     if (ratio >= 0.9) return {
       label: lang === "ar" ? "ضمن الميزانية" : "On Budget",
-      color: "text-success bg-success/10",
+      color: "text-success-strong bg-success/10",
     };
     return {
       label: lang === "ar" ? "أقل من الميزانية" : "Under Budget",
@@ -2093,7 +2094,7 @@ export default function CrmView({
           return (
             <span className="text-sm text-muted-foreground">
               {b
-                ? `${Number(b).toLocaleString(lang === "ar" ? "ar-SA" : "en-SA")} ${lang === "ar" ? "ر.س" : "SAR"}`
+                ? `${Number(b).toLocaleString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-SA")} ${lang === "ar" ? "ر.س" : "SAR"}`
                 : "—"}
             </span>
           );
@@ -3087,7 +3088,7 @@ export default function CrmView({
                       dir="ltr"
                       className="number-ltr mt-1 text-[11px] font-medium tabular-nums text-muted-foreground"
                     >
-                      {colValue.toLocaleString(lang === "ar" ? "ar-SA" : "en-SA")}{" "}
+                      {colValue.toLocaleString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-SA")}{" "}
                       {lang === "ar" ? "ر.س" : "SAR"}
                     </p>
                   )}
@@ -3190,7 +3191,7 @@ export default function CrmView({
                   )}
                   <span>
                     {c.budget
-                      ? `${Number(c.budget).toLocaleString(lang === "ar" ? "ar-SA" : "en-SA")} ${lang === "ar" ? "ر.س" : "SAR"}`
+                      ? `${Number(c.budget).toLocaleString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-SA")} ${lang === "ar" ? "ر.س" : "SAR"}`
                       : "—"}
                   </span>
                 </div>
@@ -3524,7 +3525,7 @@ export default function CrmView({
                                   <div className="flex items-center gap-2 shrink-0">
                                     {price && (
                                       <span className="text-xs font-mono text-muted-foreground" dir="ltr">
-                                        {Number(price).toLocaleString(lang === "ar" ? "ar-SA" : "en-SA")} {lang === "ar" ? "ر.س" : "SAR"}
+                                        {Number(price).toLocaleString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-SA")} {lang === "ar" ? "ر.س" : "SAR"}
                                       </span>
                                     )}
                                     {tag && (

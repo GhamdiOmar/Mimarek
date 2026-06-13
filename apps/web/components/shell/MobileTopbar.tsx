@@ -9,6 +9,7 @@ import { useSession } from "../SimpleSessionProvider";
 import { useLanguage } from "../LanguageProvider";
 import { getUnreadCount } from "../../app/actions/notifications";
 import { getOrgName } from "../../app/actions/organization";
+import { isSystemRole } from "../../lib/permissions";
 import { MobileSearchSheet } from "./MobileSearchSheet";
 import { MobileNotificationsSheet } from "./MobileNotificationsSheet";
 import { MobileUserMenuSheet } from "./MobileUserMenuSheet";
@@ -26,18 +27,22 @@ export function MobileTopbar({ onMenuClick }: MobileTopbarProps) {
   const [showSearch, setShowSearch] = React.useState(false);
   const [showNotifs, setShowNotifs] = React.useState(false);
   const [showMenu, setShowMenu] = React.useState(false);
+  const userRole = (session?.user as any)?.role ?? "";
 
   React.useEffect(() => {
     getUnreadCount().then(setUnreadCount).catch(() => {});
   }, []);
 
   React.useEffect(() => {
+    // System users have no organization — skip the tenant-scoped lookup
+    // (no tenant action in a platform context, §8; avoids a 500/round-trip — CX-001).
+    if (!userRole || isSystemRole(userRole)) return;
     getOrgName()
       .then((org) => {
         if (org) setOrgName(org.nameArabic || org.nameEnglish || org.name);
       })
       .catch(() => {});
-  }, []);
+  }, [userRole]);
 
   return (
     <>

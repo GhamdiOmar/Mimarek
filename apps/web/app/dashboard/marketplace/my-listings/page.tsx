@@ -98,8 +98,8 @@ const LISTING_STATUS_BADGE: Record<
 const INQUIRY_STATUS_STYLES: Record<string, string> = {
   OPEN: "bg-info/15 text-info",
   WITHDRAWN: "bg-muted text-muted-foreground",
-  CONVERTED_TO_DEAL: "bg-success/15 text-success",
-  CLOSED_WON: "bg-success/15 text-success",
+  CONVERTED_TO_DEAL: "bg-success/15 text-success-strong",
+  CLOSED_WON: "bg-success/15 text-success-strong",
   CLOSED_LOST: "bg-destructive/15 text-destructive",
 };
 
@@ -113,7 +113,7 @@ const INQUIRY_STATUS_LABELS: Record<string, { ar: string; en: string }> = {
 
 function formatSARLocal(amount: number | null, lang: "ar" | "en") {
   if (amount == null) return "—";
-  return new Intl.NumberFormat(lang === "ar" ? "ar-SA" : "en-SA", {
+  return new Intl.NumberFormat(lang === "ar" ? "ar-SA-u-nu-latn" : "en-SA", {
     style: "currency",
     currency: "SAR",
     maximumFractionDigits: 0,
@@ -364,7 +364,7 @@ export default function MyListingsPage() {
           <span className="text-xs text-muted-foreground">
             {row.original.publishedAt
               ? new Date(row.original.publishedAt).toLocaleDateString(
-                  lang === "ar" ? "ar-SA" : "en-GB"
+                  lang === "ar" ? "ar-SA-u-nu-latn" : "en-GB"
                 )
               : "—"}
           </span>
@@ -461,7 +461,7 @@ export default function MyListingsPage() {
         cell: ({ row }) => (
           <span className="text-xs text-muted-foreground">
             {new Date(row.original.createdAt).toLocaleDateString(
-              lang === "ar" ? "ar-SA" : "en-GB"
+              lang === "ar" ? "ar-SA-u-nu-latn" : "en-GB"
             )}
           </span>
         ),
@@ -661,7 +661,7 @@ export default function MyListingsPage() {
                       {inq.listing.title ?? inq.listing.listingNumber}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {new Date(inq.createdAt).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-GB")}
+                      {new Date(inq.createdAt).toLocaleDateString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-GB")}
                     </p>
                   </div>
                   <span

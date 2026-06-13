@@ -135,7 +135,7 @@ export default function BillingDashboardPage() {
   }
 
   const invoiceStatusColors: Record<string, string> = {
-    PAID: "bg-success/10 text-success",
+    PAID: "bg-success/10 text-success-strong",
     OVERDUE: "bg-destructive/10 text-destructive",
     DRAFT: "bg-muted text-muted-foreground",
     SENT: "bg-primary/10 text-primary",
@@ -144,7 +144,7 @@ export default function BillingDashboardPage() {
 
   const statusColors: Record<string, string> = {
     TRIALING: "bg-primary/10 text-primary",
-    ACTIVE: "bg-success/10 text-success",
+    ACTIVE: "bg-success/10 text-success-strong",
     PAST_DUE: "bg-warning/10 text-warning",
     UNPAID: "bg-destructive/10 text-destructive",
     CANCELED: "bg-muted text-muted-foreground",
@@ -251,7 +251,7 @@ export default function BillingDashboardPage() {
                 <span className="tabular-nums">
                   {subscription.nextBillingDate
                     ? new Date(subscription.nextBillingDate).toLocaleDateString(
-                        lang === "ar" ? "ar-SA" : "en-US",
+                        lang === "ar" ? "ar-SA-u-nu-latn" : "en-US",
                       )
                     : "—"}
                 </span>
@@ -261,7 +261,7 @@ export default function BillingDashboardPage() {
                   {t.trialEnds}:{" "}
                   <span className="tabular-nums">
                     {new Date(subscription.trialEndsAt).toLocaleDateString(
-                      lang === "ar" ? "ar-SA" : "en-US",
+                      lang === "ar" ? "ar-SA-u-nu-latn" : "en-US",
                     )}
                   </span>
                 </p>
@@ -327,7 +327,7 @@ export default function BillingDashboardPage() {
                       <span key="date" className="tabular-nums">
                         {inv.issuedAt
                           ? new Date(inv.issuedAt).toLocaleDateString(
-                              lang === "ar" ? "ar-SA" : "en-US",
+                              lang === "ar" ? "ar-SA-u-nu-latn" : "en-US",
                             )
                           : "—"}
                       </span>,
@@ -454,21 +454,21 @@ export default function BillingDashboardPage() {
                     </p>
                     <p className="text-sm text-muted-foreground mt-1">
                       {t.nextBilling}: {subscription.nextBillingDate
-                        ? new Date(subscription.nextBillingDate).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-US")
+                        ? new Date(subscription.nextBillingDate).toLocaleDateString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-US")
                         : "—"}
                     </p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">{t.price}</p>
                     <p className="text-lg font-semibold text-foreground mt-1">
-                      {Number(subscription.priceAtRenewal ?? 0).toLocaleString(lang === "ar" ? "ar-SA" : "en-US")} {t.sar}
+                      {Number(subscription.priceAtRenewal ?? 0).toLocaleString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-US")} {t.sar}
                       <span className="text-sm font-normal text-muted-foreground">
                         /{subscription.billingCycle === "ANNUAL" ? t.year : t.month}
                       </span>
                     </p>
                     {subscription.trialEndsAt && subscription.status === "TRIALING" && (
                       <p className="text-sm text-info mt-1">
-                        {t.trialEnds}: {new Date(subscription.trialEndsAt).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-US")}
+                        {t.trialEnds}: {new Date(subscription.trialEndsAt).toLocaleDateString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-US")}
                       </p>
                     )}
                   </div>
@@ -549,12 +549,12 @@ export default function BillingDashboardPage() {
                         <div>
                           <p className="text-sm font-medium text-foreground">{inv.invoiceNumber}</p>
                           <p className="text-xs text-muted-foreground">
-                            {inv.issuedAt ? new Date(inv.issuedAt).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-US") : "—"}
+                            {inv.issuedAt ? new Date(inv.issuedAt).toLocaleDateString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-US") : "—"}
                           </p>
                         </div>
                         <div className="text-end">
                           <p className="text-sm font-semibold text-foreground">
-                            {Number(inv.total).toLocaleString(lang === "ar" ? "ar-SA" : "en-US")} {t.sar}
+                            {Number(inv.total).toLocaleString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-US")} {t.sar}
                           </p>
                           <span className={`text-xs px-2 py-0.5 rounded-full ${invoiceStatusColors[inv.status] ?? "bg-muted text-muted-foreground"}`}>
                             {inv.status}

@@ -42,7 +42,7 @@ function relativeDate(dateStr: string, lang: "ar" | "en"): string {
   const days = Math.floor(hours / 24);
   if (days === 1) return lang === "ar" ? "أمس" : "Yesterday";
   if (days < 30) return lang === "ar" ? `منذ ${days} يوم` : `${days}d ago`;
-  return new Date(dateStr).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-US", {
+  return new Date(dateStr).toLocaleDateString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-US", {
     day: "numeric",
     month: "short",
   });
@@ -61,7 +61,7 @@ const ACTIVITY_COLORS: Record<ActivityType, string> = {
   CALL: "text-blue-600 bg-blue-50",
   EMAIL: "text-purple-600 bg-purple-50",
   MEETING: "text-amber-600 bg-amber-50",
-  SITE_VISIT: "text-green-600 bg-green-50",
+  SITE_VISIT: "text-success-strong bg-green-50",
   NOTE: "text-gray-600 bg-gray-100",
   WHATSAPP: "text-emerald-600 bg-emerald-50",
 };

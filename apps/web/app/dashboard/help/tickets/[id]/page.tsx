@@ -164,7 +164,7 @@ export default function TicketDetailPage() {
   }
 
   function formatDate(d: string) {
-    return new Date(d).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-US", {
+    return new Date(d).toLocaleDateString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-US", {
       year: "numeric",
       month: "short",
       day: "numeric",

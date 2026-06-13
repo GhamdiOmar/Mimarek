@@ -292,7 +292,7 @@ export default function DocumentVaultPage() {
                 doc.uploadedBy?.name ?? doc.uploadedBy ?? (lang === "ar" ? "غير معروف" : "Unknown");
               const date = doc.createdAt
                 ? new Date(doc.createdAt).toLocaleDateString(
-                    lang === "ar" ? "ar-SA" : "en-SA"
+                    lang === "ar" ? "ar-SA-u-nu-latn" : "en-SA"
                   )
                 : "—";
               return (
@@ -530,7 +530,7 @@ export default function DocumentVaultPage() {
                    <div className="flex items-start justify-between mb-4">
                       <div className={cn(
                         "h-12 w-12 rounded flex items-center justify-center",
-                        ['pdf'].includes(doc.type?.toLowerCase()) ? "bg-destructive/10 text-destructive" : ['jpg', 'png', 'jpeg'].includes(doc.type?.toLowerCase()) ? "bg-info/10 text-info" : "bg-success/10 text-success"
+                        ['pdf'].includes(doc.type?.toLowerCase()) ? "bg-destructive/10 text-destructive" : ['jpg', 'png', 'jpeg'].includes(doc.type?.toLowerCase()) ? "bg-info/10 text-info" : "bg-success/10 text-success-strong"
                       )}>
                          {['pdf'].includes(doc.type?.toLowerCase()) ? <FilePdf className="h-7 w-7" /> : ['jpg', 'png', 'jpeg'].includes(doc.type?.toLowerCase()) ? <FileImage className="h-7 w-7" /> : <FileText className="h-7 w-7" />}
                       </div>

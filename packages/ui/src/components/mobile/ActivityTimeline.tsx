@@ -44,7 +44,7 @@ const DOT: Record<ActivityTimelineTone, string> = {
 const ICON_TONE: Record<ActivityTimelineTone, string> = {
   default: "bg-muted text-muted-foreground",
   primary: "bg-primary/10 text-primary",
-  success: "bg-success/10 text-success",
+  success: "bg-success/10 text-success-strong",
   info: "bg-info/10 text-info",
   warning: "bg-warning/10 text-warning",
   destructive: "bg-destructive/10 text-destructive",

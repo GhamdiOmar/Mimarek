@@ -174,7 +174,7 @@ export default function PlansPage() {
             style={{ display: "inline-flex" }}
           >
             {t.annual}
-            <span className="text-[10px] bg-success/10 text-success px-1.5 py-0.5 rounded-full">
+            <span className="text-[10px] bg-success/10 text-success-strong px-1.5 py-0.5 rounded-full">
               {t.save20}
             </span>
           </Button>
@@ -415,7 +415,7 @@ export default function PlansPage() {
           style={{ display: "inline-flex" }}
         >
           {t.annual}
-          <span className="text-xs bg-success/15 text-success px-2 py-0.5 rounded-full whitespace-nowrap">
+          <span className="text-xs bg-success/15 text-success-strong px-2 py-0.5 rounded-full whitespace-nowrap">
             {t.save20}
           </span>
         </Button>
@@ -532,25 +532,25 @@ export default function PlansPage() {
                       {appliedCoupon && discountAmount > 0 ? (
                         <>
                           <p className="text-sm text-muted-foreground line-through" data-testid="original-price">
-                            {monthlyEquiv.toLocaleString(lang === "ar" ? "ar-SA" : "en-US")} {t.sar}/{t.month}
+                            {monthlyEquiv.toLocaleString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-US")} {t.sar}/{t.month}
                           </p>
                           <p className="text-3xl font-bold text-success" data-testid="discounted-price">
-                            {discountedMonthly.toLocaleString(lang === "ar" ? "ar-SA" : "en-US")}
+                            {discountedMonthly.toLocaleString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-US")}
                             <span className="text-base font-normal text-muted-foreground"> {t.sar}/{t.month}</span>
                           </p>
                           <p className="text-xs text-success mt-1">
-                            {t.youSave} {discountAmount.toLocaleString(lang === "ar" ? "ar-SA" : "en-US")} {t.sar}
+                            {t.youSave} {discountAmount.toLocaleString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-US")} {t.sar}
                           </p>
                         </>
                       ) : (
                         <p className="text-3xl font-bold">
-                          {monthlyEquiv.toLocaleString(lang === "ar" ? "ar-SA" : "en-US")}
+                          {monthlyEquiv.toLocaleString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-US")}
                           <span className="text-base font-normal text-muted-foreground"> {t.sar}/{t.month}</span>
                         </p>
                       )}
                       {billingCycle === "ANNUAL" && (
                         <p className="text-xs text-muted-foreground mt-1">
-                          {t.billedAnnually}: {(appliedCoupon ? discountedPrice : price).toLocaleString(lang === "ar" ? "ar-SA" : "en-US")} {t.sar}/{t.year}
+                          {t.billedAnnually}: {(appliedCoupon ? discountedPrice : price).toLocaleString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-US")} {t.sar}/{t.year}
                         </p>
                       )}
                     </>

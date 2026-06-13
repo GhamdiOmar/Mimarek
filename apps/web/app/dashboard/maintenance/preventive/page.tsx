@@ -411,7 +411,7 @@ export default function PreventiveMaintenancePage() {
               };
               const nextDateLabel = plan.nextRunDate
                 ? new Date(plan.nextRunDate).toLocaleDateString(
-                    lang === "ar" ? "ar-SA" : "en-US"
+                    lang === "ar" ? "ar-SA-u-nu-latn" : "en-US"
                   )
                 : "—";
               const isDue =
