@@ -39,6 +39,10 @@ import { usePermissions } from "../../../hooks/usePermissions";
 import { getInstallments, recordPayment } from "../../actions/installments";
 import { getPaymentPlan, recordInstallmentPayment } from "../../actions/payment-plans";
 import { toast } from "sonner";
+import {
+  PAYMENT_STATUS_LABEL as STATUS_LABELS,
+  PAYMENT_STATUS_VARIANT as STATUS_VARIANT,
+} from "../../../lib/domain-labels";
 
 const SAR = (amount: number) =>
   new Intl.NumberFormat("en-SA", { style: "currency", currency: "SAR" }).format(amount);
@@ -137,19 +141,6 @@ function getPaymentTone(entry: {
   };
 }
 
-const STATUS_VARIANT: Record<string, React.ComponentProps<typeof Badge>["variant"]> = {
-  PAID: "success",
-  UNPAID: "pending",
-  OVERDUE: "overdue",
-  PARTIALLY_PAID: "warning",
-};
-
-const STATUS_LABELS: Record<string, { ar: string; en: string }> = {
-  PAID: { ar: "مدفوع", en: "Paid" },
-  UNPAID: { ar: "غير مدفوع", en: "Upcoming" },
-  OVERDUE: { ar: "متأخر", en: "Overdue" },
-  PARTIALLY_PAID: { ar: "مدفوع جزئياً", en: "Partially Paid" },
-};
 
 const PAYMENT_METHODS = [
   { value: "CASH", ar: "نقد", en: "Cash" },

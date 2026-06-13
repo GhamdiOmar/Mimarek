@@ -10,6 +10,7 @@ import {
   TENANT_SCOPED_PERMISSIONS,
   type Permission,
 } from "./permissions";
+import { routeGuardFor } from "./route-guards";
 
 export type AuthSession = {
   userId: string;
@@ -90,14 +91,23 @@ export async function getTenantSessionOrThrow(): Promise<TenantAuthSession> {
  * render path and should hard-fail if reached without permission.
  */
 export async function getTenantPageAccess(
-  permission: Permission,
+  permission?: Permission,
+  routeKey?: string,
 ): Promise<{ allowed: true; session: TenantAuthSession } | { allowed: false }> {
+  // F4: a page may pass an explicit permission (current behavior — unchanged) OR
+  // a `routeKey` to source the required permission from ROUTE_GUARDS (the single
+  // source of truth). When both are passed, the explicit `permission` wins (it is
+  // the value the page author asserted). The routeKey path is additive — no
+  // existing call site changes behavior. If neither resolves to a permission
+  // (misuse), fall back to a deny-by-default check on `dashboard:read`.
+  const required: Permission =
+    permission ?? routeGuardFor(routeKey ?? "")?.permission ?? "dashboard:read";
   const session = await getSessionOrThrow();
   // System users belong to the platform surface — send them to their home
   // rather than showing a tenant access-denied page.
   if (isSystemRole(session.role)) redirect("/dashboard/admin");
   if (!session.organizationId) return { allowed: false };
-  if (!hasPermission(session.role, permission)) return { allowed: false };
+  if (!hasPermission(session.role, required)) return { allowed: false };
   return { allowed: true, session: session as TenantAuthSession };
 }
 

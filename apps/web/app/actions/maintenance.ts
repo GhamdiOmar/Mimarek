@@ -218,6 +218,19 @@ export async function updateMaintenanceRequest(
     }
   }
 
+  // BOLA guard: a reassignment must target a user inside the caller's org.
+  // Mirrors the create-path guard above; without it, updateMaintenanceRequest
+  // would write an arbitrary cross-org assignedToId (OWASP API1:2023).
+  if (data.assignedToId) {
+    const assignee = await db.user.findFirst({
+      where: { id: data.assignedToId, organizationId: session.organizationId },
+      select: { id: true },
+    });
+    if (!assignee) {
+      throw new Error("Assigned user not found or does not belong to your organization.");
+    }
+  }
+
   const updateData: any = {};
   if (data.title !== undefined) updateData.title = data.title;
   if (data.description !== undefined) updateData.description = data.description;

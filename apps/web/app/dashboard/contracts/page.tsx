@@ -51,6 +51,10 @@ import { getJourneySummary } from "../../actions/journey";
 import { getMissingRequiredDocs } from "../../actions/document-requirements";
 import type { JourneySummary } from "@repo/types";
 import {
+  CONTRACT_STATUS_LABEL as CONTRACT_STATUS_LABELS,
+  CONTRACT_STATUS_VARIANT,
+} from "../../../lib/domain-labels";
+import {
   LifecycleRail,
   NextActionPanel,
   ProcessBlockerBanner,
@@ -79,21 +83,6 @@ type Contract = {
 type Customer = { id: string; name: string };
 type Unit = { id: string; number: string; status: string };
 
-const CONTRACT_STATUS_VARIANT: Record<string, React.ComponentProps<typeof Badge>["variant"]> = {
-  DRAFT: "draft",
-  SENT: "info",
-  SIGNED: "success",
-  CANCELLED: "error",
-  VOID: "warning",
-};
-
-const CONTRACT_STATUS_LABELS: Record<string, { ar: string; en: string }> = {
-  DRAFT: { ar: "مسودة", en: "Draft" },
-  SENT: { ar: "مُرسل", en: "Sent" },
-  SIGNED: { ar: "موقّع", en: "Signed" },
-  CANCELLED: { ar: "ملغي", en: "Cancelled" },
-  VOID: { ar: "لاغٍ", en: "Void" },
-};
 
 export default function ContractsPage() {
   const { lang, dir } = useLanguage();

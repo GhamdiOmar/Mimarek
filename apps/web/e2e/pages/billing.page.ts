@@ -44,7 +44,7 @@ export class BillingPage {
     await this.page
       .locator('#main-content .hidden.md\\:block[data-loaded="true"]')
       .first()
-      .waitFor({ state: 'attached', timeout: 15_000 });
+      .waitFor({ state: 'visible', timeout: 15_000 });
   }
 
   // ─── Billing Dashboard ──────────────────────────────────────────────────

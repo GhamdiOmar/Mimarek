@@ -443,7 +443,7 @@ export default function ListingDetailPage() {
             </div>
             <div className="space-y-1">
               <label className="text-xs font-medium text-muted-foreground">
-                {lang === "ar" ? "رقم الهاتف (اختياري)" : "Phone number (optional)"}
+                {lang === "ar" ? "رقم الهاتف *" : "Phone number *"}
               </label>
               <input
                 type="tel"
@@ -451,9 +451,15 @@ export default function ListingDetailPage() {
                 value={contactPhone}
                 onChange={(e) => setContactPhone(e.target.value)}
                 placeholder={lang === "ar" ? "05xxxxxxxx" : "05xxxxxxxx"}
+                required
                 className="flex h-9 w-full rounded-md border border-border bg-background px-3 py-1 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                 dir="ltr"
               />
+              <p className="text-xs text-muted-foreground">
+                {lang === "ar"
+                  ? "مطلوب — رقم جوال سعودي للتواصل"
+                  : "Required — Saudi mobile number for callback"}
+              </p>
             </div>
           </div>
         )}

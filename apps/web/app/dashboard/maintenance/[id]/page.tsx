@@ -49,35 +49,12 @@ import {
 import { getJourneySummary } from "../../../actions/journey";
 import type { JourneySummary } from "@repo/types";
 import { formatDualDate } from "../../../../lib/hijri";
+import {
+  MAINTENANCE_CATEGORY_LABEL as categoryLabels,
+  MAINTENANCE_STATUS_LABEL as statusLabels,
+  MAINTENANCE_PRIORITY_LABEL as priorityLabels,
+} from "../../../../lib/domain-labels";
 
-const categoryLabels: Record<string, { ar: string; en: string }> = {
-  HVAC: { ar: "تكييف", en: "HVAC" },
-  PLUMBING: { ar: "سباكة", en: "Plumbing" },
-  ELECTRICAL: { ar: "كهرباء", en: "Electrical" },
-  STRUCTURAL: { ar: "إنشائي", en: "Structural" },
-  FIRE_SAFETY: { ar: "سلامة حريق", en: "Fire Safety" },
-  ELEVATOR: { ar: "مصاعد", en: "Elevator" },
-  CLEANING: { ar: "نظافة", en: "Cleaning" },
-  LANDSCAPING: { ar: "تنسيق حدائق", en: "Landscaping" },
-  PEST_CONTROL: { ar: "مكافحة آفات", en: "Pest Control" },
-  GENERAL: { ar: "عام", en: "General" },
-};
-
-const statusLabels: Record<string, { ar: string; en: string; variant: string }> = {
-  OPEN: { ar: "بانتظار المراجعة", en: "Waiting Review", variant: "draft" },
-  ASSIGNED: { ar: "معيّن", en: "Assigned", variant: "reserved" },
-  IN_PROGRESS: { ar: "قيد التنفيذ", en: "In Progress", variant: "reserved" },
-  ON_HOLD: { ar: "معلّق", en: "On Hold", variant: "maintenance" },
-  RESOLVED: { ar: "تم الحل", en: "Resolved", variant: "available" },
-  CLOSED: { ar: "مغلق", en: "Closed", variant: "sold" },
-};
-
-const priorityLabels: Record<string, { ar: string; en: string; color: string }> = {
-  LOW: { ar: "منخفض", en: "Low", color: "text-muted-foreground" },
-  MEDIUM: { ar: "متوسط", en: "Medium", color: "text-primary" },
-  HIGH: { ar: "عالي", en: "High", color: "text-warning" },
-  URGENT: { ar: "عاجل", en: "Urgent", color: "text-destructive" },
-};
 
 const VALID_TRANSITIONS: Record<string, string[]> = {
   OPEN: ["ASSIGNED", "IN_PROGRESS", "CLOSED"],

@@ -11,6 +11,8 @@ import {
   listSellerOrgsWithListings,
   type MarketplaceListingFilters,
 } from "../../lib/marketplace/listing-view";
+import { encryptCustomerData } from "../../lib/pii-crypto";
+import { normalizeSaudiPhoneE164 } from "../../lib/phone";
 
 // Saudi National Address short code: 4 letters + 4 digits (e.g. "RRRA2929").
 const SHORT_ADDRESS_RE = /^[A-Z]{4}\d{4}$/;
@@ -445,6 +447,18 @@ export async function confirmMarketplaceInterest(
 ) {
   const session = await requirePermission("marketplace:inquiry:write");
 
+  // Validate and normalize the contact phone (required — seller needs a real callback number).
+  const normalizedPhone = normalizeSaudiPhoneE164(payload.contactPhone);
+  if (!normalizedPhone) {
+    throw new Error(
+      "A valid Saudi mobile number is required to submit an inquiry (e.g. 05XXXXXXXX). " +
+        "يجب إدخال رقم جوال سعودي صحيح لإرسال الاستفسار (مثال: 05XXXXXXXX).",
+    );
+  }
+
+  // Encrypt the normalized phone before writing to the Customer table.
+  const encryptedPhone = encryptCustomerData({ phone: normalizedPhone });
+
   const result = await db.$transaction(async (tx) => {
     const listing = await tx.marketplaceListing.findFirst({
       where: { id: listingId, status: "PUBLISHED" },
@@ -464,11 +478,14 @@ export async function confirmMarketplaceInterest(
     const buyerOrg = await buildOrgSnapshot(session.organizationId);
 
     // Seller-side CRM customer representing the buyer organization.
+    // phone is stored encrypted (AES-256-GCM) with a blind-index hash for search,
+    // matching the canonical path in customers.ts:139-155.
     const crmCustomer = await tx.customer.create({
       data: {
         name: payload.contactName?.trim() || buyerOrg.nameEnglish || buyerOrg.name,
         nameArabic: buyerOrg.nameArabic ?? undefined,
-        phone: payload.contactPhone?.trim() || "—",
+        phone: encryptedPhone.phone as string,
+        phoneHash: encryptedPhone.phoneHash as string,
         status: "NEW",
         source: "MARKETPLACE",
         organizationId: listing.sellerOrgId,

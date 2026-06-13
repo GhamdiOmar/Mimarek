@@ -1,4 +1,5 @@
 import type { NextAuthConfig } from "next-auth";
+import { audienceForPath } from "./lib/route-guards";
 
 /**
  * Edge-compatible auth config — no Node.js-only imports (bcrypt, prisma adapter).
@@ -26,18 +27,27 @@ export const authConfig = {
         }
 
         // Layer 2 audience gate (CLAUDE.md § 8.3) — system users may only visit
-        // admin subtree + a short shared-route allowlist. Every tenant route calls
-        // tenant-scoped server actions that Layer 3 rejects for system roles; if
-        // we let the page render it would throw a 500. Redirect before that.
+        // platform + shared surfaces. Every tenant route calls tenant-scoped
+        // server actions that Layer 3 rejects for system roles; if we let the
+        // page render it would throw a 500. Redirect before that.
+        //
+        // F4: the route→audience map is now ROUTE_GUARDS (lib/route-guards.ts) —
+        // a single edge-safe source of truth shared with nav-items.ts and the
+        // page guards. `audienceForPath` does longest-prefix matching so nested
+        // routes (/dashboard/admin/coupons, /dashboard/notifications/x, dynamic
+        // [id] segments) resolve correctly. The `/dashboard` key (audience
+        // "tenant") is a prefix of every /dashboard/** path, so any unmapped
+        // path under /dashboard falls through to "tenant" — exactly the old
+        // "everything else under /dashboard = tenant" semantics. The old
+        // hardcoded allowlist (admin* = platform; more, notifications* = shared)
+        // is reproduced by the corresponding ROUTE_GUARDS entries.
         const role = (auth?.user as any)?.role;
         const isSystemRole = role === "SYSTEM_ADMIN" || role === "SYSTEM_SUPPORT";
         if (isSystemRole) {
-          const p = nextUrl.pathname;
-          const systemAllowed =
-            p.startsWith("/dashboard/admin") ||
-            p === "/dashboard/more" ||
-            p.startsWith("/dashboard/notifications");
-          if (!systemAllowed) {
+          const audience = audienceForPath(nextUrl.pathname);
+          // System users are allowed on "platform" and "shared" surfaces only.
+          // Anything resolving to "tenant" (or, defensively, no match) → redirect.
+          if (audience !== "platform" && audience !== "shared") {
             return Response.redirect(new URL("/dashboard/admin", nextUrl));
           }
         }

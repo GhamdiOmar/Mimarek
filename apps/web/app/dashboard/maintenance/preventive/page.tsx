@@ -53,26 +53,11 @@ import {
   generateWorkOrdersFromPlans,
 } from "../../../actions/preventive-maintenance";
 import { getAssignableUsers, getUnitsForMaintenance } from "../../../actions/maintenance";
+import {
+  MAINTENANCE_CATEGORY_LABEL as categoryLabels,
+  MAINTENANCE_PRIORITY_LABEL as priorityLabels,
+} from "../../../../lib/domain-labels";
 
-const categoryLabels: Record<string, { ar: string; en: string }> = {
-  HVAC: { ar: "تكييف", en: "HVAC" },
-  PLUMBING: { ar: "سباكة", en: "Plumbing" },
-  ELECTRICAL: { ar: "كهرباء", en: "Electrical" },
-  STRUCTURAL: { ar: "إنشائي", en: "Structural" },
-  FIRE_SAFETY: { ar: "سلامة حريق", en: "Fire Safety" },
-  ELEVATOR: { ar: "مصاعد", en: "Elevator" },
-  CLEANING: { ar: "نظافة", en: "Cleaning" },
-  LANDSCAPING: { ar: "تنسيق حدائق", en: "Landscaping" },
-  PEST_CONTROL: { ar: "مكافحة آفات", en: "Pest Control" },
-  GENERAL: { ar: "عام", en: "General" },
-};
-
-const priorityLabels: Record<string, { ar: string; en: string }> = {
-  LOW: { ar: "منخفض", en: "Low" },
-  MEDIUM: { ar: "متوسط", en: "Medium" },
-  HIGH: { ar: "عالي", en: "High" },
-  URGENT: { ar: "عاجل", en: "Urgent" },
-};
 
 const recurrenceLabels: Record<string, { ar: string; en: string }> = {
   DAILY: { ar: "يومي", en: "Daily" },

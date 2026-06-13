@@ -49,6 +49,10 @@ import { getUnitsWithBuildings } from "../../actions/units";
 import { getJourneySummary } from "../../actions/journey";
 import type { JourneySummary } from "@repo/types";
 import {
+  RESERVATION_STATUS_LABEL as STATUS_LABELS,
+  RESERVATION_STATUS_VARIANT as STATUS_VARIANT,
+} from "../../../lib/domain-labels";
+import {
   LifecycleRail,
   NextActionPanel,
   ProcessBlockerBanner,
@@ -79,19 +83,6 @@ type Reservation = {
 type Customer = { id: string; name: string; phone?: string };
 type Unit = { id: string; number: string; status: string; buildingId?: string };
 
-const STATUS_VARIANT: Record<string, React.ComponentProps<typeof Badge>["variant"]> = {
-  PENDING: "pending",
-  CONFIRMED: "success",
-  EXPIRED: "error",
-  CANCELLED: "default",
-};
-
-const STATUS_LABELS: Record<string, { ar: string; en: string }> = {
-  PENDING: { ar: "قيد الانتظار", en: "Pending" },
-  CONFIRMED: { ar: "مؤكد", en: "Confirmed" },
-  EXPIRED: { ar: "منتهي", en: "Expired" },
-  CANCELLED: { ar: "ملغي", en: "Cancelled" },
-};
 
 export default function ReservationsPage() {
   const { lang, dir } = useLanguage();

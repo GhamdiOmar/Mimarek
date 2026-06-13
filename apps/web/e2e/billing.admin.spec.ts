@@ -276,11 +276,13 @@ test.describe('Billing Dashboard — Admin', () => {
 
     test('empty invoices state shows appropriate message', async () => {
       await billing.gotoInvoices();
-      // Either shows invoice table or "No invoices" message
-      const hasTable = await billing.page.locator('table').isVisible().catch(() => false);
-      const hasEmpty = await billing.page.locator('#main-content .hidden.md\\:block').getByText(/لا توجد فواتير|No invoices/i)
-        .first().isVisible().catch(() => false);
-      expect(hasTable || hasEmpty).toBeTruthy();
+      // The desktop tree shows EITHER the invoice table OR the empty-state text.
+      // Use a real OR-locator + toBeVisible (not isVisible().catch(() => false),
+      // which silently swallows a locator miss into a false-negative failure).
+      const desktop = billing.page.locator('#main-content .hidden.md\\:block');
+      const table = desktop.locator('table').first();
+      const empty = desktop.getByText(/لا توجد فواتير|No invoices/i).first();
+      await expect(table.or(empty)).toBeVisible({ timeout: 10_000 });
     });
   });
 

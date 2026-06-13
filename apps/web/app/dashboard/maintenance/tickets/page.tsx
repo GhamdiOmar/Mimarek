@@ -50,35 +50,12 @@ import {
   getUnitsForMaintenance,
 } from "../../../actions/maintenance";
 import Link from "next/link";
+import {
+  MAINTENANCE_CATEGORY_LABEL as categoryLabels,
+  MAINTENANCE_PRIORITY_LABEL as priorityLabels,
+  MAINTENANCE_STATUS_LABEL as statusLabels,
+} from "../../../../lib/domain-labels";
 
-const categoryLabels: Record<string, { ar: string; en: string }> = {
-  HVAC: { ar: "تكييف", en: "HVAC" },
-  PLUMBING: { ar: "سباكة", en: "Plumbing" },
-  ELECTRICAL: { ar: "كهرباء", en: "Electrical" },
-  STRUCTURAL: { ar: "إنشائي", en: "Structural" },
-  FIRE_SAFETY: { ar: "سلامة حريق", en: "Fire Safety" },
-  ELEVATOR: { ar: "مصاعد", en: "Elevator" },
-  CLEANING: { ar: "نظافة", en: "Cleaning" },
-  LANDSCAPING: { ar: "تنسيق حدائق", en: "Landscaping" },
-  PEST_CONTROL: { ar: "مكافحة آفات", en: "Pest Control" },
-  GENERAL: { ar: "عام", en: "General" },
-};
-
-const statusLabels: Record<string, { ar: string; en: string }> = {
-  OPEN: { ar: "بانتظار المراجعة", en: "Waiting Review" },
-  ASSIGNED: { ar: "معيّن", en: "Assigned" },
-  IN_PROGRESS: { ar: "قيد التنفيذ", en: "In Progress" },
-  ON_HOLD: { ar: "معلّق", en: "On Hold" },
-  RESOLVED: { ar: "تم الحل", en: "Resolved" },
-  CLOSED: { ar: "مغلق", en: "Closed" },
-};
-
-const priorityLabels: Record<string, { ar: string; en: string; color: string }> = {
-  LOW: { ar: "منخفض", en: "Low", color: "text-muted-foreground" },
-  MEDIUM: { ar: "متوسط", en: "Medium", color: "text-primary" },
-  HIGH: { ar: "عالي", en: "High", color: "text-warning" },
-  URGENT: { ar: "عاجل", en: "Urgent", color: "text-destructive" },
-};
 
 export default function MaintenancePage() {
   const router = useRouter();

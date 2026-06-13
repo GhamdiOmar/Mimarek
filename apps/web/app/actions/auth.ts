@@ -2,10 +2,12 @@
 
 import { signIn } from "../../auth";
 import { AuthError } from "next-auth";
+import { headers } from "next/headers";
 import { db } from "@repo/db";
 import { hash as bcryptHash } from "@node-rs/bcrypt";
 import { validatePassword } from "../../lib/password-policy";
 import { logAuditEvent } from "../../lib/audit";
+import { checkRateLimit } from "../../lib/rate-limit";
 
 const ALLOWED_LANDING_PAGES = [
   "/dashboard", "/dashboard/units",
@@ -91,6 +93,28 @@ export async function registerUser(data: {
   const validation = validatePassword(data.password, { name: data.name, email: data.email });
   if (!validation.valid) {
     return { error: "WEAK_PASSWORD", details: validation.errors };
+  }
+
+  // Rate limiting — OWASP anti-automation on registration
+  // Per-IP: 5 attempts / hour (carrier-grade NAT safe; skip if header absent)
+  // Per-normalized-email: 3 attempts / hour (defeats +aliasing)
+  const h = await headers();
+  const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim();
+  // Normalize email for rate-limit key only: lowercase + strip +suffix from local part
+  const localPart = data.email.split("@")[0] ?? "";
+  const domain = data.email.split("@")[1] ?? "";
+  const normalizedLocal = localPart.replace(/\+.*$/, "").toLowerCase();
+  const normalizedEmailKey = `${normalizedLocal}@${domain.toLowerCase()}`;
+
+  if (ip) {
+    const ipRl = await checkRateLimit(`register:ip:${ip}`, 5, 60 * 60 * 1000);
+    if (!ipRl.allowed) {
+      return { error: "RATE_LIMITED" };
+    }
+  }
+  const emailRl = await checkRateLimit(`register:email:${normalizedEmailKey}`, 3, 60 * 60 * 1000);
+  if (!emailRl.allowed) {
+    return { error: "RATE_LIMITED" };
   }
 
   // Hash password before transaction (bcrypt is CPU-intensive, keep outside tx)

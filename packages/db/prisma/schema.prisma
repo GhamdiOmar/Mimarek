@@ -215,9 +215,9 @@ model Customer {
   maritalStatus        String? // single, married, divorced, widowed
   address              Json? // National address {region, city, district, streetName, buildingNumber, postalCode, additionalNumber, shortAddress}
   documentInfo         Json? // ID document {documentType, documentNumber, issueDate, expiryDate, issuingAuthority}
-  nationalIdHash       String? // SHA-256 hash for exact search on encrypted nationalId
-  phoneHash            String? // SHA-256 hash for exact search on encrypted phone
-  emailHash            String? // SHA-256 hash for exact search on encrypted email
+  nationalIdHash       String? // HMAC-SHA256 blind index (lib/encryption.ts hashForSearch) for exact search on encrypted nationalId
+  phoneHash            String? // HMAC-SHA256 blind index (lib/encryption.ts hashForSearch) for exact search on encrypted phone (E.164-normalized)
+  emailHash            String? // HMAC-SHA256 blind index (lib/encryption.ts hashForSearch) for exact search on encrypted email
   // RED: Buyer profile enhancements
   preferredLanguage    String?                    @default("ar")
   authorizedSignatory  String? // For corporate buyers
@@ -247,7 +247,13 @@ model Customer {
 
   @@index([organizationId])
   @@index([agentId])
-  @@index([nationalId])
+  // Blind-index lookups are tenant-scoped exact matches. Composite btree indexes
+  // (hash-type indexes are single-column equality-only and can't be tenant-scoped).
+  @@index([organizationId, phoneHash])
+  @@index([organizationId, emailHash])
+  @@index([organizationId, nationalIdHash])
+  // NOTE: @@index([nationalId]) removed in v4.18.0 — it indexed random-IV ciphertext
+  // (never equality-matched), so it was pure write-amplification dead weight.
 }
 
 enum PersonType {

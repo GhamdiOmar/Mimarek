@@ -1,4 +1,5 @@
 import type { Permission } from "../../lib/permissions";
+import { routeGuardFor } from "../../lib/route-guards";
 
 export interface NavItem {
   label: { ar: string; en: string };
@@ -12,37 +13,71 @@ export interface NavItem {
   hiddenFromNav?: boolean;
 }
 
-export const navItems: NavItem[] = [
+/**
+ * Nav entries — labels / icons / section / order / hiddenFromNav live HERE
+ * (presentation), but `permission` and `audience` are derived from the single
+ * source of truth `ROUTE_GUARDS` (lib/route-guards.ts) via the post-processing
+ * step below. Do NOT hand-write `permission`/`audience` on these entries; edit
+ * ROUTE_GUARDS instead (F4).
+ */
+type NavSeed = Omit<NavItem, "permission" | "audience">;
+
+const navSeeds: NavSeed[] = [
   // Core — tenant only
-  { label: { ar: "الرئيسية", en: "Dashboard" }, icon: "LayoutGrid", href: "/dashboard", section: "core", permission: "dashboard:read", audience: "tenant" },
-  { label: { ar: "لوحة التأجير", en: "Leasing" }, icon: "ClipboardList", href: "/dashboard/leasing", section: "core", permission: "dashboard:read", audience: "tenant" },
-  { label: { ar: "المالية", en: "Finance" }, icon: "Wallet", href: "/dashboard/finance", section: "core", permission: "dashboard:read", audience: "tenant" },
-  { label: { ar: "إدارة العملاء", en: "CRM" }, icon: "Users", href: "/dashboard/crm", section: "core", permission: "crm:read", audience: "tenant" },
-  { label: { ar: "العقارات", en: "Properties" }, icon: "Building2", href: "/dashboard/units", section: "core", permission: "properties:read", audience: "tenant" },
-  { label: { ar: "الحجوزات", en: "Reservations" }, icon: "TrendingUp", href: "/dashboard/reservations", section: "core", permission: "deals:read", audience: "tenant" },
-  { label: { ar: "العقود", en: "Contracts" }, icon: "FileText", href: "/dashboard/contracts", section: "core", permission: "contracts:read", audience: "tenant" },
-  { label: { ar: "السوق", en: "Marketplace" }, icon: "Store", href: "/dashboard/marketplace", section: "core", permission: "marketplace:read", audience: "tenant" },
-  { label: { ar: "إعلاناتي", en: "My Listings" }, icon: "Tags", href: "/dashboard/marketplace/my-listings", section: "core", permission: "marketplace:manage_own", audience: "tenant", hiddenFromNav: true },
+  { label: { ar: "الرئيسية", en: "Dashboard" }, icon: "LayoutGrid", href: "/dashboard", section: "core" },
+  { label: { ar: "لوحة التأجير", en: "Leasing" }, icon: "ClipboardList", href: "/dashboard/leasing", section: "core" },
+  { label: { ar: "المالية", en: "Finance" }, icon: "Wallet", href: "/dashboard/finance", section: "core" },
+  { label: { ar: "إدارة العملاء", en: "CRM" }, icon: "Users", href: "/dashboard/crm", section: "core" },
+  { label: { ar: "العقارات", en: "Properties" }, icon: "Building2", href: "/dashboard/units", section: "core" },
+  { label: { ar: "الحجوزات", en: "Reservations" }, icon: "TrendingUp", href: "/dashboard/reservations", section: "core" },
+  { label: { ar: "العقود", en: "Contracts" }, icon: "FileText", href: "/dashboard/contracts", section: "core" },
+  { label: { ar: "السوق", en: "Marketplace" }, icon: "Store", href: "/dashboard/marketplace", section: "core" },
+  { label: { ar: "إعلاناتي", en: "My Listings" }, icon: "Tags", href: "/dashboard/marketplace/my-listings", section: "core", hiddenFromNav: true },
 
   // Operations — tenant only
-  { label: { ar: "المدفوعات", en: "Payments" }, icon: "CreditCard", href: "/dashboard/payments", section: "operations", permission: "payments:read", audience: "tenant" },
-  { label: { ar: "الصيانة", en: "Maintenance" }, icon: "Wrench", href: "/dashboard/maintenance", section: "operations", permission: "maintenance:read", audience: "tenant" },
-  { label: { ar: "التقارير", en: "Reports" }, icon: "BarChart3", href: "/dashboard/reports", section: "operations", permission: "reports:read", audience: "tenant" },
-  { label: { ar: "المستندات", en: "Documents" }, icon: "FileText", href: "/dashboard/documents", section: "operations", permission: "documents:read", audience: "tenant" },
+  { label: { ar: "المدفوعات", en: "Payments" }, icon: "CreditCard", href: "/dashboard/payments", section: "operations" },
+  { label: { ar: "الصيانة", en: "Maintenance" }, icon: "Wrench", href: "/dashboard/maintenance", section: "operations" },
+  { label: { ar: "التقارير", en: "Reports" }, icon: "BarChart3", href: "/dashboard/reports", section: "operations" },
+  { label: { ar: "المستندات", en: "Documents" }, icon: "FileText", href: "/dashboard/documents", section: "operations" },
   // Sub-sections of Maintenance — exposed via the sub-tab bar inside /dashboard/maintenance
   // and Cmd-K search, but not as separate sidebar entries (IA: one top-level per workflow).
-  { label: { ar: "تذاكر الصيانة", en: "Maintenance · Tickets" }, icon: "ClipboardList", href: "/dashboard/maintenance/tickets", section: "operations", permission: "maintenance:read", audience: "tenant", hiddenFromNav: true },
-  { label: { ar: "الصيانة الوقائية", en: "Maintenance · Preventive" }, icon: "CalendarCheck", href: "/dashboard/maintenance/preventive", section: "operations", permission: "maintenance:read", audience: "tenant", hiddenFromNav: true },
+  { label: { ar: "تذاكر الصيانة", en: "Maintenance · Tickets" }, icon: "ClipboardList", href: "/dashboard/maintenance/tickets", section: "operations", hiddenFromNav: true },
+  { label: { ar: "الصيانة الوقائية", en: "Maintenance · Preventive" }, icon: "CalendarCheck", href: "/dashboard/maintenance/preventive", section: "operations", hiddenFromNav: true },
 
   // System
-  { label: { ar: "الاشتراك والفوترة", en: "Billing" }, icon: "Receipt", href: "/dashboard/billing", section: "system", permission: "billing:read", audience: "tenant" },
-  { label: { ar: "إدارة المنصة", en: "Admin" }, icon: "ShieldCheck", href: "/dashboard/admin", section: "system", permission: "billing:admin", audience: "platform" },
-  { label: { ar: "إعدادات SEO", en: "SEO Settings" }, icon: "SearchCheck", href: "/dashboard/admin/seo", section: "system", permission: "billing:admin", audience: "platform" },
-  { label: { ar: "إعدادات البريد", en: "Email Settings" }, icon: "Mail", href: "/dashboard/admin/email", section: "system", permission: "billing:admin", audience: "platform" },
-  { label: { ar: "تذاكر الدعم", en: "Support Tickets" }, icon: "TicketCheck", href: "/dashboard/admin/tickets", section: "system", permission: "billing:admin", audience: "platform" },
-  { label: { ar: "إدارة السوق", en: "Marketplace Moderation" }, icon: "ShieldAlert", href: "/dashboard/admin/marketplace", section: "system", permission: "marketplace:moderate", audience: "platform" },
-  { label: { ar: "الإعدادات", en: "Settings" }, icon: "Settings", href: "/dashboard/settings", section: "system", permission: "organization:read" },
+  { label: { ar: "الاشتراك والفوترة", en: "Billing" }, icon: "Receipt", href: "/dashboard/billing", section: "system" },
+  { label: { ar: "إدارة المنصة", en: "Admin" }, icon: "ShieldCheck", href: "/dashboard/admin", section: "system" },
+  { label: { ar: "إعدادات SEO", en: "SEO Settings" }, icon: "SearchCheck", href: "/dashboard/admin/seo", section: "system" },
+  { label: { ar: "إعدادات البريد", en: "Email Settings" }, icon: "Mail", href: "/dashboard/admin/email", section: "system" },
+  { label: { ar: "تذاكر الدعم", en: "Support Tickets" }, icon: "TicketCheck", href: "/dashboard/admin/tickets", section: "system" },
+  { label: { ar: "إدارة السوق", en: "Marketplace Moderation" }, icon: "ShieldAlert", href: "/dashboard/admin/marketplace", section: "system" },
+  { label: { ar: "الإعدادات", en: "Settings" }, icon: "Settings", href: "/dashboard/settings", section: "system" },
 ];
+
+/**
+ * Derive `permission` + `audience` for each nav entry from ROUTE_GUARDS.
+ *
+ * Audience mapping for nav rendering (the nav filters use the enum
+ * "tenant" | "platform", and treat `undefined` as "show to all"):
+ *   - "tenant"   → "tenant"   (hidden from platform staff)
+ *   - "platform" → "platform" (hidden from tenant users)
+ *   - "shared"   → undefined  (shown to all — identical to a legacy
+ *                              audience-less entry). No current nav item is
+ *                              shared, but this keeps the mapping total.
+ * If a seed's href has no ROUTE_GUARDS entry (shouldn't happen), it falls back
+ * to no permission / no audience — i.e. visible to all, the safe legacy default
+ * — rather than crashing the nav.
+ */
+export const navItems: NavItem[] = navSeeds.map((seed) => {
+  const guard = routeGuardFor(seed.href);
+  const audience: NavItem["audience"] =
+    guard?.audience === "tenant" || guard?.audience === "platform" ? guard.audience : undefined;
+  return {
+    ...seed,
+    permission: guard?.permission,
+    audience,
+  };
+});
 
 export const breadcrumbLabels: Record<string, { ar: string; en: string }> = {
   "": { ar: "الرئيسية", en: "Dashboard" },

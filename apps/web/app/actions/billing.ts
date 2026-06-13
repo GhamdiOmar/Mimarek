@@ -7,29 +7,24 @@ import { logAuditEvent } from "../../lib/audit";
 import { ROUTES } from "../../lib/routes";
 import { createSubscription, transitionSubscription } from "../../lib/payment/subscription-machine";
 import { invalidateEntitlements } from "../../lib/entitlements";
-import { unstable_cache } from "next/cache";
 import { getNextSequenceValue, GLOBAL_SEQUENCE_SCOPE } from "../../lib/sequence";
+import { getPublicPlans } from "../../lib/server/plans";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Plans (Public)
 // ═══════════════════════════════════════════════════════════════════════════════
 
 /**
- * Get all public plans with their entitlements.
- * Cached for 5 minutes — plans rarely change.
+ * Public plans list. The cached query lives in the server-only DAL
+ * (lib/server/plans.ts) — this is a thin async server-action wrapper so CLIENT
+ * components can call it over RPC without pulling @repo/db/pg into their bundle.
+ * As an `async function` export it satisfies the §4 "use server" rule (the
+ * landmine was the old `export const getPlans = unstable_cache(...)` — a
+ * non-async-function export — which is now gone).
  */
-export const getPlans = unstable_cache(
-  async () => {
-    const plans = await db.plan.findMany({
-      where: { isPublic: true },
-      include: { entitlements: true },
-      orderBy: { sortOrder: "asc" },
-    });
-    return JSON.parse(JSON.stringify(plans));
-  },
-  ["public-plans"],
-  { tags: ["plans"], revalidate: 300 }
-);
+export async function getPlans() {
+  return getPublicPlans();
+}
 
 /**
  * Get a single plan by slug.
