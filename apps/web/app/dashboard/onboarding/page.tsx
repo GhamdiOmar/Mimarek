@@ -3,17 +3,27 @@
 import { useLanguage } from "../../../components/LanguageProvider";
 import * as React from "react";
 import {
-  Building2,
   ArrowRight,
   ArrowLeft,
   Check,
   Loader2,
+  Search,
+  UserPlus,
+  Mail,
+  X,
 } from "lucide-react";
-import { Button, Input, AppBar, DirectionalIcon, PageIntro } from "@repo/ui";
+import { Button, Input, AppBar, DirectionalIcon, PageIntro, CRInput, SaudiPhoneInput } from "@repo/ui";
 import { cn } from "@repo/ui/lib/utils";
 import { useRouter } from "next/navigation";
-import { updateOrganization } from "../../actions/organization";
-import { createUnit } from "../../actions/units";
+import {
+  lookupOrgByCR,
+  createJoinRequest,
+  updateOnboardingOrg,
+  updateOnboardingContact,
+  completeOnboarding,
+} from "../../actions/onboarding";
+import { createInvitation } from "../../actions/invitations";
+import { CUSTOMER_ASSIGNABLE_ROLES } from "../../../lib/permissions";
 import { KSA_CITIES } from "../../../lib/ksa-cities";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -21,32 +31,54 @@ import { KSA_CITIES } from "../../../lib/ksa-cities";
 const selectClass =
   "w-full h-10 px-3 py-2 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
 
-const orgTypeOptions = [
-  { value: "BROKERAGE", ar: "وساطة عقارية", en: "Brokerage" },
-  { value: "PROPERTY_MANAGEMENT", ar: "إدارة أملاك", en: "Property Management" },
-  { value: "DEVELOPER", ar: "تطوير عقاري", en: "Developer" },
-  { value: "MIXED", ar: "متنوع", en: "Mixed" },
+const roleLabels: Record<string, { ar: string; en: string }> = {
+  ADMIN:      { ar: "مدير", en: "Admin" },
+  MANAGER:    { ar: "مدير عمليات", en: "Manager" },
+  LEASING:    { ar: "مسؤول تأجير", en: "Leasing" },
+  FINANCE:    { ar: "مسؤول مالي", en: "Finance" },
+  AGENT:      { ar: "وكيل", en: "Agent" },
+  TECHNICIAN: { ar: "فني صيانة", en: "Technician" },
+  USER:       { ar: "مستخدم", en: "User" },
+};
+
+const inviteRoleOptions = CUSTOMER_ASSIGNABLE_ROLES.map((role) => ({
+  value: role,
+  label: roleLabels[role] ?? { ar: role, en: role },
+}));
+
+const entityTypeOptions = [
+  { value: "ESTABLISHMENT",         ar: "مؤسسة",              en: "Establishment" },
+  { value: "COMPANY",               ar: "شركة",               en: "Company" },
+  { value: "BRANCH",                ar: "فرع",                en: "Branch" },
+  { value: "PROFESSIONAL_ENTITY",   ar: "كيان مهني",          en: "Professional Entity" },
+  { value: "FOREIGN_COMPANY_BRANCH", ar: "فرع شركة أجنبية",  en: "Foreign Company Branch" },
 ];
 
-const unitTypeOptions = [
-  { value: "APARTMENT", ar: "شقة", en: "Apartment" },
-  { value: "VILLA", ar: "فيلا", en: "Villa" },
-  { value: "OFFICE", ar: "مكتب", en: "Office" },
-  { value: "RETAIL", ar: "محل تجاري", en: "Retail" },
-  { value: "WAREHOUSE", ar: "مستودع", en: "Warehouse" },
-  { value: "LAND", ar: "أرض", en: "Land" },
-  { value: "BUILDING", ar: "مبنى", en: "Building" },
-  { value: "FLOOR", ar: "طابق", en: "Floor" },
-  { value: "STUDIO", ar: "استوديو", en: "Studio" },
-  { value: "ROOM", ar: "غرفة", en: "Room" },
-  { value: "OTHER", ar: "أخرى", en: "Other" },
+const legalFormOptions = [
+  { value: "SOLE_PROPRIETORSHIP",            ar: "مؤسسة فردية",                  en: "Sole Proprietorship" },
+  { value: "LIMITED_LIABILITY_COMPANY",      ar: "شركة ذات مسؤولية محدودة",      en: "LLC" },
+  { value: "JOINT_STOCK_COMPANY",            ar: "شركة مساهمة",                  en: "Joint Stock Company" },
+  { value: "SIMPLIFIED_JOINT_STOCK_COMPANY", ar: "شركة مساهمة مبسطة",            en: "Simplified JSC" },
+  { value: "GENERAL_PARTNERSHIP",            ar: "شركة تضامنية",                 en: "General Partnership" },
+  { value: "LIMITED_PARTNERSHIP",            ar: "شركة توصية",                   en: "Limited Partnership" },
+  { value: "PROFESSIONAL_COMPANY",           ar: "شركة مهنية",                   en: "Professional Company" },
 ];
 
+// Step machine: 4 setup steps + done state.
+// Index 0 = join, 1 = org, 2 = contact, 3 = team, 4 = done.
+// "join" is a choice step (no Back). Steps 1–3 have Back + Skip + Save.
 const steps = [
-  { id: "company", label: { ar: "المنشأة", en: "Company" } },
-  { id: "property", label: { ar: "العقار", en: "Property" } },
-  { id: "done", label: { ar: "تم", en: "Done" } },
+  { id: "join",    label: { ar: "الانضمام", en: "Join" } },
+  { id: "org",     label: { ar: "المنشأة",  en: "Organization" } },
+  { id: "contact", label: { ar: "التواصل",  en: "Contact" } },
+  { id: "team",    label: { ar: "الفريق",   en: "Team" } },
+  { id: "done",    label: { ar: "تم",       en: "Done" } },
 ];
+
+// ─── Invite row type ───────────────────────────────────────────────────────────
+
+type InviteRow = { email: string; role: string };
+const EMPTY_INVITE: InviteRow = { email: "", role: "AGENT" };
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -57,20 +89,150 @@ export default function OnboardingPage() {
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState("");
 
-  // ─── Step 1: Company Info ───────────────────────────────────────────────────
+  // ─── "done" step variant ────────────────────────────────────────────────────
+  // "normal" = completed own setup; "join_requested" = sent join request
+  const [doneVariant, setDoneVariant] = React.useState<"normal" | "join_requested">("normal");
 
-  const [companyName, setCompanyName] = React.useState("");
-  const [orgType, setOrgType] = React.useState("");
+  // ─── Step 1 (join): join vs. independent choice ─────────────────────────────
+  type JoinChoice = "none" | "join" | "independent";
+  const [joinChoice, setJoinChoice] = React.useState<JoinChoice>("none");
 
-  const handleSaveCompany = async () => {
-    if (!companyName.trim()) {
-      setError(lang === "ar" ? "يرجى إدخال اسم المنشأة" : "Please enter your company name");
-      return;
+  // Join sub-flow state
+  const [crSearch, setCrSearch] = React.useState("");
+  const [crSearchResult, setCrSearchResult] = React.useState<
+    | null
+    | { found: true; orgId: string; maskedName: string }
+    | { found: false; error?: string }
+  >(null);
+  const [joinReason, setJoinReason] = React.useState("");
+  const [joinLoading, setJoinLoading] = React.useState(false);
+
+  // ─── Step 2 (org): org info ─────────────────────────────────────────────────
+  const [orgForm, setOrgForm] = React.useState({
+    nameArabic: "",
+    nameEnglish: "",
+    crNumber: "",
+    vatNumber: "",
+    entityType: "",
+    legalForm: "",
+  });
+  const setOrg = (k: keyof typeof orgForm, v: string) =>
+    setOrgForm((p) => ({ ...p, [k]: v }));
+
+  // ─── Step 3 (contact): contact info ─────────────────────────────────────────
+  const [contactForm, setContactForm] = React.useState({
+    mobileNumber: "",
+    city: "",
+    region: "",
+  });
+  const setContact = (k: keyof typeof contactForm, v: string) =>
+    setContactForm((p) => ({ ...p, [k]: v }));
+
+  // ─── Step 4 (team): invite rows ─────────────────────────────────────────────
+  const [inviteRows, setInviteRows] = React.useState<InviteRow[]>([{ ...EMPTY_INVITE }]);
+  const setInviteRow = (i: number, k: keyof InviteRow, v: string) =>
+    setInviteRows((rows) => rows.map((r, idx) => (idx === i ? { ...r, [k]: v } : r)));
+  const addInviteRow = () => setInviteRows((r) => [...r, { ...EMPTY_INVITE }]);
+  const removeInviteRow = (i: number) =>
+    setInviteRows((rows) => rows.length > 1 ? rows.filter((_, idx) => idx !== i) : rows);
+
+  // ─── Navigation helpers ─────────────────────────────────────────────────────
+
+  const goNext = () => {
+    setError("");
+    setCurrentStep((p) => Math.min(p + 1, steps.length - 1));
+  };
+
+  const goPrev = () => {
+    setError("");
+    setCurrentStep((p) => Math.max(p - 1, 0));
+  };
+
+  const goToDone = (variant: "normal" | "join_requested") => {
+    setError("");
+    setDoneVariant(variant);
+    setCurrentStep(steps.findIndex((s) => s.id === "done"));
+  };
+
+  // ─── Step handlers ──────────────────────────────────────────────────────────
+
+  const handleCRLookup = async () => {
+    setCrSearchResult(null);
+    if (!crSearch) return;
+    setJoinLoading(true);
+    setError("");
+    try {
+      const result = await lookupOrgByCR(crSearch);
+      if (result.found) {
+        setCrSearchResult({
+          found: true,
+          orgId: result.orgId ?? "",
+          maskedName: result.maskedName ?? "",
+        });
+      } else {
+        setCrSearchResult({ found: false, error: result.error });
+      }
+    } catch {
+      setError(lang === "ar" ? "فشل في البحث. يرجى المحاولة مجدداً." : "Search failed. Please try again.");
+    } finally {
+      setJoinLoading(false);
     }
+  };
+
+  const handleSendJoinRequest = async () => {
+    if (!crSearchResult || !crSearchResult.found) return;
     setLoading(true);
     setError("");
     try {
-      await updateOrganization({ name: companyName.trim() });
+      const result = await createJoinRequest({
+        targetOrgId: crSearchResult.orgId,
+        crNumber: crSearch,
+        reason: joinReason || undefined,
+      });
+      if (!result.success) {
+        const msgMap: Record<string, { ar: string; en: string }> = {
+          ALREADY_IN_ORG:         { ar: "أنت بالفعل عضو في هذه المنشأة.",        en: "You are already a member of this organization." },
+          REQUEST_ALREADY_EXISTS: { ar: "لديك طلب انضمام معلق بالفعل.",          en: "You already have a pending join request." },
+          CREATE_FAILED:          { ar: "فشل إرسال الطلب. يرجى المحاولة مجدداً.", en: "Failed to send request. Please try again." },
+        };
+        const msg = result.error ? msgMap[result.error] : undefined;
+        setError(msg ? msg[lang] : (lang === "ar" ? "فشل إرسال الطلب." : "Failed to send request."));
+        return;
+      }
+      goToDone("join_requested");
+    } catch {
+      setError(lang === "ar" ? "فشل إرسال الطلب. يرجى المحاولة مجدداً." : "Failed to send request. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveOrg = async (skip = false) => {
+    if (skip) { goNext(); return; }
+    setLoading(true);
+    setError("");
+    try {
+      const payload = {
+        nameArabic:  orgForm.nameArabic  || undefined,
+        nameEnglish: orgForm.nameEnglish || undefined,
+        crNumber:    orgForm.crNumber    || undefined,
+        vatNumber:   orgForm.vatNumber   || undefined,
+        entityType:  orgForm.entityType  || undefined,
+        legalForm:   orgForm.legalForm   || undefined,
+      };
+      const result = await updateOnboardingOrg(payload);
+      if (!result.success) {
+        const msgMap: Record<string, { ar: string; en: string }> = {
+          INVALID_CR_FORMAT: { ar: "صيغة رقم السجل التجاري غير صحيحة (10 أرقام).",    en: "Invalid CR format — must be 10 digits." },
+          INVALID_VAT_FORMAT: { ar: "صيغة الرقم الضريبي غير صحيحة.",                  en: "Invalid VAT format." },
+          CR_TAKEN:           { ar: "رقم السجل التجاري مسجل لمنشأة أخرى.",            en: "CR number is already taken." },
+          VAT_TAKEN:          { ar: "الرقم الضريبي مسجل لمنشأة أخرى.",               en: "VAT number is already taken." },
+          UPDATE_FAILED:      { ar: "فشل في حفظ البيانات. يرجى المحاولة مجدداً.",     en: "Failed to save. Please try again." },
+        };
+        const msg = result.error ? msgMap[result.error] : undefined;
+        setError(msg ? msg[lang] : (lang === "ar" ? "فشل في حفظ البيانات." : "Failed to save."));
+        return;
+      }
       goNext();
     } catch {
       setError(lang === "ar" ? "فشل في حفظ البيانات. يرجى المحاولة مجدداً." : "Failed to save. Please try again.");
@@ -79,88 +241,100 @@ export default function OnboardingPage() {
     }
   };
 
-  // ─── Step 2: Add First Property ─────────────────────────────────────────────
-
-  const [unitForm, setUnitForm] = React.useState({
-    number: "",
-    type: "",
-    city: "",
-    price: "",
-  });
-
-  const setUnit = (key: string, val: string) =>
-    setUnitForm((prev) => ({ ...prev, [key]: val }));
-
-  const handleSaveUnit = async () => {
-    if (!unitForm.number.trim()) {
-      setError(lang === "ar" ? "يرجى إدخال رقم الوحدة" : "Please enter a unit number");
-      return;
-    }
-    if (!unitForm.type) {
-      setError(lang === "ar" ? "يرجى اختيار نوع الوحدة" : "Please select a unit type");
-      return;
-    }
+  const handleSaveContact = async (skip = false) => {
+    if (skip) { goNext(); return; }
     setLoading(true);
     setError("");
     try {
-      await createUnit({
-        number: unitForm.number.trim(),
-        type: unitForm.type as any,
-        price: unitForm.price ? Number(unitForm.price) : undefined,
-      });
+      const payload = {
+        mobileNumber: contactForm.mobileNumber || undefined,
+        city:         contactForm.city         || undefined,
+        region:       contactForm.region       || undefined,
+      };
+      const result = await updateOnboardingContact(payload);
+      if (!result.success) {
+        setError(lang === "ar" ? "فشل في حفظ بيانات التواصل. يرجى المحاولة مجدداً." : "Failed to save contact info. Please try again.");
+        return;
+      }
       goNext();
-    } catch (err: any) {
-      setError(
-        err?.message?.includes("limit")
-          ? lang === "ar"
-            ? "لقد وصلت إلى الحد الأقصى للوحدات في خطتك الحالية. يرجى ترقية اشتراكك."
-            : "You've reached the unit limit for your plan. Please upgrade."
-          : lang === "ar"
-            ? "فشل في إضافة الوحدة. يرجى المحاولة مجدداً."
-            : "Failed to add property. Please try again."
-      );
+    } catch {
+      setError(lang === "ar" ? "فشل في حفظ بيانات التواصل. يرجى المحاولة مجدداً." : "Failed to save contact info. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSkipUnit = () => {
+  const handleFinishTeam = async (skip = false) => {
+    setLoading(true);
     setError("");
-    goNext();
+    try {
+      // Send any filled invite rows (best-effort — don't block completion on failures)
+      if (!skip) {
+        const filledRows = inviteRows.filter((r) => r.email.trim());
+        for (const row of filledRows) {
+          await createInvitation({ email: row.email.trim(), role: row.role });
+        }
+      }
+      await completeOnboarding();
+      goToDone("normal");
+    } catch {
+      setError(lang === "ar" ? "حدث خطأ. يرجى المحاولة مجدداً." : "Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // ─── Navigation ─────────────────────────────────────────────────────────────
+  // ─── Derived UI helpers ─────────────────────────────────────────────────────
 
-  const goNext = () => {
-    setError("");
-    setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1));
-  };
-
-  const goPrev = () => {
-    setError("");
-    setCurrentStep((prev) => Math.max(prev - 1, 0));
-  };
-
-  const currentStepId = steps[currentStep]?.id;
+  const currentStepId  = steps[currentStep]?.id ?? "join";
   const currentStepObj = steps[currentStep];
-  const isLast = currentStep === steps.length - 1;
-  const progressPct = ((currentStep) / (steps.length - 1)) * 100;
+  const isDoneStep     = currentStepId === "done";
+  const isJoinStep     = currentStepId === "join";
+
+  // Progress excludes the "done" step from the count so bar fills to 100% on the last setup step.
+  const setupStepCount = steps.length - 1; // 4
+  const progressPct    = (currentStep / setupStepCount) * 100;
+
+  // Mobile primary CTA label + handler
+  const mobilePrimaryLabel = React.useMemo(() => {
+    if (currentStepId === "join") {
+      if (joinChoice === "join" && crSearchResult?.found) return lang === "ar" ? "إرسال طلب الانضمام" : "Send Join Request";
+      if (joinChoice === "independent")                   return lang === "ar" ? "المتابعة" : "Continue";
+      return lang === "ar" ? "اختيار" : "Select";
+    }
+    if (currentStepId === "org")     return lang === "ar" ? "حفظ ومتابعة" : "Save & Continue";
+    if (currentStepId === "contact") return lang === "ar" ? "حفظ ومتابعة" : "Save & Continue";
+    if (currentStepId === "team")    return lang === "ar" ? "إنهاء الإعداد" : "Finish Setup";
+    return lang === "ar" ? "الذهاب إلى لوحة التحكم" : "Go to Dashboard";
+  }, [currentStepId, joinChoice, crSearchResult, lang]);
 
   const handleMobilePrimary = () => {
-    if (currentStepId === "company") return handleSaveCompany();
-    if (currentStepId === "property") return handleSaveUnit();
-    if (currentStepId === "done") return router.push("/dashboard/crm");
+    if (currentStepId === "join") {
+      if (joinChoice === "join" && crSearchResult?.found) return handleSendJoinRequest();
+      if (joinChoice === "independent")                   return goNext();
+      return; // no choice yet — button is disabled
+    }
+    if (currentStepId === "org")     return handleSaveOrg();
+    if (currentStepId === "contact") return handleSaveContact();
+    if (currentStepId === "team")    return handleFinishTeam();
+    if (isDoneStep)                  return router.push("/dashboard");
   };
 
-  const primaryLabel = React.useMemo(() => {
-    if (currentStepId === "company") {
-      return lang === "ar" ? "حفظ ومتابعة" : "Save & Continue";
-    }
-    if (currentStepId === "property") {
-      return lang === "ar" ? "إضافة ومتابعة" : "Add & Continue";
-    }
-    return lang === "ar" ? "الذهاب إلى CRM" : "Go to CRM";
-  }, [currentStepId, lang]);
+  const mobilePrimaryDisabled =
+    loading ||
+    (currentStepId === "join" && joinChoice === "none") ||
+    (currentStepId === "join" && joinChoice === "join" && !crSearchResult?.found);
+
+  // ─── Join step error display helper ─────────────────────────────────────────
+  function crLookupErrorMessage(code?: string): string {
+    const msgMap: Record<string, { ar: string; en: string }> = {
+      INVALID_CR_FORMAT: { ar: "رقم السجل التجاري يجب أن يكون 10 أرقام.", en: "CR must be exactly 10 digits." },
+      TOO_MANY_LOOKUPS:  { ar: "تجاوزت الحد المسموح. يرجى الانتظار قليلاً.", en: "Too many searches. Please wait." },
+      LOOKUP_FAILED:     { ar: "فشل في البحث. يرجى المحاولة مجدداً.", en: "Search failed. Please try again." },
+    };
+    if (!code) return lang === "ar" ? "المنشأة غير موجودة في النظام." : "Organization not found in the system.";
+    return (msgMap[code] ?? { ar: "خطأ غير متوقع.", en: "Unexpected error." })[lang];
+  }
 
   // ─── Render ─────────────────────────────────────────────────────────────────
 
@@ -174,20 +348,24 @@ export default function OnboardingPage() {
       <AppBar
         title={currentStepObj ? currentStepObj.label[lang] : (lang === "ar" ? "إعداد الحساب" : "Setup")}
         subtitle={
-          lang === "ar"
-            ? `الخطوة ${currentStep + 1} من ${steps.length}`
-            : `Step ${currentStep + 1} of ${steps.length}`
+          isDoneStep
+            ? undefined
+            : lang === "ar"
+              ? `الخطوة ${currentStep + 1} من ${setupStepCount}`
+              : `Step ${currentStep + 1} of ${setupStepCount}`
         }
         lang={lang}
       />
 
       {/* Progress bar */}
-      <div className="h-1 w-full bg-muted">
-        <div
-          className="h-full bg-primary transition-all duration-500"
-          style={{ width: `${progressPct}%` }}
-        />
-      </div>
+      {!isDoneStep && (
+        <div className="h-1 w-full bg-muted">
+          <div
+            className="h-full bg-primary transition-all duration-500"
+            style={{ width: `${progressPct}%` }}
+          />
+        </div>
+      )}
 
       {/* Body */}
       <div className="flex-1 overflow-y-auto px-4 py-5 space-y-5 pb-[calc(theme(height.mobile-bottomnav)+env(safe-area-inset-bottom)+7rem)]">
@@ -197,104 +375,230 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {currentStepId === "company" && (
+        {/* ─── Step 1: Join ─── */}
+        {currentStepId === "join" && (
           <div className="space-y-5 animate-in fade-in duration-300">
             <div>
               <h2 className="text-lg font-bold text-foreground">
-                {lang === "ar" ? "معلومات المنشأة" : "Company Info"}
+                {lang === "ar" ? "كيف تريد البدء؟" : "How would you like to start?"}
               </h2>
               <p className="mt-1 text-sm text-muted-foreground">
                 {lang === "ar"
-                  ? "أدخل اسم منشأتك ونوع نشاطها."
-                  : "Enter your company name and business type."}
+                  ? "انضم إلى منشأة قائمة أو أنشئ مساحة عملك الخاصة."
+                  : "Join an existing organization or set up your own workspace."}
               </p>
             </div>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                  {lang === "ar" ? "اسم المنشأة" : "Company Name"}
-                  <span className="text-destructive ms-1">*</span>
-                </label>
-                <Input
-                  value={companyName}
-                  onChange={(e) => setCompanyName(e.target.value)}
-                  placeholder={lang === "ar" ? "مثال: شركة الأفق العقارية" : "e.g. Al Ufuq Real Estate"}
-                  className="h-11"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                  {lang === "ar" ? "نوع النشاط" : "Business Type"}
-                </label>
-                <select
-                  value={orgType}
-                  onChange={(e) => setOrgType(e.target.value)}
-                  className="w-full h-11 px-3 rounded-md border border-input bg-background text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  <option value="">{lang === "ar" ? "اختر نوع النشاط..." : "Select business type..."}</option>
-                  {orgTypeOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {lang === "ar" ? opt.ar : opt.en}
-                    </option>
-                  ))}
-                </select>
-              </div>
+
+            {/* Choice cards */}
+            <div className="space-y-3">
+              <button
+                type="button"
+                onClick={() => { setJoinChoice("join"); setCrSearchResult(null); setCrSearch(""); }}
+                className={cn(
+                  "w-full text-start rounded-xl border-2 p-4 transition-all",
+                  joinChoice === "join"
+                    ? "border-primary bg-primary/5"
+                    : "border-border bg-card hover:border-primary/50"
+                )}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={cn("h-10 w-10 rounded-full flex items-center justify-center shrink-0", joinChoice === "join" ? "bg-primary text-white" : "bg-muted text-muted-foreground")}>
+                    <UserPlus className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">
+                      {lang === "ar" ? "الانضمام إلى منشأة قائمة" : "Join an existing company"}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {lang === "ar" ? "ابحث عن المنشأة عبر رقم السجل التجاري." : "Search by commercial registration number."}
+                    </p>
+                  </div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => { setJoinChoice("independent"); setCrSearchResult(null); }}
+                className={cn(
+                  "w-full text-start rounded-xl border-2 p-4 transition-all",
+                  joinChoice === "independent"
+                    ? "border-primary bg-primary/5"
+                    : "border-border bg-card hover:border-primary/50"
+                )}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={cn("h-10 w-10 rounded-full flex items-center justify-center shrink-0", joinChoice === "independent" ? "bg-primary text-white" : "bg-muted text-muted-foreground")}>
+                    <Check className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">
+                      {lang === "ar" ? "المتابعة بشكل مستقل" : "Continue independently"}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {lang === "ar" ? "أنشئ مساحة عمل خاصة بمنشأتك." : "Create your own workspace."}
+                    </p>
+                  </div>
+                </div>
+              </button>
             </div>
+
+            {/* Join sub-flow */}
+            {joinChoice === "join" && (
+              <div className="space-y-4 animate-in fade-in duration-200">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                    {lang === "ar" ? "رقم السجل التجاري" : "Commercial Registration No."}
+                  </label>
+                  <div className="flex gap-2">
+                    <CRInput
+                      value={crSearch}
+                      onChange={(raw) => { setCrSearch(raw); setCrSearchResult(null); }}
+                      placeholder="1010XXXXXX"
+                      className="h-11 flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="min-h-11 gap-2 shrink-0"
+                      style={{ display: "inline-flex" }}
+                      onClick={handleCRLookup}
+                      disabled={joinLoading || crSearch.length !== 10}
+                    >
+                      {joinLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                      {lang === "ar" ? "بحث" : "Search"}
+                    </Button>
+                  </div>
+                </div>
+
+                {crSearchResult && !crSearchResult.found && (
+                  <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
+                    {crLookupErrorMessage(crSearchResult.error)}
+                  </div>
+                )}
+
+                {crSearchResult?.found && (
+                  <div className="space-y-3 animate-in fade-in duration-200">
+                    <div className="rounded-lg border border-border bg-muted/30 p-3">
+                      <p className="text-xs text-muted-foreground mb-1">
+                        {lang === "ar" ? "المنشأة:" : "Organization:"}
+                      </p>
+                      <p className="text-sm font-semibold text-foreground font-mono">{crSearchResult.maskedName}</p>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                        {lang === "ar" ? "سبب الطلب (اختياري)" : "Reason for joining (optional)"}
+                      </label>
+                      <textarea
+                        value={joinReason}
+                        onChange={(e) => setJoinReason(e.target.value)}
+                        rows={3}
+                        placeholder={
+                          lang === "ar"
+                            ? "اذكر سبب رغبتك في الانضمام إلى هذه المنشأة..."
+                            : "Describe why you want to join this organization..."
+                        }
+                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
-        {currentStepId === "property" && (
+        {/* ─── Step 2: Org ─── */}
+        {currentStepId === "org" && (
           <div className="space-y-5 animate-in fade-in duration-300">
             <div>
               <h2 className="text-lg font-bold text-foreground">
-                {lang === "ar" ? "إضافة أول عقار" : "Add First Property"}
+                {lang === "ar" ? "بيانات المنشأة" : "Organization Info"}
               </h2>
               <p className="mt-1 text-sm text-muted-foreground">
                 {lang === "ar"
-                  ? "أضف أول وحدة عقارية في منصتك."
-                  : "Add your first property unit to the platform."}
+                  ? "أضف بيانات منشأتك. يمكنك تخطي هذه الخطوة الآن وإكمالها لاحقاً."
+                  : "Add your organization details. You can skip this step and complete it later."}
               </p>
             </div>
             <div className="space-y-4">
               <div className="space-y-2">
                 <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                  {lang === "ar" ? "رقم الوحدة" : "Unit Number"}
-                  <span className="text-destructive ms-1">*</span>
+                  {lang === "ar" ? "الاسم بالعربي" : "Arabic Name"}
                 </label>
-                <Input
-                  value={unitForm.number}
-                  onChange={(e) => setUnit("number", e.target.value)}
-                  placeholder={lang === "ar" ? "مثال: A-101" : "e.g. A-101"}
-                  className="h-11"
-                />
+                <Input value={orgForm.nameArabic} onChange={(e) => setOrg("nameArabic", e.target.value)} placeholder={lang === "ar" ? "مثال: شركة الأفق العقارية" : "e.g. شركة الأفق العقارية"} dir="rtl" className="h-11" />
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                  {lang === "ar" ? "نوع الوحدة" : "Unit Type"}
-                  <span className="text-destructive ms-1">*</span>
+                  {lang === "ar" ? "الاسم بالإنجليزي" : "English Name"}
                 </label>
-                <select
-                  value={unitForm.type}
-                  onChange={(e) => setUnit("type", e.target.value)}
-                  className="w-full h-11 px-3 rounded-md border border-input bg-background text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  <option value="">{lang === "ar" ? "اختر النوع..." : "Select type..."}</option>
-                  {unitTypeOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt[lang]}
-                    </option>
+                <Input value={orgForm.nameEnglish} onChange={(e) => setOrg("nameEnglish", e.target.value)} placeholder="e.g. Al Ufuq Real Estate" dir="ltr" className="h-11" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                  {lang === "ar" ? "رقم السجل التجاري" : "CR Number"}
+                </label>
+                <CRInput value={orgForm.crNumber} onChange={(raw) => setOrg("crNumber", raw)} placeholder="1010XXXXXX" className="h-11" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                  {lang === "ar" ? "الرقم الضريبي" : "VAT Number"}
+                </label>
+                <Input value={orgForm.vatNumber} onChange={(e) => setOrg("vatNumber", e.target.value)} placeholder="3000XXXXXX00003" dir="ltr" className="h-11 font-mono tabular-nums" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                  {lang === "ar" ? "نوع المنشأة" : "Entity Type"}
+                </label>
+                <select value={orgForm.entityType} onChange={(e) => setOrg("entityType", e.target.value)} className={cn(selectClass, "h-11")}>
+                  <option value="">{lang === "ar" ? "اختر..." : "Select..."}</option>
+                  {entityTypeOptions.map((o) => (
+                    <option key={o.value} value={o.value}>{lang === "ar" ? o.ar : o.en}</option>
                   ))}
                 </select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                  {lang === "ar" ? "الشكل القانوني" : "Legal Form"}
+                </label>
+                <select value={orgForm.legalForm} onChange={(e) => setOrg("legalForm", e.target.value)} className={cn(selectClass, "h-11")}>
+                  <option value="">{lang === "ar" ? "اختر..." : "Select..."}</option>
+                  {legalFormOptions.map((o) => (
+                    <option key={o.value} value={o.value}>{lang === "ar" ? o.ar : o.en}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <Button type="button" variant="link" onClick={() => handleSaveOrg(true)} disabled={loading} className="w-full min-h-11 text-sm text-muted-foreground hover:text-foreground">
+              {lang === "ar" ? "تخطي هذه الخطوة" : "Skip this step"}
+            </Button>
+          </div>
+        )}
+
+        {/* ─── Step 3: Contact ─── */}
+        {currentStepId === "contact" && (
+          <div className="space-y-5 animate-in fade-in duration-300">
+            <div>
+              <h2 className="text-lg font-bold text-foreground">
+                {lang === "ar" ? "بيانات التواصل" : "Contact Info"}
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {lang === "ar"
+                  ? "أضف رقم الجوال والمدينة. يمكنك تخطي هذه الخطوة."
+                  : "Add your mobile and city. You can skip this step."}
+              </p>
+            </div>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                  {lang === "ar" ? "رقم الجوال" : "Mobile Number"}
+                </label>
+                <SaudiPhoneInput value={contactForm.mobileNumber} onChange={(e164) => setContact("mobileNumber", e164)} placeholder="05XXXXXXXX" className="h-11" />
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                   {lang === "ar" ? "المدينة" : "City"}
                 </label>
-                <select
-                  value={unitForm.city}
-                  onChange={(e) => setUnit("city", e.target.value)}
-                  className="w-full h-11 px-3 rounded-md border border-input bg-background text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
+                <select value={contactForm.city} onChange={(e) => setContact("city", e.target.value)} className={cn(selectClass, "h-11")}>
                   <option value="">{lang === "ar" ? "اختر المدينة..." : "Select city..."}</option>
                   {KSA_CITIES.map((city) => (
                     <option key={city.value} value={city.value}>
@@ -305,48 +609,99 @@ export default function OnboardingPage() {
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                  {lang === "ar" ? "السعر (ريال)" : "Price (SAR)"}
+                  {lang === "ar" ? "المنطقة" : "Region"}
                 </label>
-                <Input
-                  value={unitForm.price}
-                  onChange={(e) =>
-                    setUnit("price", e.target.value.replace(/[^\d.]/g, ""))
-                  }
-                  placeholder={lang === "ar" ? "مثال: 500000" : "e.g. 500000"}
-                  dir="ltr"
-                  className="h-11 font-latin tabular-nums"
-                  type="number"
-                  min="0"
-                  inputMode="numeric"
-                />
+                <Input value={contactForm.region} onChange={(e) => setContact("region", e.target.value)} placeholder={lang === "ar" ? "مثال: منطقة الرياض" : "e.g. Riyadh Region"} className="h-11" />
               </div>
             </div>
-            <Button
-              type="button"
-              variant="link"
-              onClick={handleSkipUnit}
-              disabled={loading}
-              className="w-full min-h-11 text-sm text-muted-foreground hover:text-foreground"
-            >
+            <Button type="button" variant="link" onClick={() => handleSaveContact(true)} disabled={loading} className="w-full min-h-11 text-sm text-muted-foreground hover:text-foreground">
               {lang === "ar" ? "تخطي هذه الخطوة" : "Skip this step"}
             </Button>
           </div>
         )}
 
+        {/* ─── Step 4: Team ─── */}
+        {currentStepId === "team" && (
+          <div className="space-y-5 animate-in fade-in duration-300">
+            <div>
+              <h2 className="text-lg font-bold text-foreground">
+                {lang === "ar" ? "دعوة أعضاء الفريق" : "Invite Team Members"}
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {lang === "ar"
+                  ? "أرسل دعوات لزملائك. يمكنك تخطي هذه الخطوة."
+                  : "Send invitations to your colleagues. You can skip this step."}
+              </p>
+            </div>
+            <div className="space-y-3">
+              {inviteRows.map((row, i) => (
+                <div key={i} className="space-y-2 rounded-lg border border-border bg-card/50 p-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-muted-foreground">
+                      {lang === "ar" ? `دعوة ${i + 1}` : `Invite ${i + 1}`}
+                    </span>
+                    {inviteRows.length > 1 && (
+                      <button type="button" onClick={() => removeInviteRow(i)} className="text-muted-foreground hover:text-destructive transition-colors" aria-label={lang === "ar" ? "إزالة" : "Remove"}>
+                        <X className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+                  <Input
+                    type="email"
+                    value={row.email}
+                    onChange={(e) => setInviteRow(i, "email", e.target.value)}
+                    placeholder="name@example.com"
+                    dir="ltr"
+                    className="h-11"
+                  />
+                  <select value={row.role} onChange={(e) => setInviteRow(i, "role", e.target.value)} className={cn(selectClass, "h-11")}>
+                    {inviteRoleOptions.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label[lang]}</option>
+                    ))}
+                  </select>
+                </div>
+              ))}
+              <Button type="button" variant="outline" onClick={addInviteRow} className="w-full min-h-11 gap-2" style={{ display: "inline-flex" }}>
+                <Mail className="h-4 w-4" />
+                {lang === "ar" ? "إضافة دعوة أخرى" : "Add another invite"}
+              </Button>
+            </div>
+            <Button type="button" variant="link" onClick={() => handleFinishTeam(true)} disabled={loading} className="w-full min-h-11 text-sm text-muted-foreground hover:text-foreground">
+              {lang === "ar" ? "تخطي هذه الخطوة" : "Skip this step"}
+            </Button>
+          </div>
+        )}
+
+        {/* ─── Done ─── */}
         {currentStepId === "done" && (
           <div className="flex flex-col items-center justify-center py-10 space-y-5 animate-in fade-in duration-300">
             <div className="h-20 w-20 rounded-full bg-success/15 flex items-center justify-center">
               <Check className="h-10 w-10 text-success" aria-hidden="true" />
             </div>
             <div className="text-center space-y-2 max-w-sm">
-              <h2 className="text-xl font-bold text-foreground">
-                {lang === "ar" ? "تم إعداد حسابك بنجاح!" : "Your account is ready!"}
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                {lang === "ar"
-                  ? "يمكنك الآن الانتقال إلى لوحة التحكم وإدارة عملائك وعقاراتك."
-                  : "You can now go to the dashboard and manage your customers and properties."}
-              </p>
+              {doneVariant === "join_requested" ? (
+                <>
+                  <h2 className="text-xl font-bold text-foreground">
+                    {lang === "ar" ? "تم إرسال طلب الانضمام!" : "Join request submitted!"}
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    {lang === "ar"
+                      ? "سيقوم مدير المنشأة بمراجعة طلبك والرد عليه خلال فترة قصيرة."
+                      : "The organization admin will review your request and respond shortly."}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <h2 className="text-xl font-bold text-foreground">
+                    {lang === "ar" ? "تم إعداد حسابك بنجاح!" : "Your account is ready!"}
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    {lang === "ar"
+                      ? "يمكنك الآن الانتقال إلى لوحة التحكم وإدارة منشأتك."
+                      : "You can now go to the dashboard and manage your organization."}
+                  </p>
+                </>
+              )}
             </div>
           </div>
         )}
@@ -361,7 +716,7 @@ export default function OnboardingPage() {
         }}
       >
         <div className="flex items-center gap-2">
-          {currentStep > 0 && !isLast && (
+          {currentStep > 0 && !isDoneStep && (
             <Button
               variant="outline"
               className="min-h-11 gap-2"
@@ -377,17 +732,17 @@ export default function OnboardingPage() {
             className="flex-1 min-h-11 gap-2"
             style={{ display: "inline-flex" }}
             onClick={handleMobilePrimary}
-            disabled={loading}
+            disabled={mobilePrimaryDisabled}
           >
             {loading && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
-            {primaryLabel}
-            {!isLast && !loading && <DirectionalIcon icon={ArrowRight} className="h-4 w-4" aria-hidden="true" />}
+            {mobilePrimaryLabel}
+            {!isDoneStep && !loading && <DirectionalIcon icon={ArrowRight} className="h-4 w-4" aria-hidden="true" />}
           </Button>
         </div>
       </div>
     </div>
 
-    {/* ─── Desktop (≥ md) ─ unchanged ───────────────────────────────── */}
+    {/* ─── Desktop (≥ md) ─────────────────────────────────────────────── */}
     <div className="hidden md:block">
     <div
       dir={lang === "ar" ? "rtl" : "ltr"}
@@ -403,53 +758,55 @@ export default function OnboardingPage() {
           }
         />
 
-        {/* Stepper */}
-        <div className="relative h-1 bg-muted rounded-full mx-8">
-          <div
-            className="absolute h-full bg-secondary rounded-full transition-all duration-500"
-            style={{
-              width: `${(currentStep / (steps.length - 1)) * 100}%`,
-              [lang === "ar" ? "right" : "left"]: 0,
-            }}
-          />
-          <div className="absolute top-1/2 -translate-y-1/2 w-full flex justify-between">
-            {steps.map((step, i) => (
-              <div key={step.id} className="relative flex flex-col items-center">
-                <div
-                  className={cn(
-                    "h-9 w-9 rounded-full border-2 flex items-center justify-center text-sm font-bold transition-all duration-300",
-                    i < currentStep
-                      ? "bg-success border-success text-white"
-                      : i === currentStep
-                        ? "bg-secondary border-secondary text-white"
-                        : "bg-card border-border text-muted-foreground"
-                  )}
-                >
-                  {i < currentStep ? (
-                    <Check className="h-[18px] w-[18px]" />
-                  ) : (
-                    i + 1
-                  )}
+        {/* Stepper (only while setup steps visible) */}
+        {!isDoneStep && (
+          <div className="relative h-1 bg-muted rounded-full mx-8">
+            <div
+              className="absolute h-full bg-secondary rounded-full transition-all duration-500"
+              style={{
+                width: `${(currentStep / (steps.length - 1)) * 100}%`,
+                [lang === "ar" ? "right" : "left"]: 0,
+              }}
+            />
+            <div className="absolute top-1/2 -translate-y-1/2 w-full flex justify-between">
+              {steps.map((step, i) => (
+                <div key={step.id} className="relative flex flex-col items-center">
+                  <div
+                    className={cn(
+                      "h-9 w-9 rounded-full border-2 flex items-center justify-center text-sm font-bold transition-all duration-300",
+                      i < currentStep
+                        ? "bg-success border-success text-white"
+                        : i === currentStep
+                          ? "bg-secondary border-secondary text-white"
+                          : "bg-card border-border text-muted-foreground"
+                    )}
+                  >
+                    {i < currentStep ? (
+                      <Check className="h-[18px] w-[18px]" />
+                    ) : (
+                      i + 1
+                    )}
+                  </div>
+                  <span
+                    className={cn(
+                      "absolute top-12 whitespace-nowrap text-[10px] font-bold uppercase tracking-widest",
+                      i === currentStep
+                        ? "text-primary"
+                        : i < currentStep
+                          ? "text-success"
+                          : "text-muted-foreground"
+                    )}
+                  >
+                    {step.label[lang]}
+                  </span>
                 </div>
-                <span
-                  className={cn(
-                    "absolute top-12 whitespace-nowrap text-[10px] font-bold uppercase tracking-widest",
-                    i === currentStep
-                      ? "text-primary"
-                      : i < currentStep
-                        ? "text-success"
-                        : "text-muted-foreground"
-                  )}
-                >
-                  {step.label[lang]}
-                </span>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Step Content */}
-        <div className="pt-10">
+        <div className={isDoneStep ? "" : "pt-10"}>
           <div className="bg-card rounded-xl border border-border shadow-sm p-8 min-h-[400px]">
             {/* Error Banner */}
             {error && (
@@ -458,146 +815,214 @@ export default function OnboardingPage() {
               </div>
             )}
 
-            {/* ─── Step 1: Company Info ─── */}
-            {currentStepId === "company" && (
+            {/* ─── Step 1: Join ─── */}
+            {currentStepId === "join" && (
               <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
                 <div className="mb-6">
                   <h2 className="text-lg font-bold text-primary">
-                    {lang === "ar" ? "معلومات المنشأة" : "Company Info"}
+                    {lang === "ar" ? "كيف تريد البدء؟" : "How would you like to start?"}
                   </h2>
                   <p className="text-sm text-muted-foreground mt-1">
                     {lang === "ar"
-                      ? "أدخل اسم منشأتك ونوع نشاطها."
-                      : "Enter your company name and business type."}
+                      ? "انضم إلى منشأة قائمة أو أنشئ مساحة عملك الخاصة."
+                      : "Join an existing organization or set up your own workspace."}
                   </p>
                 </div>
 
-                <div className="space-y-5">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                      {lang === "ar" ? "اسم المنشأة" : "Company Name"}
-                      <span className="text-destructive ms-1">*</span>
-                    </label>
-                    <Input
-                      value={companyName}
-                      onChange={(e) => setCompanyName(e.target.value)}
-                      placeholder={lang === "ar" ? "مثال: شركة الأفق العقارية" : "e.g. Al Ufuq Real Estate"}
-                    />
-                  </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <button
+                    type="button"
+                    onClick={() => { setJoinChoice("join"); setCrSearchResult(null); setCrSearch(""); }}
+                    className={cn(
+                      "text-start rounded-xl border-2 p-5 transition-all",
+                      joinChoice === "join"
+                        ? "border-primary bg-primary/5"
+                        : "border-border bg-card hover:border-primary/50"
+                    )}
+                  >
+                    <div className={cn("h-12 w-12 rounded-full flex items-center justify-center mb-3", joinChoice === "join" ? "bg-primary text-white" : "bg-muted text-muted-foreground")}>
+                      <UserPlus className="h-6 w-6" />
+                    </div>
+                    <p className="text-sm font-semibold text-foreground">
+                      {lang === "ar" ? "الانضمام إلى منشأة قائمة" : "Join an existing company"}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {lang === "ar" ? "ابحث عبر رقم السجل التجاري." : "Search by commercial registration number."}
+                    </p>
+                  </button>
 
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                      {lang === "ar" ? "نوع النشاط" : "Business Type"}
-                    </label>
-                    <select
-                      value={orgType}
-                      onChange={(e) => setOrgType(e.target.value)}
-                      className={selectClass}
-                    >
-                      <option value="">{lang === "ar" ? "اختر نوع النشاط..." : "Select business type..."}</option>
-                      {orgTypeOptions.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.ar} / {opt.en}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => { setJoinChoice("independent"); setCrSearchResult(null); }}
+                    className={cn(
+                      "text-start rounded-xl border-2 p-5 transition-all",
+                      joinChoice === "independent"
+                        ? "border-primary bg-primary/5"
+                        : "border-border bg-card hover:border-primary/50"
+                    )}
+                  >
+                    <div className={cn("h-12 w-12 rounded-full flex items-center justify-center mb-3", joinChoice === "independent" ? "bg-primary text-white" : "bg-muted text-muted-foreground")}>
+                      <Check className="h-6 w-6" />
+                    </div>
+                    <p className="text-sm font-semibold text-foreground">
+                      {lang === "ar" ? "المتابعة بشكل مستقل" : "Continue independently"}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {lang === "ar" ? "أنشئ مساحة عمل خاصة بمنشأتك." : "Create your own workspace."}
+                    </p>
+                  </button>
                 </div>
 
+                {/* Join sub-flow — desktop */}
+                {joinChoice === "join" && (
+                  <div className="space-y-4 animate-in fade-in duration-200 pt-2">
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium text-muted-foreground">
+                        {lang === "ar" ? "رقم السجل التجاري" : "Commercial Registration No."}
+                      </label>
+                      <div className="flex gap-2">
+                        <CRInput
+                          value={crSearch}
+                          onChange={(raw) => { setCrSearch(raw); setCrSearchResult(null); }}
+                          placeholder="1010XXXXXX"
+                          className="flex-1"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="gap-2 shrink-0"
+                          style={{ display: "inline-flex" }}
+                          onClick={handleCRLookup}
+                          disabled={joinLoading || crSearch.length !== 10}
+                        >
+                          {joinLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                          {lang === "ar" ? "بحث" : "Search"}
+                        </Button>
+                      </div>
+                    </div>
+
+                    {crSearchResult && !crSearchResult.found && (
+                      <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
+                        {crLookupErrorMessage(crSearchResult.error)}
+                      </div>
+                    )}
+
+                    {crSearchResult?.found && (
+                      <div className="space-y-4 animate-in fade-in duration-200">
+                        <div className="rounded-lg border border-border bg-muted/30 p-4">
+                          <p className="text-xs text-muted-foreground mb-1">
+                            {lang === "ar" ? "المنشأة:" : "Organization:"}
+                          </p>
+                          <p className="text-sm font-semibold text-foreground font-mono">{crSearchResult.maskedName}</p>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-xs font-medium text-muted-foreground">
+                            {lang === "ar" ? "سبب الطلب (اختياري)" : "Reason for joining (optional)"}
+                          </label>
+                          <textarea
+                            value={joinReason}
+                            onChange={(e) => setJoinReason(e.target.value)}
+                            rows={3}
+                            placeholder={
+                              lang === "ar"
+                                ? "اذكر سبب رغبتك في الانضمام إلى هذه المنشأة..."
+                                : "Describe why you want to join this organization..."
+                            }
+                            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <div className="flex items-center justify-end pt-6 border-t border-border">
-                  <Button
-                    onClick={handleSaveCompany}
-                    disabled={loading}
-                    className="gap-2 px-8"
-                    style={{ display: "inline-flex" }}
-                  >
-                    {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-                    {lang === "ar" ? "حفظ ومتابعة" : "Save & Continue"}
-                    <DirectionalIcon icon={ArrowRight} className="h-4 w-4" />
-                  </Button>
+                  {joinChoice === "join" && crSearchResult?.found ? (
+                    <Button
+                      onClick={handleSendJoinRequest}
+                      disabled={loading}
+                      className="gap-2 px-8"
+                      style={{ display: "inline-flex" }}
+                    >
+                      {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+                      {lang === "ar" ? "إرسال طلب الانضمام" : "Send Join Request"}
+                      <DirectionalIcon icon={ArrowRight} className="h-4 w-4" />
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={() => joinChoice === "independent" && goNext()}
+                      disabled={loading || joinChoice !== "independent"}
+                      className="gap-2 px-8"
+                      style={{ display: "inline-flex" }}
+                    >
+                      {lang === "ar" ? "المتابعة" : "Continue"}
+                      <DirectionalIcon icon={ArrowRight} className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
               </div>
             )}
 
-            {/* ─── Step 2: Add First Property ─── */}
-            {currentStepId === "property" && (
+            {/* ─── Step 2: Org ─── */}
+            {currentStepId === "org" && (
               <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
                 <div className="mb-6">
                   <h2 className="text-lg font-bold text-primary">
-                    {lang === "ar" ? "إضافة أول عقار" : "Add First Property"}
+                    {lang === "ar" ? "بيانات المنشأة" : "Organization Info"}
                   </h2>
                   <p className="text-sm text-muted-foreground mt-1">
                     {lang === "ar"
-                      ? "أضف أول وحدة عقارية في منصتك."
-                      : "Add your first property unit to the platform."}
+                      ? "أضف بيانات منشأتك. جميع الحقول اختيارية."
+                      : "Add your organization details. All fields are optional."}
                   </p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                      {lang === "ar" ? "رقم الوحدة" : "Unit Number"}
-                      <span className="text-destructive ms-1">*</span>
+                    <label className="text-xs font-medium text-muted-foreground">
+                      {lang === "ar" ? "الاسم بالعربي" : "Arabic Name"}
                     </label>
-                    <Input
-                      value={unitForm.number}
-                      onChange={(e) => setUnit("number", e.target.value)}
-                      placeholder={lang === "ar" ? "مثال: A-101" : "e.g. A-101"}
-                    />
+                    <Input value={orgForm.nameArabic} onChange={(e) => setOrg("nameArabic", e.target.value)} placeholder={lang === "ar" ? "شركة الأفق العقارية" : "شركة الأفق العقارية"} dir="rtl" />
                   </div>
-
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                      {lang === "ar" ? "نوع الوحدة" : "Unit Type"}
-                      <span className="text-destructive ms-1">*</span>
+                    <label className="text-xs font-medium text-muted-foreground">
+                      {lang === "ar" ? "الاسم بالإنجليزي" : "English Name"}
                     </label>
-                    <select
-                      value={unitForm.type}
-                      onChange={(e) => setUnit("type", e.target.value)}
-                      className={selectClass}
-                    >
-                      <option value="">{lang === "ar" ? "اختر النوع..." : "Select type..."}</option>
-                      {unitTypeOptions.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt[lang]}
-                        </option>
+                    <Input value={orgForm.nameEnglish} onChange={(e) => setOrg("nameEnglish", e.target.value)} placeholder="Al Ufuq Real Estate" dir="ltr" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-muted-foreground">
+                      {lang === "ar" ? "رقم السجل التجاري" : "CR Number"}
+                    </label>
+                    <CRInput value={orgForm.crNumber} onChange={(raw) => setOrg("crNumber", raw)} placeholder="1010XXXXXX" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-muted-foreground">
+                      {lang === "ar" ? "الرقم الضريبي" : "VAT Number"}
+                    </label>
+                    <Input value={orgForm.vatNumber} onChange={(e) => setOrg("vatNumber", e.target.value)} placeholder="3000XXXXXX00003" dir="ltr" className="font-mono tabular-nums" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-muted-foreground">
+                      {lang === "ar" ? "نوع المنشأة" : "Entity Type"}
+                    </label>
+                    <select value={orgForm.entityType} onChange={(e) => setOrg("entityType", e.target.value)} className={selectClass}>
+                      <option value="">{lang === "ar" ? "اختر..." : "Select..."}</option>
+                      {entityTypeOptions.map((o) => (
+                        <option key={o.value} value={o.value}>{lang === "ar" ? o.ar : o.en}</option>
                       ))}
                     </select>
                   </div>
-
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                      {lang === "ar" ? "المدينة" : "City"}
+                    <label className="text-xs font-medium text-muted-foreground">
+                      {lang === "ar" ? "الشكل القانوني" : "Legal Form"}
                     </label>
-                    <select
-                      value={unitForm.city}
-                      onChange={(e) => setUnit("city", e.target.value)}
-                      className={selectClass}
-                    >
-                      <option value="">{lang === "ar" ? "اختر المدينة..." : "Select city..."}</option>
-                      {KSA_CITIES.map((city) => (
-                        <option key={city.value} value={city.value}>
-                          {city.labelAr} / {city.labelEn}
-                        </option>
+                    <select value={orgForm.legalForm} onChange={(e) => setOrg("legalForm", e.target.value)} className={selectClass}>
+                      <option value="">{lang === "ar" ? "اختر..." : "Select..."}</option>
+                      {legalFormOptions.map((o) => (
+                        <option key={o.value} value={o.value}>{lang === "ar" ? o.ar : o.en}</option>
                       ))}
                     </select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                      {lang === "ar" ? "السعر (ريال)" : "Price (SAR)"}
-                    </label>
-                    <Input
-                      value={unitForm.price}
-                      onChange={(e) =>
-                        setUnit("price", e.target.value.replace(/[^\d.]/g, ""))
-                      }
-                      placeholder={lang === "ar" ? "مثال: 500000" : "e.g. 500000"}
-                      dir="ltr"
-                      className="font-latin text-sm"
-                      type="number"
-                      min="0"
-                    />
                   </div>
                 </div>
 
@@ -610,25 +1035,25 @@ export default function OnboardingPage() {
                     style={{ display: "inline-flex" }}
                   >
                     <DirectionalIcon icon={ArrowLeft} className="h-4 w-4" />
-                    {lang === "ar" ? "السابق" : "Previous"}
+                    {lang === "ar" ? "السابق" : "Back"}
                   </Button>
                   <div className="flex items-center gap-3">
                     <Button
                       variant="ghost"
-                      onClick={handleSkipUnit}
+                      onClick={() => handleSaveOrg(true)}
                       disabled={loading}
                       style={{ display: "inline-flex" }}
                     >
                       {lang === "ar" ? "تخطي" : "Skip"}
                     </Button>
                     <Button
-                      onClick={handleSaveUnit}
+                      onClick={() => handleSaveOrg(false)}
                       disabled={loading}
                       className="gap-2 px-8"
                       style={{ display: "inline-flex" }}
                     >
                       {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-                      {lang === "ar" ? "إضافة ومتابعة" : "Add & Continue"}
+                      {lang === "ar" ? "حفظ ومتابعة" : "Save & Continue"}
                       <DirectionalIcon icon={ArrowRight} className="h-4 w-4" />
                     </Button>
                   </div>
@@ -636,29 +1061,208 @@ export default function OnboardingPage() {
               </div>
             )}
 
-            {/* ─── Step 3: Done ─── */}
+            {/* ─── Step 3: Contact ─── */}
+            {currentStepId === "contact" && (
+              <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
+                <div className="mb-6">
+                  <h2 className="text-lg font-bold text-primary">
+                    {lang === "ar" ? "بيانات التواصل" : "Contact Info"}
+                  </h2>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {lang === "ar"
+                      ? "أضف رقم الجوال والمدينة. جميع الحقول اختيارية."
+                      : "Add your mobile and city. All fields are optional."}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-muted-foreground">
+                      {lang === "ar" ? "رقم الجوال" : "Mobile Number"}
+                    </label>
+                    <SaudiPhoneInput value={contactForm.mobileNumber} onChange={(e164) => setContact("mobileNumber", e164)} placeholder="05XXXXXXXX" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-muted-foreground">
+                      {lang === "ar" ? "المنطقة" : "Region"}
+                    </label>
+                    <Input value={contactForm.region} onChange={(e) => setContact("region", e.target.value)} placeholder={lang === "ar" ? "منطقة الرياض" : "Riyadh Region"} />
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <label className="text-xs font-medium text-muted-foreground">
+                      {lang === "ar" ? "المدينة" : "City"}
+                    </label>
+                    <select value={contactForm.city} onChange={(e) => setContact("city", e.target.value)} className={selectClass}>
+                      <option value="">{lang === "ar" ? "اختر المدينة..." : "Select city..."}</option>
+                      {KSA_CITIES.map((city) => (
+                        <option key={city.value} value={city.value}>
+                          {lang === "ar" ? city.labelAr : city.labelEn}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-6 border-t border-border">
+                  <Button
+                    variant="ghost"
+                    onClick={goPrev}
+                    disabled={loading}
+                    className="gap-2"
+                    style={{ display: "inline-flex" }}
+                  >
+                    <DirectionalIcon icon={ArrowLeft} className="h-4 w-4" />
+                    {lang === "ar" ? "السابق" : "Back"}
+                  </Button>
+                  <div className="flex items-center gap-3">
+                    <Button
+                      variant="ghost"
+                      onClick={() => handleSaveContact(true)}
+                      disabled={loading}
+                      style={{ display: "inline-flex" }}
+                    >
+                      {lang === "ar" ? "تخطي" : "Skip"}
+                    </Button>
+                    <Button
+                      onClick={() => handleSaveContact(false)}
+                      disabled={loading}
+                      className="gap-2 px-8"
+                      style={{ display: "inline-flex" }}
+                    >
+                      {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+                      {lang === "ar" ? "حفظ ومتابعة" : "Save & Continue"}
+                      <DirectionalIcon icon={ArrowRight} className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ─── Step 4: Team ─── */}
+            {currentStepId === "team" && (
+              <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
+                <div className="mb-6">
+                  <h2 className="text-lg font-bold text-primary">
+                    {lang === "ar" ? "دعوة أعضاء الفريق" : "Invite Team Members"}
+                  </h2>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {lang === "ar"
+                      ? "أرسل دعوات لزملائك لبدء العمل معاً."
+                      : "Send invitations to your colleagues to get started together."}
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  {inviteRows.map((row, i) => (
+                    <div key={i} className="grid grid-cols-[1fr_180px_auto] gap-3 items-center">
+                      <Input
+                        type="email"
+                        value={row.email}
+                        onChange={(e) => setInviteRow(i, "email", e.target.value)}
+                        placeholder="name@example.com"
+                        dir="ltr"
+                      />
+                      <select value={row.role} onChange={(e) => setInviteRow(i, "role", e.target.value)} className={selectClass}>
+                        {inviteRoleOptions.map((opt) => (
+                          <option key={opt.value} value={opt.value}>{opt.label[lang]}</option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={() => removeInviteRow(i)}
+                        disabled={inviteRows.length === 1}
+                        className="h-10 w-10 rounded-md flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors disabled:opacity-30"
+                        aria-label={lang === "ar" ? "إزالة" : "Remove"}
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={addInviteRow}
+                    className="gap-2"
+                    style={{ display: "inline-flex" }}
+                  >
+                    <Mail className="h-4 w-4" />
+                    {lang === "ar" ? "إضافة دعوة" : "Add invite"}
+                  </Button>
+                </div>
+
+                <div className="flex items-center justify-between pt-6 border-t border-border">
+                  <Button
+                    variant="ghost"
+                    onClick={goPrev}
+                    disabled={loading}
+                    className="gap-2"
+                    style={{ display: "inline-flex" }}
+                  >
+                    <DirectionalIcon icon={ArrowLeft} className="h-4 w-4" />
+                    {lang === "ar" ? "السابق" : "Back"}
+                  </Button>
+                  <div className="flex items-center gap-3">
+                    <Button
+                      variant="ghost"
+                      onClick={() => handleFinishTeam(true)}
+                      disabled={loading}
+                      style={{ display: "inline-flex" }}
+                    >
+                      {lang === "ar" ? "تخطي" : "Skip"}
+                    </Button>
+                    <Button
+                      onClick={() => handleFinishTeam(false)}
+                      disabled={loading}
+                      className="gap-2 px-8"
+                      style={{ display: "inline-flex" }}
+                    >
+                      {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+                      {lang === "ar" ? "إنهاء الإعداد" : "Finish Setup"}
+                      <DirectionalIcon icon={ArrowRight} className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ─── Done ─── */}
             {currentStepId === "done" && (
               <div className="flex flex-col items-center justify-center py-12 space-y-6 animate-in slide-in-from-right-4 duration-500">
                 <div className="h-20 w-20 rounded-full bg-success/15 flex items-center justify-center">
                   <Check className="h-10 w-10 text-success" />
                 </div>
                 <div className="text-center space-y-2">
-                  <h2 className="text-2xl font-bold text-primary">
-                    {lang === "ar" ? "تم إعداد حسابك بنجاح!" : "Your account is ready!"}
-                  </h2>
-                  <p className="text-sm text-muted-foreground max-w-sm">
-                    {lang === "ar"
-                      ? "يمكنك الآن الانتقال إلى لوحة التحكم وإدارة عملائك وعقاراتك."
-                      : "You can now go to the dashboard and manage your customers and properties."}
-                  </p>
+                  {doneVariant === "join_requested" ? (
+                    <>
+                      <h2 className="text-2xl font-bold text-primary">
+                        {lang === "ar" ? "تم إرسال طلب الانضمام!" : "Join request submitted!"}
+                      </h2>
+                      <p className="text-sm text-muted-foreground max-w-sm">
+                        {lang === "ar"
+                          ? "سيقوم مدير المنشأة بمراجعة طلبك والرد عليه خلال فترة قصيرة. ستصلك إشعار بالقرار."
+                          : "The organization admin will review your request and respond shortly. You will receive a notification with their decision."}
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <h2 className="text-2xl font-bold text-primary">
+                        {lang === "ar" ? "تم إعداد حسابك بنجاح!" : "Your account is ready!"}
+                      </h2>
+                      <p className="text-sm text-muted-foreground max-w-sm">
+                        {lang === "ar"
+                          ? "يمكنك الآن الانتقال إلى لوحة التحكم وإدارة منشأتك وعقاراتك."
+                          : "You can now go to the dashboard and manage your organization and properties."}
+                      </p>
+                    </>
+                  )}
                 </div>
                 <div className="flex items-center gap-4 pt-2">
                   <Button
-                    onClick={() => router.push("/dashboard/crm")}
+                    onClick={() => router.push("/dashboard")}
                     className="gap-2 px-8"
                     style={{ display: "inline-flex" }}
                   >
-                    {lang === "ar" ? "الذهاب إلى CRM" : "Go to CRM"}
+                    {lang === "ar" ? "الذهاب إلى لوحة التحكم" : "Go to Dashboard"}
                     <DirectionalIcon icon={ArrowRight} className="h-4 w-4" />
                   </Button>
                 </div>

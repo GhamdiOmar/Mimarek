@@ -45,6 +45,8 @@ type Invitation = {
 const roleLabels: Record<string, { ar: string; en: string }> = {
   ADMIN: { ar: "مدير", en: "Admin" },
   MANAGER: { ar: "مدير عمليات", en: "Manager" },
+  LEASING: { ar: "مسؤول تأجير", en: "Leasing" },
+  FINANCE: { ar: "مسؤول مالي", en: "Finance" },
   AGENT: { ar: "وكيل", en: "Agent" },
   TECHNICIAN: { ar: "فني صيانة", en: "Technician" },
   USER: { ar: "مستخدم", en: "User" },

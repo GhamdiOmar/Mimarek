@@ -30,10 +30,12 @@
 
 ### 3.2 Workflow Orchestration
 - Enter plan mode for ANY non-trivial task (3+ steps or architectural decisions).
+- **For any non-trivial task, drive it through the global `/plan` skill (`~/.claude/skills/plan-creation/`): Explore (read-only subagents) → Design → Review with the user → write a PRD-style plan → get explicit approval → execute.** Plans use the PRD-style template the skill defines. The skill is generic; it defers UI-verification (§ 3.4 / § 3.9) and release (§ 7) specifics to this file.
 - If something goes sideways, STOP and re-plan immediately.
 - Write detailed specs upfront to reduce ambiguity.
-- Use subagents liberally to keep main context window clean — one task per subagent for focused execution.
+- Use subagents liberally to keep main context window clean — one task per subagent for focused execution. **Delegate-and-validate is mandatory: subagents give breadth, but you audit every output against the requirement and verify critical/absence claims yourself (§ 3.8).**
 - On non-trivial tasks, query the Graphify graph (§ 10.1) before cold-reading files — and pass subagents the relevant graph slice so they read narrowly.
+- **Never start executing (edits, commits, non-read-only tools, or task-chip spawning) before explicit plan approval — see § 3.10.**
 
 ### 3.3 Self-Improvement Loop
 - After ANY correction from the user, update AGENTS.md with the lesson learned.
@@ -44,6 +46,7 @@
 - **Visual deliverables require a real layout system, not just shared colors.** For decks and documents, normalize asset ratios, use fixed artboards, define consistent grids / margins / frame sizes, and verify pages side-by-side before calling the result polished. A collection of individually acceptable screens is still a failed design system if their proportions and composition drift from page to page.
 - **When a strong in-repo benchmark exists, inspect it before claiming design quality.** Do not rely on generic design principles or self-generated taste when the user points to a concrete artifact that is already better. Read the benchmark, compare hierarchy, density, narrative, screenshots, and finishing details, then either match or deliberately exceed that bar. Repeatedly polishing an inferior direction without studying the stronger reference wastes the user's time and trust.
 - **When creating user-facing deliverables, confirm and honor the expected save location.** If the user later corrects the location, move the deliverables to the requested place immediately and do not leave duplicate “almost right” copies elsewhere.
+- **Scope-clarification answers are NOT execution approval (learned 2026-06-13).** When the user is reviewing a plan and answers `AskUserQuestion` scope/option questions, that refines the plan — it does not authorize edits. Wait for an explicit "go/proceed/approved" (or `ExitPlanMode` acceptance) before any non-read-only action. Incident: a help-page plan was presented, the user picked scope options, and 13 file edits were made before any approval (then reverted). Codified as the hard gate in § 3.10.
 
 ### 3.4 Verification Before Done
 - Never mark a task complete without proving it works (build, preview, or test).
@@ -88,6 +91,7 @@
   3. Only then report the finding as confirmed
 - If you cannot verify due to context limits, state explicitly: "I was unable to directly verify this — treat as unconfirmed."
 - Reporting an unverified gap as confirmed fact is worse than missing a real gap. False findings waste engineering time and erode trust.
+- This is the **delegate-and-validate** bar the `/plan` skill (§ 3.2) enforces: delegate for breadth, validate before trust. It is mandatory, not optional.
 
 ### 3.9 Release-Gate Rule (Hard Stop — Violated Once, Never Again)
 **Context:** On 2026-04-18 I shipped v4.1.0 (merge + tag + GitHub release + push) on typecheck-green alone. No preview walk. No screenshots. No console-log check. No axe scan. No mobile viewport pass. This violated § 3.4 and broke the working agreement with the user.
@@ -120,6 +124,20 @@ Before `git tag`, `git push origin vX.Y.Z`, or `gh release create`, ALL of the f
 ### 3.9.1 Release-Gating — historical note (journey-first, v4.3.1–v4.6.0)
 
 The "journey-first transformation" CI-as-gate exception that once lived here is **lapsed and removed (2026-06-12).** It scoped a per-phase carve-out — CI-green substituting for the §3.9 preview walk — to releases v4.3.1–v4.6.0, all shipped 2026-05-17. That transformation ended at v4.6.0; we are now at v4.16.x, and the exception's own lapse condition ("the moment a safe preview DB becomes available") has been met — UI is now preview-verified via the MCP browser against a local `next build && next start` (see the `reference_release_screenshot_verification` memory). **§3.9 applies in full to every release; there is no active CI-as-gate exception.** The full prior text is in git history if ever needed.
+
+### 3.10 Plan-Approval Gate (Hard Stop — never execute before approval)
+
+**Context:** On 2026-06-13 I presented a help-page plan, the user answered scope-clarifying `AskUserQuestion` options, and I treated that as a go — making 13 file edits before any explicit approval. The edits were reverted. Scope answers refine a plan; they do not authorize execution.
+
+**Rule:**
+
+1. **Planning posture is triggered by intent, not just formal plan mode.** When the user asks for "a plan", a strategy, a proposal, or "how would you…", you are in plan-only posture even in normal mode — produce the plan and STOP.
+2. **"Execution" = any non-read-only action:** editing/writing project files, Bash mutations, commits / tags / pushes, non-read-only MCP calls, **and spawning background task chips.**
+3. **Allowed while planning:** read-only tools (Read/Grep/Glob), read-only Explore subagents, and `AskUserQuestion`.
+4. **Approval = an explicit affirmative** — "go", "proceed", "approved", "ship it", or accepting `ExitPlanMode`. **Answering scope/clarifying questions is NOT approval.** If unsure whether you have approval, you do not — present the plan and ask.
+5. Use the `/plan` skill (§ 3.2) to run the full Explore → Design → Review → Approve → Execute loop. After approval, the § 3.9 release gate still applies in full before any tag/release.
+
+**Violating this rule is worse than a slow plan.** Editing before approval breaks the working agreement and forces reverts.
 
 ---
 
