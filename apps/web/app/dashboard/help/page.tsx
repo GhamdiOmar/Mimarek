@@ -77,6 +77,28 @@ const PRIORITY_OPTIONS = [
 
 type Tab = "overview" | "faq" | "tickets" | "permissions" | "org-admin";
 
+// A short, hand-picked set of high-traffic FAQs surfaced on the Overview landing.
+const POPULAR_FAQ_IDS = ["gs-1", "sc-1", "sc-8", "fi-7", "mk-1", "sp-5"];
+
+// Maps the in-app deep-link anchors (e.g. an empty-state "Learn about contracts"
+// linking to /dashboard/help#contracts) to the FAQ category to open + filter.
+const HASH_TO_CATEGORY: Record<string, FAQCategory> = {
+  crm: "sales_crm",
+  deals: "sales_crm",
+  contracts: "sales_crm",
+  units: "property_management",
+  documents: "property_management",
+  maintenance: "property_management",
+  "preventive-maintenance": "property_management",
+  marketplace: "marketplace",
+  payments: "finance",
+  coupons: "finance",
+  notifications: "account_notifications",
+  search: "account_notifications",
+  security: "security_privacy",
+  settings: "technical",
+};
+
 export default function HelpPage() {
   const { data: session } = useSession();
   const userRole = (session?.user as any)?.role ?? "USER";
@@ -89,6 +111,7 @@ export default function HelpPage() {
   const [faqCategory, setFaqCategory] = React.useState<FAQCategory | "all">("all");
   const [openFaq, setOpenFaq] = React.useState<string | null>(null);
   const [openGuide, setOpenGuide] = React.useState<string | null>(null);
+  const [overviewSearch, setOverviewSearch] = React.useState("");
 
   // Ticket state
   const [myTickets, setMyTickets] = React.useState<any[]>([]);
@@ -123,6 +146,73 @@ export default function HelpPage() {
       getPendingJoinRequests().then(setPendingJoinRequests).catch(() => {});
     }
   }, [activeTab, isOrgAdmin]);
+
+  // Deep-link handling: open the right tab/category when the page is reached via
+  // an in-app anchor (e.g. /dashboard/help#contracts from an empty-state link).
+  // Listens for hashchange too, so the link also works when Help is already open.
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const applyHash = () => {
+      const hash = window.location.hash.replace(/^#/, "").toLowerCase();
+      if (!hash) return;
+      const cat = HASH_TO_CATEGORY[hash];
+      if (cat) {
+        setActiveTab("faq");
+        setFaqCategory(cat);
+      } else if (hash === "faq" || hash === "faqs" || hash === "guides") {
+        setActiveTab("faq");
+      } else if (hash === "tickets") {
+        setActiveTab("tickets");
+      } else if (hash === "permissions") {
+        setActiveTab("permissions");
+      } else {
+        return;
+      }
+      // Let the tab content mount, then bring the FAQ section into view.
+      window.setTimeout(() => {
+        document.getElementById("help-faq-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 250);
+    };
+    applyHash();
+    window.addEventListener("hashchange", applyHash);
+    return () => window.removeEventListener("hashchange", applyHash);
+  }, []);
+
+  // Jump to a specific FAQ from the Overview (popular questions / search).
+  const goToFaq = React.useCallback((opts?: { category?: FAQCategory | "all"; search?: string; openId?: string }) => {
+    if (opts?.category !== undefined) setFaqCategory(opts.category);
+    if (opts?.search !== undefined) setFaqSearch(opts.search);
+    if (opts?.openId !== undefined) setOpenFaq(opts.openId);
+    setActiveTab("faq");
+    window.setTimeout(() => {
+      document.getElementById("help-faq-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 100);
+  }, []);
+
+  const popularFaqs = POPULAR_FAQ_IDS
+    .map((id) => FAQ_ITEMS.find((f) => f.id === id))
+    .filter(Boolean) as typeof FAQ_ITEMS;
+
+  // Shared FAQ accordion row — used by both the flat and category-grouped views.
+  const renderFaqRow = (item: (typeof FAQ_ITEMS)[number]) => (
+    <div key={item.id}>
+      <Button
+        variant="ghost"
+        onClick={() => setOpenFaq(openFaq === item.id ? null : item.id)}
+        className="flex items-center justify-between w-full px-4 py-3 h-auto text-sm font-medium text-foreground hover:bg-muted/10 transition-colors text-start rounded-none"
+        style={{ display: "inline-flex" }}
+        aria-expanded={openFaq === item.id}
+      >
+        <span>{item.question[lang]}</span>
+        {openFaq === item.id ? <ChevronUp className="h-4 w-4 min-w-[16px]" /> : <ChevronDown className="h-4 w-4 min-w-[16px]" />}
+      </Button>
+      {openFaq === item.id && (
+        <div className="px-4 pb-3 text-sm text-muted-foreground leading-relaxed bg-muted/5">
+          {item.answer[lang]}
+        </div>
+      )}
+    </div>
+  );
 
   // Filter FAQs
   const filteredFaqs = FAQ_ITEMS.filter((item) => {
@@ -683,8 +773,11 @@ export default function HelpPage() {
             {lang === "ar" ? "الأسئلة الشائعة" : "FAQs"}
           </h2>
           {mobileFaqsByCategory.length === 0 ? (
-            <div className="rounded-2xl border border-border bg-card p-6 text-center text-sm text-muted-foreground">
-              {lang === "ar" ? "لا توجد نتائج مطابقة." : "No matching FAQs."}
+            <div className="rounded-2xl border border-border bg-card p-6 text-center">
+              <p className="text-sm text-muted-foreground">{lang === "ar" ? "لا توجد نتائج مطابقة." : "No matching FAQs."}</p>
+              <Button variant="outline" size="sm" className="mt-3" style={{ display: "inline-flex" }} onClick={() => setMobileNewTicketOpen(true)}>
+                {lang === "ar" ? "افتح تذكرة" : "Open a ticket"}
+              </Button>
             </div>
           ) : (
             <div className="rounded-2xl border border-border bg-card">
@@ -921,45 +1014,83 @@ export default function HelpPage() {
       {/* Tab Content */}
       {activeTab === "overview" && (
         <div className="space-y-6">
-          {/* Quick Actions */}
+          {/* Search hero */}
+          <div className="bg-card rounded-lg border border-border p-6 md:p-8 text-center">
+            <h2 className="text-lg font-bold text-foreground">{lang === "ar" ? "كيف يمكننا مساعدتك؟" : "How can we help?"}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">{lang === "ar" ? "ابحث في الأسئلة والأدلة، أو تواصل مع الدعم." : "Search our FAQs and guides, or contact support."}</p>
+            <form
+              onSubmit={(e) => { e.preventDefault(); goToFaq({ search: overviewSearch, category: "all" }); }}
+              className="relative mx-auto mt-4 max-w-xl"
+            >
+              <Search className="h-[18px] w-[18px] absolute start-3 top-1/2 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+              <input
+                type="text"
+                value={overviewSearch}
+                onChange={(e) => setOverviewSearch(e.target.value)}
+                placeholder={lang === "ar" ? "ابحث في المساعدة..." : "Search help..."}
+                aria-label={lang === "ar" ? "ابحث في المساعدة" : "Search help"}
+                className="w-full bg-background border border-border rounded-md py-2.5 ps-10 pe-4 text-sm focus:border-primary/30 focus:ring-0 outline-none"
+              />
+            </form>
+          </div>
+
+          {/* Popular questions */}
+          <div>
+            <h3 className="mb-3 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">{lang === "ar" ? "الأسئلة الأكثر شيوعاً" : "Popular questions"}</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              {popularFaqs.map((item) => (
+                <Button
+                  key={item.id}
+                  variant="ghost"
+                  onClick={() => goToFaq({ category: item.category, openId: item.id })}
+                  className="w-full justify-between gap-2 h-auto px-4 py-3 text-start text-sm font-medium text-foreground bg-card border border-border rounded-md hover:border-primary/30 hover:bg-muted/10 transition-colors"
+                  style={{ display: "inline-flex" }}
+                >
+                  <span className="line-clamp-1">{item.question[lang]}</span>
+                  <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground icon-directional" aria-hidden="true" />
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          {/* Actions */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Button
               variant="outline"
               onClick={() => { setActiveTab("tickets"); setShowNewTicket(true); }}
-              className="bg-card p-6 rounded-md shadow-card h-auto justify-start flex-col items-start hover:shadow-lg hover:-translate-y-0.5 transition-all text-start"
+              className="w-full bg-card p-6 rounded-md shadow-card h-auto justify-start flex-col items-start hover:shadow-lg hover:-translate-y-0.5 transition-all text-start"
               style={{ display: "inline-flex" }}
             >
-              <Ticket className="h-8 w-8 text-secondary mb-3" />
-              <h3 className="font-bold text-foreground">{lang === "ar" ? "تقديم تذكرة" : "Submit Ticket"}</h3>
-              <p className="text-xs text-muted-foreground mt-1">{lang === "ar" ? "أبلغ عن مشكلة أو اطلب ميزة جديدة" : "Report an issue or request a feature"}</p>
+              <LifeBuoy className="h-8 w-8 text-secondary mb-3" />
+              <h3 className="font-bold text-foreground">{lang === "ar" ? "تواصل مع الدعم" : "Contact Support"}</h3>
+              <p className="text-xs text-muted-foreground mt-1">{lang === "ar" ? "افتح تذكرة وسيرد عليك فريقنا" : "Open a ticket and our team will reply"}</p>
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setActiveTab("faq")}
+              className="w-full bg-card p-6 rounded-md shadow-card h-auto justify-start flex-col items-start hover:shadow-lg hover:-translate-y-0.5 transition-all text-start"
+              style={{ display: "inline-flex" }}
+            >
+              <BookOpen className="h-8 w-8 text-info mb-3" />
+              <h3 className="font-bold text-foreground">{lang === "ar" ? "الأسئلة والأدلة" : "FAQs & Guides"}</h3>
+              <p className="text-xs text-muted-foreground mt-1">{lang === "ar" ? "تصفّح كل الأسئلة وأدلة الاستخدام" : "Browse all FAQs and usage guides"}</p>
             </Button>
             <Button
               variant="outline"
               onClick={() => setActiveTab("permissions")}
-              className="bg-card p-6 rounded-md shadow-card h-auto justify-start flex-col items-start hover:shadow-lg hover:-translate-y-0.5 transition-all text-start"
+              className="w-full bg-card p-6 rounded-md shadow-card h-auto justify-start flex-col items-start hover:shadow-lg hover:-translate-y-0.5 transition-all text-start"
               style={{ display: "inline-flex" }}
             >
               <ShieldCheck className="h-8 w-8 text-warning mb-3" />
               <h3 className="font-bold text-foreground">{lang === "ar" ? "طلب صلاحيات" : "Request Permissions"}</h3>
               <p className="text-xs text-muted-foreground mt-1">{lang === "ar" ? "اطلب ترقية صلاحياتك في النظام" : "Request a role upgrade in the system"}</p>
             </Button>
-            <Button
-              variant="outline"
-              onClick={() => setActiveTab("faq")}
-              className="bg-card p-6 rounded-md shadow-card h-auto justify-start flex-col items-start hover:shadow-lg hover:-translate-y-0.5 transition-all text-start"
-              style={{ display: "inline-flex" }}
-            >
-              <BookOpen className="h-8 w-8 text-info mb-3" />
-              <h3 className="font-bold text-foreground">{lang === "ar" ? "الأسئلة الشائعة" : "FAQs & Guides"}</h3>
-              <p className="text-xs text-muted-foreground mt-1">{lang === "ar" ? "ابحث في الأسئلة الشائعة وأدلة الاستخدام" : "Browse FAQs and usage guides"}</p>
-            </Button>
           </div>
-
         </div>
       )}
 
       {activeTab === "faq" && (
-        <div className="space-y-6">
+        <div id="help-faq-section" className="space-y-6 scroll-mt-4">
           {/* Search */}
           <div className="relative">
             <Search className="h-[18px] w-[18px] absolute end-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -1000,30 +1131,44 @@ export default function HelpPage() {
           </div>
 
           {/* FAQ Accordion */}
-          <div className="bg-card rounded-md border border-border divide-y divide-border">
-            {filteredFaqs.length === 0 ? (
-              <div className="p-6 text-center text-sm text-muted-foreground">{lang === "ar" ? "لا توجد نتائج" : "No results found"}</div>
-            ) : (
-              filteredFaqs.map((item) => (
-                <div key={item.id}>
-                  <Button
-                    variant="ghost"
-                    onClick={() => setOpenFaq(openFaq === item.id ? null : item.id)}
-                    className="flex items-center justify-between w-full px-4 py-3 h-auto text-sm font-medium text-foreground hover:bg-muted/10 transition-colors text-start rounded-none"
-                    style={{ display: "inline-flex" }}
-                  >
-                    <span>{item.question[lang]}</span>
-                    {openFaq === item.id ? <ChevronUp className="h-4 w-4 min-w-[16px]" /> : <ChevronDown className="h-4 w-4 min-w-[16px]" />}
-                  </Button>
-                  {openFaq === item.id && (
-                    <div className="px-4 pb-3 text-sm text-muted-foreground leading-relaxed bg-muted/5">
-                      {item.answer[lang]}
+          {filteredFaqs.length === 0 ? (
+            <div className="bg-card rounded-md border border-border p-8 text-center">
+              <p className="text-sm text-muted-foreground">
+                {lang === "ar"
+                  ? `لا توجد نتائج${faqSearch ? ` لـ "${faqSearch}"` : ""}`
+                  : `No results${faqSearch ? ` for "${faqSearch}"` : ""}`}
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-3"
+                style={{ display: "inline-flex" }}
+                onClick={() => { setActiveTab("tickets"); setShowNewTicket(true); }}
+              >
+                {lang === "ar" ? "لم تجد ما تبحث عنه؟ افتح تذكرة" : "Didn't find it? Open a ticket"}
+              </Button>
+            </div>
+          ) : faqCategory === "all" && !faqSearch ? (
+            // Grouped by category when browsing everything — avoids a long flat wall.
+            <div className="space-y-5">
+              {FAQ_CATEGORIES.map((cat) => {
+                const items = filteredFaqs.filter((f) => f.category === cat.key);
+                if (items.length === 0) return null;
+                return (
+                  <div key={cat.key}>
+                    <h3 className="mb-2 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">{cat.label[lang]}</h3>
+                    <div className="bg-card rounded-md border border-border divide-y divide-border">
+                      {items.map(renderFaqRow)}
                     </div>
-                  )}
-                </div>
-              ))
-            )}
-          </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="bg-card rounded-md border border-border divide-y divide-border">
+              {filteredFaqs.map(renderFaqRow)}
+            </div>
+          )}
 
           {/* Guides */}
           <div>

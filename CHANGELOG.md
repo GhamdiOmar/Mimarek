@@ -1,5 +1,37 @@
 # Changelog — Mimaric PropTech
 
+## [4.19.0] — 2026-06-13 — Help Center refresh + onboarding wizard + planning discipline
+
+Rebuilds the Help Center against current product truth, expands it to the modules it was missing, humanizes the bilingual copy, completes the onboarding wizard, removes placeholder UI, and tightens the desktop help flow (search-first landing, working deep-links, grouped FAQs). Also codifies a planning/approval workflow (new `/plan` skill + AGENTS.md §3.10).
+
+### Help Center content (`apps/web/lib/help-content.ts`)
+- **13 factual corrections** against the codebase: 7 org roles (added Leasing/Finance, dropped platform roles from the tenant list), CRM kanban stages → New/Contacted/Qualified/Viewing/Negotiation, org-prefixed contract numbers (`ABC1-SALE-2026-0001`), sale-sign sets the linked deal → Won (not customer → Converted), Manager/Agent have `contracts:write`, document categories → General/Legal/Contract/Marketing/Finance (chosen on upload), installment statuses (+Partially Paid), report types → Revenue/Occupancy/Rent Collection/Maintenance/Maintenance Costs, payments KPIs → Collected This Month/Total Overdue/Expected Next 30 Days, annual-discount wording, removed the fake storage-meter claim.
+- **Coverage expansion:** 2 new categories (Marketplace, Account & Notifications); 9 new FAQs (marketplace browse/list/convert/roles, notifications, global search, role dashboards, PII visibility, settings overview); 2 new Marketplace guides; corrected the stale team-management guide to the real email-invite flow.
+- **Bilingual humanization:** EN strings de-AI'd via the `humanizer` skill; AR strings naturalized to a professional Saudi business register via `saudi-software-arabic-humanizer`. Exact values/terms preserved (audited — zero factual drift).
+
+### Help Center flow (`apps/web/app/dashboard/help/page.tsx`)
+- **Deep-links now work.** `helpHref="/dashboard/help#<topic>"` (14 links across 9 modules) open the FAQ tab, select the mapped category, and scroll — via a hash map + `hashchange` listener (fresh nav and when Help is already open). They previously landed on a redundant Overview with the anchor ignored.
+- **Search-first Overview:** "How can we help?" search hero + popular questions + Contact Support / FAQs / Request Permissions cards (replacing the 3 tab-duplicating cards; also fixed the shrink-to-content card-misalignment bug).
+- **Category-grouped FAQs** in the All view (section headers) instead of a 46-item flat wall; **empty search → "Open a ticket" CTA** (desktop + mobile).
+
+### Onboarding (`apps/web/app/dashboard/onboarding/page.tsx`)
+- Completed the **4-step wizard** (Join existing company by CR / continue independently → Organization → Contact → Team invite → Done), wiring the existing onboarding server actions; reuses `CRInput`/`SaudiPhoneInput`, KSA cities, and the team-invite pattern. Full cycle verified EN + AR, 0 console errors.
+
+### Documents (`apps/web/app/dashboard/documents/page.tsx`)
+- Removed the hardcoded placeholder storage meter (no quota infrastructure exists) and wired the desktop search to filter by name (matching mobile).
+
+### Roles / i18n
+- Added Arabic labels for the **Leasing** and **Finance** roles in team management (were falling back to the English key).
+
+### Planning discipline
+- New global **`/plan` skill** codifying explore → design → review → approve → execute, with a hard no-execute-before-approval gate, delegate-and-validate, and project-deferred UI-verify + release steps.
+- **AGENTS.md §3.10 Plan-Approval Gate** (scope-clarification answers are not execution approval) + §3.2/§3.3/§3.8 reinforcement.
+
+### Gates
+- `check-types` 2/2; full `next build` green; §3.9 preview walk across help (overview + grouped FAQs), onboarding (full cycle), documents — all 4 theme/lang combos + mobile, **0 console errors**. Deep-link (`#contracts` → Sales & CRM) and empty-search CTA asserted in the browser.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimaric/compare/v4.18.0...v4.19.0
+
 ## [4.18.0] — 2026-06-13 — Stabilization + planned architecture: PII trust, CRM a11y, route-guards SSOT
 
 Closes the post-v4.17.0 QA audit criticals and carries the F4/F5 architecture fixes. Hardens the PII trust boundary (marketplace plaintext leak + blind-index correctness), fixes the failing CRM accessibility and billing E2E specs, makes contract signing atomic, adds registration anti-automation, and collapses three sources of route→permission/audience truth into one. Two new ESLint guards and an E2E coverage guard mechanize the landmines this release fixed.

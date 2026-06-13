@@ -49,6 +49,7 @@ export default function DocumentVaultPage() {
   const [exporting, setExporting] = React.useState(false);
   const [activeCategory, setActiveCategory] = React.useState<string>("all");
   const [mobileSearch, setMobileSearch] = React.useState("");
+  const [desktopSearch, setDesktopSearch] = React.useState("");
 
   React.useEffect(() => {
     async function loadDocs() {
@@ -82,6 +83,16 @@ export default function DocumentVaultPage() {
     const q = mobileSearch.toLowerCase();
     return base.filter((d) => (d.name ?? "").toLowerCase().includes(q));
   }, [docs, activeCategory, mobileSearch]);
+
+  const desktopFiltered = React.useMemo(() => {
+    const base =
+      activeCategory === "all"
+        ? docs
+        : docs.filter((d) => d.category === activeCategory);
+    if (!desktopSearch) return base;
+    const q = desktopSearch.toLowerCase();
+    return base.filter((d) => (d.name ?? "").toLowerCase().includes(q));
+  }, [docs, activeCategory, desktopSearch]);
 
   function pickFileIcon(type: string | null | undefined) {
     const t = (type ?? "").toLowerCase();
@@ -421,16 +432,6 @@ export default function DocumentVaultPage() {
               </div>
            </div>
            
-           <div className="bg-primary-deep p-6 rounded-md text-white shadow-lg overflow-hidden relative">
-              <FilePdf className="h-12 w-12 absolute -bottom-4 -end-4 opacity-10 rotate-12" />
-              <p className="text-[10px] font-bold uppercase tracking-widest text-white font-latin">Storage Usage</p>
-              <div className="mt-4 space-y-2">
-                 <div className="h-1.5 w-full bg-card/10 rounded-full overflow-hidden">
-                    <div className="h-full bg-secondary w-3/4 rounded-full" />
-                 </div>
-                 <p className="text-[10px] text-white/50 text-end font-latin">7.2 GB / 10 GB</p>
-              </div>
-           </div>
         </div>
 
         {/* Document Grid */}
@@ -441,6 +442,8 @@ export default function DocumentVaultPage() {
                 <Search className="h-[18px] w-[18px] absolute end-3 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-secondary transition-colors" />
                 <input
                   type="text"
+                  value={desktopSearch}
+                  onChange={(e) => setDesktopSearch(e.target.value)}
                   placeholder={lang === "ar" ? "بحث في الوثائق..." : "Search documents..."}
                   className="w-full bg-muted/30 border-transparent rounded py-2 pe-10 ps-4 text-sm outline-none focus:bg-card focus:border-border transition-all"
                 />
@@ -474,7 +477,7 @@ export default function DocumentVaultPage() {
                  </div>
                ))}
              </div>
-           ) : docs.filter((doc) => activeCategory === "all" || doc.category === activeCategory).length === 0 ? (
+           ) : desktopFiltered.length === 0 ? (
              docs.length === 0 ? (
                <EmptyState
                  variant="first-time"
@@ -512,7 +515,7 @@ export default function DocumentVaultPage() {
                    <Button
                      variant="outline"
                      size="sm"
-                     onClick={() => setActiveCategory("all")}
+                     onClick={() => { setActiveCategory("all"); setDesktopSearch(""); }}
                      style={{ display: "inline-flex" }}
                    >
                      {lang === "ar" ? "عرض الكل" : "View all"}
@@ -522,7 +525,7 @@ export default function DocumentVaultPage() {
              )
            ) : (
            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {docs.filter((doc) => activeCategory === "all" || doc.category === activeCategory).map((doc) => (
+              {desktopFiltered.map((doc) => (
                 <div key={doc.id} className="bg-card rounded-md border border-border p-5 hover:shadow-md transition-all group relative border-b-4 border-b-transparent hover:border-b-secondary">
                    <div className="flex items-start justify-between mb-4">
                       <div className={cn(

@@ -2,8 +2,10 @@ export type FAQCategory =
   | "getting_started"
   | "sales_crm"
   | "property_management"
+  | "marketplace"
   | "finance"
   | "security_privacy"
+  | "account_notifications"
   | "technical";
 
 export type FAQItem = {
@@ -25,8 +27,10 @@ export const FAQ_CATEGORIES: { key: FAQCategory; label: { ar: string; en: string
   { key: "getting_started", label: { ar: "البدء", en: "Getting Started" } },
   { key: "sales_crm", label: { ar: "المبيعات والعملاء", en: "Sales & CRM" } },
   { key: "property_management", label: { ar: "إدارة العقارات", en: "Property Management" } },
+  { key: "marketplace", label: { ar: "السوق العقاري", en: "Marketplace" } },
   { key: "finance", label: { ar: "المالية", en: "Finance" } },
   { key: "security_privacy", label: { ar: "الأمان والخصوصية", en: "Security & Privacy" } },
+  { key: "account_notifications", label: { ar: "الحساب والتنبيهات", en: "Account & Notifications" } },
   { key: "technical", label: { ar: "الدعم الفني", en: "Technical" } },
 ];
 
@@ -35,227 +39,285 @@ export const FAQ_ITEMS: FAQItem[] = [
   {
     id: "gs-1",
     question: { ar: "كيف أبدأ استخدام ميماريك؟", en: "How do I get started with Mimaric?" },
-    answer: { ar: "بعد تسجيل الدخول، ستصل إلى لوحة التحكم الرئيسية. يمكنك البدء بإضافة عملاء من قسم CRM، ثم إضافة العقارات والوحدات من قسم العقارات، وإنشاء الحجوزات والعقود.", en: "After logging in, you'll reach the main dashboard. Start by adding customers from the CRM section, then add properties and units from the Properties section, and create reservations and contracts." },
+    answer: { ar: "بعد تسجيل الدخول تنتقل إلى لوحة التحكم الرئيسية. ابدأ بإضافة العملاء من قسم CRM، ثم أضف العقارات والوحدات من قسم العقارات، وأنشئ الحجوزات والعقود.", en: "After you log in, you land on the main dashboard. Start by adding customers in the CRM section, then add properties and units in the Properties section, and create your reservations and contracts from there." },
     category: "getting_started",
   },
   {
     id: "gs-2",
     question: { ar: "ما هي الأدوار المتاحة في النظام؟", en: "What roles are available in the system?" },
-    answer: { ar: "يوفر ميماريك 7 أدوار: مدير المنصة (SYSTEM_ADMIN)، دعم المنصة (SYSTEM_SUPPORT)، مدير (ADMIN) — يملك كامل الصلاحيات التشغيلية، مدير عمليات (MANAGER)، وكيل (AGENT) — للمبيعات وخدمة العملاء، فني صيانة (TECHNICIAN)، ومستخدم (USER). كل دور له صلاحيات محددة يمكن الاطلاع عليها من طلب الصلاحيات.", en: "Mimaric offers 7 roles: System Admin — platform-level only, System Support — platform-level only, Admin — full operational permissions, Manager — operations management, Agent — sales and customer service, Technician — maintenance only, and User — read-only. Each has specific permissions viewable from the Request Permissions section." },
+    answer: { ar: "في ميماريك سبعة أدوار داخل المنشأة: مدير (Admin) بكامل الصلاحيات التشغيلية، مدير عمليات (Manager) لإدارة العمليات، مسؤول تأجير (Leasing) للإيجارات وخط الإيجار، مسؤول مالي (Finance) للمدفوعات والتقارير المالية، وكيل (Agent) للمبيعات وخدمة العملاء، فني صيانة (Technician) للصيانة، ومستخدم (User) للاطلاع فقط. ويوجد دوران إضافيان مخصصان لطاقم منصة ميماريك للدعم الداخلي. ولكل دور صلاحياته الخاصة.", en: "There are seven organization roles: Admin (full operational permissions), Manager (operations management), Leasing (rentals and the leasing pipeline), Finance (payments and financial reports), Agent (sales and customer service), Technician (maintenance), and User (read-only). Two more roles are reserved for Mimaric's own platform-support staff. Each role gets its own set of permissions." },
     category: "getting_started",
   },
   {
     id: "gs-3",
     question: { ar: "كيف أطلب صلاحيات إضافية؟", en: "How do I request additional permissions?" },
-    answer: { ar: "اذهب إلى صفحة المساعدة > طلب الصلاحيات. اختر الدور المطلوب واكتب سبب الطلب. سيراجع المدير طلبك ويوافق عليه أو يرفضه.", en: "Go to Help > Request Permissions. Select the desired role and write your reason. An admin will review and approve or decline your request." },
+    answer: { ar: "اذهب إلى صفحة المساعدة > طلب الصلاحيات. اختر الدور الذي تريده واكتب سبب الطلب. يراجع المدير طلبك ثم يوافق عليه أو يرفضه.", en: "Go to Help > Request Permissions. Pick the role you want and write your reason. An admin reviews it and either approves or declines." },
     category: "getting_started",
   },
   // Sales & CRM
   {
     id: "sc-1",
     question: { ar: "كيف أضيف عميلاً جديداً؟", en: "How do I add a new customer?" },
-    answer: { ar: "من قسم العملاء، انقر على 'إضافة عميل'. أدخل بيانات العميل (الاسم، الهاتف، الهوية الوطنية). سيتم تشفير البيانات الشخصية تلقائياً.", en: "From the Customers section, click 'Add Customer'. Enter customer details (name, phone, national ID). Personal data is automatically encrypted." },
+    answer: { ar: "من قسم العملاء، انقر 'إضافة عميل' وأدخل بيانات العميل (الاسم، الهاتف، الهوية الوطنية). تُشفّر البيانات الشخصية تلقائياً.", en: "In the Customers section, click 'Add Customer' and enter the customer's name, phone, and national ID. The system encrypts personal data for you." },
     category: "sales_crm",
   },
   {
     id: "sc-2",
     question: { ar: "ما الفرق بين عرض كانبان وعرض القائمة؟", en: "What's the difference between Kanban and List view?" },
-    answer: { ar: "عرض كانبان يعرض العملاء في أعمدة حسب حالتهم (جديد، مهتم، مؤهل، معاينة، محجوز). عرض القائمة يعرضهم في جدول مع إمكانية الفرز والفلترة.", en: "Kanban view shows customers in columns by status (New, Interested, Qualified, Viewing, Reserved). List view shows them in a sortable, filterable table." },
+    answer: { ar: "عرض كانبان يوزّع العملاء على أعمدة حسب مرحلتهم في خط البيع (جديد، تم التواصل، مؤهل، معاينة، تفاوض). وعرض القائمة يعرضهم في جدول قابل للفرز والتصفية.", en: "Kanban view puts customers in columns by pipeline stage (New, Contacted, Qualified, Viewing, Negotiation). List view shows the same customers in a table you can sort and filter." },
     category: "sales_crm",
   },
   {
     id: "sc-3",
     question: { ar: "كيف أنشئ حجزاً لعميل؟", en: "How do I create a reservation for a customer?" },
-    answer: { ar: "من قسم الحجوزات، انقر 'حجز جديد'. اختر العميل، ثم اختر العقار والوحدة المناسبة. أكمل خطوات المعالج لتأكيد الحجز — ستتحدث حالة الوحدة تلقائياً إلى 'محجوز'.", en: "From the Reservations section, click 'New Reservation'. Select the customer, then choose the property and unit. Complete the wizard steps to confirm the reservation — the unit status will automatically update to 'Reserved'." },
+    answer: { ar: "من قسم الحجوزات، انقر 'حجز جديد'. اختر العميل، ثم العقار والوحدة المناسبة، وأكمل خطوات المعالج لتأكيد الحجز. تتحول حالة الوحدة تلقائياً إلى 'محجوز'.", en: "In the Reservations section, click 'New Reservation'. Pick the customer, then the property and unit. Finish the wizard to confirm the reservation, and the unit status switches to 'Reserved' on its own." },
     category: "sales_crm",
   },
   // Property Management
   {
     id: "pm-1",
     question: { ar: "كيف أتابع حالة الوحدات؟", en: "How do I track unit status?" },
-    answer: { ar: "من قسم العقارات، يمكنك رؤية جميع الوحدات في شبكة بطاقات ملونة حسب الحالة (متاح، محجوز، مباع، مؤجر، صيانة). انقر زر التفاصيل على أي وحدة لفتح لوحة جانبية تعرض: النوع، الحالة، المساحة، أسعار التكلفة والبيع والإيجار، الملخص المالي (إيجار محصّل، إيراد البيع، تكاليف الصيانة، صافي الدخل)، العقد المرتبط (إن وُجد)، وطلبات الصيانة. حالة الوحدة تتحدث تلقائياً عند توقيع أو إلغاء العقود.", en: "From the Properties section, view all units in a color-coded card grid by status (Available, Reserved, Sold, Rented, Maintenance). Click the detail button on any unit to open a side panel showing: type, status, area, cost/selling/rental prices, financial summary (rent collected, sale revenue, maintenance costs, net income), linked contract (if any), and maintenance requests. Unit status updates automatically when contracts are signed or cancelled." },
+    answer: { ar: "يعرض قسم العقارات جميع الوحدات في شبكة بطاقات ملوّنة حسب الحالة (متاح، محجوز، مباع، مؤجر، صيانة). انقر زر التفاصيل على أي وحدة لفتح لوحة جانبية تعرض: النوع، الحالة، المساحة، أسعار التكلفة والبيع والإيجار، الملخص المالي (إيجار محصّل، إيراد البيع، تكاليف الصيانة، صافي الدخل)، العقد المرتبط (إن وُجد)، وطلبات الصيانة. وتتحدث حالة الوحدة تلقائياً عند توقيع العقود أو إلغائها.", en: "The Properties section shows all units as cards, color-coded by status (Available, Reserved, Sold, Rented, Maintenance). Click the detail button on a unit to open a side panel with its type, status, area, cost/selling/rental prices, financial summary (rent collected, sale revenue, maintenance costs, net income), linked contract if there is one, and maintenance requests. Unit status updates on its own when a contract is signed or cancelled." },
     category: "property_management",
   },
   {
     id: "pm-2",
     question: { ar: "كيف أقدم طلب صيانة؟", en: "How do I submit a maintenance request?" },
-    answer: { ar: "من قسم الصيانة، انقر على 'طلب جديد'. حدد الوحدة، الفئة (كهرباء، سباكة، تكييف...)، الأولوية، ووصف المشكلة.", en: "From Maintenance, click 'New Request'. Select the unit, category (electrical, plumbing, HVAC...), priority, and describe the issue." },
+    answer: { ar: "من قسم الصيانة، انقر 'طلب جديد'. حدد الوحدة والفئة (كهرباء، سباكة، تكييف...) والأولوية، ثم اكتب وصف المشكلة.", en: "In Maintenance, click 'New Request'. Pick the unit, category (electrical, plumbing, HVAC...), and priority, then describe the issue." },
     category: "property_management",
   },
   {
     id: "pm-3",
     question: { ar: "ما هي الصيانة الوقائية؟", en: "What is preventive maintenance?" },
-    answer: { ar: "الصيانة الوقائية هي جدولة أعمال صيانة دورية (يومية، أسبوعية، شهرية، سنوية) لمنع الأعطال. يتم إنشاء أوامر عمل تلقائياً حسب الجدول.", en: "Preventive maintenance schedules recurring work (daily, weekly, monthly, annual) to prevent breakdowns. Work orders are auto-generated per schedule." },
+    answer: { ar: "الصيانة الوقائية هي جدولة أعمال صيانة دورية (يومية، أسبوعية، شهرية، سنوية) لمنع الأعطال قبل وقوعها. وتُنشأ أوامر العمل تلقائياً حسب الجدول.", en: "Preventive maintenance schedules recurring work (daily, weekly, monthly, annual) so problems get caught before something breaks. The system creates the work orders for you on each schedule." },
     category: "property_management",
   },
   // Finance
   {
     id: "fi-1",
     question: { ar: "كيف أتابع الأقساط المستحقة؟", en: "How do I track due installments?" },
-    answer: { ar: "من قسم المدفوعات، يمكنك رؤية جميع الأقساط مع حالتها (مدفوع، غير مدفوع، متأخر). يمكنك تسجيل الدفعات من هناك. عند إنشاء عقد إيجار متوافق مع إيجار من قسم العقود، يُنشأ جدول الأقساط تلقائياً حسب دورية الدفع المحددة (شهري، ربع سنوي، نصف سنوي، سنوي) ويُربط بالعقد.", en: "From the Payments section, view all installments with status (Paid, Unpaid, Overdue). You can record payments from there. When creating an Ejar-compliant lease contract from the Contracts section, the installment schedule is auto-generated based on the specified payment frequency (monthly, quarterly, semi-annual, annual) and linked to the contract." },
+    answer: { ar: "يعرض قسم المدفوعات جميع الأقساط مع حالتها (مدفوع، مدفوع جزئياً، غير مدفوع، متأخر)، وتسجّل الدفعات من المكان نفسه. وعند إنشاء عقد إيجار متوافق مع إيجار من قسم العقود، يُنشأ جدول الأقساط تلقائياً حسب دورية الدفع المحددة (شهري، ربع سنوي، نصف سنوي، سنوي) ويُربط بالعقد.", en: "The Payments section lists every installment with its status (Paid, Partially Paid, Unpaid, Overdue), and you can record payments right there. When you create an Ejar-compliant lease contract in the Contracts section, the system builds the installment schedule from the payment frequency you set (monthly, quarterly, semi-annual, annual) and links it to the contract." },
     category: "finance",
   },
   {
     id: "fi-8",
     question: { ar: "كيف أتابع الملخص المالي للوحدة؟", en: "How do I view the financial summary for a unit?" },
-    answer: { ar: "من قسم العقارات، افتح تفاصيل أي وحدة. قسم 'الملخص المالي' يعرض أربعة مؤشرات: إيجار محصّل (إجمالي الأقساط المدفوعة)، إيراد البيع (مبالغ عقود البيع الموقّعة)، تكاليف الصيانة (التكلفة الفعلية أو المقدّرة لطلبات الصيانة)، وصافي الدخل (الإيرادات ناقص التكاليف). المؤشرات تُحسب تلقائياً من بيانات العقود والإيجارات والصيانة.", en: "From the Properties section, open any unit's details. The 'Financial Summary' section shows four KPIs: Rent Collected (total paid installments), Sale Revenue (signed sale contract amounts), Maintenance Costs (actual or estimated maintenance request costs), and Net Income (revenue minus costs). KPIs are auto-calculated from contracts, leases, and maintenance data." },
+    answer: { ar: "من قسم العقارات، افتح تفاصيل أي وحدة. يعرض قسم 'الملخص المالي' أربعة مؤشرات: إيجار محصّل (إجمالي الأقساط المدفوعة)، إيراد البيع (مبالغ عقود البيع الموقّعة)، تكاليف الصيانة (التكلفة الفعلية أو المقدّرة لطلبات الصيانة)، وصافي الدخل (الإيرادات ناقص التكاليف). وتُحسب هذه المؤشرات تلقائياً من بيانات العقود والإيجارات والصيانة.", en: "Open any unit's details from the Properties section. The 'Financial Summary' section shows four KPIs: Rent Collected (total paid installments), Sale Revenue (signed sale contract amounts), Maintenance Costs (actual or estimated maintenance request costs), and Net Income (revenue minus costs). The system calculates these from your contracts, leases, and maintenance data." },
     category: "finance",
   },
   {
     id: "fi-2",
     question: { ar: "هل النظام متوافق مع متطلبات هيئة الزكاة والضريبة (ZATCA)؟", en: "Is the system ZATCA compliant?" },
-    answer: { ar: "نعم، يدعم ميماريك حساب ضريبة القيمة المضافة (15%) وفقاً لمتطلبات هيئة الزكاة والضريبة والجمارك. الفوترة الإلكترونية قيد التطوير.", en: "Yes, Mimaric supports VAT calculation (15%) per ZATCA requirements. E-invoicing integration is under development." },
+    answer: { ar: "نعم، يحسب ميماريك ضريبة القيمة المضافة (15%) وفق متطلبات هيئة الزكاة والضريبة والجمارك. والفوترة الإلكترونية قيد التطوير.", en: "Yes. Mimaric calculates VAT (15%) per ZATCA requirements. E-invoicing integration is still under development." },
     category: "finance",
   },
   {
     id: "fi-3",
     question: { ar: "كيف أصدر تقارير مالية؟", en: "How do I generate financial reports?" },
-    answer: { ar: "من قسم التقارير، اختر نوع التقرير (مالي، إشغال، صيانة، إيجارات، عملاء...) وحدد نطاق التاريخ. يمكنك التصدير بصيغة Excel أو PDF.", en: "From Reports, select the report type (financial, occupancy, maintenance, leases, customers...) and date range. Export as Excel or PDF." },
+    answer: { ar: "من قسم التقارير، اختر نوع التقرير (الإيرادات، الإشغال، تحصيل الإيجارات، الصيانة، تكاليف الصيانة) وحدد نطاق التاريخ، ثم صدّره بصيغة Excel أو PDF.", en: "In Reports, pick the report type (Revenue, Occupancy, Rent Collection, Maintenance, Maintenance Costs) and a date range, then export as Excel or PDF." },
     category: "finance",
   },
   // Security & Privacy
   {
     id: "sp-1",
     question: { ar: "كيف يتم حماية بيانات العملاء الشخصية؟", en: "How is customer personal data protected?" },
-    answer: { ar: "يتم تشفير البيانات الشخصية (الهوية الوطنية، الهاتف، البريد الإلكتروني) بتقنية AES-256-GCM. فقط المستخدمون المصرح لهم يمكنهم عرض البيانات الكاملة.", en: "Personal data (national ID, phone, email) is encrypted with AES-256-GCM. Only authorized users can view full data." },
+    answer: { ar: "تُشفّر البيانات الشخصية (الهوية الوطنية، الهاتف، البريد الإلكتروني) بتقنية AES-256-GCM، ولا يطّلع على البيانات الكاملة إلا المستخدمون المصرّح لهم.", en: "Personal data (national ID, phone, email) is encrypted with AES-256-GCM. Only authorized users can see it in full." },
     category: "security_privacy",
   },
   {
     id: "sp-4",
     question: { ar: "كيف يعمل نظام الصلاحيات للعقود؟", en: "How does the contract permissions system work?" },
-    answer: { ar: "يفصل ميماريك بين العمليات التقدمية والتدميرية للعقود. العمليات التقدمية (إنشاء، إرسال، توقيع) تتطلب صلاحية 'contracts:write' — متاحة للمدير (Admin) ومدير العمليات (Manager) والوكيل (Agent). العمليات التدميرية (إلغاء، إبطال، حذف) تتطلب صلاحية 'contracts:delete' — متاحة للمدير (Admin) فقط. الحذف متاح فقط للعقود في حالة 'مسودة'.", en: "Mimaric separates progressive and destructive contract operations. Progressive operations (create, send, sign) require 'contracts:write' — available to Admin, Manager, and Agent roles. Destructive operations (cancel, void, delete) require 'contracts:delete' — available to Admin only. Deletion is only allowed for Draft contracts." },
+    answer: { ar: "يفصل ميماريك بين عمليات العقود التقدمية والتدميرية. العمليات التقدمية (إنشاء، إرسال، توقيع) تحتاج صلاحية 'contracts:write' المتاحة للمدير (Admin) ومدير العمليات (Manager) والوكيل (Agent). والعمليات التدميرية (إلغاء، إبطال، حذف) تحتاج صلاحية 'contracts:delete' المتاحة للمدير (Admin) فقط. والحذف لا يكون إلا للعقود في حالة 'مسودة'.", en: "Mimaric splits contract actions into progressive and destructive ones. Progressive actions (create, send, sign) need 'contracts:write', which Admin, Manager, and Agent roles have. Destructive actions (cancel, void, delete) need 'contracts:delete', which only Admin has. You can only delete a contract while it's still a Draft." },
     category: "security_privacy",
   },
   {
     id: "sp-2",
     question: { ar: "ما هي سياسة كلمة المرور؟", en: "What is the password policy?" },
-    answer: { ar: "يتطلب النظام كلمة مرور لا تقل عن 10 أحرف، ولا تحتوي على اسمك أو بريدك الإلكتروني، وليست من قائمة كلمات المرور الشائعة.", en: "The system requires a password of at least 10 characters, not containing your name or email, and not in a common password list." },
+    answer: { ar: "يجب ألا تقل كلمة المرور عن 10 أحرف، وألا تحتوي على اسمك أو بريدك الإلكتروني، وألا تكون من كلمات المرور الشائعة.", en: "Your password must be at least 10 characters. It can't contain your name or email, and it can't be one of the common passwords on the blocklist." },
     category: "security_privacy",
   },
   {
     id: "sp-3",
     question: { ar: "هل يمكنني مراجعة سجل النشاطات؟", en: "Can I review the activity log?" },
-    answer: { ar: "نعم، المديرون يمكنهم الوصول إلى سجل التدقيق من الإعدادات > سجل التدقيق. يتم تسجيل جميع عمليات الوصول والتعديل والتصدير.", en: "Yes, admins can access the audit trail from Settings > Audit Log. All access, modification, and export operations are logged." },
+    answer: { ar: "نعم، يصل المديرون إلى سجل التدقيق من الإعدادات > سجل التدقيق، حيث تُسجَّل كل عمليات الاطلاع والتعديل والتصدير.", en: "Yes. Admins can open the audit trail from Settings > Audit Log. Every access, edit, and export is recorded there." },
     category: "security_privacy",
   },
   // Technical
   {
     id: "te-1",
     question: { ar: "كيف أغير كلمة المرور؟", en: "How do I change my password?" },
-    answer: { ar: "اذهب إلى الإعدادات > الأمان. أدخل كلمة المرور الحالية ثم الجديدة. يجب أن تستوفي كلمة المرور الجديدة سياسة الأمان.", en: "Go to Settings > Security. Enter your current password then the new one. The new password must meet the security policy." },
+    answer: { ar: "اذهب إلى الإعدادات > الأمان، وأدخل كلمة المرور الحالية ثم الجديدة. ويجب أن تستوفي الكلمة الجديدة سياسة الأمان.", en: "Go to Settings > Security and enter your current password, then the new one. The new password has to meet the security policy." },
     category: "technical",
   },
   {
     id: "te-2",
     question: { ar: "هل يدعم النظام اللغة العربية والإنجليزية؟", en: "Does the system support Arabic and English?" },
-    answer: { ar: "نعم، يدعم ميماريك اللغتين العربية والإنجليزية مع تخطيط RTL/LTR. يمكنك تغيير اللغة من الشريط العلوي.", en: "Yes, Mimaric supports both Arabic and English with RTL/LTR layout. Toggle the language from the top bar." },
+    answer: { ar: "نعم، يعمل ميماريك بالعربية والإنجليزية مع تخطيط RTL/LTR كامل. غيّر اللغة من الشريط العلوي.", en: "Yes. Mimaric runs in both Arabic and English with full RTL/LTR layout. Switch the language from the top bar." },
     category: "technical",
   },
   {
     id: "te-3",
     question: { ar: "هل يدعم النظام التاريخ الهجري؟", en: "Does the system support Hijri dates?" },
-    answer: { ar: "نعم، يعرض النظام التاريخ الهجري والميلادي معاً في جميع الأقسام.", en: "Yes, the system displays both Hijri and Gregorian dates across all sections." },
+    answer: { ar: "نعم، يعرض ميماريك التاريخ الهجري والميلادي معاً في كل الأقسام.", en: "Yes. The system shows both Hijri and Gregorian dates everywhere." },
     category: "technical",
   },
   // Document Vault
   {
     id: "pm-6",
     question: { ar: "كيف أرفع وأدير المستندات؟", en: "How do I upload and manage documents?" },
-    answer: { ar: "من قسم المستندات، انقر 'رفع مستند' لرفع ملفات PDF أو صور أو مستندات نصية. المستندات تُصنّف تلقائياً (مخططات، تصاريح قانونية، مخططات إنشائية، تجاري، تسويق). يمكنك البحث بالاسم، إنشاء مجلدات جديدة، وتحميل أي مستند. يعرض النظام مؤشر المساحة المستخدمة من إجمالي التخزين المتاح.", en: "From the Documents section, click 'Upload Document' to upload PDFs, images, or text files. Documents are categorized automatically (blueprints, legal permits, structural plans, commercial, marketing). You can search by name, create new folders, and download any document. The system shows a storage usage indicator of your total available space." },
+    answer: { ar: "من قسم المستندات، انقر 'رفع مستند' لرفع ملفات PDF أو صور أو مستندات نصية. تختار لكل مستند فئته عند الرفع — عام، قانوني، عقود، تسويق، أو مالي — وبعدها تبحث بالاسم وتصفّي القائمة حسب الفئة وتحمّل أي مستند.", en: "In the Documents section, click 'Upload Document' to upload PDFs, images, or text files. You pick each document's category as you upload it (General, Legal, Contract, Marketing, or Finance). From there you can search by name, filter the list by category, and download any document." },
     category: "property_management",
   },
   // Billing & Subscription
   {
     id: "fi-4",
     question: { ar: "كيف أدير اشتراكي؟", en: "How do I manage my subscription?" },
-    answer: { ar: "من قسم الفوترة، يمكنك رؤية خطتك الحالية وحالتها (تجريبي، نشط، متأخر، ملغي)، دورة الفوترة (شهري، ربع سنوي، نصف سنوي، سنوي)، تاريخ الفاتورة التالية، وطرق الدفع المحفوظة. انقر 'تغيير الخطة' لعرض الخطط المتاحة والمقارنة بينها.", en: "From the Billing section, view your current plan and its status (trialing, active, past due, canceled), billing cycle (monthly, quarterly, semi-annual, annual), next billing date, and saved payment methods. Click 'Change Plan' to browse and compare available plans." },
+    answer: { ar: "يعرض قسم الفوترة خطتك الحالية وحالتها (تجريبي، نشط، متأخر، ملغي)، ودورة الفوترة (شهري، ربع سنوي، نصف سنوي، سنوي)، وتاريخ الفاتورة التالية، وطرق الدفع المحفوظة. انقر 'تغيير الخطة' لاستعراض الخطط المتاحة والمقارنة بينها.", en: "The Billing section shows your current plan and its status (trialing, active, past due, canceled), your billing cycle (monthly, quarterly, semi-annual, annual), the next billing date, and any saved payment methods. Click 'Change Plan' to browse and compare what's available." },
     category: "finance",
   },
   {
     id: "fi-5",
     question: { ar: "كيف أستخدم كود الخصم (كوبون)؟", en: "How do I apply a coupon code?" },
-    answer: { ar: "من صفحة الخطط (الفوترة > الخطط)، أدخل كود الخصم في حقل الكوبون وانقر 'تطبيق'. إذا كان الكود صالحاً، سيظهر الخصم (نسبة مئوية أو مبلغ ثابت) على أسعار الخطط مع عرض السعر الأصلي مشطوباً والسعر الجديد باللون الأخضر ومبلغ التوفير.", en: "From the Plans page (Billing > Plans), enter the discount code in the coupon field and click 'Apply'. If valid, the discount (percentage or fixed amount) appears on plan prices with the original price crossed out, the new price in green, and the savings amount displayed." },
+    answer: { ar: "من صفحة الخطط (الفوترة > الخطط)، أدخل كود الخصم في حقل الكوبون وانقر 'تطبيق'. إذا كان الكود صالحاً، ظهر الخصم (نسبة مئوية أو مبلغ ثابت) على أسعار الخطط: السعر الأصلي مشطوباً، والسعر الجديد باللون الأخضر، ومبلغ التوفير.", en: "On the Plans page (Billing > Plans), type the discount code in the coupon field and click 'Apply'. If the code works, the discount (percentage or fixed amount) shows up on plan prices: the original price is crossed out, the new price is in green, and you see how much you save." },
     category: "finance",
   },
   {
     id: "fi-6",
     question: { ar: "ماذا يحدث عند تأخر سداد الاشتراك؟", en: "What happens when my subscription payment is overdue?" },
-    answer: { ar: "عند تأخر السداد، تتحول حالة اشتراكك إلى 'متأخر' ويظهر شريط تنبيه مع زر 'تحديث الدفع'. لديك فترة سماح لتحديث طريقة الدفع قبل تعليق الخدمة. يمكنك مراجعة فواتيرك ومبالغها من صفحة الفواتير.", en: "When payment is overdue, your subscription status changes to 'Past Due' and a warning banner appears with an 'Update Payment' button. You have a grace period to update your payment method before service suspension. You can review your invoices and amounts from the Invoices page." },
+    answer: { ar: "عند تأخر السداد، تتحول حالة اشتراكك إلى 'متأخر' ويظهر شريط تنبيه مع زر 'تحديث الدفع'. ولديك فترة سماح لتحديث طريقة الدفع قبل تعليق الخدمة. وتجد فواتيرك ومبالغها في صفحة الفواتير.", en: "When a payment is overdue, your subscription status changes to 'Past Due' and a warning banner appears with an 'Update Payment' button. You get a grace period to fix your payment method before the service is suspended. You can check your invoices and their amounts on the Invoices page." },
     category: "finance",
   },
   {
     id: "fi-7",
     question: { ar: "كيف أتابع مدفوعات الإيجار؟", en: "How do I track and record rental payments?" },
-    answer: { ar: "من قسم المدفوعات، تظهر لوحة بأربعة مؤشرات: إجمالي المستحق، المحصّل، المتأخر، والمعلق. الجدول يعرض كل قسط مع اسم المستأجر ورقم الوحدة والمبلغ وتاريخ الاستحقاق والحالة. انقر 'تسجيل دفعة' على أي قسط غير مدفوع لتسجيل التحصيل. النظام يحدّث الأقساط المتأخرة تلقائياً.", en: "From the Payments section, a dashboard shows four KPIs: Total Due, Collected, Overdue, and Pending. The table lists each installment with tenant name, unit number, amount, due date, and status. Click 'Record Payment' on any unpaid installment to record collection. The system automatically marks overdue installments." },
+    answer: { ar: "يبدأ قسم المدفوعات بثلاثة مؤشرات: المُحصَّل هذا الشهر، وإجمالي المتأخرات، والمتوقع خلال 30 يوماً. ويعرض الجدول كل قسط مع اسم المستأجر ورقم الوحدة والمبلغ وتاريخ الاستحقاق والحالة. انقر 'تسجيل دفعة' على أي قسط غير مدفوع لتسجيل التحصيل. وتُحدَّث الأقساط المتأخرة تلقائياً.", en: "The Payments section opens with three KPIs: Collected This Month, Total Overdue, and Expected Next 30 Days. The table lists each installment with the tenant name, unit number, amount, due date, and status. To record a collection, click 'Record Payment' on any unpaid installment. The system marks overdue installments for you." },
     category: "finance",
   },
   // Sales Contracts & Ejar Compliance
   {
     id: "sc-4",
     question: { ar: "كيف أتابع عقود المبيعات؟", en: "How do I track sales contracts?" },
-    answer: { ar: "من قسم العقود، يعرض النظام جدولاً بجميع العقود مع بيانات العميل (الاسم والهاتف)، الوحدة (الرقم والمبنى)، نوع العقد (بيع أو إيجار)، المبلغ بالريال، التاريخ بالهجري والميلادي، والحالة. يمكنك تصفية العقود حسب الحالة: مسودة، مُرسل، موقّع، ملغي. لكل عقد رقم فريد تلقائي (مثل SALE-2026-0001 أو LEASE-2026-0001). انقر 'عرض' لفتح تفاصيل أي عقد.", en: "From the Contracts section, the system shows a table of all contracts with customer info (name and phone), unit (number and building), contract type (sale or lease), amount in SAR, date in Hijri and Gregorian, and status. Filter contracts by status: Draft, Sent, Signed, Canceled. Each contract gets an auto-generated unique number (e.g., SALE-2026-0001 or LEASE-2026-0001). Click 'View' to open any contract's details." },
+    answer: { ar: "يعرض قسم العقود جدولاً بجميع العقود مع بيانات العميل (الاسم والهاتف)، والوحدة (الرقم والمبنى)، ونوع العقد (بيع أو إيجار)، والمبلغ بالريال، والتاريخ بالهجري والميلادي، والحالة. وتُصفّى العقود حسب الحالة: مسودة، مُرسل، موقّع، ملغي. ولكل عقد رقم فريد تلقائي يبدأ برمز خاص بمنشأتك (مثل ABC1-SALE-2026-0001 أو ABC1-LEASE-2026-0001). انقر 'عرض' لفتح تفاصيل أي عقد.", en: "The Contracts section lists every contract in a table with customer info (name and phone), unit (number and building), contract type (sale or lease), amount in SAR, date in Hijri and Gregorian, and status. You can filter by status: Draft, Sent, Signed, Canceled. Each contract gets its own number, prefixed with a short code for your organization (e.g., ABC1-SALE-2026-0001 or ABC1-LEASE-2026-0001). Click 'View' to open a contract's details." },
     category: "sales_crm",
   },
   {
     id: "sc-5",
     question: { ar: "ما هو نظام إيجار وكيف يتوافق ميماريك معه؟", en: "What is Ejar and how does Mimaric comply with it?" },
-    answer: { ar: "إيجار هو النظام الإلكتروني لعقود الإيجار في المملكة العربية السعودية. يتوافق ميماريك مع متطلبات إيجار عند إنشاء عقد إيجار: تاريخ البدء والانتهاء (إلزامي)، دورية الدفع (شهري، ربع سنوي، نصف سنوي، سنوي)، مبلغ الضمان (بحد أقصى 5% من قيمة العقد)، التجديد التلقائي (يُفعّل تلقائياً للعقود أكثر من 3 أشهر)، مسؤولية الصيانة (المؤجر أو المستأجر)، وفترة الإشعار (60 يوماً افتراضياً). النظام ينشئ جدول أقساط تلقائياً ويربطه بالعقد.", en: "Ejar is Saudi Arabia's electronic rental contract system. Mimaric complies with Ejar requirements when creating a lease contract: start and end dates (mandatory), payment frequency (monthly, quarterly, semi-annual, annual), security deposit (maximum 5% of contract value), auto-renewal (automatically enabled for leases over 3 months), maintenance responsibility (landlord or tenant), and notice period (60 days default). The system auto-generates an installment schedule linked to the contract." },
+    answer: { ar: "إيجار هو النظام الإلكتروني لعقود الإيجار في المملكة العربية السعودية. وعند إنشاء عقد إيجار يلتزم ميماريك بمتطلبات إيجار: تاريخ البدء والانتهاء (إلزامي)، ودورية الدفع (شهري، ربع سنوي، نصف سنوي، سنوي)، ومبلغ الضمان (بحد أقصى 5% من قيمة العقد)، والتجديد التلقائي (يُفعّل تلقائياً للعقود التي تزيد على 3 أشهر)، ومسؤولية الصيانة (المؤجر أو المستأجر)، وفترة الإشعار (60 يوماً افتراضياً). ثم يُنشئ جدول الأقساط تلقائياً ويربطه بالعقد.", en: "Ejar is Saudi Arabia's electronic rental contract system. When you create a lease contract, Mimaric follows the Ejar rules: start and end dates (mandatory), payment frequency (monthly, quarterly, semi-annual, annual), security deposit (maximum 5% of contract value), auto-renewal (turned on automatically for leases over 3 months), maintenance responsibility (landlord or tenant), and notice period (60 days default). The system then builds an installment schedule and links it to the contract." },
     category: "sales_crm",
   },
   {
     id: "sc-7",
     question: { ar: "ما هي دورة حياة العقد في ميماريك؟", en: "What is the contract lifecycle in Mimaric?" },
-    answer: { ar: "يمر العقد بثلاث حالات رئيسية: مسودة ← مُرسل ← موقّع، ويمكن إلغاء العقد أو إبطاله. المسودة يمكن إرسالها أو إلغاؤها أو حذفها. المُرسل يمكن توقيعه أو إلغاؤه. الموقّع يمكن إبطاله فقط (يتطلب صلاحية Admin). عند التوقيع: عقد البيع يحوّل الوحدة إلى 'مباع' والعميل إلى 'مُحوّل'. عقد الإيجار يحوّل الوحدة إلى 'مؤجر' ويفعّل جدول الأقساط. عند الإلغاء أو الإبطال: تعود الوحدة إلى 'متاح' تلقائياً.", en: "A contract goes through three main states: Draft → Sent → Signed, and can be Cancelled or Voided. Draft contracts can be sent, cancelled, or deleted. Sent contracts can be signed or cancelled. Signed contracts can only be voided (requires Admin permission). On signing: Sale contracts set unit to 'Sold' and customer to 'Converted'. Lease contracts set unit to 'Rented' and activate the installment schedule. On cancel/void: the unit automatically returns to 'Available'." },
+    answer: { ar: "يمر العقد بثلاث حالات رئيسية: مسودة ← مُرسل ← موقّع، ويمكن إلغاؤه أو إبطاله. المسودة تُرسل أو تُلغى أو تُحذف. والمُرسل يُوقّع أو يُلغى. والموقّع يُبطل فقط (ويتطلب صلاحية Admin). وعند التوقيع: عقد البيع يحوّل الوحدة إلى 'مباع' وتنتقل الصفقة المرتبطة إلى 'مكسوبة'؛ وعقد الإيجار يحوّل الوحدة إلى 'مؤجر' والعميل إلى 'مستأجر نشط' ويفعّل جدول الأقساط. وعند الإلغاء أو الإبطال: تعود الوحدة إلى 'متاح' ويُنهى عقد الإيجار المرتبط (إن وُجد).", en: "A contract moves through three main states, Draft → Sent → Signed, and can also be Cancelled or Voided. A Draft can be sent, cancelled, or deleted. A Sent contract can be signed or cancelled. A Signed contract can only be voided (which requires Admin permission). When you sign a Sale contract, the unit becomes 'Sold' and the linked deal moves to 'Won'. When you sign a Lease contract, the unit becomes 'Rented', the customer becomes an 'Active Tenant', and the installment schedule goes live. If you cancel or void, the unit goes back to 'Available' and the linked lease, if there is one, is terminated." },
     category: "sales_crm",
   },
   {
     id: "sc-8",
     question: { ar: "كيف أنشئ عقد إيجار متوافق مع إيجار؟", en: "How do I create an Ejar-compliant lease contract?" },
-    answer: { ar: "من قسم العقود، انقر 'عقد جديد' واختر نوع 'إيجار'. ستظهر حقول إيجار: تاريخ البداية والنهاية، دورية الدفع (شهري/ربع سنوي/نصف سنوي/سنوي)، مبلغ الضمان (لا يتجاوز 5%)، التجديد التلقائي، مسؤولية الصيانة، والملاحظات. عند الحفظ، يُنشأ تلقائياً: عقد إيجار مع رقم فريد، جدول أقساط حسب الدورية، وعقد إيجار مربوط بجدول الأقساط.", en: "From the Contracts section, click 'New Contract' and select 'Lease' type. Ejar fields appear: start and end dates, payment frequency (monthly/quarterly/semi-annual/annual), security deposit (max 5%), auto-renewal, maintenance responsibility, and notes. On save, the system auto-creates: a contract with a unique number, an installment schedule based on frequency, and a linked lease record with the installment schedule." },
+    answer: { ar: "من قسم العقود، انقر 'عقد جديد' واختر نوع 'إيجار'. تظهر حينها حقول إيجار: تاريخ البداية والنهاية، ودورية الدفع (شهري/ربع سنوي/نصف سنوي/سنوي)، ومبلغ الضمان (لا يتجاوز 5%)، والتجديد التلقائي، ومسؤولية الصيانة، والملاحظات. وعند الحفظ يُنشأ تلقائياً: عقد إيجار برقم فريد، وجدول أقساط حسب الدورية، وعقد إيجار مربوط بجدول الأقساط.", en: "In the Contracts section, click 'New Contract' and choose the 'Lease' type. The Ejar fields then appear: start and end dates, payment frequency (monthly/quarterly/semi-annual/annual), security deposit (max 5%), auto-renewal, maintenance responsibility, and notes. When you save, the system creates a contract with its own number, an installment schedule based on the frequency, and a linked lease record tied to that schedule." },
     category: "sales_crm",
   },
   {
     id: "sc-10",
     question: { ar: "من يمكنه إلغاء أو إبطال أو حذف العقود؟", en: "Who can cancel, void, or delete contracts?" },
-    answer: { ar: "العمليات التدميرية (إلغاء، إبطال، حذف) تتطلب صلاحية 'contracts:delete' المتاحة للمدير (Admin) فقط. العمليات التقدمية (إرسال، توقيع) تتطلب صلاحية 'contracts:write' المتاحة للمدير (Admin) ومدير العمليات (Manager) والوكيل (Agent). مدير العمليات (Manager) يمكنه عرض العقود فقط بصلاحية contracts:read. الحذف متاح فقط للعقود في حالة 'مسودة'.", en: "Destructive operations (cancel, void, delete) require 'contracts:delete' permission, available to Admin only. Progressive operations (send, sign) require 'contracts:write', available to Admin, Manager, and Agent roles. Manager role can view contracts read-only. Deletion is only allowed for 'Draft' contracts." },
+    answer: { ar: "العمليات التدميرية (إلغاء، إبطال، حذف) تحتاج صلاحية 'contracts:delete' المتاحة للمدير (Admin) فقط. والعمليات التقدمية (إنشاء، إرسال، توقيع) تحتاج صلاحية 'contracts:write' المتاحة للمدير (Admin) ومدير العمليات (Manager) والوكيل (Agent) — أي أن مدير العمليات والوكيل ينشئان العقود ويرسلانها ويوقّعانها دون إلغائها أو إبطالها أو حذفها. والحذف لا يكون إلا للعقود في حالة 'مسودة'.", en: "Destructive operations (cancel, void, delete) need 'contracts:delete' permission, which only Admin has. Progressive operations (create, send, sign) need 'contracts:write', which Admin, Manager, and Agent have. So Manager and Agent can create, send, and sign contracts, but they can't cancel, void, or delete them. Deletion only works on 'Draft' contracts." },
     category: "sales_crm",
   },
   {
     id: "sc-11",
     question: { ar: "كيف أرى العقد المرتبط بوحدة؟", en: "How do I see the contract linked to a unit?" },
-    answer: { ar: "من قسم العقارات، انقر على زر التفاصيل لأي وحدة مباعة أو مؤجرة. في لوحة التفاصيل، ستجد قسم 'العقد المرتبط' الذي يعرض: نوع العقد (بيع/إيجار)، الحالة (مسودة/مُرسل/موقّع)، اسم العميل، رقم العقد، وزر 'عرض العقد' للانتقال مباشرة لتفاصيل العقد.", en: "From the Properties section, click the detail button for any sold or rented unit. In the detail panel, you'll find the 'Linked Contract' section showing: contract type (sale/lease), status (draft/sent/signed), customer name, contract number, and a 'View Contract' button to navigate directly to the contract details." },
+    answer: { ar: "من قسم العقارات، انقر زر التفاصيل لأي وحدة مباعة أو مؤجرة. تجد في لوحة التفاصيل قسم 'العقد المرتبط' الذي يعرض: نوع العقد (بيع/إيجار)، والحالة (مسودة/مُرسل/موقّع)، واسم العميل، ورقم العقد، وزر 'عرض العقد' للانتقال مباشرة إلى تفاصيل العقد.", en: "In the Properties section, click the detail button on any sold or rented unit. The detail panel has a 'Linked Contract' section that shows the contract type (sale/lease), status (draft/sent/signed), customer name, and contract number, plus a 'View Contract' button that takes you straight to the contract details." },
     category: "sales_crm",
   },
   {
     id: "sc-12",
     question: { ar: "كيف أعرض تفاصيل عقد الإيجار (شروط إيجار)؟", en: "How do I view lease contract details (Ejar terms)?" },
-    answer: { ar: "من صفحة تفاصيل العقد (نوع إيجار)، ستجد: القسم الأول — بيانات الأطراف (المؤجر والمستأجر)، القسم الثاني — بيانات الوحدة، القسم الثالث — القيمة المالية، القسم الرابع — شروط الإيجار (الفترة، دورية الدفع، مبلغ الضمان، التجديد التلقائي، مسؤولية الصيانة، فترة الإشعار)، والقسم الخامس — جدول الأقساط (رقم القسط، تاريخ الاستحقاق، المبلغ، الحالة).", en: "From the contract detail page (lease type), you'll find: Section 1 — party details (landlord and tenant), Section 2 — unit details, Section 3 — financial value, Section 4 — lease terms (period, payment frequency, security deposit, auto-renewal, maintenance responsibility, notice period), and Section 5 — payment schedule (installment number, due date, amount, status)." },
+    answer: { ar: "صفحة تفاصيل عقد الإيجار مكوّنة من خمسة أقسام: الأول — بيانات الأطراف (المؤجر والمستأجر)، والثاني — بيانات الوحدة، والثالث — القيمة المالية، والرابع — شروط الإيجار (الفترة، ودورية الدفع، ومبلغ الضمان، والتجديد التلقائي، ومسؤولية الصيانة، وفترة الإشعار)، والخامس — جدول الأقساط (رقم القسط، وتاريخ الاستحقاق، والمبلغ، والحالة).", en: "The contract detail page for a lease has five sections. Section 1 covers the parties (landlord and tenant), Section 2 the unit details, Section 3 the financial value, Section 4 the lease terms (period, payment frequency, security deposit, auto-renewal, maintenance responsibility, notice period), and Section 5 the payment schedule (installment number, due date, amount, status)." },
     category: "sales_crm",
   },
   {
     id: "sc-13",
     question: { ar: "كيف أعرض تفاصيل عقد البيع؟", en: "How do I view sale contract details?" },
-    answer: { ar: "من صفحة تفاصيل العقد (نوع بيع)، ستجد: القسم الأول — بيانات الأطراف (البائع والمشتري)، القسم الثاني — بيانات الوحدة، القسم الثالث — القيمة المالية، والقسم الرابع — شروط البيع (تاريخ التسليم والملاحظات). الشريط الجانبي يعرض رقم العقد والقيمة والحالة.", en: "From the contract detail page (sale type), you'll find: Section 1 — party details (seller and buyer), Section 2 — unit details, Section 3 — financial value, and Section 4 — sale terms (delivery date and notes). The sidebar shows the contract number, value, and status." },
+    answer: { ar: "صفحة تفاصيل عقد البيع مكوّنة من أربعة أقسام: الأول — بيانات الأطراف (البائع والمشتري)، والثاني — بيانات الوحدة، والثالث — القيمة المالية، والرابع — شروط البيع (تاريخ التسليم والملاحظات). ويعرض الشريط الجانبي رقم العقد والقيمة والحالة.", en: "The contract detail page for a sale has four sections. Section 1 covers the parties (seller and buyer), Section 2 the unit details, Section 3 the financial value, and Section 4 the sale terms (delivery date and notes). The sidebar shows the contract number, value, and status." },
     category: "sales_crm",
   },
   // Onboarding / Getting Started
   {
     id: "gs-4",
     question: { ar: "كيف أُعدّ حسابي ومنشأتي في ميماريك؟", en: "How do I set up my account and organization in Mimaric?" },
-    answer: { ar: "عند أول تسجيل دخول، يظهر معالج الإعداد المكوّن من 4 خطوات: (1) الانضمام لشركة قائمة أو المتابعة مستقلاً، (2) بيانات المنشأة (الاسم بالعربية والإنجليزية، السجل التجاري، الرقم الضريبي، نوع الكيان والشكل القانوني)، (3) بيانات التواصل (الجوال، المدينة، المنطقة)، (4) دعوة أعضاء الفريق عبر البريد الإلكتروني مع تحديد أدوارهم. يمكنك تخطي أي خطوة والعودة لإكمالها لاحقاً.", en: "On first login, a 4-step setup wizard appears: (1) Join an existing company or continue independently, (2) Organization details (Arabic and English names, CR number, VAT number, entity type, legal form), (3) Contact information (mobile, city, region), (4) Invite team members by email with role assignment. You can skip any step and complete it later." },
+    answer: { ar: "عند أول تسجيل دخول يظهر معالج الإعداد المكوّن من 4 خطوات: (1) الانضمام لشركة قائمة أو المتابعة بشكل مستقل، (2) بيانات المنشأة (الاسم بالعربية والإنجليزية، السجل التجاري، الرقم الضريبي، نوع الكيان والشكل القانوني)، (3) بيانات التواصل (الجوال، المدينة، المنطقة)، (4) دعوة أعضاء الفريق عبر البريد الإلكتروني مع تحديد أدوارهم. ويمكنك تخطي أي خطوة والعودة لإكمالها لاحقاً.", en: "The first time you log in, a 4-step setup wizard walks you through it: (1) join an existing company or continue independently, (2) organization details (Arabic and English names, CR number, VAT number, entity type, legal form), (3) contact information (mobile, city, region), and (4) inviting team members by email and assigning their roles. You can skip any step and come back to it later." },
     category: "getting_started",
   },
   {
     id: "gs-5",
     question: { ar: "كيف أنضم لشركة قائمة في ميماريك؟", en: "How do I join an existing company in Mimaric?" },
-    answer: { ar: "في الخطوة الأولى من الإعداد، اختر 'انضم لشركة'. أدخل رقم السجل التجاري المكوّن من 10 خانات وانقر 'بحث'. إذا وُجدت الشركة، ستظهر بياناتها ويمكنك إرسال طلب انضمام. سيراجع مدير الشركة طلبك ويوافق عليه.", en: "In the first setup step, choose 'Join a Company'. Enter the 10-digit CR number and click 'Search'. If the company is found, its details appear and you can send a join request. The company admin will review and approve your request." },
+    answer: { ar: "في الخطوة الأولى من الإعداد، اختر 'انضم لشركة'. أدخل رقم السجل التجاري المكوّن من 10 خانات وانقر 'بحث'. إذا وُجدت الشركة ظهرت بياناتها وأمكنك إرسال طلب انضمام، ثم يراجعه مدير الشركة ويوافق عليه.", en: "In the first setup step, choose 'Join a Company'. Type the 10-digit CR number and click 'Search'. If we find the company, its details show up and you can send a join request. The company admin then reviews and approves it." },
     category: "getting_started",
   },
   // Platform Administration
   {
     id: "te-4",
     question: { ar: "ما هي أدوات إدارة المنصة (للمسؤولين)؟", en: "What are the platform administration tools (for admins)?" },
-    answer: { ar: "لوحة الإدارة تتيح للمسؤولين: إدارة خطط الاشتراك (إنشاء وتعديل الخطط والأسعار والميزات)، متابعة جميع الاشتراكات (نشط، تجريبي، متأخر، ملغي) مع إحصائيات شاملة، إنشاء وإدارة الكوبونات (كود الخصم، النسبة أو المبلغ، الحد الأقصى للاستخدام، الصلاحية)، وعرض جميع الفواتير والمدفوعات عبر المنصة مع إجمالي الإيرادات.", en: "The Admin panel lets administrators: manage subscription plans (create and edit plans, pricing, and features), monitor all subscriptions (active, trialing, past due, canceled) with comprehensive statistics, create and manage coupons (discount codes, percentage or fixed amount, max redemptions, validity), and view all invoices and payments across the platform with total revenue." },
+    answer: { ar: "تتيح لوحة الإدارة للمسؤولين: إدارة خطط الاشتراك (إنشاء وتعديل الخطط والأسعار والميزات)، ومتابعة جميع الاشتراكات (نشط، تجريبي، متأخر، ملغي) مع إحصائيات شاملة، وإنشاء الكوبونات وإدارتها (كود الخصم، والنسبة أو المبلغ، والحد الأقصى للاستخدام، والصلاحية)، وعرض جميع الفواتير والمدفوعات عبر المنصة مع إجمالي الإيرادات.", en: "The Admin panel lets administrators manage subscription plans (create and edit plans, pricing, and features), watch all subscriptions (active, trialing, past due, canceled) with full stats, set up and manage coupons (discount codes, percentage or fixed amount, max redemptions, validity), and see every invoice and payment across the platform along with total revenue." },
+    category: "technical",
+  },
+  // Marketplace
+  {
+    id: "mk-1",
+    question: { ar: "كيف أتصفح العقارات وأرسل استفساراً في السوق العقاري؟", en: "How do I browse properties and send an inquiry on the Marketplace?" },
+    answer: { ar: "افتح السوق العقاري وابقَ على تبويب 'تصفّح الإعلانات'. صفِّ النتائج حسب المدينة أو الحي أو نوع العقار أو السعر أو المساحة أو البائع. افتح أي إعلان لعرض تفاصيله، ثم انقر 'إبداء الاهتمام' وأدخل رقم جوال سعودي (إلزامي) مع اسم ورسالة اختياريين. يصل إشعار للبائع فيتواصل معك. وتابع استفساراتك من تبويب 'استفساراتي'، حيث يمكنك سحب أي استفسار مفتوح.", en: "Open the Marketplace and stay on the Browse Listings tab. Filter by city, district, property type, price, area, or seller. Open a listing to see its full details, then click 'Express Interest' and enter a Saudi mobile number (required), plus a name and message if you like. The seller gets notified and reaches out to you. To keep track, use the My Inquiries tab, where you can also withdraw any open inquiry." },
+    category: "marketplace",
+  },
+  {
+    id: "mk-2",
+    question: { ar: "كيف أعرض وحدة للبيع في السوق العقاري؟", en: "How do I list a unit for sale on the Marketplace?" },
+    answer: { ar: "ابدأ من وحدة في مخزونك وأنشئ لها إعلاناً في السوق — على أن تكون الوحدة متاحة، ولها مدينة وحي، وبدون عقد إيجار أو حجز أو إعلان قائم. يُنشأ الإعلان كـ'مسودة'. ومن السوق العقاري ← إعلاناتي، عدّل المسودة لإضافة العنوان والسعر والعنوان الوطني المختصر (4 أحرف + 4 أرقام، مثل RRRA2929)؛ وبإمكانك إضافة وصف ورقم رخصة إعلان وعمر المبنى. ثم انشر الإعلان ليظهر لجميع المنشآت.", en: "Start from a unit in your inventory and create a marketplace listing. The unit has to be Available, have a city and district, and have no active lease, reservation, or existing listing. That creates a Draft. In Marketplace → My Listings, edit the draft to set a title, price, and a National Address code (4 letters + 4 digits, e.g. RRRA2929); you can also add a description, ad license number, and building age. Then publish it so all organizations can see it." },
+    category: "marketplace",
+  },
+  {
+    id: "mk-3",
+    question: { ar: "ماذا يحدث بعد أن يُبدي مشترٍ اهتمامه بإعلاني؟", en: "What happens after a buyer expresses interest in my listing?" },
+    answer: { ar: "تظهر الاستفسارات الواردة أسفل إعلانك في 'إعلاناتي'. انقر 'تحويل لصفقة' لقبول استفسار — فيحجز ذلك الوحدة وينشئ حجزاً مبدئياً بين المنشأتين. وبعد توقيع عقد بيع للوحدة، انقر 'تسوية ونقل' لإتمام النقل: تُعلَّم الوحدة 'مباع' وتُضاف نسخة منها إلى مخزون المشتري. التسوية لا يمكن التراجع عنها، لذا تأكد من توقيع العقد أولاً.", en: "Incoming inquiries show up under your listing in My Listings. Click 'Convert to Deal' to accept one. That reserves the unit and creates a preliminary cross-organization reservation. Once the unit has a signed sale contract, click 'Settle & Transfer' to finish the handover: the unit is marked Sold and a copy lands in the buyer's inventory. You can't undo a settlement, so make sure the contract is signed first." },
+    category: "marketplace",
+  },
+  {
+    id: "mk-4",
+    question: { ar: "من يمكنه استخدام السوق العقاري؟", en: "Who can use the Marketplace?" },
+    answer: { ar: "المدير (Admin) ومدير العمليات (Manager) لهما كل الصلاحيات — التصفح ونشر الإعلانات وتحويل الاستفسارات حتى النقل. والوكيل (Agent) ومسؤول التأجير (Leasing) يتصفحان الإعلانات ويرسلان الاستفسارات. أما المسؤول المالي (Finance) والمستخدم (User) فلا صلاحية لهما للوصول إلى السوق العقاري.", en: "Admin and Manager can do everything: browse, publish listings, and take inquiries all the way through to transfer. Agent and Leasing can browse listings and send inquiries. The Finance and User roles don't have Marketplace access." },
+    category: "marketplace",
+  },
+  // Account & Notifications
+  {
+    id: "an-1",
+    question: { ar: "كيف تعمل التنبيهات (الإشعارات)؟", en: "How do notifications work?" },
+    answer: { ar: "انقر أيقونة الجرس في الشريط العلوي (تظهر كلوحة سفلية على الجوال) لفتح إشعاراتك. وهي تغطي الفوترة والعقود والصيانة والتذاكر وتحديثات المنصة، وتُصفّى حسب: تنبيهات، أو تذكيرات، أو تحديثات. ويظهر عدد غير المقروء على الجرس؛ انقر أي إشعار لتعليمه مقروءاً والانتقال إلى العنصر المرتبط، أو استخدم 'تحديد الكل كمقروء'.", en: "Click the bell icon in the top bar (it opens as a bottom sheet on mobile) to see your notifications. They cover billing, contracts, maintenance, tickets, and platform updates, and you can filter them by Alerts, Reminders, or Updates. The bell shows an unread count; click a notification to mark it read and jump to the related item, or use 'Mark all read'." },
+    category: "account_notifications",
+  },
+  {
+    id: "an-2",
+    question: { ar: "كيف أبحث بسرعة في ميماريك؟", en: "How do I search quickly across Mimaric?" },
+    answer: { ar: "اضغط Cmd+K (ماك) أو Ctrl+K (ويندوز) لفتح لوحة الأوامر — تعرض إجراءات سريعة (عميل جديد، عقد جديد…) وكل صفحة يمكنك الوصول إليها. ويبحث مربع البحث في الشريط العلوي عن العملاء والوحدات والعقود بالاسم أو الرقم أثناء الكتابة (بحرفين على الأقل). وعلى الجوال، انقر أيقونة البحث.", en: "Press Cmd+K (Mac) or Ctrl+K (Windows) to open the command palette. It lists quick actions (New customer, New contract…) and every page you can reach. The search box in the top bar finds customers, units, and contracts by name or number as you type (two characters minimum). On mobile, tap the search icon." },
+    category: "account_notifications",
+  },
+  {
+    id: "an-3",
+    question: { ar: "أي لوحة تحكم سأرى حسب دوري؟", en: "Which dashboard will I see for my role?" },
+    answer: { ar: "لوحتك تتبع دورك. فالمدير ومدير العمليات والمالك يرون اللوحة الرئيسية (المؤشر الأساسي: الإيرادات). ومسؤول التأجير والوكيل يريان لوحة التأجير (العقود الموقّعة). والمسؤول المالي يرى لوحة المالية (نسبة التحصيل). والفنيون يرون لوحة الصيانة (الطلبات المفتوحة). وتعرض كل لوحة المؤشرات والرسوم المناسبة لذلك الدور.", en: "Your dashboard depends on your role. Admin, Manager, and Owner see the main dashboard (North Star: Revenue). Leasing and Agent see the Leasing dashboard (Leases Signed). Finance sees the Finance dashboard (Collection Rate). Technicians see the Maintenance dashboard (Open Tickets). Each one shows the KPIs and charts that matter for that role." },
+    category: "account_notifications",
+  },
+  // Security & Privacy — PII visibility
+  {
+    id: "sp-5",
+    question: { ar: "من يمكنه رؤية البيانات الشخصية الكاملة للعملاء؟", en: "Who can see customers' full personal data?" },
+    answer: { ar: "لا يرى البيانات الشخصية الكاملة (الهوية الوطنية، الهاتف، البريد) إلا أدوار المدير (Admin) ومدير العمليات (Manager) ومسؤول التأجير (Leasing). أما الوكيل (Agent) والمسؤول المالي (Finance) فيرونها مُقنّعة — تظهر الهوية والهاتف بآخر 4 أرقام فقط (مثل ‎***6789) ويظهر البريد بأول حرف فقط. وفي كل مرة يُطّلع فيها على البيانات الكاملة، يُسجَّل ذلك في سجل التدقيق كحدث READ_PII.", en: "Only the Admin, Manager, and Leasing roles see full personal data (national ID, phone, email). Agent and Finance see it masked: national IDs and phones show only the last 4 digits (e.g. ***6789) and emails show just the first character. Every time someone views full personal data, the audit log records it as a READ_PII event." },
+    category: "security_privacy",
+  },
+  // Settings overview
+  {
+    id: "te-5",
+    question: { ar: "ماذا يمكنني إدارته من الإعدادات؟", en: "What can I manage in Settings?" },
+    answer: { ar: "تضم الإعدادات أربعة أقسام: المنشأة (اسم منشأتك، والسجل التجاري، والرقم الضريبي، وبيانات التواصل، والعنوان الوطني، والصفحة الافتتاحية الافتراضية)، والفريق (دعوة الأعضاء وتعيين الأدوار)، والأمان (تغيير كلمة المرور)، وسجل التدقيق (سجل بكل عملية — إنشاء، واطلاع، وتعديل، وحذف، ووصول للبيانات الشخصية، وتسجيل دخول — قابل للتصفية حسب العملية والمورد، ومتاح للمديرين).", en: "Settings has four areas: Organization (your org's name, commercial registration, VAT, contact details, national address, and default landing page), Team (invite members and assign roles), Security (change your password), and Audit Trail (a log of every action: create, view, update, delete, PII access, and login, filterable by action and resource, available to admins)." },
     category: "technical",
   },
 ];
@@ -264,15 +326,15 @@ export const GUIDE_ITEMS: GuideItem[] = [
   {
     id: "guide-2",
     title: { ar: "إدارة العقارات والوحدات", en: "Manage Properties & Units" },
-    description: { ar: "كيفية إضافة وتعديل وعرض تفاصيل الوحدات العقارية", en: "How to add, edit, and view details of real estate units" },
+    description: { ar: "كيفية إضافة وتعديل وعرض تفاصيل الوحدات العقارية", en: "How to add, edit, and view your property units" },
     module: "properties",
     steps: [
-      { ar: "اذهب إلى قسم العقارات من القائمة الجانبية — ستظهر شبكة بطاقات بجميع الوحدات مع حالتها", en: "Go to the Properties section from the sidebar — a card grid shows all units with their status" },
+      { ar: "اذهب إلى قسم العقارات من القائمة الجانبية — تظهر شبكة بطاقات بجميع الوحدات مع حالتها", en: "Open the Properties section from the sidebar. A card grid shows all units with their status" },
       { ar: "استخدم الفلاتر: البحث برقم الوحدة، تصفية حسب الحالة", en: "Use filters: search by unit number, filter by status" },
       { ar: "انقر 'إضافة وحدة' وأدخل الرقم، النوع، المبنى، المساحة، وأسعار التكلفة والبيع والإيجار", en: "Click 'Add Unit' and enter number, type, building, area, and cost/selling/rental prices" },
       { ar: "يمكنك تعديل عدة وحدات معاً باستخدام التحديد المتعدد وشريط الإجراءات", en: "You can bulk-edit units using multi-select and the action bar" },
-      { ar: "انقر زر التفاصيل للوحدة لعرض: المعلومات الأساسية، الملخص المالي، العقد المرتبط، وطلبات الصيانة", en: "Click the detail button to view: basic info, financial summary, linked contract, and maintenance requests" },
-      { ar: "حالة الوحدة تتحدث تلقائياً: مباع عند توقيع عقد بيع، مؤجر عند توقيع عقد إيجار", en: "Unit status auto-updates: Sold when a sale contract is signed, Rented when a lease is signed" },
+      { ar: "انقر زر التفاصيل للوحدة لعرض: المعلومات الأساسية، والملخص المالي، والعقد المرتبط، وطلبات الصيانة", en: "Click the detail button to see the basic info, financial summary, linked contract, and maintenance requests" },
+      { ar: "تتحدث حالة الوحدة تلقائياً: مباع عند توقيع عقد بيع، ومؤجر عند توقيع عقد إيجار", en: "Unit status auto-updates: Sold when a sale contract is signed, Rented when a lease is signed" },
     ],
   },
   {
@@ -285,8 +347,8 @@ export const GUIDE_ITEMS: GuideItem[] = [
       { ar: "انقر 'إضافة عميل'", en: "Click 'Add Customer'" },
       { ar: "أدخل الاسم بالعربية والإنجليزية", en: "Enter the name in Arabic and English" },
       { ar: "أدخل رقم الهاتف ورقم الهوية الوطنية", en: "Enter phone number and national ID" },
-      { ar: "اختر مصدر العميل (موقع، إحالة، معرض، إلخ)", en: "Select the customer source (website, referral, exhibition, etc.)" },
-      { ar: "انقر 'حفظ' — سيتم تشفير البيانات الحساسة تلقائياً", en: "Click 'Save' — sensitive data is auto-encrypted" },
+      { ar: "اختر مصدر العميل (الموقع، إحالة، معرض، إلخ)", en: "Select the customer source (website, referral, exhibition, etc.)" },
+      { ar: "انقر 'حفظ' — تُشفّر البيانات الحساسة تلقائياً", en: "Click 'Save'. Sensitive data is encrypted for you" },
     ],
   },
   {
@@ -299,7 +361,7 @@ export const GUIDE_ITEMS: GuideItem[] = [
       { ar: "انقر 'عقد جديد' واختر نوع 'إيجار'", en: "Click 'New Contract' and select 'Lease' type" },
       { ar: "اختر الوحدة والمستأجر (العميل)", en: "Select the unit and tenant (customer)" },
       { ar: "حدد تاريخ البدء والانتهاء، دورية الدفع، ومبلغ الضمان (لا يتجاوز 5%)", en: "Set start date, end date, payment frequency, and security deposit (max 5%)" },
-      { ar: "انقر 'حفظ' — سيتم إنشاء جدول الأقساط تلقائياً ورقم عقد فريد", en: "Click 'Save' — the installment schedule is auto-generated with a unique contract number" },
+      { ar: "انقر 'حفظ' — يُنشأ جدول الأقساط تلقائياً مع رقم عقد فريد", en: "Click 'Save'. The installment schedule is generated for you, along with a unique contract number" },
       { ar: "تتبع مدفوعات الأقساط من قسم المدفوعات", en: "Track installment payments from the Payments section" },
     ],
   },
@@ -314,7 +376,7 @@ export const GUIDE_ITEMS: GuideItem[] = [
       { ar: "اختر الوحدة المعنية", en: "Select the relevant unit" },
       { ar: "حدد الفئة (كهرباء، سباكة، تكييف، مصعد، إلخ) والأولوية", en: "Select category (electrical, plumbing, HVAC, elevator, etc.) and priority" },
       { ar: "اكتب وصفاً تفصيلياً للمشكلة", en: "Write a detailed description of the issue" },
-      { ar: "انقر 'إرسال' — سيتم تعيين فني حسب الأولوية", en: "Click 'Submit' — a technician will be assigned by priority" },
+      { ar: "انقر 'إرسال' — يُعيَّن فني حسب الأولوية", en: "Click 'Submit'. A technician is assigned based on priority" },
     ],
   },
   {
@@ -324,7 +386,7 @@ export const GUIDE_ITEMS: GuideItem[] = [
     module: "reports",
     steps: [
       { ar: "اذهب إلى قسم التقارير", en: "Go to the Reports section" },
-      { ar: "اختر نوع التقرير (إشغال، مالي، صيانة، إيجارات، عملاء)", en: "Select report type (occupancy, financial, maintenance, leases, customers)" },
+      { ar: "اختر نوع التقرير (الإيرادات، الإشغال، تحصيل الإيجارات، الصيانة، تكاليف الصيانة)", en: "Select report type (Revenue, Occupancy, Rent Collection, Maintenance, Maintenance Costs)" },
       { ar: "حدد نطاق التاريخ المطلوب", en: "Set the desired date range" },
       { ar: "انقر زر Excel (أخضر) أو PDF (أحمر) للتصدير", en: "Click Excel (green) or PDF (red) button to export" },
     ],
@@ -335,11 +397,11 @@ export const GUIDE_ITEMS: GuideItem[] = [
     description: { ar: "إضافة وإدارة أعضاء الفريق وتعيين الأدوار", en: "Add and manage team members and assign roles" },
     module: "settings",
     steps: [
-      { ar: "اذهب إلى الإعدادات > إدارة الفريق", en: "Go to Settings > Team Management" },
-      { ar: "انقر 'دعوة عضو جديد'", en: "Click 'Invite Member'" },
-      { ar: "أدخل الاسم والبريد الإلكتروني وكلمة المرور", en: "Enter name, email, and password" },
-      { ar: "اختر الدور المناسب: مدير (Admin)، مدير عمليات (Manager)، وكيل (Agent)، أو فني (Technician)", en: "Select the appropriate role: Admin, Manager, Agent, or Technician" },
-      { ar: "انقر 'حفظ' — سيتمكن العضو من تسجيل الدخول فوراً", en: "Click 'Save' — the member can log in immediately" },
+      { ar: "اذهب إلى الإعدادات ← الفريق", en: "Go to Settings → Team" },
+      { ar: "انقر 'دعوة عضو' وأدخل بريده الإلكتروني", en: "Click 'Invite member' and enter their email" },
+      { ar: "اختر الدور: مدير، مدير عمليات، مسؤول تأجير، مسؤول مالي، وكيل، فني، أو مستخدم", en: "Choose the role: Admin, Manager, Leasing, Finance, Agent, Technician, or User" },
+      { ar: "انقر 'إرسال الدعوة' — تصل دعوة بالبريد الإلكتروني أو يظهر رابط لنسخه ومشاركته", en: "Click 'Send invitation'. We email the invite, or show you a link you can copy and share" },
+      { ar: "تابع الدعوات المعلقة من نفس الصفحة، وأعد الإرسال أو ألغِ الدعوة عند الحاجة", en: "Track pending invitations on the same page, and resend or revoke as needed" },
     ],
   },
   {
@@ -352,7 +414,7 @@ export const GUIDE_ITEMS: GuideItem[] = [
       { ar: "انقر على تبويب 'طلب صلاحيات'", en: "Click the 'Request Permissions' tab" },
       { ar: "اختر الدور الذي تريد الترقية إليه", en: "Select the role you want to upgrade to" },
       { ar: "اكتب سبب الطلب بالتفصيل", en: "Write a detailed reason for the request" },
-      { ar: "انقر 'إرسال الطلب' — سيتم إشعار المدير", en: "Click 'Submit Request' — the admin will be notified" },
+      { ar: "انقر 'إرسال الطلب' — يصل إشعار للمدير", en: "Click 'Submit Request'. The admin gets notified" },
       { ar: "تابع حالة طلبك من نفس الصفحة", en: "Track your request status from the same page" },
     ],
   },
@@ -365,8 +427,8 @@ export const GUIDE_ITEMS: GuideItem[] = [
     steps: [
       { ar: "اذهب إلى قسم المستندات من القائمة الجانبية", en: "Go to the Documents section from the sidebar" },
       { ar: "انقر زر 'رفع مستند' واختر ملفاً من جهازك (PDF، صورة، أو نص)", en: "Click 'Upload Document' and select a file from your device (PDF, image, or text)" },
-      { ar: "سيتم رفع الملف وتصنيفه تلقائياً في الفئة المناسبة", en: "The file will be uploaded and automatically categorized" },
-      { ar: "استخدم القائمة الجانبية للتصفية حسب الفئة (مخططات، تصاريح، إنشائية، تجاري، تسويق)", en: "Use the sidebar to filter by category (blueprints, legal permits, structural, commercial, marketing)" },
+      { ar: "اختر فئة المستند عند الرفع: عام، قانوني، عقود، تسويق، أو مالي", en: "Choose the document's category when uploading: General, Legal, Contract, Marketing, or Finance" },
+      { ar: "استخدم أزرار الفئات للتصفية حسب الفئة (عام، قانوني، عقود، تسويق، مالي)", en: "Use the category buttons to filter the list by category (General, Legal, Contract, Marketing, Finance)" },
       { ar: "استخدم شريط البحث للعثور على أي مستند بالاسم", en: "Use the search bar to find any document by name" },
       { ar: "انقر زر التحميل على أي بطاقة مستند لتحميله إلى جهازك", en: "Click the download button on any document card to download it" },
     ],
@@ -392,13 +454,13 @@ export const GUIDE_ITEMS: GuideItem[] = [
     module: "contracts",
     steps: [
       { ar: "اذهب إلى قسم العقود وانقر 'عقد جديد'", en: "Go to the Contracts section and click 'New Contract'" },
-      { ar: "اختر نوع العقد: 'إيجار' — ستظهر حقول إيجار الإضافية", en: "Select contract type: 'Lease' — Ejar-specific fields will appear" },
+      { ar: "اختر نوع العقد: 'إيجار' — ستظهر حقول إيجار الإضافية", en: "Set the contract type to 'Lease'. The Ejar-specific fields then appear" },
       { ar: "اختر العميل (المستأجر) والوحدة، وأدخل مبلغ الإيجار الإجمالي", en: "Select the customer (tenant) and unit, and enter the total lease amount" },
-      { ar: "حدد تاريخ البداية والنهاية — هذه حقول إلزامية لعقود الإيجار", en: "Set start and end dates — these are mandatory for lease contracts" },
+      { ar: "حدد تاريخ البداية والنهاية — هذه حقول إلزامية لعقود الإيجار", en: "Set the start and end dates. These are mandatory for lease contracts" },
       { ar: "اختر دورية الدفع: شهري، ربع سنوي، نصف سنوي، أو سنوي", en: "Select payment frequency: monthly, quarterly, semi-annual, or annual" },
-      { ar: "أدخل مبلغ الضمان (اختياري — لا يتجاوز 5% من قيمة العقد حسب نظام إيجار)", en: "Enter security deposit (optional — max 5% of contract value per Ejar regulation)" },
+      { ar: "أدخل مبلغ الضمان (اختياري — لا يتجاوز 5% من قيمة العقد حسب نظام إيجار)", en: "Enter the security deposit (optional, max 5% of contract value per Ejar regulation)" },
       { ar: "حدد التجديد التلقائي (نعم/لا) ومسؤولية الصيانة (المؤجر/المستأجر)", en: "Set auto-renewal (yes/no) and maintenance responsibility (landlord/tenant)" },
-      { ar: "انقر 'إنشاء' — يُنشأ العقد مع جدول أقساط تلقائي ورقم عقد فريد", en: "Click 'Create' — the contract is created with an auto-generated installment schedule and unique contract number" },
+      { ar: "انقر 'إنشاء' — يُنشأ العقد مع جدول أقساط تلقائي ورقم عقد فريد", en: "Click 'Create'. The contract is created with an installment schedule and a unique contract number, both generated for you" },
     ],
   },
   {
@@ -411,9 +473,9 @@ export const GUIDE_ITEMS: GuideItem[] = [
       { ar: "العقد 'مسودة': يمكنك النقر على 'إرسال' أو 'إلغاء' أو 'حذف' (يحتاج صلاحية حذف)", en: "For 'Draft': click 'Send', 'Cancel', or 'Delete' (delete requires delete permission)" },
       { ar: "العقد 'مُرسل': يمكنك النقر على 'توقيع' أو 'إلغاء'", en: "For 'Sent': click 'Sign' or 'Cancel'" },
       { ar: "العقد 'موقّع': يمكنك النقر على 'إبطال' فقط (يعكس جميع التأثيرات)", en: "For 'Signed': only 'Void' is available (reverses all effects)" },
-      { ar: "عند توقيع عقد بيع: الوحدة ← مباع، العميل ← مُحوّل", en: "When signing a sale contract: unit → Sold, customer → Converted" },
+      { ar: "عند توقيع عقد بيع: الوحدة ← مباع، والصفقة المرتبطة ← مكسوبة", en: "When signing a sale contract: unit → Sold, and the linked deal → Won" },
       { ar: "عند توقيع عقد إيجار: الوحدة ← مؤجر، العميل ← مستأجر نشط، الإيجار ← نشط", en: "When signing a lease contract: unit → Rented, customer → Active Tenant, lease → Active" },
-      { ar: "عند الإلغاء أو الإبطال: الوحدة ← متاح، العميل ← مؤهل (إن لم يكن له عقود أخرى)", en: "On cancel/void: unit → Available, customer → Qualified (if no other active contracts)" },
+      { ar: "عند الإلغاء أو الإبطال: الوحدة ← متاح، ويُنهى عقد الإيجار المرتبط (إن وُجد)", en: "On cancel/void: unit → Available, and the linked lease (if any) is terminated" },
     ],
   },
   // Rental Payments Guide
@@ -424,10 +486,10 @@ export const GUIDE_ITEMS: GuideItem[] = [
     module: "payments",
     steps: [
       { ar: "اذهب إلى قسم المدفوعات من القائمة الجانبية", en: "Go to the Payments section from the sidebar" },
-      { ar: "راجع بطاقات المؤشرات: إجمالي المستحق، المحصّل، المتأخر، والمعلق", en: "Review the KPI cards: Total Due, Collected, Overdue, and Pending" },
+      { ar: "راجع بطاقات المؤشرات: المُحصَّل هذا الشهر، إجمالي المتأخرات، والمتوقع خلال 30 يوماً", en: "Review the KPI cards: Collected This Month, Total Overdue, and Expected Next 30 Days" },
       { ar: "استعرض جدول الأقساط مع بيانات المستأجر والوحدة والمبلغ وتاريخ الاستحقاق", en: "Browse the installments table with tenant info, unit, amount, and due date" },
       { ar: "حدد القسط المطلوب تسجيله (غير مدفوع أو متأخر)", en: "Find the installment to record (unpaid or overdue)" },
-      { ar: "انقر زر 'تسجيل دفعة' — سيتم تحديث الحالة تلقائياً إلى 'مدفوع'", en: "Click 'Record Payment' — the status will automatically update to 'Paid'" },
+      { ar: "انقر زر 'تسجيل دفعة' — وتتحول الحالة تلقائياً إلى 'مدفوع'", en: "Click 'Record Payment'. The status switches to 'Paid' on its own" },
     ],
   },
   // Billing & Subscription Guide
@@ -439,7 +501,7 @@ export const GUIDE_ITEMS: GuideItem[] = [
     steps: [
       { ar: "اذهب إلى الفوترة من القائمة الجانبية لعرض خطتك الحالية", en: "Go to Billing from the sidebar to view your current plan" },
       { ar: "انقر 'تغيير الخطة' لاستعراض الخطط المتاحة", en: "Click 'Change Plan' to browse available plans" },
-      { ar: "بدّل بين الفوترة الشهرية والسنوية (وفّر 20% مع السنوية)", en: "Toggle between monthly and annual billing (save 20% with annual)" },
+      { ar: "بدّل بين الفوترة الشهرية والسنوية لمقارنة السعر — الاشتراك السنوي عادةً أوفر", en: "Toggle between monthly and annual billing to compare pricing. Annual is usually the better value" },
       { ar: "اختيارياً: أدخل كود خصم في حقل الكوبون وانقر 'تطبيق'", en: "Optionally: enter a discount code in the coupon field and click 'Apply'" },
       { ar: "انقر 'اختر الخطة' أو 'ابدأ التجربة المجانية' للاشتراك", en: "Click 'Choose Plan' or 'Start Free Trial' to subscribe" },
       { ar: "راجع فواتيرك من صفحة الفواتير (رقم الفاتورة، التاريخ، الحالة، المبلغ مع الضريبة)", en: "Review your invoices from the Invoices page (invoice number, date, status, amount with VAT)" },
@@ -457,7 +519,35 @@ export const GUIDE_ITEMS: GuideItem[] = [
       { ar: "اختر نوع الكيان (مؤسسة، شركة، فرع...) والشكل القانوني (ذ.م.م، مساهمة...)", en: "Select entity type (establishment, company, branch...) and legal form (LLC, joint stock...)" },
       { ar: "الخطوة 3: أدخل بيانات التواصل (رقم الجوال 05XXXXXXXX، المدينة، المنطقة)", en: "Step 3: Enter contact info (mobile 05XXXXXXXX, city, region)" },
       { ar: "الخطوة 4: أضف أعضاء الفريق عبر البريد الإلكتروني واختر دور كل عضو", en: "Step 4: Add team members by email and select each member's role" },
-      { ar: "انقر 'إرسال الدعوات وإكمال الإعداد' — سيتمكن فريقك من الدخول فوراً", en: "Click 'Send Invitations & Complete Setup' — your team can log in immediately" },
+      { ar: "انقر 'إرسال الدعوات وإكمال الإعداد' — ويتمكن فريقك من الدخول فوراً", en: "Click 'Send Invitations & Complete Setup'. Your team can log in right away" },
+    ],
+  },
+  // Marketplace Guides
+  {
+    id: "guide-25",
+    title: { ar: "التصفح والاستفسار في السوق العقاري", en: "Browse & Inquire on the Marketplace" },
+    description: { ar: "كيفية تصفح الإعلانات وإرسال استفسار ومتابعته", en: "How to browse listings, send an inquiry, and track it" },
+    module: "marketplace",
+    steps: [
+      { ar: "اذهب إلى السوق العقاري من القائمة الجانبية وابقَ على تبويب 'تصفّح الإعلانات'", en: "Go to the Marketplace from the sidebar and stay on the 'Browse Listings' tab" },
+      { ar: "استخدم البحث والفلاتر (المدينة، الحي، نوع العقار، السعر، المساحة، البائع)", en: "Use search and the filters (city, district, property type, price, area, seller)" },
+      { ar: "افتح أي إعلان لعرض التفاصيل والعنوان الوطني وحالة الامتثال", en: "Open any listing to view its details, national address, and compliance status" },
+      { ar: "انقر 'إبداء الاهتمام' وأدخل رقم جوال سعودي (إلزامي) واسماً ورسالة اختياريين", en: "Click 'Express Interest' and enter a Saudi mobile number (required) plus an optional name and message" },
+      { ar: "تابع استفساراتك من تبويب 'استفساراتي'، واسحب أي استفسار مفتوح عند الحاجة", en: "Track your inquiries under the 'My Inquiries' tab, and withdraw any open inquiry if needed" },
+    ],
+  },
+  {
+    id: "guide-26",
+    title: { ar: "عرض وحدة في السوق العقاري", en: "List a Unit on the Marketplace" },
+    description: { ar: "خطوات نشر إعلان عن وحدة وإتمام النقل", en: "Steps to publish a listing and complete the transfer" },
+    module: "marketplace",
+    steps: [
+      { ar: "تأكد أن الوحدة متاحة ولها مدينة وحي وبدون عقد أو حجز قائم", en: "Make sure the unit is Available, has a city and district, and has no active contract or reservation" },
+      { ar: "أنشئ إعلاناً للوحدة — يُنشأ كمسودة", en: "Create a listing for the unit. It starts as a Draft" },
+      { ar: "من السوق العقاري ← إعلاناتي، عدّل المسودة وأضف العنوان والسعر والعنوان الوطني (4 أحرف + 4 أرقام)", en: "In Marketplace → My Listings, edit the draft and add a title, price, and National Address code (4 letters + 4 digits)" },
+      { ar: "اختيارياً أضف وصفاً ورقم رخصة إعلان وعمر المبنى", en: "Optionally add a description, ad license number, and building age" },
+      { ar: "انشر الإعلان ليظهر لجميع المنشآت", en: "Publish the listing to make it visible to all organizations" },
+      { ar: "عند ورود استفسار، انقر 'تحويل لصفقة' لحجز الوحدة، ثم 'تسوية ونقل' بعد توقيع عقد البيع", en: "When an inquiry arrives, click 'Convert to Deal' to reserve the unit, then 'Settle & Transfer' once the sale contract is signed" },
     ],
   },
 ];
