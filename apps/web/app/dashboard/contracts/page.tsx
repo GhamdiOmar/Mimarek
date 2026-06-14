@@ -1,6 +1,9 @@
 "use client";
 
 import * as React from "react";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import {
   Plus,
   Loader2,
@@ -44,6 +47,7 @@ import {
 } from "@repo/ui";
 import { useLanguage } from "../../../components/LanguageProvider";
 import { usePermissions } from "../../../hooks/usePermissions";
+import { useUnsavedChanges } from "../../../hooks/useUnsavedChanges";
 import { getContracts, createContract, updateContractStatus } from "../../actions/contracts";
 import { getCustomers } from "../../actions/customers";
 import { getUnitsWithBuildings } from "../../actions/units";
@@ -108,32 +112,86 @@ export default function ContractsPage() {
   const [units, setUnits] = React.useState<Unit[]>([]);
   const [submitting, setSubmitting] = React.useState(false);
 
-  // Sale form
-  const [saleForm, setSaleForm] = React.useState({
-    customerId: "",
-    customerName: "",
-    customerSearch: "",
-    unitId: "",
-    unitNumber: "",
-    unitSearch: "",
-    amount: "",
-    notes: "",
+  // ── Zod schemas (built per-render so bilingual messages use current `lang`) ──
+
+  const saleSchema = React.useMemo(
+    () =>
+      z.object({
+        customerId: z.string().min(1, lang === "ar" ? "العميل مطلوب" : "Customer is required"),
+        unitId: z.string().min(1, lang === "ar" ? "الوحدة مطلوبة" : "Unit is required"),
+        amount: z
+          .number({ invalid_type_error: lang === "ar" ? "المبلغ مطلوب" : "Amount is required" })
+          .positive(lang === "ar" ? "المبلغ يجب أن يكون أكبر من صفر" : "Amount must be greater than zero"),
+        notes: z.string().optional(),
+      }),
+    [lang],
+  );
+
+  const leaseSchema = React.useMemo(
+    () =>
+      z
+        .object({
+          customerId: z.string().min(1, lang === "ar" ? "المستأجر مطلوب" : "Customer is required"),
+          unitId: z.string().min(1, lang === "ar" ? "الوحدة مطلوبة" : "Unit is required"),
+          startDate: z.string().min(1, lang === "ar" ? "تاريخ البداية مطلوب" : "Start date is required"),
+          endDate: z.string().min(1, lang === "ar" ? "تاريخ النهاية مطلوب" : "End date is required"),
+          amount: z
+            .number({ invalid_type_error: lang === "ar" ? "المبلغ مطلوب" : "Amount is required" })
+            .positive(lang === "ar" ? "المبلغ يجب أن يكون أكبر من صفر" : "Amount must be greater than zero"),
+          paymentFrequency: z.string().min(1),
+          notes: z.string().optional(),
+        })
+        .refine(
+          (d) => !d.startDate || !d.endDate || d.endDate > d.startDate,
+          {
+            message: lang === "ar" ? "تاريخ النهاية يجب أن يكون بعد تاريخ البداية" : "End date must be after start date",
+            path: ["endDate"],
+          },
+        ),
+    [lang],
+  );
+
+  type SaleFormValues = z.infer<typeof saleSchema>;
+  type LeaseFormValues = z.infer<typeof leaseSchema>;
+
+  // ── react-hook-form instances ──────────────────────────────────────────────
+
+  const saleRhf = useForm<SaleFormValues>({
+    resolver: zodResolver(saleSchema),
+    mode: "onTouched",
+    defaultValues: { customerId: "", unitId: "", amount: undefined as unknown as number, notes: "" },
   });
 
-  // Lease form
-  const [leaseForm, setLeaseForm] = React.useState({
-    customerId: "",
-    customerName: "",
-    customerSearch: "",
-    unitId: "",
-    unitNumber: "",
-    unitSearch: "",
-    startDate: "",
-    endDate: "",
-    amount: "",
-    paymentFrequency: "MONTHLY",
-    notes: "",
+  const leaseRhf = useForm<LeaseFormValues>({
+    resolver: zodResolver(leaseSchema),
+    mode: "onTouched",
+    defaultValues: {
+      customerId: "",
+      unitId: "",
+      startDate: "",
+      endDate: "",
+      amount: undefined as unknown as number,
+      paymentFrequency: "MONTHLY",
+      notes: "",
+    },
   });
+
+  // Unsaved-changes guard — warn on tab close/refresh when either form is dirty
+  useUnsavedChanges(saleRhf.formState.isDirty || leaseRhf.formState.isDirty);
+
+  // ── Autocomplete display state (local UI only — not RHF fields) ────────────
+
+  // Sale autocomplete display
+  const [saleCustomerSearch, setSaleCustomerSearch] = React.useState("");
+  const [saleCustomerName, setSaleCustomerName] = React.useState("");
+  const [saleUnitSearch, setSaleUnitSearch] = React.useState("");
+  const [saleUnitNumber, setSaleUnitNumber] = React.useState("");
+
+  // Lease autocomplete display
+  const [leaseCustomerSearch, setLeaseCustomerSearch] = React.useState("");
+  const [leaseCustomerName, setLeaseCustomerName] = React.useState("");
+  const [leaseUnitSearch, setLeaseUnitSearch] = React.useState("");
+  const [leaseUnitNumber, setLeaseUnitNumber] = React.useState("");
 
   // Contract detail drawer + journey
   const [detailContract, setDetailContract] = React.useState<Contract | null>(null);
@@ -218,18 +276,16 @@ export default function ContractsPage() {
     getReservationById(prefillDealId)
       .then((reservation) => {
         if (!reservation) return;
-        setSaleForm((f) => ({
-          ...f,
-          customerId: reservation.customer.id,
-          customerName: reservation.customer.name,
-          customerSearch: reservation.customer.name,
-          unitId: reservation.unit.id,
-          unitNumber: reservation.unit.number,
-          unitSearch: reservation.unit.number,
-          amount: String(reservation.amount),
-        }));
+        saleRhf.setValue("customerId", reservation.customer.id, { shouldValidate: true });
+        saleRhf.setValue("unitId", reservation.unit.id, { shouldValidate: true });
+        saleRhf.setValue("amount", Number(reservation.amount), { shouldValidate: true });
+        setSaleCustomerName(reservation.customer.name);
+        setSaleCustomerSearch(reservation.customer.name);
+        setSaleUnitNumber(reservation.unit.number);
+        setSaleUnitSearch(reservation.unit.number);
       })
       .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prefillDealId]);
 
   const saleContracts = allContracts.filter((c) => c.type === "SALE");
@@ -303,83 +359,83 @@ export default function ContractsPage() {
 
   // Filtered autocomplete helpers
   const saleCustomerOptions = React.useMemo(() => {
-    const q = saleForm.customerSearch.toLowerCase();
+    const q = saleCustomerSearch.toLowerCase();
     return customers.filter((c) => !q || c.name.toLowerCase().includes(q)).slice(0, 8);
-  }, [customers, saleForm.customerSearch]);
+  }, [customers, saleCustomerSearch]);
 
   const saleUnitOptions = React.useMemo(() => {
-    const q = saleForm.unitSearch.toLowerCase();
+    const q = saleUnitSearch.toLowerCase();
     return units
       .filter((u) => (u.status === "AVAILABLE" || u.status === "RESERVED") && (!q || u.number.toLowerCase().includes(q)))
       .slice(0, 8);
-  }, [units, saleForm.unitSearch]);
+  }, [units, saleUnitSearch]);
 
   const leaseCustomerOptions = React.useMemo(() => {
-    const q = leaseForm.customerSearch.toLowerCase();
+    const q = leaseCustomerSearch.toLowerCase();
     return customers.filter((c) => !q || c.name.toLowerCase().includes(q)).slice(0, 8);
-  }, [customers, leaseForm.customerSearch]);
+  }, [customers, leaseCustomerSearch]);
 
   const leaseUnitOptions = React.useMemo(() => {
-    const q = leaseForm.unitSearch.toLowerCase();
+    const q = leaseUnitSearch.toLowerCase();
     return units
       .filter((u) => u.status === "AVAILABLE" && (!q || u.number.toLowerCase().includes(q)))
       .slice(0, 8);
-  }, [units, leaseForm.unitSearch]);
+  }, [units, leaseUnitSearch]);
 
-  async function handleCreateSale() {
-    if (!saleForm.customerId || !saleForm.unitId || !saleForm.amount) {
-      toast.error(lang === "ar" ? "يرجى تعبئة جميع الحقول المطلوبة" : "Please fill all required fields");
-      return;
-    }
+  const handleCreateSale = saleRhf.handleSubmit(async (values: SaleFormValues) => {
     setSubmitting(true);
     try {
       await createContract({
-        customerId: saleForm.customerId,
-        unitId: saleForm.unitId,
+        customerId: values.customerId,
+        unitId: values.unitId,
         type: "SALE",
-        amount: parseFloat(saleForm.amount),
-        notes: saleForm.notes || undefined,
+        amount: values.amount,
+        notes: values.notes || undefined,
       });
-      trackEvent(AnalyticsEvent.ContractCreated, { contract_type: "SALE", amount: Number(saleForm.amount) });
+      trackEvent(AnalyticsEvent.ContractCreated, { contract_type: "SALE", amount: values.amount });
       toast.success(lang === "ar" ? "تم إنشاء عقد البيع بنجاح" : "Sale contract created successfully");
       setSaleModalOpen(false);
-      setSaleForm({ customerId: "", customerName: "", customerSearch: "", unitId: "", unitNumber: "", unitSearch: "", amount: "", notes: "" });
+      saleRhf.reset();
+      setSaleCustomerSearch("");
+      setSaleCustomerName("");
+      setSaleUnitSearch("");
+      setSaleUnitNumber("");
       loadContracts();
     } catch (err) {
       toast.error(sanitizeError(err, lang));
     } finally {
       setSubmitting(false);
     }
-  }
+  });
 
-  async function handleCreateLease() {
-    if (!leaseForm.customerId || !leaseForm.unitId || !leaseForm.amount || !leaseForm.startDate || !leaseForm.endDate) {
-      toast.error(lang === "ar" ? "يرجى تعبئة جميع الحقول المطلوبة" : "Please fill all required fields");
-      return;
-    }
+  const handleCreateLease = leaseRhf.handleSubmit(async (values: LeaseFormValues) => {
     setSubmitting(true);
     try {
       await createContract({
-        customerId: leaseForm.customerId,
-        unitId: leaseForm.unitId,
+        customerId: values.customerId,
+        unitId: values.unitId,
         type: "LEASE",
-        amount: parseFloat(leaseForm.amount),
-        startDate: leaseForm.startDate,
-        endDate: leaseForm.endDate,
-        paymentFrequency: leaseForm.paymentFrequency,
-        notes: leaseForm.notes || undefined,
+        amount: values.amount,
+        startDate: values.startDate,
+        endDate: values.endDate,
+        paymentFrequency: values.paymentFrequency,
+        notes: values.notes || undefined,
       });
-      trackEvent(AnalyticsEvent.ContractCreated, { contract_type: "LEASE", amount: Number(leaseForm.amount) });
+      trackEvent(AnalyticsEvent.ContractCreated, { contract_type: "LEASE", amount: values.amount });
       toast.success(lang === "ar" ? "تم إنشاء عقد الإيجار بنجاح" : "Lease contract created successfully");
       setLeaseModalOpen(false);
-      setLeaseForm({ customerId: "", customerName: "", customerSearch: "", unitId: "", unitNumber: "", unitSearch: "", startDate: "", endDate: "", amount: "", paymentFrequency: "MONTHLY", notes: "" });
+      leaseRhf.reset();
+      setLeaseCustomerSearch("");
+      setLeaseCustomerName("");
+      setLeaseUnitSearch("");
+      setLeaseUnitNumber("");
       loadContracts();
     } catch (err) {
       toast.error(sanitizeError(err, lang));
     } finally {
       setSubmitting(false);
     }
-  }
+  });
 
   // ── Sale table columns ──────────────────────────────────────────────
   const saleColumns: ColumnDef<Contract>[] = [
@@ -1219,11 +1275,31 @@ export default function ContractsPage() {
       {/* New Sale Contract Modal */}
       <ResponsiveDialog
         open={saleModalOpen}
-        onOpenChange={setSaleModalOpen}
+        onOpenChange={(open) => {
+          setSaleModalOpen(open);
+          if (!open) {
+            saleRhf.reset();
+            setSaleCustomerSearch("");
+            setSaleCustomerName("");
+            setSaleUnitSearch("");
+            setSaleUnitNumber("");
+          }
+        }}
         title={lang === "ar" ? "عقد بيع جديد" : "New Sale Contract"}
         footer={
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-            <Button variant="ghost" onClick={() => setSaleModalOpen(false)} style={{ display: "inline-flex" }}>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setSaleModalOpen(false);
+                saleRhf.reset();
+                setSaleCustomerSearch("");
+                setSaleCustomerName("");
+                setSaleUnitSearch("");
+                setSaleUnitNumber("");
+              }}
+              style={{ display: "inline-flex" }}
+            >
               {lang === "ar" ? "إلغاء" : "Cancel"}
             </Button>
             <Button type="submit" form="sale-contract-form" disabled={submitting} style={{ display: "inline-flex" }} className="gap-2">
@@ -1235,116 +1311,192 @@ export default function ContractsPage() {
       >
         <form
           id="sale-contract-form"
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleCreateSale();
-          }}
+          onSubmit={handleCreateSale}
           className="space-y-4 py-2"
         >
+          {/* Required fields legend */}
+          <p className="text-caption text-muted-foreground text-xs">
+            {lang === "ar" ? "الحقول المطلوبة معلّمة بـ *" : "Required fields marked with *"}
+          </p>
+
           {/* Customer */}
-          <div className="space-y-1">
-            <label className="text-sm font-medium text-foreground">
-              {lang === "ar" ? "العميل" : "Customer"} *
-            </label>
-            <div className="relative">
-              <Input
-                value={saleForm.customerName || saleForm.customerSearch}
-                onChange={(e) => {
-                  setSaleForm((f) => ({ ...f, customerSearch: e.target.value, customerId: "", customerName: "" }));
-                }}
-                placeholder={lang === "ar" ? "ابحث عن العميل..." : "Search customer..."}
-              />
-              {saleForm.customerSearch && !saleForm.customerId && saleCustomerOptions.length > 0 && (
-                <div className="absolute z-10 top-full mt-1 w-full bg-popover border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                  {saleCustomerOptions.map((c) => (
-                    <Button
-                      key={c.id}
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setSaleForm((f) => ({ ...f, customerId: c.id, customerName: c.name, customerSearch: c.name }))}
-                      className="w-full justify-start rounded-none px-3 py-2 text-sm font-normal"
-                      style={{ display: "flex" }}
-                    >
-                      {c.name}
-                    </Button>
-                  ))}
+          <Controller
+            control={saleRhf.control}
+            name="customerId"
+            render={({ field, fieldState }) => (
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-foreground">
+                  {lang === "ar" ? "العميل" : "Customer"} *
+                </label>
+                <div className="relative">
+                  <Input
+                    value={saleCustomerName || saleCustomerSearch}
+                    onChange={(e) => {
+                      setSaleCustomerSearch(e.target.value);
+                      setSaleCustomerName("");
+                      field.onChange("");
+                    }}
+                    onBlur={field.onBlur}
+                    placeholder={lang === "ar" ? "ابحث عن العميل..." : "Search customer..."}
+                    aria-invalid={!!fieldState.error}
+                  />
+                  {saleCustomerSearch && !field.value && saleCustomerOptions.length > 0 && (
+                    <div className="absolute z-10 top-full mt-1 w-full bg-popover border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                      {saleCustomerOptions.map((c) => (
+                        <Button
+                          key={c.id}
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setSaleCustomerName(c.name);
+                            setSaleCustomerSearch(c.name);
+                            field.onChange(c.id);
+                          }}
+                          className="w-full justify-start rounded-none px-3 py-2 text-sm font-normal"
+                          style={{ display: "flex" }}
+                        >
+                          {c.name}
+                        </Button>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          </div>
+                {fieldState.error && (
+                  <p className="text-caption text-destructive mt-1 text-xs">{fieldState.error.message}</p>
+                )}
+              </div>
+            )}
+          />
 
           {/* Unit */}
-          <div className="space-y-1">
-            <label className="text-sm font-medium text-foreground">
-              {lang === "ar" ? "الوحدة" : "Unit"} *
-            </label>
-            <div className="relative">
-              <Input
-                value={saleForm.unitNumber || saleForm.unitSearch}
-                onChange={(e) => {
-                  setSaleForm((f) => ({ ...f, unitSearch: e.target.value, unitId: "", unitNumber: "" }));
-                }}
-                placeholder={lang === "ar" ? "ابحث عن وحدة..." : "Search unit..."}
-              />
-              {saleForm.unitSearch && !saleForm.unitId && saleUnitOptions.length > 0 && (
-                <div className="absolute z-10 top-full mt-1 w-full bg-popover border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                  {saleUnitOptions.map((u) => (
-                    <Button
-                      key={u.id}
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setSaleForm((f) => ({ ...f, unitId: u.id, unitNumber: u.number, unitSearch: u.number }))}
-                      className="w-full justify-start rounded-none px-3 py-2 text-sm font-normal"
-                      style={{ display: "flex" }}
-                    >
-                      {lang === "ar" ? "وحدة" : "Unit"} {u.number}
-                      <span className="ms-2 text-xs text-muted-foreground">{u.status}</span>
-                    </Button>
-                  ))}
+          <Controller
+            control={saleRhf.control}
+            name="unitId"
+            render={({ field, fieldState }) => (
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-foreground">
+                  {lang === "ar" ? "الوحدة" : "Unit"} *
+                </label>
+                <div className="relative">
+                  <Input
+                    value={saleUnitNumber || saleUnitSearch}
+                    onChange={(e) => {
+                      setSaleUnitSearch(e.target.value);
+                      setSaleUnitNumber("");
+                      field.onChange("");
+                    }}
+                    onBlur={field.onBlur}
+                    placeholder={lang === "ar" ? "ابحث عن وحدة..." : "Search unit..."}
+                    aria-invalid={!!fieldState.error}
+                  />
+                  {saleUnitSearch && !field.value && saleUnitOptions.length > 0 && (
+                    <div className="absolute z-10 top-full mt-1 w-full bg-popover border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                      {saleUnitOptions.map((u) => (
+                        <Button
+                          key={u.id}
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setSaleUnitNumber(u.number);
+                            setSaleUnitSearch(u.number);
+                            field.onChange(u.id);
+                          }}
+                          className="w-full justify-start rounded-none px-3 py-2 text-sm font-normal"
+                          style={{ display: "flex" }}
+                        >
+                          {lang === "ar" ? "وحدة" : "Unit"} {u.number}
+                          <span className="ms-2 text-xs text-muted-foreground">{u.status}</span>
+                        </Button>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          </div>
+                {fieldState.error && (
+                  <p className="text-caption text-destructive mt-1 text-xs">{fieldState.error.message}</p>
+                )}
+              </div>
+            )}
+          />
 
           {/* Amount */}
-          <div className="space-y-1">
-            <label className="text-sm font-medium text-foreground">
-              {lang === "ar" ? "مبلغ العقد (ريال)" : "Contract Amount (SAR)"} *
-            </label>
-            <SARAmountInput
-              value={saleForm.amount === "" ? null : Number(saleForm.amount)}
-              onChange={(n) => setSaleForm((f) => ({ ...f, amount: n == null ? "" : String(n) }))}
-              placeholder="0.00"
-            />
-          </div>
+          <Controller
+            control={saleRhf.control}
+            name="amount"
+            render={({ field, fieldState }) => (
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-foreground">
+                  {lang === "ar" ? "مبلغ العقد (ريال)" : "Contract Amount (SAR)"} *
+                </label>
+                <SARAmountInput
+                  value={field.value ?? null}
+                  onChange={(n) => field.onChange(n ?? undefined)}
+                  onBlur={field.onBlur}
+                  placeholder="0.00"
+                  aria-invalid={!!fieldState.error}
+                />
+                {fieldState.error && (
+                  <p className="text-caption text-destructive mt-1 text-xs">{fieldState.error.message}</p>
+                )}
+              </div>
+            )}
+          />
 
           {/* Notes */}
-          <div className="space-y-1">
-            <label className="text-sm font-medium text-foreground">
-              {lang === "ar" ? "ملاحظات" : "Notes"}
-            </label>
-            <textarea
-              value={saleForm.notes}
-              onChange={(e) => setSaleForm((f) => ({ ...f, notes: e.target.value }))}
-              rows={3}
-              placeholder={lang === "ar" ? "ملاحظات اختيارية..." : "Optional notes..."}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]"
-            />
-          </div>
+          <Controller
+            control={saleRhf.control}
+            name="notes"
+            render={({ field }) => (
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-foreground">
+                  {lang === "ar" ? "ملاحظات" : "Notes"}
+                  {" "}
+                  <span className="text-muted-foreground text-xs font-normal">
+                    ({lang === "ar" ? "اختياري" : "optional"})
+                  </span>
+                </label>
+                <textarea
+                  {...field}
+                  rows={3}
+                  placeholder={lang === "ar" ? "ملاحظات اختيارية..." : "Optional notes..."}
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]"
+                />
+              </div>
+            )}
+          />
         </form>
       </ResponsiveDialog>
 
       {/* New Lease Contract Modal */}
       <ResponsiveDialog
         open={leaseModalOpen}
-        onOpenChange={setLeaseModalOpen}
+        onOpenChange={(open) => {
+          setLeaseModalOpen(open);
+          if (!open) {
+            leaseRhf.reset();
+            setLeaseCustomerSearch("");
+            setLeaseCustomerName("");
+            setLeaseUnitSearch("");
+            setLeaseUnitNumber("");
+          }
+        }}
         title={lang === "ar" ? "عقد إيجار جديد" : "New Lease Contract"}
         contentClassName="sm:max-w-[640px]"
         footer={
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-            <Button variant="ghost" onClick={() => setLeaseModalOpen(false)} style={{ display: "inline-flex" }}>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setLeaseModalOpen(false);
+                leaseRhf.reset();
+                setLeaseCustomerSearch("");
+                setLeaseCustomerName("");
+                setLeaseUnitSearch("");
+                setLeaseUnitNumber("");
+              }}
+              style={{ display: "inline-flex" }}
+            >
               {lang === "ar" ? "إلغاء" : "Cancel"}
             </Button>
             <Button type="submit" form="lease-contract-form" disabled={submitting} style={{ display: "inline-flex" }} className="gap-2">
@@ -1356,142 +1508,225 @@ export default function ContractsPage() {
       >
         <form
           id="lease-contract-form"
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleCreateLease();
-          }}
+          onSubmit={handleCreateLease}
           className="space-y-4 py-2"
         >
+          {/* Required fields legend */}
+          <p className="text-caption text-muted-foreground text-xs">
+            {lang === "ar" ? "الحقول المطلوبة معلّمة بـ *" : "Required fields marked with *"}
+          </p>
+
           {/* Tenant */}
-          <div className="space-y-1">
-            <label className="text-sm font-medium text-foreground">
-              {lang === "ar" ? "المستأجر" : "Tenant/Customer"} *
-            </label>
-            <div className="relative">
-              <Input
-                value={leaseForm.customerName || leaseForm.customerSearch}
-                onChange={(e) => {
-                  setLeaseForm((f) => ({ ...f, customerSearch: e.target.value, customerId: "", customerName: "" }));
-                }}
-                placeholder={lang === "ar" ? "ابحث عن المستأجر..." : "Search tenant..."}
-              />
-              {leaseForm.customerSearch && !leaseForm.customerId && leaseCustomerOptions.length > 0 && (
-                <div className="absolute z-10 top-full mt-1 w-full bg-popover border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                  {leaseCustomerOptions.map((c) => (
-                    <Button
-                      key={c.id}
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setLeaseForm((f) => ({ ...f, customerId: c.id, customerName: c.name, customerSearch: c.name }))}
-                      className="w-full justify-start rounded-none px-3 py-2 text-sm font-normal"
-                      style={{ display: "flex" }}
-                    >
-                      {c.name}
-                    </Button>
-                  ))}
+          <Controller
+            control={leaseRhf.control}
+            name="customerId"
+            render={({ field, fieldState }) => (
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-foreground">
+                  {lang === "ar" ? "المستأجر" : "Tenant/Customer"} *
+                </label>
+                <div className="relative">
+                  <Input
+                    value={leaseCustomerName || leaseCustomerSearch}
+                    onChange={(e) => {
+                      setLeaseCustomerSearch(e.target.value);
+                      setLeaseCustomerName("");
+                      field.onChange("");
+                    }}
+                    onBlur={field.onBlur}
+                    placeholder={lang === "ar" ? "ابحث عن المستأجر..." : "Search tenant..."}
+                    aria-invalid={!!fieldState.error}
+                  />
+                  {leaseCustomerSearch && !field.value && leaseCustomerOptions.length > 0 && (
+                    <div className="absolute z-10 top-full mt-1 w-full bg-popover border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                      {leaseCustomerOptions.map((c) => (
+                        <Button
+                          key={c.id}
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setLeaseCustomerName(c.name);
+                            setLeaseCustomerSearch(c.name);
+                            field.onChange(c.id);
+                          }}
+                          className="w-full justify-start rounded-none px-3 py-2 text-sm font-normal"
+                          style={{ display: "flex" }}
+                        >
+                          {c.name}
+                        </Button>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          </div>
+                {fieldState.error && (
+                  <p className="text-caption text-destructive mt-1 text-xs">{fieldState.error.message}</p>
+                )}
+              </div>
+            )}
+          />
 
           {/* Unit */}
-          <div className="space-y-1">
-            <label className="text-sm font-medium text-foreground">
-              {lang === "ar" ? "الوحدة" : "Unit"} *
-            </label>
-            <div className="relative">
-              <Input
-                value={leaseForm.unitNumber || leaseForm.unitSearch}
-                onChange={(e) => {
-                  setLeaseForm((f) => ({ ...f, unitSearch: e.target.value, unitId: "", unitNumber: "" }));
-                }}
-                placeholder={lang === "ar" ? "ابحث عن وحدة متاحة..." : "Search available unit..."}
-              />
-              {leaseForm.unitSearch && !leaseForm.unitId && leaseUnitOptions.length > 0 && (
-                <div className="absolute z-10 top-full mt-1 w-full bg-popover border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                  {leaseForm.unitSearch && !leaseForm.unitId && leaseUnitOptions.map((u) => (
-                    <Button
-                      key={u.id}
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setLeaseForm((f) => ({ ...f, unitId: u.id, unitNumber: u.number, unitSearch: u.number }))}
-                      className="w-full justify-start rounded-none px-3 py-2 text-sm font-normal"
-                      style={{ display: "flex" }}
-                    >
-                      {lang === "ar" ? "وحدة" : "Unit"} {u.number}
-                    </Button>
-                  ))}
+          <Controller
+            control={leaseRhf.control}
+            name="unitId"
+            render={({ field, fieldState }) => (
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-foreground">
+                  {lang === "ar" ? "الوحدة" : "Unit"} *
+                </label>
+                <div className="relative">
+                  <Input
+                    value={leaseUnitNumber || leaseUnitSearch}
+                    onChange={(e) => {
+                      setLeaseUnitSearch(e.target.value);
+                      setLeaseUnitNumber("");
+                      field.onChange("");
+                    }}
+                    onBlur={field.onBlur}
+                    placeholder={lang === "ar" ? "ابحث عن وحدة متاحة..." : "Search available unit..."}
+                    aria-invalid={!!fieldState.error}
+                  />
+                  {leaseUnitSearch && !field.value && leaseUnitOptions.length > 0 && (
+                    <div className="absolute z-10 top-full mt-1 w-full bg-popover border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                      {leaseUnitOptions.map((u) => (
+                        <Button
+                          key={u.id}
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setLeaseUnitNumber(u.number);
+                            setLeaseUnitSearch(u.number);
+                            field.onChange(u.id);
+                          }}
+                          className="w-full justify-start rounded-none px-3 py-2 text-sm font-normal"
+                          style={{ display: "flex" }}
+                        >
+                          {lang === "ar" ? "وحدة" : "Unit"} {u.number}
+                        </Button>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          </div>
+                {fieldState.error && (
+                  <p className="text-caption text-destructive mt-1 text-xs">{fieldState.error.message}</p>
+                )}
+              </div>
+            )}
+          />
 
           {/* Dates */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-foreground">
-                {lang === "ar" ? "تاريخ البداية" : "Start Date"} *
-              </label>
-              <HijriDatePicker
-                value={leaseForm.startDate ? new Date(leaseForm.startDate) : null}
-                onChange={(d) => setLeaseForm((f) => ({ ...f, startDate: d ? d.toISOString().slice(0, 10) : "" }))}
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-foreground">
-                {lang === "ar" ? "تاريخ النهاية" : "End Date"} *
-              </label>
-              <HijriDatePicker
-                value={leaseForm.endDate ? new Date(leaseForm.endDate) : null}
-                onChange={(d) => setLeaseForm((f) => ({ ...f, endDate: d ? d.toISOString().slice(0, 10) : "" }))}
-              />
-            </div>
+            <Controller
+              control={leaseRhf.control}
+              name="startDate"
+              render={({ field, fieldState }) => (
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-foreground">
+                    {lang === "ar" ? "تاريخ البداية" : "Start Date"} *
+                  </label>
+                  <HijriDatePicker
+                    value={field.value ? new Date(field.value) : null}
+                    onChange={(d) => {
+                      field.onChange(d ? d.toISOString().slice(0, 10) : "");
+                    }}
+                  />
+                  {fieldState.error && (
+                    <p className="text-caption text-destructive mt-1 text-xs">{fieldState.error.message}</p>
+                  )}
+                </div>
+              )}
+            />
+            <Controller
+              control={leaseRhf.control}
+              name="endDate"
+              render={({ field, fieldState }) => (
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-foreground">
+                    {lang === "ar" ? "تاريخ النهاية" : "End Date"} *
+                  </label>
+                  <HijriDatePicker
+                    value={field.value ? new Date(field.value) : null}
+                    onChange={(d) => {
+                      field.onChange(d ? d.toISOString().slice(0, 10) : "");
+                    }}
+                  />
+                  {fieldState.error && (
+                    <p className="text-caption text-destructive mt-1 text-xs">{fieldState.error.message}</p>
+                  )}
+                </div>
+              )}
+            />
           </div>
 
           {/* Amount */}
-          <div className="space-y-1">
-            <label className="text-sm font-medium text-foreground">
-              {lang === "ar" ? "إجمالي الإيجار (ريال)" : "Total Amount (SAR)"} *
-            </label>
-            <SARAmountInput
-              value={leaseForm.amount === "" ? null : Number(leaseForm.amount)}
-              onChange={(n) => setLeaseForm((f) => ({ ...f, amount: n == null ? "" : String(n) }))}
-              placeholder="0.00"
-            />
-          </div>
+          <Controller
+            control={leaseRhf.control}
+            name="amount"
+            render={({ field, fieldState }) => (
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-foreground">
+                  {lang === "ar" ? "إجمالي الإيجار (ريال)" : "Total Amount (SAR)"} *
+                </label>
+                <SARAmountInput
+                  value={field.value ?? null}
+                  onChange={(n) => field.onChange(n ?? undefined)}
+                  onBlur={field.onBlur}
+                  placeholder="0.00"
+                  aria-invalid={!!fieldState.error}
+                />
+                {fieldState.error && (
+                  <p className="text-caption text-destructive mt-1 text-xs">{fieldState.error.message}</p>
+                )}
+              </div>
+            )}
+          />
 
           {/* Payment Frequency */}
-          <div className="space-y-1">
-            <label className="text-sm font-medium text-foreground">
-              {lang === "ar" ? "دورية الدفع" : "Payment Frequency"}
-            </label>
-            <select
-              value={leaseForm.paymentFrequency}
-              onChange={(e) => setLeaseForm((f) => ({ ...f, paymentFrequency: e.target.value }))}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]"
-            >
-              <option value="MONTHLY">{lang === "ar" ? "شهري" : "Monthly"}</option>
-              <option value="QUARTERLY">{lang === "ar" ? "ربع سنوي" : "Quarterly"}</option>
-              <option value="SEMI_ANNUAL">{lang === "ar" ? "نصف سنوي" : "Semi-Annual"}</option>
-              <option value="ANNUAL">{lang === "ar" ? "سنوي" : "Annual"}</option>
-            </select>
-          </div>
+          <Controller
+            control={leaseRhf.control}
+            name="paymentFrequency"
+            render={({ field }) => (
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-foreground">
+                  {lang === "ar" ? "دورية الدفع" : "Payment Frequency"}
+                </label>
+                <select
+                  {...field}
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]"
+                >
+                  <option value="MONTHLY">{lang === "ar" ? "شهري" : "Monthly"}</option>
+                  <option value="QUARTERLY">{lang === "ar" ? "ربع سنوي" : "Quarterly"}</option>
+                  <option value="SEMI_ANNUAL">{lang === "ar" ? "نصف سنوي" : "Semi-Annual"}</option>
+                  <option value="ANNUAL">{lang === "ar" ? "سنوي" : "Annual"}</option>
+                </select>
+              </div>
+            )}
+          />
 
           {/* Notes */}
-          <div className="space-y-1">
-            <label className="text-sm font-medium text-foreground">
-              {lang === "ar" ? "ملاحظات" : "Notes"}
-            </label>
-            <textarea
-              value={leaseForm.notes}
-              onChange={(e) => setLeaseForm((f) => ({ ...f, notes: e.target.value }))}
-              rows={3}
-              placeholder={lang === "ar" ? "ملاحظات اختيارية..." : "Optional notes..."}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]"
-            />
-          </div>
+          <Controller
+            control={leaseRhf.control}
+            name="notes"
+            render={({ field }) => (
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-foreground">
+                  {lang === "ar" ? "ملاحظات" : "Notes"}
+                  {" "}
+                  <span className="text-muted-foreground text-xs font-normal">
+                    ({lang === "ar" ? "اختياري" : "optional"})
+                  </span>
+                </label>
+                <textarea
+                  {...field}
+                  rows={3}
+                  placeholder={lang === "ar" ? "ملاحظات اختيارية..." : "Optional notes..."}
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]"
+                />
+              </div>
+            )}
+          />
         </form>
       </ResponsiveDialog>
     </div>

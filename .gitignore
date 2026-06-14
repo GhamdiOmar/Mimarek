@@ -8,8 +8,9 @@
 **/playwright-report-*/
 **/e2e/__screenshots__/
 
-# Verification artifacts (local screenshots + run logs)
+# Verification artifacts (local screenshots + run logs + CX-audit report)
 verification-screenshots/
+verification/
 
 # Claude Code
 .claude/

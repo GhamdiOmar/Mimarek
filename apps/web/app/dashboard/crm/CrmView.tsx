@@ -55,6 +55,7 @@ import {
   DirectionalIcon,
   NationalIdInput,
   SaudiPhoneInput,
+  SARAmountInput,
   DataTable,
   EmptyState,
   DropdownMenu,
@@ -3433,13 +3434,11 @@ export default function CrmView({
                   <label className="text-xs font-bold text-muted-foreground">
                     {lang === "ar" ? "الميزانية (ريال)" : "Budget (SAR)"}
                   </label>
-                  <Input
-                    type="number"
-                    value={newCustomer.budget}
-                    onChange={(e) => setNewCustomer({ ...newCustomer, budget: e.target.value })}
+                  <SARAmountInput
+                    value={newCustomer.budget === "" ? null : Number(newCustomer.budget)}
+                    onChange={(n) => setNewCustomer({ ...newCustomer, budget: n == null ? "" : String(n) })}
                     placeholder={lang === "ar" ? "مثال: 500000" : "e.g. 500000"}
-                    dir="ltr"
-                    min="0"
+                    locale={lang}
                   />
                 </div>
                 {/* ── Link Property (Optional) ── */}

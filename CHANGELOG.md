@@ -1,5 +1,27 @@
 # Changelog — Mimaric PropTech
 
+## [4.22.0] — 2026-06-14 — CX bundle: form validation (RHF), unsaved-changes guard, SAR adoption, join-request status
+
+Third CX-audit remediation release. Closes CX-006, CX-007, CX-008, CX-009.
+
+### Inline form validation (CX-006)
+- The **reservation** create form and both **contract** create forms (sale + lease) now use **react-hook-form + zod** (`mode: "onTouched"`) — required fields show a **field-level bilingual error after blur/submit** (red border + one-line message under the field) instead of a single submit-time toast, with a "Required fields marked with *" legend. Server-side validation is unchanged. The complex autocomplete (customer/unit), `SARAmountInput`, and `HijriDatePicker` inputs are wired via RHF `Controller`; URL prefill (reservation `?customerId`, contract `?dealId`) preserved; the v4.21.0 contract sign-confirm is untouched.
+- The CRM add-customer form keeps its current submit-time validation for now; its full RHF migration folds into v4.26 (where CrmView is converted to RSC) to avoid rewriting the deeply-coupled form twice.
+
+### Unsaved-changes guard (CX-007)
+- New `apps/web/hooks/useUnsavedChanges.ts` — warns before tab close / refresh / external navigation while a form is dirty (`beforeunload`). Attached to the reservation + contract forms via RHF `isDirty`.
+
+### SAR input (CX-008)
+- `SARAmountInput` now formats with `en-SA` (Western digits + comma grouping in both languages, matching KPI values / CX-019; localized ر.س / SAR suffix unchanged). **Adopted** for the reservation amount and the CRM budget field (were raw `type=number`).
+
+### Join-request status (CX-009)
+- New **"My Requests"** tab in the Help Center showing the user's organization join requests (org name, status badge, submitted/expiry dates, review note) with a **Cancel** action on pending requests — reusing the existing `getMyJoinRequests` + `cancelJoinRequest`. The onboarding "join request submitted" screen now links to it (`/dashboard/help#join-requests`), closing the previous dead-end.
+
+### Gates
+- `npm run build` green; CI green; §3.9 screenshots (reservations/contracts/CRM/help × light/dark × AR/EN + 375px mobile); 0 console errors; interactive proof: empty-submit on the reservation + contract forms renders inline field errors + the required legend (not a toast).
+
+**Full diff:** https://github.com/GhamdiOmar/Mimaric/compare/v4.21.0...v4.22.0
+
 ## [4.21.0] — 2026-06-14 — CX bundle: trustworthy errors, confirm discipline, non-blocking consent + analytics
 
 Second CX-audit remediation release — the first *bundled* tag (5 findings, two commits, one release): CX-012, CX-013, CX-021 (errors/confirm/sign) + CX-005, CX-004 (consent/analytics).

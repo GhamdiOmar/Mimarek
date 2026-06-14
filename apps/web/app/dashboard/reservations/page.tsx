@@ -31,14 +31,19 @@ import {
   FAB,
   EmptyState,
   SARAmount,
+  SARAmountInput,
   Skeleton,
   BottomSheet,
   Alert,
   AlertDescription,
   cn,
 } from "@repo/ui";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { useLanguage } from "../../../components/LanguageProvider";
 import { usePermissions } from "../../../hooks/usePermissions";
+import { useUnsavedChanges } from "../../../hooks/useUnsavedChanges";
 import {
   getReservations,
   createReservation,
@@ -95,6 +100,49 @@ export default function ReservationsPage() {
   const prefillUnitId = searchParams.get("unitId");
   const prefillAmount = searchParams.get("amount");
 
+  // ── Zod schema (built per-render so messages use current lang) ────────
+  const createSchema = React.useMemo(
+    () =>
+      z.object({
+        customerId: z
+          .string()
+          .min(1, lang === "ar" ? "يرجى اختيار العميل" : "Customer is required"),
+        unitId: z
+          .string()
+          .min(1, lang === "ar" ? "يرجى اختيار الوحدة" : "Unit is required"),
+        amount: z
+          .number({ invalid_type_error: lang === "ar" ? "أدخل قيمة صحيحة" : "Enter a valid amount" })
+          .positive(lang === "ar" ? "يجب أن تكون القيمة أكبر من صفر" : "Amount must be greater than zero"),
+        expiresAt: z
+          .string()
+          .min(1, lang === "ar" ? "تاريخ الانتهاء مطلوب" : "Expiry date is required"),
+        notes: z.string().optional(),
+      }),
+    [lang],
+  );
+
+  type CreateFormValues = z.infer<typeof createSchema>;
+
+  const {
+    control,
+    handleSubmit,
+    reset,
+    setValue,
+    formState,
+  } = useForm<CreateFormValues>({
+    resolver: zodResolver(createSchema),
+    mode: "onTouched",
+    defaultValues: {
+      customerId: "",
+      unitId: "",
+      amount: null as unknown as number,
+      expiresAt: "",
+      notes: "",
+    },
+  });
+
+  useUnsavedChanges(formState.isDirty);
+
   const [deals, setDeals] = React.useState<Reservation[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [loadError, setLoadError] = React.useState<string | null>(null);
@@ -108,15 +156,9 @@ export default function ReservationsPage() {
   const [units, setUnits] = React.useState<Unit[]>([]);
   const [customerSearch, setCustomerSearch] = React.useState("");
   const [unitSearch, setUnitSearch] = React.useState("");
-  const [form, setForm] = React.useState({
-    customerId: "",
-    customerName: "",
-    unitId: "",
-    unitNumber: "",
-    amount: "",
-    expiresAt: "",
-    notes: "",
-  });
+  // Display-name local state for autocomplete fields (the RHF fields hold IDs)
+  const [selectedCustomerName, setSelectedCustomerName] = React.useState("");
+  const [selectedUnitNumber, setSelectedUnitNumber] = React.useState("");
   const [submitting, setSubmitting] = React.useState(false);
 
   // Details popover
@@ -208,26 +250,25 @@ export default function ReservationsPage() {
         // Apply ?unitId prefill once units are loaded
         if (prefillUnitId) {
           const matchingUnit = unitsList.find((u) => u.id === prefillUnitId);
-          setForm((f) => ({
-            ...f,
-            unitId: prefillUnitId,
-            unitNumber: matchingUnit?.number ?? prefillUnitId,
-          }));
-          setUnitSearch(matchingUnit?.number ?? prefillUnitId);
+          setValue("unitId", prefillUnitId, { shouldDirty: false });
+          const displayNumber = matchingUnit?.number ?? prefillUnitId;
+          setSelectedUnitNumber(displayNumber);
+          setUnitSearch(displayNumber);
         }
       })
       .catch(() => {});
     // Apply URL param prefills
     if (prefillCustomerId) {
-      setForm((f) => ({
-        ...f,
-        customerId: prefillCustomerId,
-        customerName: prefillCustomerName ?? "",
-      }));
-      setCustomerSearch(prefillCustomerName ?? "");
+      setValue("customerId", prefillCustomerId, { shouldDirty: false });
+      const displayName = prefillCustomerName ?? "";
+      setSelectedCustomerName(displayName);
+      setCustomerSearch(displayName);
     }
     if (prefillAmount) {
-      setForm((f) => ({ ...f, amount: prefillAmount }));
+      const parsed = parseFloat(prefillAmount);
+      if (Number.isFinite(parsed)) {
+        setValue("amount", parsed, { shouldDirty: false });
+      }
     }
   }
 
@@ -239,30 +280,30 @@ export default function ReservationsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prefillCustomerId, prefillUnitId]);
 
-  async function handleCreate() {
-    if (!form.customerId || !form.unitId || !form.amount || !form.expiresAt) {
-      toast.error(lang === "ar" ? "يرجى تعبئة جميع الحقول المطلوبة" : "Please fill all required fields");
-      return;
-    }
+  const onCreateSubmit = handleSubmit(async (values) => {
     setSubmitting(true);
     try {
       await createReservation({
-        customerId: form.customerId,
-        unitId: form.unitId,
-        amount: parseFloat(form.amount),
-        expiresAt: new Date(form.expiresAt),
+        customerId: values.customerId,
+        unitId: values.unitId,
+        amount: values.amount,
+        expiresAt: new Date(values.expiresAt),
       });
-      trackEvent(AnalyticsEvent.ReservationCreated, { amount: Number(parseFloat(form.amount)) });
+      trackEvent(AnalyticsEvent.ReservationCreated, { amount: values.amount });
       toast.success(lang === "ar" ? "تم إنشاء الحجز بنجاح" : "Reservation created successfully");
       setCreateOpen(false);
-      setForm({ customerId: "", customerName: "", unitId: "", unitNumber: "", amount: "", expiresAt: "", notes: "" });
+      reset();
+      setSelectedCustomerName("");
+      setSelectedUnitNumber("");
+      setCustomerSearch("");
+      setUnitSearch("");
       loadDeals();
     } catch (err: unknown) {
       toast.error(sanitizeError(err, lang));
     } finally {
       setSubmitting(false);
     }
-  }
+  });
 
   async function handleConfirmDeal(dealId: string) {
     try {
@@ -956,126 +997,192 @@ export default function ReservationsPage() {
       >
         <form
           id="create-deal-form"
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleCreate();
-          }}
+          onSubmit={onCreateSubmit}
           className="space-y-4 py-2"
         >
+          {/* Required fields legend */}
+          <p className="text-caption text-muted-foreground text-xs">
+            {lang === "ar"
+              ? "الحقول المطلوبة معلّمة بـ *"
+              : "Required fields marked with *"}
+          </p>
+
           {/* Customer search */}
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-foreground">
-                {lang === "ar" ? "العميل" : "Customer"} *
-              </label>
-              <div className="relative">
-                <Input
-                  value={form.customerName || customerSearch}
-                  onChange={(e) => {
-                    setCustomerSearch(e.target.value);
-                    setForm((f) => ({ ...f, customerId: "", customerName: "" }));
-                  }}
-                  placeholder={lang === "ar" ? "ابحث عن العميل..." : "Search customer..."}
-                />
-                {customerSearch && !form.customerId && filteredCustomers.length > 0 && (
-                  <div className="absolute z-10 top-full mt-1 w-full bg-popover border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                    {filteredCustomers.map((c) => (
-                      <Button
-                        key={c.id}
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setForm((f) => ({ ...f, customerId: c.id, customerName: c.name }));
-                          setCustomerSearch(c.name);
-                        }}
-                        className="w-full justify-start rounded-none px-3 py-2 text-sm font-normal"
-                        style={{ display: "flex" }}
-                      >
-                        {c.name}
-                      </Button>
-                    ))}
-                  </div>
+          <Controller
+            name="customerId"
+            control={control}
+            render={({ field, fieldState }) => (
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-foreground">
+                  {lang === "ar" ? "العميل" : "Customer"} *
+                </label>
+                <div className="relative">
+                  <Input
+                    value={selectedCustomerName || customerSearch}
+                    aria-invalid={!!fieldState.error}
+                    onChange={(e) => {
+                      setCustomerSearch(e.target.value);
+                      setSelectedCustomerName("");
+                      field.onChange("");
+                    }}
+                    onBlur={field.onBlur}
+                    placeholder={lang === "ar" ? "ابحث عن العميل..." : "Search customer..."}
+                  />
+                  {customerSearch && !field.value && filteredCustomers.length > 0 && (
+                    <div className="absolute z-10 top-full mt-1 w-full bg-popover border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                      {filteredCustomers.map((c) => (
+                        <Button
+                          key={c.id}
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            field.onChange(c.id);
+                            setSelectedCustomerName(c.name);
+                            setCustomerSearch(c.name);
+                          }}
+                          className="w-full justify-start rounded-none px-3 py-2 text-sm font-normal"
+                          style={{ display: "flex" }}
+                        >
+                          {c.name}
+                        </Button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                {fieldState.error && (
+                  <p className="text-caption text-destructive mt-1 text-xs">
+                    {fieldState.error.message}
+                  </p>
                 )}
               </div>
-            </div>
+            )}
+          />
 
-            {/* Unit search */}
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-foreground">
-                {lang === "ar" ? "الوحدة" : "Unit"} *
-              </label>
-              <div className="relative">
-                <Input
-                  value={form.unitNumber || unitSearch}
-                  onChange={(e) => {
-                    setUnitSearch(e.target.value);
-                    setForm((f) => ({ ...f, unitId: "", unitNumber: "" }));
-                  }}
-                  placeholder={lang === "ar" ? "ابحث عن وحدة متاحة..." : "Search available unit..."}
-                />
-                {unitSearch && !form.unitId && filteredUnits.length > 0 && (
-                  <div className="absolute z-10 top-full mt-1 w-full bg-popover border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                    {filteredUnits.map((u) => (
-                      <Button
-                        key={u.id}
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setForm((f) => ({ ...f, unitId: u.id, unitNumber: u.number }));
-                          setUnitSearch(u.number);
-                        }}
-                        className="w-full justify-start rounded-none px-3 py-2 text-sm font-normal"
-                        style={{ display: "flex" }}
-                      >
-                        {lang === "ar" ? "وحدة" : "Unit"} {u.number}
-                      </Button>
-                    ))}
-                  </div>
+          {/* Unit search */}
+          <Controller
+            name="unitId"
+            control={control}
+            render={({ field, fieldState }) => (
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-foreground">
+                  {lang === "ar" ? "الوحدة" : "Unit"} *
+                </label>
+                <div className="relative">
+                  <Input
+                    value={selectedUnitNumber || unitSearch}
+                    aria-invalid={!!fieldState.error}
+                    onChange={(e) => {
+                      setUnitSearch(e.target.value);
+                      setSelectedUnitNumber("");
+                      field.onChange("");
+                    }}
+                    onBlur={field.onBlur}
+                    placeholder={lang === "ar" ? "ابحث عن وحدة متاحة..." : "Search available unit..."}
+                  />
+                  {unitSearch && !field.value && filteredUnits.length > 0 && (
+                    <div className="absolute z-10 top-full mt-1 w-full bg-popover border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                      {filteredUnits.map((u) => (
+                        <Button
+                          key={u.id}
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            field.onChange(u.id);
+                            setSelectedUnitNumber(u.number);
+                            setUnitSearch(u.number);
+                          }}
+                          className="w-full justify-start rounded-none px-3 py-2 text-sm font-normal"
+                          style={{ display: "flex" }}
+                        >
+                          {lang === "ar" ? "وحدة" : "Unit"} {u.number}
+                        </Button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                {fieldState.error && (
+                  <p className="text-caption text-destructive mt-1 text-xs">
+                    {fieldState.error.message}
+                  </p>
                 )}
               </div>
-            </div>
+            )}
+          />
 
-            {/* Amount */}
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-foreground">
-                {lang === "ar" ? "قيمة الحجز (ريال)" : "Reservation Amount (SAR)"} *
-              </label>
-              <Input
-                type="number"
-                min={0}
-                value={form.amount}
-                onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
-                placeholder="0.00"
-              />
-            </div>
+          {/* Amount — SARAmountInput via Controller */}
+          <Controller
+            name="amount"
+            control={control}
+            render={({ field, fieldState }) => (
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-foreground">
+                  {lang === "ar" ? "قيمة الحجز (ريال)" : "Reservation Amount (SAR)"} *
+                </label>
+                <SARAmountInput
+                  value={field.value ?? null}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  invalid={!!fieldState.error}
+                  locale={lang as "ar" | "en"}
+                  placeholder="0.00"
+                />
+                {fieldState.error && (
+                  <p className="text-caption text-destructive mt-1 text-xs">
+                    {fieldState.error.message}
+                  </p>
+                )}
+              </div>
+            )}
+          />
 
-            {/* Expiry Date */}
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-foreground">
-                {lang === "ar" ? "تاريخ الانتهاء" : "Expiry Date"} *
-              </label>
-              <Input
-                type="date"
-                value={form.expiresAt}
-                onChange={(e) => setForm((f) => ({ ...f, expiresAt: e.target.value }))}
-                min={new Date().toISOString().split("T")[0]}
-              />
-            </div>
+          {/* Expiry Date */}
+          <Controller
+            name="expiresAt"
+            control={control}
+            render={({ field, fieldState }) => (
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-foreground">
+                  {lang === "ar" ? "تاريخ الانتهاء" : "Expiry Date"} *
+                </label>
+                <Input
+                  type="date"
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  aria-invalid={!!fieldState.error}
+                  min={new Date().toISOString().split("T")[0]}
+                />
+                {fieldState.error && (
+                  <p className="text-caption text-destructive mt-1 text-xs">
+                    {fieldState.error.message}
+                  </p>
+                )}
+              </div>
+            )}
+          />
 
-            {/* Notes */}
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-foreground">
-                {lang === "ar" ? "ملاحظات" : "Notes"}
-              </label>
-              <textarea
-                value={form.notes}
-                onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-                rows={3}
-                placeholder={lang === "ar" ? "أي ملاحظات إضافية..." : "Any additional notes..."}
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]"
-              />
-            </div>
+          {/* Notes — optional, no Controller needed; plain textarea is fine */}
+          <Controller
+            name="notes"
+            control={control}
+            render={({ field }) => (
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-foreground">
+                  {lang === "ar" ? "ملاحظات" : "Notes"}
+                </label>
+                <textarea
+                  value={field.value ?? ""}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  rows={3}
+                  placeholder={lang === "ar" ? "أي ملاحظات إضافية..." : "Any additional notes..."}
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]"
+                />
+              </div>
+            )}
+          />
         </form>
       </ResponsiveDialog>
 

@@ -20,6 +20,7 @@ import {
   Loader2,
   LifeBuoy,
   Plus,
+  Users,
 } from "lucide-react";
 import {
   Button,
@@ -49,7 +50,8 @@ import { FAQ_ITEMS, FAQ_CATEGORIES, GUIDE_ITEMS, type FAQCategory } from "../../
 import { createPermissionRequest, getMyPermissionRequests } from "../../actions/permission-requests";
 import { getPendingPermissionRequests, reviewPermissionRequest } from "../../actions/permission-requests";
 import { createSupportTicket, getMySupportTickets } from "../../actions/support-tickets";
-import { getPendingJoinRequests, reviewJoinRequest } from "../../actions/join-requests";
+import { getPendingJoinRequests, reviewJoinRequest, cancelJoinRequest } from "../../actions/join-requests";
+import { getMyJoinRequests } from "../../actions/onboarding";
 import { toast } from "sonner";
 
 const ROLE_OPTIONS = [
@@ -75,7 +77,7 @@ const PRIORITY_OPTIONS = [
   { value: "URGENT", label: { ar: "عاجلة", en: "Urgent" } },
 ];
 
-type Tab = "overview" | "faq" | "tickets" | "permissions" | "org-admin";
+type Tab = "overview" | "faq" | "tickets" | "permissions" | "join-requests" | "org-admin";
 
 // A short, hand-picked set of high-traffic FAQs surfaced on the Overview landing.
 const POPULAR_FAQ_IDS = ["gs-1", "sc-1", "sc-8", "fi-7", "mk-1", "sp-5"];
@@ -135,12 +137,18 @@ export default function HelpPage() {
   const [joinReviewNote, setJoinReviewNote] = React.useState("");
   const [joinReviewActionLoading, setJoinReviewActionLoading] = React.useState(false);
 
+  // My join requests state
+  const [myJoinRequests, setMyJoinRequests] = React.useState<any[]>([]);
+  const [cancellingJoinId, setCancellingJoinId] = React.useState<string | null>(null);
+
   // Load data based on tab
   React.useEffect(() => {
     if (activeTab === "tickets") {
       getMySupportTickets().then(setMyTickets).catch(() => {});
     } else if (activeTab === "permissions") {
       getMyPermissionRequests().then(setMyRequests).catch(() => {});
+    } else if (activeTab === "join-requests") {
+      getMyJoinRequests().then(setMyJoinRequests).catch(() => {});
     } else if (activeTab === "org-admin" && isOrgAdmin) {
       getPendingPermissionRequests().then(setPendingRequests).catch(() => {});
       getPendingJoinRequests().then(setPendingJoinRequests).catch(() => {});
@@ -165,6 +173,8 @@ export default function HelpPage() {
         setActiveTab("tickets");
       } else if (hash === "permissions") {
         setActiveTab("permissions");
+      } else if (hash === "join-requests" || hash === "join_requests") {
+        setActiveTab("join-requests");
       } else {
         return;
       }
@@ -291,6 +301,29 @@ export default function HelpPage() {
     }
   }
 
+  async function handleCancelJoinRequest(requestId: string) {
+    setCancellingJoinId(requestId);
+    try {
+      await cancelJoinRequest(requestId);
+      toast.success(
+        lang === "ar"
+          ? "تم إلغاء طلب الانضمام بنجاح."
+          : "Join request cancelled successfully.",
+      );
+      const updated = await getMyJoinRequests();
+      setMyJoinRequests(updated);
+    } catch (e: any) {
+      toast.error(
+        lang === "ar"
+          ? "تعذّر إلغاء الطلب. يُرجى المحاولة مرة أخرى."
+          : "We couldn't cancel this request. Please try again.",
+      );
+      console.error(e);
+    } finally {
+      setCancellingJoinId(null);
+    }
+  }
+
   async function handleReview(requestId: string, decision: "APPROVED" | "DECLINED") {
     setReviewActionLoading(true);
     try {
@@ -316,6 +349,7 @@ export default function HelpPage() {
     faq: BookOpen,
     tickets: Ticket,
     permissions: ShieldCheck,
+    "join-requests": Users,
     "org-admin": ShieldCheck,
   };
 
@@ -324,6 +358,7 @@ export default function HelpPage() {
     { key: "faq", label: { ar: "الأسئلة والأدلة", en: "FAQs & Guides" } },
     { key: "tickets", label: { ar: "تذاكري", en: "My Tickets" } },
     { key: "permissions", label: { ar: "طلب صلاحيات", en: "Request Permissions" } },
+    { key: "join-requests", label: { ar: "طلباتي", en: "My Requests" } },
     ...(isOrgAdmin ? [{ key: "org-admin" as Tab, label: { ar: "إدارة المنظمة", en: "Org Management" }, adminOnly: true }] : []),
   ];
 
@@ -350,6 +385,18 @@ export default function HelpPage() {
       URGENT: { label: { ar: "عاجلة",  en: "Urgent" }, variant: "error" },
     };
     const entry = map[priority] ?? { label: { ar: priority, en: priority }, variant: "default" as const };
+    return <Badge variant={entry.variant} size="sm">{entry.label[lang]}</Badge>;
+  };
+
+  const joinRequestStatusBadge = (status: string) => {
+    const map: Record<string, { label: { ar: string; en: string }; variant: "default" | "warning" | "success" | "error" | "pending" }> = {
+      PENDING_JOIN:   { label: { ar: "قيد المراجعة", en: "Pending" },   variant: "warning" },
+      APPROVED_JOIN:  { label: { ar: "تمت الموافقة", en: "Approved" },  variant: "success" },
+      DECLINED_JOIN:  { label: { ar: "مرفوض",        en: "Declined" },  variant: "error" },
+      EXPIRED_JOIN:   { label: { ar: "انتهت الصلاحية", en: "Expired" }, variant: "default" },
+      CANCELLED_JOIN: { label: { ar: "ملغى",          en: "Cancelled" }, variant: "default" },
+    };
+    const entry = map[status] ?? { label: { ar: status, en: status }, variant: "default" as const };
     return <Badge variant={entry.variant} size="sm">{entry.label[lang]}</Badge>;
   };
 
@@ -1373,6 +1420,110 @@ export default function HelpPage() {
               )}
             />
           </div>
+        </div>
+      )}
+
+      {/* My Join Requests Tab */}
+      {activeTab === "join-requests" && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-bold text-foreground">
+              {lang === "ar" ? "طلبات الانضمام للمنشأة" : "My Organization Join Requests"}
+            </h2>
+          </div>
+
+          {myJoinRequests.length === 0 ? (
+            <div className="bg-card rounded-md border border-border p-10 text-center space-y-3">
+              <Users className="mx-auto h-10 w-10 text-muted-foreground/40" aria-hidden="true" />
+              <p className="font-medium text-foreground">
+                {lang === "ar" ? "لا توجد طلبات انضمام" : "No join requests yet"}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {lang === "ar"
+                  ? "ستظهر هنا طلبات الانضمام التي أرسلتها إلى منشآت أخرى."
+                  : "Join requests you send to organizations will appear here."}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {myJoinRequests.map((req: any) => {
+                const orgName = lang === "ar"
+                  ? (req.targetOrg?.nameArabic || req.targetOrg?.name || "—")
+                  : (req.targetOrg?.nameEnglish || req.targetOrg?.name || "—");
+                const isPending = req.status === "PENDING_JOIN";
+                const submittedDate = req.createdAt
+                  ? new Date(req.createdAt).toLocaleDateString("ar-SA-u-nu-latn", { year: "numeric", month: "long", day: "numeric" })
+                  : "—";
+                const expiryDate = req.expiresAt
+                  ? new Date(req.expiresAt).toLocaleDateString("ar-SA-u-nu-latn", { year: "numeric", month: "long", day: "numeric" })
+                  : null;
+
+                return (
+                  <div key={req.id} className="bg-card rounded-md border border-border p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="font-semibold text-sm text-foreground">{orgName}</div>
+                        {req.targetOrg?.nameArabic && req.targetOrg?.nameEnglish && (
+                          <div className="text-xs text-muted-foreground mt-0.5">
+                            {lang === "ar" ? req.targetOrg.nameEnglish : req.targetOrg.nameArabic}
+                          </div>
+                        )}
+                      </div>
+                      <div className="shrink-0">{joinRequestStatusBadge(req.status)}</div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-x-6 gap-y-1 text-xs text-muted-foreground">
+                      <span>
+                        <span className="font-medium text-foreground">
+                          {lang === "ar" ? "تاريخ الإرسال: " : "Submitted: "}
+                        </span>
+                        <span dir="ltr" className="tabular-nums">{submittedDate}</span>
+                      </span>
+                      {isPending && expiryDate && (
+                        <span>
+                          <span className="font-medium text-foreground">
+                            {lang === "ar" ? "ينتهي: " : "Expires: "}
+                          </span>
+                          <span dir="ltr" className="tabular-nums">{expiryDate}</span>
+                        </span>
+                      )}
+                    </div>
+
+                    {req.reviewNote && (
+                      <p className="text-xs text-muted-foreground bg-muted/30 rounded px-3 py-2">
+                        <span className="font-medium text-foreground">
+                          {lang === "ar" ? "ملاحظة المراجع: " : "Review note: "}
+                        </span>
+                        {req.reviewNote}
+                      </p>
+                    )}
+
+                    {isPending && (
+                      <div className="flex justify-end">
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleCancelJoinRequest(req.id)}
+                          disabled={cancellingJoinId === req.id}
+                          style={{ display: "inline-flex" }}
+                          className="gap-1.5"
+                        >
+                          {cancellingJoinId === req.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                          ) : (
+                            <XCircle className="h-3.5 w-3.5" aria-hidden="true" />
+                          )}
+                          {cancellingJoinId === req.id
+                            ? (lang === "ar" ? "جاري الإلغاء..." : "Cancelling...")
+                            : (lang === "ar" ? "إلغاء الطلب" : "Cancel request")}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 

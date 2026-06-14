@@ -689,6 +689,15 @@ export default function OnboardingPage() {
                       ? "سيقوم مدير المنشأة بمراجعة طلبك والرد عليه خلال فترة قصيرة."
                       : "The organization admin will review your request and respond shortly."}
                   </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-2 gap-1.5"
+                    style={{ display: "inline-flex" }}
+                    onClick={() => router.push("/dashboard/help#join-requests")}
+                  >
+                    {lang === "ar" ? "متابعة حالة الطلب" : "Check request status"}
+                  </Button>
                 </>
               ) : (
                 <>
@@ -1256,7 +1265,7 @@ export default function OnboardingPage() {
                     </>
                   )}
                 </div>
-                <div className="flex items-center gap-4 pt-2">
+                <div className="flex flex-col items-center gap-3 pt-2">
                   <Button
                     onClick={() => router.push("/dashboard")}
                     className="gap-2 px-8"
@@ -1265,6 +1274,16 @@ export default function OnboardingPage() {
                     {lang === "ar" ? "الذهاب إلى لوحة التحكم" : "Go to Dashboard"}
                     <DirectionalIcon icon={ArrowRight} className="h-4 w-4" />
                   </Button>
+                  {doneVariant === "join_requested" && (
+                    <Button
+                      variant="outline"
+                      onClick={() => router.push("/dashboard/help#join-requests")}
+                      className="gap-2"
+                      style={{ display: "inline-flex" }}
+                    >
+                      {lang === "ar" ? "متابعة حالة الطلب" : "Check request status"}
+                    </Button>
+                  )}
                 </div>
               </div>
             )}
