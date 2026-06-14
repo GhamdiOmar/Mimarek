@@ -43,6 +43,8 @@ import {
   PAYMENT_STATUS_LABEL as STATUS_LABELS,
   PAYMENT_STATUS_VARIANT as STATUS_VARIANT,
 } from "../../../lib/domain-labels";
+import { sanitizeError } from "../../../lib/error-sanitizer";
+import { trackEvent, AnalyticsEvent } from "../../../lib/analytics";
 
 const SAR = (amount: number) =>
   new Intl.NumberFormat("en-SA", { style: "currency", currency: "SAR" }).format(amount);
@@ -270,11 +272,15 @@ export default function PaymentsPage() {
           paymentReference: paymentReferenceRef.current,
         });
       }
+      trackEvent(AnalyticsEvent.PaymentRecorded, {
+        method: payForm.paymentMethod,
+        amount: Number(parseFloat(payForm.amount)),
+      });
       toast.success(lang === "ar" ? "تم تسجيل الدفعة بنجاح" : "Payment recorded successfully");
       setPaymentTarget(null);
       loadData();
-    } catch (err: any) {
-      toast.error(err.message || (lang === "ar" ? "حدث خطأ أثناء التسجيل" : "Failed to record payment"));
+    } catch (err: unknown) {
+      toast.error(sanitizeError(err, lang));
     } finally {
       setSubmitting(false);
     }

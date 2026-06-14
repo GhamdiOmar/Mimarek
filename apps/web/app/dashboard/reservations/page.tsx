@@ -61,6 +61,8 @@ import {
 import { toast } from "sonner";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { sanitizeError } from "../../../lib/error-sanitizer";
+import { trackEvent, AnalyticsEvent } from "../../../lib/analytics";
 
 const SAR = (amount: number) =>
   new Intl.NumberFormat("en-SA", { style: "currency", currency: "SAR" }).format(amount);
@@ -250,12 +252,13 @@ export default function ReservationsPage() {
         amount: parseFloat(form.amount),
         expiresAt: new Date(form.expiresAt),
       });
+      trackEvent(AnalyticsEvent.ReservationCreated, { amount: Number(parseFloat(form.amount)) });
       toast.success(lang === "ar" ? "تم إنشاء الحجز بنجاح" : "Reservation created successfully");
       setCreateOpen(false);
       setForm({ customerId: "", customerName: "", unitId: "", unitNumber: "", amount: "", expiresAt: "", notes: "" });
       loadDeals();
-    } catch (err: any) {
-      toast.error(err.message || (lang === "ar" ? "حدث خطأ أثناء الإنشاء" : "Failed to create reservation"));
+    } catch (err: unknown) {
+      toast.error(sanitizeError(err, lang));
     } finally {
       setSubmitting(false);
     }
@@ -264,10 +267,11 @@ export default function ReservationsPage() {
   async function handleConfirmDeal(dealId: string) {
     try {
       await updateReservationStatus(dealId, "CONFIRMED");
+      trackEvent(AnalyticsEvent.ReservationConfirmed);
       toast.success(lang === "ar" ? "تم تأكيد الحجز" : "Reservation confirmed");
       loadDeals();
-    } catch (err: any) {
-      toast.error(err.message || (lang === "ar" ? "حدث خطأ أثناء التأكيد" : "Failed to confirm reservation"));
+    } catch (err: unknown) {
+      toast.error(sanitizeError(err, lang));
     }
   }
 
@@ -279,8 +283,8 @@ export default function ReservationsPage() {
       toast.success(lang === "ar" ? "تم إلغاء الحجز" : "Reservation cancelled");
       setCancelDeal(null);
       loadDeals();
-    } catch (err: any) {
-      toast.error(err.message || (lang === "ar" ? "حدث خطأ أثناء الإلغاء" : "Failed to cancel reservation"));
+    } catch (err: unknown) {
+      toast.error(sanitizeError(err, lang));
     } finally {
       setCancelling(false);
     }

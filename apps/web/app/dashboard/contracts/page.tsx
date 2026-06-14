@@ -39,6 +39,7 @@ import {
   Alert,
   AlertDescription,
   DataTable,
+  ConfirmDialog,
   type ColumnDef,
 } from "@repo/ui";
 import { useLanguage } from "../../../components/LanguageProvider";
@@ -54,6 +55,8 @@ import {
   CONTRACT_STATUS_LABEL as CONTRACT_STATUS_LABELS,
   CONTRACT_STATUS_VARIANT,
 } from "../../../lib/domain-labels";
+import { sanitizeError } from "../../../lib/error-sanitizer";
+import { trackEvent, AnalyticsEvent } from "../../../lib/analytics";
 import {
   LifecycleRail,
   NextActionPanel,
@@ -140,6 +143,9 @@ export default function ContractsPage() {
 
   // Missing required docs for the open contract
   const [missingDocs, setMissingDocs] = React.useState<string[]>([]);
+  const [signConfirmOpen, setSignConfirmOpen] = React.useState(false);
+  const [signTargetId, setSignTargetId] = React.useState<string | null>(null);
+  const [signMissingDocs, setSignMissingDocs] = React.useState<string[]>([]);
 
   // Fetch journey + missing docs when detail drawer opens
   React.useEffect(() => {
@@ -173,13 +179,31 @@ export default function ContractsPage() {
       .finally(() => setLoading(false));
   }
 
-  async function handleSignContract(contractId: string) {
+  // CX-021: signing is irreversible — open a confirm that also surfaces the
+  // required-documents gate (previously visible only in the detail drawer), so
+  // a user signing from the list row sees missing docs before committing.
+  async function askSign(contractId: string) {
+    setSignTargetId(contractId);
+    setSignMissingDocs([]);
+    setSignConfirmOpen(true);
+    try {
+      const cats = await getMissingRequiredDocs(contractId);
+      setSignMissingDocs(cats);
+    } catch {
+      /* docs check failed — still allow the confirm, just without the warning */
+    }
+  }
+
+  async function confirmSign() {
+    const contractId = signTargetId;
+    if (!contractId) return;
     try {
       await updateContractStatus(contractId, "SIGNED");
+      trackEvent(AnalyticsEvent.ContractSigned);
       toast.success(lang === "ar" ? "تم توقيع العقد بنجاح" : "Contract signed successfully");
       loadContracts();
-    } catch (err: any) {
-      toast.error(err.message || (lang === "ar" ? "حدث خطأ أثناء التوقيع" : "Failed to sign contract"));
+    } catch (err) {
+      toast.error(sanitizeError(err, lang));
     }
   }
 
@@ -316,12 +340,13 @@ export default function ContractsPage() {
         amount: parseFloat(saleForm.amount),
         notes: saleForm.notes || undefined,
       });
+      trackEvent(AnalyticsEvent.ContractCreated, { contract_type: "SALE", amount: Number(saleForm.amount) });
       toast.success(lang === "ar" ? "تم إنشاء عقد البيع بنجاح" : "Sale contract created successfully");
       setSaleModalOpen(false);
       setSaleForm({ customerId: "", customerName: "", customerSearch: "", unitId: "", unitNumber: "", unitSearch: "", amount: "", notes: "" });
       loadContracts();
-    } catch (err: any) {
-      toast.error(err.message || (lang === "ar" ? "حدث خطأ أثناء الإنشاء" : "Failed to create contract"));
+    } catch (err) {
+      toast.error(sanitizeError(err, lang));
     } finally {
       setSubmitting(false);
     }
@@ -344,12 +369,13 @@ export default function ContractsPage() {
         paymentFrequency: leaseForm.paymentFrequency,
         notes: leaseForm.notes || undefined,
       });
+      trackEvent(AnalyticsEvent.ContractCreated, { contract_type: "LEASE", amount: Number(leaseForm.amount) });
       toast.success(lang === "ar" ? "تم إنشاء عقد الإيجار بنجاح" : "Lease contract created successfully");
       setLeaseModalOpen(false);
       setLeaseForm({ customerId: "", customerName: "", customerSearch: "", unitId: "", unitNumber: "", unitSearch: "", startDate: "", endDate: "", amount: "", paymentFrequency: "MONTHLY", notes: "" });
       loadContracts();
-    } catch (err: any) {
-      toast.error(err.message || (lang === "ar" ? "حدث خطأ أثناء الإنشاء" : "Failed to create contract"));
+    } catch (err) {
+      toast.error(sanitizeError(err, lang));
     } finally {
       setSubmitting(false);
     }
@@ -441,7 +467,7 @@ export default function ContractsPage() {
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 text-primary"
-                onClick={() => handleSignContract(c.id)}
+                onClick={() => askSign(c.id)}
               />
             )}
           </div>
@@ -548,7 +574,7 @@ export default function ContractsPage() {
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 text-primary"
-                onClick={() => handleSignContract(c.id)}
+                onClick={() => askSign(c.id)}
               />
             )}
           </div>
@@ -1470,6 +1496,23 @@ export default function ContractsPage() {
       </ResponsiveDialog>
     </div>
     </div>
+      <ConfirmDialog
+        open={signConfirmOpen}
+        onOpenChange={setSignConfirmOpen}
+        title={lang === "ar" ? "توقيع العقد؟" : "Sign this contract?"}
+        description={
+          signMissingDocs.length > 0
+            ? lang === "ar"
+              ? `تنبيه: توجد مستندات مطلوبة ناقصة (${signMissingDocs.length}). التوقيع نهائي ولا يمكن التراجع عنه.`
+              : `Warning: ${signMissingDocs.length} required document(s) still missing. Signing is final and cannot be undone.`
+            : lang === "ar"
+              ? "التوقيع نهائي ولا يمكن التراجع عنه."
+              : "Signing is final and cannot be undone."
+        }
+        confirmLabel={lang === "ar" ? "توقيع" : "Sign"}
+        cancelLabel={lang === "ar" ? "إلغاء" : "Cancel"}
+        onConfirm={confirmSign}
+      />
     </>
   );
 }

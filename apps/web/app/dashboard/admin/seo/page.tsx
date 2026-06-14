@@ -38,6 +38,7 @@ import {
 } from "@repo/ui";
 import { PageHeader } from "@repo/ui/components/PageHeader";
 import { toast } from "sonner";
+import { sanitizeError } from "../../../../lib/error-sanitizer";
 
 type RobotsRule = { userAgent: string; allow: string[]; disallow: string[] };
 
@@ -91,7 +92,7 @@ function AssetUploader({
             const url = res[0]?.url;
             if (url) onUploaded(url);
           }}
-          onUploadError={(err) => { toast.error(err.message); }}
+          onUploadError={(err) => { toast.error(sanitizeError(err, lang)); }}
           appearance={{
             button: "bg-primary text-primary-foreground text-xs px-3 py-1.5 rounded-md font-medium",
           }}
