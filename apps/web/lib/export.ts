@@ -3,6 +3,23 @@ import { saveAs } from 'file-saver';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
+/**
+ * Neutralize spreadsheet formula injection (CSV/Excel). A cell value beginning
+ * with `= + @` or a control char can execute as a formula when the export is
+ * opened in Excel/Sheets/LibreOffice — user-controlled fields (customer names,
+ * unit labels, reference numbers) flow into exports, so prefix such values with
+ * an apostrophe to force literal-text interpretation. A leading `-` is only
+ * neutralized when the value is NOT a plain number, so legitimate negatives
+ * (e.g. "-500") are preserved.
+ */
+function neutralizeFormula(v: unknown): unknown {
+  if (typeof v !== 'string' || v.length === 0) return v;
+  if (/^[=+@\t\r]/.test(v) || (v[0] === '-' && Number.isNaN(Number(v)))) {
+    return `'${v}`;
+  }
+  return v;
+}
+
 export async function exportToExcel({
   data,
   columns,
@@ -62,7 +79,7 @@ export async function exportToExcel({
     const rowValues = columns.map((c) => {
       const val = item[c.key];
       const render = c.render;
-      return render ? render(val) : val ?? '';
+      return neutralizeFormula(render ? render(val) : val ?? '');
     });
     
     const row = worksheet.addRow(rowValues);

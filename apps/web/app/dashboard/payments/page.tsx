@@ -38,6 +38,13 @@ import { useLanguage } from "../../../components/LanguageProvider";
 import { usePermissions } from "../../../hooks/usePermissions";
 import { getInstallments, recordPayment } from "../../actions/installments";
 import { getPaymentPlan, recordInstallmentPayment } from "../../actions/payment-plans";
+import {
+  getSavedViews,
+  createSavedView,
+  deleteSavedView,
+  type SavedTableViewDTO,
+} from "../../actions/saved-views";
+import { exportToExcel } from "../../../lib/export";
 import { toast } from "sonner";
 import {
   PAYMENT_STATUS_LABEL as STATUS_LABELS,
@@ -160,6 +167,17 @@ export default function PaymentsPage() {
   const [rentInstallments, setRentInstallments] = React.useState<RentInstallment[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [loadError, setLoadError] = React.useState<string | null>(null);
+
+  // CX-014 — DataTable saved views (personal, DB-backed)
+  const [savedViews, setSavedViews] = React.useState<SavedTableViewDTO[]>([]);
+  const refreshSavedViews = React.useCallback(() => {
+    getSavedViews("payments")
+      .then(setSavedViews)
+      .catch(() => {});
+  }, []);
+  React.useEffect(() => {
+    refreshSavedViews();
+  }, [refreshSavedViews]);
 
   const [typeFilter, setTypeFilter] = React.useState<"ALL" | "SALE" | "RENT">("ALL");
   const [statusFilter, setStatusFilter] = React.useState("ALL");
@@ -829,6 +847,44 @@ export default function PaymentsPage() {
           pagination
           pageSize={10}
           getRowId={(r) => r.id}
+          enableColumnReorder
+          exportable
+          onExport={({ rows, columns: exportColumns }) =>
+            exportToExcel({
+              filename: `payments-${new Date().toISOString().slice(0, 10)}`,
+              title: lang === "ar" ? "المدفوعات" : "Payments",
+              lang,
+              columns: exportColumns.map((c) => ({ header: c.header, key: c.id })),
+              data: rows.map((r) => ({
+                clientName: r.clientName,
+                propertyLabel: r.propertyLabel,
+                type:
+                  r.type === "rent"
+                    ? lang === "ar" ? "إيجار" : "Rent"
+                    : lang === "ar" ? "بيع" : "Sale",
+                amount: SAR(r.amount),
+                dueDate: new Date(r.dueDate).toLocaleDateString(
+                  lang === "ar" ? "ar-SA-u-nu-latn" : "en-SA",
+                ),
+                status:
+                  lang === "ar"
+                    ? STATUS_LABELS[r.status]?.ar ?? r.status
+                    : STATUS_LABELS[r.status]?.en ?? r.status,
+              })),
+            })
+          }
+          savedViews={{
+            tableKey: "payments",
+            views: savedViews,
+            onCreate: async (name, config) => {
+              await createSavedView({ tableKey: "payments", name, config });
+              refreshSavedViews();
+            },
+            onDelete: async (id) => {
+              await deleteSavedView(id);
+              refreshSavedViews();
+            },
+          }}
           emptyTitle={lang === "ar" ? "لا توجد نتائج مطابقة" : "No matching payments"}
           emptyDescription={
             lang === "ar"

@@ -1,7 +1,18 @@
 "use client";
 
 import * as React from "react";
-import { Search, Bell, Globe, User, Settings, ShieldCheck, HelpCircle, LogOut } from "lucide-react";
+import {
+  Search,
+  Bell,
+  Globe,
+  User,
+  Settings,
+  ShieldCheck,
+  HelpCircle,
+  LogOut,
+  Loader2,
+  ArrowRight,
+} from "lucide-react";
 import { cn } from "@repo/ui/lib/utils";
 import { Popover, PopoverTrigger, PopoverContent, DirectionalIcon, Button, IconButton } from "@repo/ui";
 import Link from "next/link";
@@ -11,9 +22,11 @@ import { ThemeToggle } from "../ThemeToggle";
 import { useSession } from "../SimpleSessionProvider";
 import { useLanguage } from "../LanguageProvider";
 import { getUnreadCount, getMyNotifications, markAsRead, markAllAsRead } from "../../app/actions/notifications";
-import { globalSearch } from "../../app/actions/search";
 import { getOrgName } from "../../app/actions/organization";
 import { isSystemRole } from "../../lib/permissions";
+import { useFederatedSearch } from "../../hooks/useFederatedSearch";
+import { trackEvent, AnalyticsEvent } from "../../lib/analytics";
+import { SEARCH_ENTITY_META, SEARCH_ENTITY_ORDER } from "../../lib/search-entity-meta";
 import { breadcrumbLabels, roleLabels } from "./nav-items";
 
 import {
@@ -33,10 +46,15 @@ export function AppTopbar() {
   const [showNotifs, setShowNotifs] = React.useState(false);
   const [notifCategory, setNotifCategory] = React.useState<NotifCategory>("all");
   const [searchQuery, setSearchQuery] = React.useState("");
-  const [searchResults, setSearchResults] = React.useState<any>(null);
   const [showSearch, setShowSearch] = React.useState(false);
-  const searchTimeout = React.useRef<any>(null);
   const [orgName, setOrgName] = React.useState("");
+
+  const { groups, loading, showSpinner, error, isSearching } = useFederatedSearch(searchQuery, lang);
+  const resultCount = React.useMemo(
+    () => groups.reduce((sum, g) => sum + g.hits.length, 0),
+    [groups],
+  );
+  const hasResults = groups.length > 0;
 
   const userName = session?.user?.name ?? (lang === "ar" ? "مستخدم" : "User");
   const userRole = (session?.user as any)?.role ?? "USER";
@@ -57,16 +75,18 @@ export function AppTopbar() {
 
   function handleSearchInput(value: string) {
     setSearchQuery(value);
-    if (searchTimeout.current) clearTimeout(searchTimeout.current);
-    if (!value.trim()) { setSearchResults(null); setShowSearch(false); return; }
-    searchTimeout.current = setTimeout(async () => {
-      try {
-        const results = await globalSearch(value.trim());
-        setSearchResults(results);
-        setShowSearch(true);
-      } catch { setSearchResults(null); }
-    }, 300);
+    setShowSearch(Boolean(value.trim()));
   }
+
+  // Report only the result count to analytics — NEVER the query (it can be PII).
+  const prevLoadingRef = React.useRef(false);
+  React.useEffect(() => {
+    // Fire once per settled search (loading true→false). Count only.
+    if (prevLoadingRef.current && !loading && isSearching) {
+      trackEvent(AnalyticsEvent.SearchPerformed, { result_count: resultCount });
+    }
+    prevLoadingRef.current = loading;
+  }, [loading, isSearching, resultCount]);
 
   async function handleMarkAllRead() {
     await markAllAsRead();
@@ -125,39 +145,70 @@ export function AppTopbar() {
             type="text"
             value={searchQuery}
             onChange={(e) => handleSearchInput(e.target.value)}
-            onFocus={() => searchResults && setShowSearch(true)}
+            onFocus={() => setShowSearch(Boolean(searchQuery.trim()))}
             onBlur={() => setTimeout(() => setShowSearch(false), 200)}
             placeholder={lang === "ar" ? "بحث..." : "Search..."}
             aria-label={lang === "ar" ? "بحث" : "Search"}
             className="w-full bg-muted/40 border border-transparent rounded-md py-2 ps-9 pe-3 text-sm focus:bg-background focus:border-border focus:ring-2 focus:ring-ring/20 transition-all outline-none placeholder:text-muted-foreground"
           />
-          {showSearch && searchResults && (
+          {/* Result-count announcement for assistive tech. */}
+          <span className="sr-only" role="status" aria-live="polite">
+            {isSearching ? (lang === "ar" ? `${resultCount} نتيجة` : `${resultCount} results`) : ""}
+          </span>
+          {showSearch && isSearching && (
             <div className="absolute top-full mt-1 w-full bg-card rounded-lg shadow-md border border-border z-50 max-h-80 overflow-y-auto">
-              {[
-                { key: "customers", label: lang === "ar" ? "العملاء" : "Customers", prefix: "/dashboard/crm" },
-                { key: "units", label: lang === "ar" ? "الوحدات" : "Units", prefix: "/dashboard/units" },
-                { key: "contracts", label: lang === "ar" ? "العقود" : "Contracts", prefix: "/dashboard/contracts" },
-              ].map(({ key, label, prefix }) => {
-                const items = searchResults[key] ?? [];
-                if (!items.length) return null;
+              {showSpinner && (
+                <div className="flex items-center justify-center gap-2 px-3 py-4 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>{lang === "ar" ? "جارٍ البحث…" : "Searching…"}</span>
+                </div>
+              )}
+              {error && !showSpinner && (
+                <div role="alert" className="px-3 py-4 text-sm text-destructive text-center">
+                  {lang === "ar" ? "تعذّر إجراء البحث. حاول مرة أخرى." : "We couldn't run the search. Please try again."}
+                </div>
+              )}
+              {!showSpinner && !error && SEARCH_ENTITY_ORDER.map((type) => {
+                const group = groups.find((g) => g.type === type);
+                if (!group || group.hits.length === 0) return null;
+                const meta = SEARCH_ENTITY_META[type];
+                const Icon = meta.icon;
                 return (
-                  <div key={key}>
-                    <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground bg-muted/30">{label}</div>
-                    {items.map((item: any) => (
+                  <div key={type}>
+                    <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground bg-muted/30">{meta.label[lang]}</div>
+                    {group.hits.map((hit) => (
                       <Link
-                        key={item.id}
-                        href={`${prefix}/${item.id}`}
-                        className="block px-3 py-2 text-sm text-foreground hover:bg-muted/30 transition-colors"
+                        key={`${hit.type}:${hit.id}`}
+                        href={hit.href}
+                        className="flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-muted/30 transition-colors"
                         onClick={() => { setShowSearch(false); setSearchQuery(""); }}
                       >
-                        {item.name || item.unitNumber || item.number || item.id}
+                        <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                        <span className="flex-1 min-w-0 truncate">{hit.title}</span>
+                        {hit.maskedPii ? (
+                          <span dir="ltr" className="number-ltr text-xs text-muted-foreground tabular-nums">{hit.maskedPii}</span>
+                        ) : hit.subtitle ? (
+                          <span className="text-xs text-muted-foreground truncate">{hit.subtitle}</span>
+                        ) : null}
                       </Link>
                     ))}
+                    {group.hasMore && (
+                      <Link
+                        href={SEARCH_ENTITY_META[type].listHref(searchQuery)}
+                        className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-primary hover:bg-muted/30 transition-colors"
+                        onClick={() => { setShowSearch(false); setSearchQuery(""); }}
+                      >
+                        <ArrowRight className="h-3.5 w-3.5 icon-directional" />
+                        <span>{lang === "ar" ? "عرض الكل" : "See all"}</span>
+                      </Link>
+                    )}
                   </div>
                 );
               })}
-              {Object.values(searchResults).every((arr: any) => !arr?.length) && (
-                <div className="px-3 py-4 text-sm text-muted-foreground text-center">{lang === "ar" ? "لا توجد نتائج" : "No results"}</div>
+              {!showSpinner && !error && !hasResults && (
+                <div className="px-3 py-4 text-sm text-muted-foreground text-center">
+                  {lang === "ar" ? `لا توجد نتائج لـ "${searchQuery.trim()}"` : `No results for "${searchQuery.trim()}"`}
+                </div>
               )}
             </div>
           )}

@@ -60,6 +60,9 @@ model Organization {
   marketplaceSellerInquiries MarketplaceInquiry[]      @relation("MarketplaceSellerInquiries")
   marketplaceSellerTransfers UnitTransferTransaction[] @relation("MarketplaceSellerTransfers")
   marketplaceBuyerTransfers  UnitTransferTransaction[] @relation("MarketplaceBuyerTransfers")
+
+  // ── DataTable saved-views (CX-014) ──
+  savedTableViews SavedTableView[]
 }
 
 enum OrgType {
@@ -130,12 +133,35 @@ model User {
   joinRequests         JoinRequest[]        @relation("UserJoinRequests")
   reviewedJoinRequests JoinRequest[]        @relation("JoinReviewers")
   customerActivities   CustomerActivity[]   @relation("ActivityCreator")
+  savedTableViews      SavedTableView[]
   lastActiveAt         DateTime? // Debounced sign-in / authed-request timestamp — powers admin-no-login KPIs
   createdAt            DateTime             @default(now())
   updatedAt            DateTime             @updatedAt
 
   @@index([organizationId])
   @@index([organizationId, lastActiveAt])
+}
+
+// ─── SavedTableView (CX-014 — DataTable personal saved views) ────────────────────
+// Personal, DB-backed view configs for the shared DataTable (sort / filters /
+// column visibility + order / density / page size). Scoped to (org, user, tableKey).
+// `isShared` exists for a later org-wide-views feature — queries ignore it for now.
+// §4: every required column carries @default so `db push` backfills existing rows.
+
+model SavedTableView {
+  id             String       @id @default(cuid())
+  organizationId String
+  userId         String
+  tableKey       String
+  name           String
+  config         Json
+  isShared       Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, userId, tableKey])
 }
 
 enum UserRole {

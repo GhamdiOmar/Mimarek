@@ -54,6 +54,13 @@ import { getUnitsWithBuildings } from "../../actions/units";
 import { getReservationById } from "../../actions/reservations";
 import { getJourneySummary } from "../../actions/journey";
 import { getMissingRequiredDocs } from "../../actions/document-requirements";
+import {
+  getSavedViews,
+  createSavedView,
+  deleteSavedView,
+  type SavedTableViewDTO,
+} from "../../actions/saved-views";
+import { exportToExcel } from "../../../lib/export";
 import type { JourneySummary } from "@repo/types";
 import {
   CONTRACT_STATUS_LABEL as CONTRACT_STATUS_LABELS,
@@ -101,6 +108,22 @@ export default function ContractsPage() {
   const [allContracts, setAllContracts] = React.useState<Contract[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [loadError, setLoadError] = React.useState<string | null>(null);
+
+  // CX-014 — DataTable saved views (personal, DB-backed). Sale and lease tables
+  // carry different column sets, so each tab keeps its own keyed views.
+  const contractsTableKey = tab === "SALE" ? "contracts-sale" : "contracts-lease";
+  const [savedViews, setSavedViews] = React.useState<SavedTableViewDTO[]>([]);
+  const refreshSavedViews = React.useCallback(() => {
+    getSavedViews(contractsTableKey)
+      .then(setSavedViews)
+      .catch(() => {});
+  }, [contractsTableKey]);
+  React.useEffect(() => {
+    // Clear the previous tab's views before refetching so switching SALE↔LEASE
+    // never briefly shows the other tab's saved views (different column sets).
+    setSavedViews([]);
+    refreshSavedViews();
+  }, [refreshSavedViews]);
   const [search, setSearch] = React.useState("");
   const [mobileTab, setMobileTab] = React.useState<"ALL" | "SALE" | "LEASE">("ALL");
   const [newContractSheetOpen, setNewContractSheetOpen] = React.useState(false);
@@ -1047,6 +1070,41 @@ export default function ContractsPage() {
             locale={lang === "ar" ? "ar" : "en"}
             pagination
             pageSize={10}
+            enableColumnReorder
+            exportable
+            onExport={({ rows, columns: exportColumns }) =>
+              exportToExcel({
+                filename: `sale-contracts-${new Date().toISOString().slice(0, 10)}`,
+                title: lang === "ar" ? "عقود البيع" : "Sale Contracts",
+                lang,
+                columns: exportColumns.map((c) => ({ header: c.header, key: c.id })),
+                data: rows.map((c) => ({
+                  contractNumber: c.contractNumber ?? "—",
+                  customer_name: c.customer.name,
+                  property: `${lang === "ar" ? "وحدة" : "Unit"} ${c.unit.number}${c.unit.buildingName ? ` — ${c.unit.buildingName}` : ""}`,
+                  amount: SAR(Number(c.amount)),
+                  status:
+                    lang === "ar"
+                      ? CONTRACT_STATUS_LABELS[c.status]?.ar ?? c.status
+                      : CONTRACT_STATUS_LABELS[c.status]?.en ?? c.status,
+                  signedAt: c.signedAt
+                    ? new Date(c.signedAt).toLocaleDateString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-SA")
+                    : "—",
+                })),
+              })
+            }
+            savedViews={{
+              tableKey: "contracts-sale",
+              views: savedViews,
+              onCreate: async (name, config) => {
+                await createSavedView({ tableKey: "contracts-sale", name, config });
+                refreshSavedViews();
+              },
+              onDelete: async (id) => {
+                await deleteSavedView(id);
+                refreshSavedViews();
+              },
+            }}
             mobileCard={(row) => (
               <DataCard
                 icon={Home}
@@ -1091,6 +1149,44 @@ export default function ContractsPage() {
             locale={lang === "ar" ? "ar" : "en"}
             pagination
             pageSize={10}
+            enableColumnReorder
+            exportable
+            onExport={({ rows, columns: exportColumns }) =>
+              exportToExcel({
+                filename: `lease-contracts-${new Date().toISOString().slice(0, 10)}`,
+                title: lang === "ar" ? "عقود الإيجار" : "Lease Contracts",
+                lang,
+                columns: exportColumns.map((c) => ({ header: c.header, key: c.id })),
+                data: rows.map((c) => ({
+                  contractNumber: c.contractNumber ?? "—",
+                  customer_name: c.customer.name,
+                  property: `${lang === "ar" ? "وحدة" : "Unit"} ${c.unit.number}${c.unit.buildingName ? ` — ${c.unit.buildingName}` : ""}`,
+                  amount: SAR(Number(c.amount)),
+                  startDate: c.lease?.startDate
+                    ? new Date(c.lease.startDate).toLocaleDateString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-SA")
+                    : "—",
+                  endDate: c.lease?.endDate
+                    ? new Date(c.lease.endDate).toLocaleDateString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-SA")
+                    : "—",
+                  status:
+                    lang === "ar"
+                      ? CONTRACT_STATUS_LABELS[c.status]?.ar ?? c.status
+                      : CONTRACT_STATUS_LABELS[c.status]?.en ?? c.status,
+                })),
+              })
+            }
+            savedViews={{
+              tableKey: "contracts-lease",
+              views: savedViews,
+              onCreate: async (name, config) => {
+                await createSavedView({ tableKey: "contracts-lease", name, config });
+                refreshSavedViews();
+              },
+              onDelete: async (id) => {
+                await deleteSavedView(id);
+                refreshSavedViews();
+              },
+            }}
             mobileCard={(row) => (
               <DataCard
                 icon={Key}
