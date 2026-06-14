@@ -1,5 +1,35 @@
 # Changelog — Mimaric PropTech
 
+## [4.23.0] — 2026-06-14 — CX bundle: federated record search, DataTable power tools, Help in Cmd-K
+
+Fourth CX-audit remediation release. Closes **CX-002** (the audit's #1 Critical leverage item), **CX-014**, and **CX-015** — CX-002 and CX-015 were absent from the original roadmap. Bundled behind one §3.9 gate.
+
+### Federated record search (CX-002)
+- `globalSearch` (`apps/web/app/actions/search.ts`) rewritten from a plaintext-only 3-entity lookup into a **7-entity federated search** — customers, units, contracts, reservations, payments, maintenance tickets, documents. Customers match by name / Arabic name / **encrypted phone · email · national-ID via blind index** (ports the `getCustomers` OR-query — `phoneSearchHash`/`hashForSearch`, so `05…` and `+9665…` both hit). Each entity is **permission-gated** (a role only sees record types it can read) and **tenant-scoped**; customer results are **PII-masked** (`***NNNN` — raw values never enter the payload) and every search is audit-logged (`READ_PII`/`READ`).
+- **§8 audience gate:** the action returns empty for system/no-org sessions; the Cmd-K records group is hidden for platform staff (system Cmd-K stays navigation-only).
+- New shared client hook `apps/web/hooks/useFederatedSearch.ts` (200ms debounce, 2-char / 3-digit minimum, monotonic sequence token dropping stale responses, ~500ms spinner threshold, never throws) + one `apps/web/lib/search-entity-meta.ts` (icon + bilingual label + "See all" list route) feeding all three surfaces.
+- **Cmd-K** (`CommandPalette.tsx`) now searches records (was navigation-only) — `shouldFilter={false}` self-filtering, grouped results, masked PII rendered `dir="ltr"`, "See all →", `aria-live` count, query-aware empty + friendly inline error. The **top-bar dropdown** and **mobile search sheet** upgrade in place via the shared hook.
+- Fires `search_performed` (result count only — never the query, which may be PII).
+
+### DataTable saved views · column reorder · Excel export (CX-014)
+- New `SavedTableView` model (personal, org+user-scoped) + `apps/web/app/actions/saved-views.ts` (async-only; every query scoped by `organizationId` AND `userId`). A view = `{ sorting, columnFilters, columnVisibility, columnOrder, density, pageSize }` (versioned JSON), reconciled against live columns on apply so a schema change never hides or crashes a column.
+- `packages/ui/src/components/DataTable.tsx` gains three **opt-in** features (existing tables render unchanged): a **Views** menu, **@dnd-kit** column reorder (header-only drag handle, RTL-aware keyboard sensor, restrict-to-horizontal), and a toolbar **Export to Excel** (`onExport` → `lib/export.ts`, Western digits, bilingual headers). Wired on **Payments / Reservations / Contracts** (sale + lease).
+- Hardened the shared `exportToExcel` against **CSV/spreadsheet formula injection** (neutralizes leading `= + @` / control chars; preserves plain negative numbers).
+
+### Help in Cmd-K + route-guard (CX-015)
+- Added the missing `/dashboard/help` entry to `ROUTE_GUARDS` (tenant audience — completes the F4 SSOT and makes the edge audience gate explicit) and surfaced **Help in Cmd-K** for tenant users. (Help was already discoverable via the radial nav + profile menu; the "no nav entry" finding was measured against the obsolete sidebar source.)
+
+### Accessibility
+- The mobile `BottomSheet` gained an opt-in `srOnlyTitle` so the search sheet carries an accessible Radix `DialogTitle` — clears a pre-existing "DialogContent requires a DialogTitle" console warning.
+
+### Gates
+- `npm run build` green; `check-types` + lint (0 errors) green; §3.9 screenshots — Cmd-K search, top-bar dropdown, mobile sheet, Payments/Reservations/Contracts tables, Cmd-K Help, system-user Cmd-K × light/dark × AR/EN + 375px; **0 console errors**; claim probes: name/phone search → masked customer (`***NNNN`) across Customers/Reservations/Payments; system Cmd-K → no tenant records; Views + Export controls present on all three tables.
+
+### Schema / RLS
+- `prisma db push` applied the additive `SavedTableView` table; `2026-06-enable-rls.sql` regenerated (CI `rls:check` green). **Manual step owed:** apply `ALTER TABLE IF EXISTS public."SavedTableView" ENABLE ROW LEVEL SECURITY;` in the Supabase SQL Editor and verify `relrowsecurity=t` (RLS-on + no-policy = the PostgREST/anon firewall; §4).
+
+**Full diff:** https://github.com/GhamdiOmar/Mimaric/compare/v4.22.0...v4.23.0
+
 ## [4.22.0] — 2026-06-14 — CX bundle: form validation (RHF), unsaved-changes guard, SAR adoption, join-request status
 
 Third CX-audit remediation release. Closes CX-006, CX-007, CX-008, CX-009.

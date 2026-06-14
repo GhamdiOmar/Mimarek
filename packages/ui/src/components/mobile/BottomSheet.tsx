@@ -9,6 +9,8 @@ export interface BottomSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title?: string;
+  /** Render `title` as a visually-hidden Radix DialogTitle (a11y name only, no visible heading). */
+  srOnlyTitle?: boolean;
   description?: string;
   children: React.ReactNode;
   footer?: React.ReactNode;
@@ -20,6 +22,7 @@ export function BottomSheet({
   open,
   onOpenChange,
   title,
+  srOnlyTitle,
   description,
   children,
   footer,
@@ -64,7 +67,13 @@ export function BottomSheet({
           ) : null}
 
           {title ? (
-            <DialogPrimitive.Title className="mt-2 mb-1 text-center text-base font-semibold text-foreground px-4">
+            <DialogPrimitive.Title
+              className={cn(
+                srOnlyTitle
+                  ? "sr-only"
+                  : "mt-2 mb-1 text-center text-base font-semibold text-foreground px-4",
+              )}
+            >
               {title}
             </DialogPrimitive.Title>
           ) : null}

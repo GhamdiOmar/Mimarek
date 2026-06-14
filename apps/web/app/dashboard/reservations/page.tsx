@@ -52,6 +52,13 @@ import {
 import { getCustomers } from "../../actions/customers";
 import { getUnitsWithBuildings } from "../../actions/units";
 import { getJourneySummary } from "../../actions/journey";
+import {
+  getSavedViews,
+  createSavedView,
+  deleteSavedView,
+  type SavedTableViewDTO,
+} from "../../actions/saved-views";
+import { exportToExcel } from "../../../lib/export";
 import type { JourneySummary } from "@repo/types";
 import {
   RESERVATION_STATUS_LABEL as STATUS_LABELS,
@@ -147,6 +154,17 @@ export default function ReservationsPage() {
   const [loading, setLoading] = React.useState(true);
   const [loadError, setLoadError] = React.useState<string | null>(null);
   const [search, setSearch] = React.useState("");
+
+  // CX-014 — DataTable saved views (personal, DB-backed)
+  const [savedViews, setSavedViews] = React.useState<SavedTableViewDTO[]>([]);
+  const refreshSavedViews = React.useCallback(() => {
+    getSavedViews("reservations")
+      .then(setSavedViews)
+      .catch(() => {});
+  }, []);
+  React.useEffect(() => {
+    refreshSavedViews();
+  }, [refreshSavedViews]);
   const [statusFilter, setStatusFilter] = React.useState("ALL");
   const [showMobileFilters, setShowMobileFilters] = React.useState(false);
 
@@ -913,6 +931,41 @@ export default function ReservationsPage() {
           pagination
           pageSize={10}
           getRowId={(r) => r.id}
+          enableColumnReorder
+          exportable
+          onExport={({ rows, columns: exportColumns }) =>
+            exportToExcel({
+              filename: `reservations-${new Date().toISOString().slice(0, 10)}`,
+              title: lang === "ar" ? "الحجوزات" : "Reservations",
+              lang,
+              columns: exportColumns.map((c) => ({ header: c.header, key: c.id })),
+              data: rows.map((d) => ({
+                client: d.customer.name,
+                property: `${lang === "ar" ? "وحدة" : "Unit"} ${d.unit.number}${d.unit.buildingName ? ` — ${d.unit.buildingName}` : ""}`,
+                amount: SAR(d.amount),
+                depositAmount: d.depositAmount ? SAR(d.depositAmount) : "—",
+                status:
+                  lang === "ar"
+                    ? STATUS_LABELS[d.status]?.ar ?? d.status
+                    : STATUS_LABELS[d.status]?.en ?? d.status,
+                expiresAt: new Date(d.expiresAt).toLocaleDateString(
+                  lang === "ar" ? "ar-SA-u-nu-latn" : "en-SA",
+                ),
+              })),
+            })
+          }
+          savedViews={{
+            tableKey: "reservations",
+            views: savedViews,
+            onCreate: async (name, config) => {
+              await createSavedView({ tableKey: "reservations", name, config });
+              refreshSavedViews();
+            },
+            onDelete: async (id) => {
+              await deleteSavedView(id);
+              refreshSavedViews();
+            },
+          }}
           mobileCard={(deal) => {
             const countdown = expiryCountdown(deal.expiresAt);
             const badgeVariant = statusBadgeVariant(deal.status);

@@ -48,6 +48,7 @@
 -- ── Tables (schema.prisma model order) ───────────────────────────────────────
 ALTER TABLE IF EXISTS public."Organization"              ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public."User"                      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public."SavedTableView"            ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public."Unit"                      ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public."Customer"                  ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public."Reservation"               ENABLE ROW LEVEL SECURITY;
