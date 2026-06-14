@@ -16,7 +16,10 @@ export interface SARAmountInputProps
 }
 
 function format(n: number): string {
-  return new Intl.NumberFormat("en-US", {
+  // en-SA → Western digits + comma grouping in BOTH languages (the Saudi
+  // convention; matches KPI values and CX-019). The ر.س / SAR suffix is the
+  // localized part, rendered separately below. (CX-008)
+  return new Intl.NumberFormat("en-SA", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(n);
