@@ -111,39 +111,36 @@ export function CookieConsent({
           aria-modal="false"
           aria-label={tt("title")}
           className={cn(
-            "fixed inset-x-0 bottom-0 z-[1080] p-3 sm:p-4",
-            "pb-[calc(0.75rem+env(safe-area-inset-bottom))]",
+            // Non-blocking corner card (CX-005): never spans the full width or
+            // covers center content / the Kanban Add column buttons, and on
+            // mobile sits ABOVE the bottom tab bar (h-16) so it never eats a
+            // third of the screen or the FAB.
+            "fixed z-[1080] start-3 end-3 sm:end-auto sm:start-4 sm:max-w-[400px]",
+            "bottom-[calc(4.75rem+env(safe-area-inset-bottom))] md:bottom-4",
           )}
         >
-          <div className="mx-auto max-w-[920px] rounded-lg border border-border bg-card text-card-foreground shadow-lg">
-            <div className="flex flex-col gap-3 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
-              <div className="min-w-0 lg:max-w-[58%]">
-                <p className="text-sm font-semibold text-foreground">
-                  {tt("title")}
-                  {" — "}
-                  <span className="font-normal text-muted-foreground line-clamp-1">
-                    {tt("body")}
-                  </span>{" "}
-                  <Link
-                    href="/cookie-policy"
-                    className="text-primary underline-offset-4 hover:underline"
-                  >
-                    {tt("policyLink")}
-                  </Link>
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2 lg:shrink-0 lg:justify-end">
-                {/* Reject given equal prominence to Accept (PDPL) */}
-                <Button variant="secondary" size="sm" onClick={onRejectAll}>
-                  {tt("rejectNonEssential")}
-                </Button>
-                <Button variant="primary" size="sm" onClick={onAcceptAll}>
-                  {tt("acceptAll")}
-                </Button>
-                <Button variant="ghost" size="sm" onClick={onOpenPreferences}>
-                  {tt("managePreferences")}
-                </Button>
-              </div>
+          <div className="rounded-lg border border-border bg-card text-card-foreground shadow-lg p-4">
+            <p className="text-sm font-semibold text-foreground">{tt("title")}</p>
+            <p className="mt-1 text-caption text-muted-foreground line-clamp-3">
+              {tt("body")}{" "}
+              <Link
+                href="/cookie-policy"
+                className="text-primary underline-offset-4 hover:underline"
+              >
+                {tt("policyLink")}
+              </Link>
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {/* Reject given equal prominence to Accept (PDPL) */}
+              <Button variant="secondary" size="sm" onClick={onRejectAll}>
+                {tt("rejectNonEssential")}
+              </Button>
+              <Button variant="primary" size="sm" onClick={onAcceptAll}>
+                {tt("acceptAll")}
+              </Button>
+              <Button variant="ghost" size="sm" onClick={onOpenPreferences}>
+                {tt("managePreferences")}
+              </Button>
             </div>
           </div>
         </div>

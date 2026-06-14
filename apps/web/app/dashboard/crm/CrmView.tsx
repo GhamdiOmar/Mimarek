@@ -93,6 +93,7 @@ import {
 } from "../../actions/customer-interests";
 import { maskPhone, maskEmail } from "@/lib/pii-masking";
 import { toWhatsAppNumber } from "@/lib/phone";
+import { trackEvent, AnalyticsEvent } from "../../../lib/analytics";
 
 // ─── Pipeline Stage Config ────────────────────────────────────────────────────
 
@@ -2329,6 +2330,7 @@ export default function CrmView({
       }
 
       setCustomers((prev) => [created, ...prev]);
+      trackEvent(AnalyticsEvent.CustomerCreated, { source: newCustomer.source || "manual" });
       setShowAddModal(false);
       setNewCustomer(EMPTY_NEW_CUSTOMER);
       setNewCustSelectedUnit(null);
@@ -2381,6 +2383,7 @@ export default function CrmView({
   // ─── Export (CSV) ────────────────────────────────────────────────────────────
 
   function handleExport() {
+    trackEvent(AnalyticsEvent.ExportPerformed, { kind: "customers", count: Number(filteredCustomers.length) });
     const rows = [
       ["Name", "Phone", "Email", "Status", "Source", "Budget", "Property Interest"],
       ...filteredCustomers.map((c) => [
