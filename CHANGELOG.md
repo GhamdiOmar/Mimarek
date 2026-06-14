@@ -1,5 +1,28 @@
 # Changelog — Mimaric PropTech
 
+## [4.21.0] — 2026-06-14 — CX bundle: trustworthy errors, confirm discipline, non-blocking consent + analytics
+
+Second CX-audit remediation release — the first *bundled* tag (5 findings, two commits, one release): CX-012, CX-013, CX-021 (errors/confirm/sign) + CX-005, CX-004 (consent/analytics).
+
+### Trustworthy errors (CX-012)
+- New `apps/web/lib/error-sanitizer.ts` (pure module) — `sanitizeError(err, lang)` maps any thrown error to a safe bilingual message, hiding Zod/Prisma/SDK internals, stack traces, status codes, and variable names (AGENTS.md §6.11.4). Short, deliberately-friendly server messages pass through; technical or over-long ones collapse to a friendly fallback.
+- Routed user-facing `toast.error` / error sites through it across contracts, reservations, payments, CRM, settings, billing, help, portal, and admin. Fixed two confirmed raw leaks: the SEO uploader's raw UploadThing message and the admin email/marketplace English-only `err.message`.
+
+### Confirm discipline + sign-confirm (CX-013, CX-021)
+- New ESLint guard (`no-restricted-syntax`) banning native `confirm()`/`window.confirm()`/`alert()` — destructive confirmations must use the governed `<ConfirmDialog>` (AGENTS.md §6.6).
+- Contract **signing now opens a `<ConfirmDialog>`** instead of firing immediately (irreversible action), and that dialog **surfaces the required-documents gate** (count of missing docs) at sign time — previously only visible in the detail drawer.
+
+### Non-blocking consent (CX-005)
+- The PDPL cookie banner moved from a full-width `fixed bottom-0` bar (which overlaid the Kanban "Add" buttons, the login form, and ~⅓ of mobile) to a **compact bottom-start corner card** that never covers CTAs and, on mobile, sits **above** the bottom tab bar. Equal-prominence Reject/Accept and persisted dismissal unchanged; GA4 still blocked until consent.
+
+### Analytics (CX-004)
+- New `apps/web/lib/analytics.ts` — `trackEvent(name, params)` (no-op until consent; `window.gtag` only exists post-consent — never throws) + `identify()` (opaque user/org ids, no PII) + an `AnalyticsEvent` taxonomy. Wired the funnel: `customer_created`, `reservation_created/confirmed`, `contract_created/signed`, `payment_recorded`, `maintenance_ticket_created`, `export_performed`. Numeric params are Western-digit; no PII in any event.
+
+### Gates
+- `npm run build` green; §3.9 screenshots (login + contracts/CRM/payments/dashboard × light/dark × AR/EN + 375px mobile); 0 console errors; claim probes: `window.gtag` undefined pre-consent, sign opens ConfirmDialog, consent banner clears CTAs.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimaric/compare/v4.20.0...v4.21.0
+
 ## [4.20.0] — 2026-06-14 — CX Quick Wins: Western numerals, success contrast, tap targets, Kanban polish
 
 First CX-audit remediation release (Quick Wins). Closes CX-019, CX-016, CX-022, CX-020 from the CX audit (`verification/Mimaric-CX-Audit.html`).

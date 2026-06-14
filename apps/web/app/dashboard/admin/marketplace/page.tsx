@@ -27,6 +27,7 @@ import { PageHeader } from "@repo/ui/components/PageHeader";
 import { DirectionalIcon } from "@repo/ui";
 import { cn } from "@repo/ui/lib/utils";
 import { useLanguage } from "../../../../components/LanguageProvider";
+import { sanitizeError } from "../../../../lib/error-sanitizer";
 import {
   listListingsForModeration,
   moderateSuspendListing,
@@ -115,7 +116,7 @@ export default function AdminMarketplacePage() {
       setFeedback({ type: "success", message: `Listing ${suspendTarget.listingNumber} suspended successfully.` });
       setSuspendTarget(null);
     } catch (err: unknown) {
-      setSuspendError(err instanceof Error ? err.message : "Failed to suspend listing");
+      setSuspendError(sanitizeError(err, lang));
     } finally {
       setSuspending(false);
     }

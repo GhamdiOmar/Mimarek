@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Button, Card, CardContent, CardHeader, CardTitle, Input, Switch } from "@repo/ui";
 import { PageHeader } from "@repo/ui/components/PageHeader";
 import { useLanguage } from "../../../../components/LanguageProvider";
+import { sanitizeError } from "../../../../lib/error-sanitizer";
 import {
   clearSmtpPasswordAction,
   getEmailSettingsAction,
@@ -180,7 +181,7 @@ export default function AdminEmailSettingsPage() {
       if (result.ok) toast.success(result.message);
       else toast.error(result.message);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : t.failed);
+      toast.error(sanitizeError(error, lang));
     } finally {
       setTesting(false);
     }

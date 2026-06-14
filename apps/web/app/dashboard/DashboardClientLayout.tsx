@@ -10,6 +10,7 @@ import { CircleMenu } from "../../components/shell/CircleMenu";
 import { CommandPalette } from "../../components/CommandPalette";
 import { isSystemRole } from "../../lib/permissions";
 import { navItems } from "../../components/shell/nav-items";
+import { identify } from "../../lib/analytics";
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -49,6 +50,14 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
   // Close the radial menu on route change (the overlay also closes on link click).
   React.useEffect(() => { setNavOpen(false); }, [pathname]);
+
+  // Associate the GA4 session with an opaque user + org (CX-004). No-op until
+  // analytics consent is granted (window.gtag is undefined before then).
+  React.useEffect(() => {
+    const u = session?.user as any;
+    if (!u?.id) return;
+    identify({ userId: u.id, orgId: u.organizationId ?? null, role: u.role });
+  }, [session]);
 
   return (
     <div className="flex min-h-screen bg-background" dir={lang === "ar" ? "rtl" : "ltr"}>

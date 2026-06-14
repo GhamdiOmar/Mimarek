@@ -206,6 +206,21 @@ export const nextJsConfig = [
             "encrypted with blind-index hashes — never write Customer rows directly. Marketplace " +
             "inquiries use the helper in marketplace.ts. See AGENTS.md §4/§6.",
         },
+        {
+          // CX-013 / §6.6.4: no native confirm()/alert() — use the governed
+          // <ConfirmDialog> primitive (or a toast/banner) so destructive
+          // confirmations are bilingual, RTL-safe, and consistent.
+          selector:
+            "CallExpression[callee.name='confirm'], CallExpression[callee.object.name='window'][callee.property.name='confirm']",
+          message:
+            "Don't hand-roll confirm()/window.confirm() — use <ConfirmDialog> from @repo/ui (AGENTS.md §6.6 / CX-013).",
+        },
+        {
+          selector:
+            "CallExpression[callee.name='alert'], CallExpression[callee.object.name='window'][callee.property.name='alert']",
+          message:
+            "Never use alert()/window.alert() — use a toast, banner, or <ConfirmDialog> from @repo/ui (AGENTS.md §6.6.4).",
+        },
       ],
     },
   },

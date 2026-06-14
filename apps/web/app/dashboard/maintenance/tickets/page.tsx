@@ -55,6 +55,7 @@ import {
   MAINTENANCE_PRIORITY_LABEL as priorityLabels,
   MAINTENANCE_STATUS_LABEL as statusLabels,
 } from "../../../../lib/domain-labels";
+import { trackEvent, AnalyticsEvent } from "../../../../lib/analytics";
 
 
 export default function MaintenancePage() {
@@ -229,6 +230,10 @@ export default function MaintenancePage() {
           scheduledDate: form.scheduledDate || undefined,
           estimatedCost: form.estimatedCost ? parseFloat(form.estimatedCost) : undefined,
           notes: form.notes || undefined,
+        });
+        trackEvent(AnalyticsEvent.MaintenanceTicketCreated, {
+          category: form.category,
+          priority: form.priority,
         });
       }
       setShowModal(false);
