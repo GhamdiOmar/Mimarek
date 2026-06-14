@@ -17,6 +17,10 @@ import {
   Key,
   Eye,
   PenLine,
+  Pencil,
+  Send,
+  Ban,
+  Trash2,
 } from "lucide-react";
 import {
   Button,
@@ -48,7 +52,14 @@ import {
 import { useLanguage } from "../../../components/LanguageProvider";
 import { usePermissions } from "../../../hooks/usePermissions";
 import { useUnsavedChanges } from "../../../hooks/useUnsavedChanges";
-import { getContracts, createContract, updateContractStatus } from "../../actions/contracts";
+import {
+  getContracts,
+  createContract,
+  updateContract,
+  updateContractStatus,
+  bulkUpdateContractStatus,
+  bulkDeleteContracts,
+} from "../../actions/contracts";
 import { getCustomers } from "../../actions/customers";
 import { getUnitsWithBuildings } from "../../actions/units";
 import { getReservationById } from "../../actions/reservations";
@@ -128,12 +139,18 @@ export default function ContractsPage() {
   const [mobileTab, setMobileTab] = React.useState<"ALL" | "SALE" | "LEASE">("ALL");
   const [newContractSheetOpen, setNewContractSheetOpen] = React.useState(false);
 
-  // Create modals
+  // Create / edit modals — `editingContractId` non-null = the sale/lease form is
+  // in edit mode (CX-011), reusing the create form pre-filled with the contract.
   const [saleModalOpen, setSaleModalOpen] = React.useState(false);
   const [leaseModalOpen, setLeaseModalOpen] = React.useState(false);
+  const [editingContractId, setEditingContractId] = React.useState<string | null>(null);
   const [customers, setCustomers] = React.useState<Customer[]>([]);
   const [units, setUnits] = React.useState<Unit[]>([]);
   const [submitting, setSubmitting] = React.useState(false);
+
+  // CX-010 — bulk delete confirm (DRAFT-only; destructive → ConfirmDialog).
+  const [bulkDeleteOpen, setBulkDeleteOpen] = React.useState(false);
+  const [bulkDeleteIds, setBulkDeleteIds] = React.useState<string[]>([]);
 
   // ── Zod schemas (built per-render so bilingual messages use current `lang`) ──
 
@@ -408,16 +425,28 @@ export default function ContractsPage() {
   const handleCreateSale = saleRhf.handleSubmit(async (values: SaleFormValues) => {
     setSubmitting(true);
     try {
-      await createContract({
-        customerId: values.customerId,
-        unitId: values.unitId,
-        type: "SALE",
-        amount: values.amount,
-        notes: values.notes || undefined,
-      });
-      trackEvent(AnalyticsEvent.ContractCreated, { contract_type: "SALE", amount: values.amount });
-      toast.success(lang === "ar" ? "تم إنشاء عقد البيع بنجاح" : "Sale contract created successfully");
+      if (editingContractId) {
+        // CX-011 — DRAFT edit (server re-enforces DRAFT-only).
+        await updateContract(editingContractId, {
+          customerId: values.customerId,
+          unitId: values.unitId,
+          amount: values.amount,
+          notes: values.notes || undefined,
+        });
+        toast.success(lang === "ar" ? "تم تحديث عقد البيع بنجاح" : "Sale contract updated successfully");
+      } else {
+        await createContract({
+          customerId: values.customerId,
+          unitId: values.unitId,
+          type: "SALE",
+          amount: values.amount,
+          notes: values.notes || undefined,
+        });
+        trackEvent(AnalyticsEvent.ContractCreated, { contract_type: "SALE", amount: values.amount });
+        toast.success(lang === "ar" ? "تم إنشاء عقد البيع بنجاح" : "Sale contract created successfully");
+      }
       setSaleModalOpen(false);
+      setEditingContractId(null);
       saleRhf.reset();
       setSaleCustomerSearch("");
       setSaleCustomerName("");
@@ -434,19 +463,34 @@ export default function ContractsPage() {
   const handleCreateLease = leaseRhf.handleSubmit(async (values: LeaseFormValues) => {
     setSubmitting(true);
     try {
-      await createContract({
-        customerId: values.customerId,
-        unitId: values.unitId,
-        type: "LEASE",
-        amount: values.amount,
-        startDate: values.startDate,
-        endDate: values.endDate,
-        paymentFrequency: values.paymentFrequency,
-        notes: values.notes || undefined,
-      });
-      trackEvent(AnalyticsEvent.ContractCreated, { contract_type: "LEASE", amount: values.amount });
-      toast.success(lang === "ar" ? "تم إنشاء عقد الإيجار بنجاح" : "Lease contract created successfully");
+      if (editingContractId) {
+        // CX-011 — DRAFT edit; lease-term changes recreate installments server-side.
+        await updateContract(editingContractId, {
+          customerId: values.customerId,
+          unitId: values.unitId,
+          amount: values.amount,
+          startDate: values.startDate,
+          endDate: values.endDate,
+          paymentFrequency: values.paymentFrequency,
+          notes: values.notes || undefined,
+        });
+        toast.success(lang === "ar" ? "تم تحديث عقد الإيجار بنجاح" : "Lease contract updated successfully");
+      } else {
+        await createContract({
+          customerId: values.customerId,
+          unitId: values.unitId,
+          type: "LEASE",
+          amount: values.amount,
+          startDate: values.startDate,
+          endDate: values.endDate,
+          paymentFrequency: values.paymentFrequency,
+          notes: values.notes || undefined,
+        });
+        trackEvent(AnalyticsEvent.ContractCreated, { contract_type: "LEASE", amount: values.amount });
+        toast.success(lang === "ar" ? "تم إنشاء عقد الإيجار بنجاح" : "Lease contract created successfully");
+      }
       setLeaseModalOpen(false);
+      setEditingContractId(null);
       leaseRhf.reset();
       setLeaseCustomerSearch("");
       setLeaseCustomerName("");
@@ -459,6 +503,143 @@ export default function ContractsPage() {
       setSubmitting(false);
     }
   });
+
+  // CX-011 — open the create form pre-filled for a DRAFT contract (edit mode).
+  // Reuses the existing sale/lease RHF forms; only DRAFT contracts reach here
+  // (the Edit button renders solely for status === "DRAFT").
+  function openEditContract(c: Contract) {
+    if (c.status !== "DRAFT") return;
+    setDetailContract(null);
+    setEditingContractId(c.id);
+    loadLookups();
+    if (c.type === "SALE") {
+      saleRhf.reset({
+        customerId: c.customer.id,
+        unitId: c.unit.id,
+        amount: Number(c.amount),
+        notes: (c as any).notes ?? "",
+      });
+      setSaleCustomerName(c.customer.name);
+      setSaleCustomerSearch(c.customer.name);
+      setSaleUnitNumber(c.unit.number);
+      setSaleUnitSearch(c.unit.number);
+      setSaleModalOpen(true);
+    } else {
+      leaseRhf.reset({
+        customerId: c.customer.id,
+        unitId: c.unit.id,
+        startDate: c.lease?.startDate ? c.lease.startDate.slice(0, 10) : "",
+        endDate: c.lease?.endDate ? c.lease.endDate.slice(0, 10) : "",
+        amount: Number(c.amount),
+        paymentFrequency: (c as any).paymentFrequency ?? "MONTHLY",
+        notes: (c as any).notes ?? "",
+      });
+      setLeaseCustomerName(c.customer.name);
+      setLeaseCustomerSearch(c.customer.name);
+      setLeaseUnitNumber(c.unit.number);
+      setLeaseUnitSearch(c.unit.number);
+      setLeaseModalOpen(true);
+    }
+  }
+
+  // CX-010 — bulk status transition (Send / Cancel selected). Reports skipped.
+  async function handleBulkStatus(ids: string[], target: "SENT" | "CANCELLED") {
+    try {
+      const res = await bulkUpdateContractStatus(ids, target);
+      const verb =
+        target === "SENT"
+          ? lang === "ar" ? "إرسال" : "sent"
+          : lang === "ar" ? "إلغاء" : "cancelled";
+      if (lang === "ar") {
+        toast.success(
+          res.skippedCount > 0
+            ? `تم ${verb} ${res.updatedCount} عقد، وتم تخطّي ${res.skippedCount}`
+            : `تم ${verb} ${res.updatedCount} عقد`,
+        );
+      } else {
+        toast.success(
+          res.skippedCount > 0
+            ? `${res.updatedCount} contract(s) ${verb}, ${res.skippedCount} skipped`
+            : `${res.updatedCount} contract(s) ${verb}`,
+        );
+      }
+      loadContracts();
+    } catch (err) {
+      toast.error(sanitizeError(err, lang));
+    }
+  }
+
+  // CX-010 — bulk delete (DRAFT-only). Server rejects non-DRAFT; we still gate
+  // the affordance client-side and confirm before the destructive call.
+  function askBulkDelete(ids: string[]) {
+    setBulkDeleteIds(ids);
+    setBulkDeleteOpen(true);
+  }
+  async function confirmBulkDelete() {
+    try {
+      const res = await bulkDeleteContracts(bulkDeleteIds);
+      toast.success(
+        lang === "ar"
+          ? `تم حذف ${res.deletedCount} عقد`
+          : `${res.deletedCount} contract(s) deleted`,
+      );
+      loadContracts();
+    } catch (err) {
+      toast.error(sanitizeError(err, lang));
+    }
+  }
+
+  // Shared bulk-action toolbar renderer for both sale + lease tables.
+  // (DataTable owns row selection and renders its own "clear" X; deleted rows
+  // also drop out naturally on the post-op reload.)
+  function renderBulkActions(selectedRows: Contract[]) {
+    const ids = selectedRows.map((r) => r.id);
+    const allDraft = selectedRows.length > 0 && selectedRows.every((r) => r.status === "DRAFT");
+    return (
+      <div className="flex items-center gap-1">
+        <Button
+          variant="subtle"
+          size="sm"
+          onClick={() => handleBulkStatus(ids, "SENT")}
+          style={{ display: "inline-flex" }}
+          className="gap-1.5"
+        >
+          <Send className="h-3.5 w-3.5" />
+          {lang === "ar" ? "إرسال المحدد" : "Send selected"}
+        </Button>
+        <Button
+          variant="subtle"
+          size="sm"
+          onClick={() => handleBulkStatus(ids, "CANCELLED")}
+          style={{ display: "inline-flex" }}
+          className="gap-1.5"
+        >
+          <Ban className="h-3.5 w-3.5" />
+          {lang === "ar" ? "إلغاء المحدد" : "Cancel selected"}
+        </Button>
+        {can("contracts:delete") && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => askBulkDelete(ids)}
+            disabled={!allDraft}
+            title={
+              !allDraft
+                ? lang === "ar"
+                  ? "يمكن حذف المسودات فقط"
+                  : "Only draft contracts can be deleted"
+                : undefined
+            }
+            style={{ display: "inline-flex" }}
+            className="gap-1.5 text-destructive"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            {lang === "ar" ? "حذف المحدد" : "Delete selected"}
+          </Button>
+        )}
+      </div>
+    );
+  }
 
   // ── Sale table columns ──────────────────────────────────────────────
   const saleColumns: ColumnDef<Contract>[] = [
@@ -1071,6 +1252,8 @@ export default function ContractsPage() {
             pagination
             pageSize={10}
             enableColumnReorder
+            enableSelection={canWrite}
+            bulkActions={canWrite ? renderBulkActions : undefined}
             exportable
             onExport={({ rows, columns: exportColumns }) =>
               exportToExcel({
@@ -1150,6 +1333,8 @@ export default function ContractsPage() {
             pagination
             pageSize={10}
             enableColumnReorder
+            enableSelection={canWrite}
+            bulkActions={canWrite ? renderBulkActions : undefined}
             exportable
             onExport={({ rows, columns: exportColumns }) =>
               exportToExcel({
@@ -1242,6 +1427,17 @@ export default function ContractsPage() {
             >
               {lang === "ar" ? "إغلاق" : "Close"}
             </Button>
+            {/* CX-011 — Edit shown only for DRAFT (the only editable state). */}
+            {detailContract?.status === "DRAFT" && canWrite && (
+              <Button
+                onClick={() => detailContract && openEditContract(detailContract)}
+                style={{ display: "inline-flex" }}
+                className="gap-2"
+              >
+                <Pencil className="h-4 w-4" />
+                {lang === "ar" ? "تعديل" : "Edit"}
+              </Button>
+            )}
           </div>
         }
       >
@@ -1368,12 +1564,13 @@ export default function ContractsPage() {
         )}
       </ResponsiveDialog>
 
-      {/* New Sale Contract Modal */}
+      {/* Sale Contract Modal (create + CX-011 DRAFT edit) */}
       <ResponsiveDialog
         open={saleModalOpen}
         onOpenChange={(open) => {
           setSaleModalOpen(open);
           if (!open) {
+            setEditingContractId(null);
             saleRhf.reset();
             setSaleCustomerSearch("");
             setSaleCustomerName("");
@@ -1381,13 +1578,18 @@ export default function ContractsPage() {
             setSaleUnitNumber("");
           }
         }}
-        title={lang === "ar" ? "عقد بيع جديد" : "New Sale Contract"}
+        title={
+          editingContractId
+            ? lang === "ar" ? "تعديل عقد البيع" : "Edit Sale Contract"
+            : lang === "ar" ? "عقد بيع جديد" : "New Sale Contract"
+        }
         footer={
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <Button
               variant="ghost"
               onClick={() => {
                 setSaleModalOpen(false);
+                setEditingContractId(null);
                 saleRhf.reset();
                 setSaleCustomerSearch("");
                 setSaleCustomerName("");
@@ -1400,7 +1602,9 @@ export default function ContractsPage() {
             </Button>
             <Button type="submit" form="sale-contract-form" disabled={submitting} style={{ display: "inline-flex" }} className="gap-2">
               {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
-              {lang === "ar" ? "إنشاء العقد" : "Create Contract"}
+              {editingContractId
+                ? lang === "ar" ? "حفظ التغييرات" : "Save changes"
+                : lang === "ar" ? "إنشاء العقد" : "Create Contract"}
             </Button>
           </div>
         }
@@ -1564,12 +1768,13 @@ export default function ContractsPage() {
         </form>
       </ResponsiveDialog>
 
-      {/* New Lease Contract Modal */}
+      {/* Lease Contract Modal (create + CX-011 DRAFT edit) */}
       <ResponsiveDialog
         open={leaseModalOpen}
         onOpenChange={(open) => {
           setLeaseModalOpen(open);
           if (!open) {
+            setEditingContractId(null);
             leaseRhf.reset();
             setLeaseCustomerSearch("");
             setLeaseCustomerName("");
@@ -1577,7 +1782,11 @@ export default function ContractsPage() {
             setLeaseUnitNumber("");
           }
         }}
-        title={lang === "ar" ? "عقد إيجار جديد" : "New Lease Contract"}
+        title={
+          editingContractId
+            ? lang === "ar" ? "تعديل عقد الإيجار" : "Edit Lease Contract"
+            : lang === "ar" ? "عقد إيجار جديد" : "New Lease Contract"
+        }
         contentClassName="sm:max-w-[640px]"
         footer={
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
@@ -1585,6 +1794,7 @@ export default function ContractsPage() {
               variant="ghost"
               onClick={() => {
                 setLeaseModalOpen(false);
+                setEditingContractId(null);
                 leaseRhf.reset();
                 setLeaseCustomerSearch("");
                 setLeaseCustomerName("");
@@ -1597,7 +1807,9 @@ export default function ContractsPage() {
             </Button>
             <Button type="submit" form="lease-contract-form" disabled={submitting} style={{ display: "inline-flex" }} className="gap-2">
               {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
-              {lang === "ar" ? "إنشاء العقد" : "Create Contract"}
+              {editingContractId
+                ? lang === "ar" ? "حفظ التغييرات" : "Save changes"
+                : lang === "ar" ? "إنشاء العقد" : "Create Contract"}
             </Button>
           </div>
         }
@@ -1843,6 +2055,22 @@ export default function ContractsPage() {
         confirmLabel={lang === "ar" ? "توقيع" : "Sign"}
         cancelLabel={lang === "ar" ? "إلغاء" : "Cancel"}
         onConfirm={confirmSign}
+      />
+
+      {/* CX-010 — Bulk delete confirm (DRAFT-only, destructive) */}
+      <ConfirmDialog
+        open={bulkDeleteOpen}
+        onOpenChange={setBulkDeleteOpen}
+        title={lang === "ar" ? "حذف العقود المحددة؟" : "Delete selected contracts?"}
+        description={
+          lang === "ar"
+            ? `سيتم حذف ${bulkDeleteIds.length} عقد مسودة نهائيًا ولا يمكن التراجع عن ذلك.`
+            : `This will permanently delete ${bulkDeleteIds.length} draft contract(s). This cannot be undone.`
+        }
+        confirmLabel={lang === "ar" ? "حذف" : "Delete"}
+        cancelLabel={lang === "ar" ? "إلغاء" : "Cancel"}
+        variant="destructive"
+        onConfirm={confirmBulkDelete}
       />
     </>
   );

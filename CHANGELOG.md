@@ -1,5 +1,31 @@
 # Changelog — Mimaric PropTech
 
+## [4.24.0] — 2026-06-15 — Bulk ops · CSV/Excel import · DRAFT contract edit
+
+Fifth CX-audit remediation release. Closes **CX-010** (bulk operations + CSV/Excel import) and **CX-011** (DRAFT contract editing). No schema change.
+
+### Bulk operations (CX-010)
+- **Payments** — select rows → **Mark as paid** (the "record N rent payments at once" flow; ConfirmDialog-gated; writes `paidAmount`+`status` per §4). Gated `finance:write` to match single-row `recordPayment` — the bulk path is never more permissive.
+- **Reservations** — bulk **Cancel** + **Delete** (ConfirmDialog). **Contracts** — bulk **Send/Cancel** + **Delete (DRAFT-only, server-enforced)**.
+- All via `enableSelection` + `DataTable.bulkActions`; each bulk action is an atomic `$transaction`, permission-gated, org-scoped, with one audit event.
+
+### CSV/Excel import wizard (CX-010)
+- New 5-step wizard (**Requirements → Upload → Map columns → Validate-preview → Import**) for **customers + units**, reachable from an **Import** button on CRM + Units. Step 1 is a **requirements panel** — required/optional columns, data formats (Saudi phone, national-ID, unit-type enum), the **5,000-row + 10 MB caps**, accepted `.csv`/`.xlsx`, and a **Download template** (bilingual `.xlsx`).
+- **Validate-all-then-all-or-nothing** import in one bumped-timeout `$transaction` (default), with an opt-in **"skip bad rows"** toggle. Per-row + in-file + DB dedupe via the **blind-index hash** (batched). Bilingual RTL column-map.
+- **Customers are written ONLY through `encryptCustomerData`** (pre-encrypted `createMany`; raw PII never inserted). `customer-import.ts` is whitelisted in the PII ESLint guard; validation re-runs server-side; one audit event per import (`importBatchId` is a runtime UUID — no schema column).
+
+### DRAFT contract editing (CX-011)
+- New `updateContract` server action — **DRAFT-only** (rejects non-DRAFT server-side; `requirePermission` + `logAuditEvent` before/after). For leases, term changes (dates/frequency/amount) **regenerate the rent installments** via the shared `buildRentInstallments` helper (no stale rows).
+- The contracts list exposes an **edit affordance on DRAFT contracts only**, reusing the v4.22 RHF create form pre-filled in edit mode (`useUnsavedChanges` attached). Bulk status transitions validated through `isValidContractTransition`.
+
+### QA gate (AGENTS.md §3.11, first run)
+- A `/mimaric-qa` subagent audit gated this release. Findings fixed: **bulk Mark-as-paid permission** raised `payments:write` → `finance:write` (closes a privilege-escalation gap vs single-row `recordPayment`); **import validation messages** bilingualized (AR / EN). Flagged/deferred: the pre-existing payments-page UI gate uses `payments:write` while the actions require `finance:write` — an access-model product call.
+
+### Gates
+- `npm run build` green; `check-types` + lint (0 errors) + cspell green; §3.9 screenshots (import requirements EN + AR-RTL-dark, bulk toolbars on payments/reservations/contracts, DRAFT-only edit pencil) — **0 console errors**; claims: bulk select→action shows the selected count, requirements panel + caps render, DRAFT-only edit affordance present (absent on Signed), import writes go through the encrypt path. No schema/RLS change.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimaric/compare/v4.23.0...v4.24.0
+
 ## [4.23.0] — 2026-06-14 — CX bundle: federated record search, DataTable power tools, Help in Cmd-K
 
 Fourth CX-audit remediation release. Closes **CX-002** (the audit's #1 Critical leverage item), **CX-014**, and **CX-015** — CX-002 and CX-015 were absent from the original roadmap. Bundled behind one §3.9 gate.

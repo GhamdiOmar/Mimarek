@@ -59,12 +59,17 @@ import {
   deleteUnit,
   getUnitFinancialSummary,
   getActiveContractForUnit,
+  getUnitsWithBuildings,
 } from "../../actions/units";
 import { getJourneySummary } from "../../actions/journey";
 import type { JourneySummary } from "@repo/types";
 import { getMaintenanceForUnit } from "../../actions/maintenance";
 import { PublishListingDialog } from "../../../components/marketplace/PublishListingDialog";
 import Link from "next/link";
+import { Upload } from "lucide-react";
+import { ImportWizard } from "../../../components/import/ImportWizard";
+import { UNIT_IMPORT_CONFIG } from "../../../components/import/import-config";
+import { validateUnitImport, commitUnitImport } from "../../actions/unit-import";
 
 const unitTypeLabels: Record<string, { ar: string; en: string }> = {
   APARTMENT: { ar: "شقة", en: "Apartment" },
@@ -91,6 +96,8 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
   const [updating, setUpdating] = React.useState(false);
   const [showAddModal, setShowAddModal] = React.useState(false);
   const [showPriceModal, setShowPriceModal] = React.useState(false);
+  // CX-010 bulk import
+  const [showImport, setShowImport] = React.useState(false);
   const [bulkPrice, setBulkPrice] = React.useState("");
   const [viewMode, setViewMode] = React.useState<"cards" | "table">("cards");
   const [density, setDensity] = React.useState<"compact" | "default" | "comfortable">("default");
@@ -744,12 +751,34 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
               <Plus className="h-3.5 w-3.5" />
               {lang === "ar" ? "إضافة وحدة" : "Add Unit"}
             </Button>
+            <Button variant="outline" size="sm" style={{ display: "inline-flex" }} className="gap-2" onClick={() => setShowImport(true)}>
+              <Upload className="h-3.5 w-3.5" />
+              {lang === "ar" ? "استيراد" : "Import"}
+            </Button>
             <Button variant="outline" size="sm" style={{ display: "inline-flex" }} className="gap-2">
               <FileDown className="h-3.5 w-3.5" />
               {lang === "ar" ? "تصدير" : "Export"}
             </Button>
           </>
         }
+      />
+
+      {/* CX-010: bulk unit import wizard */}
+      <ImportWizard
+        open={showImport}
+        onOpenChange={setShowImport}
+        config={UNIT_IMPORT_CONFIG}
+        parsePermission="units:write"
+        onValidate={validateUnitImport}
+        onCommit={commitUnitImport}
+        onImported={async () => {
+          try {
+            const fresh = await getUnitsWithBuildings({ pageSize: 100 });
+            setUnits(fresh);
+          } catch {
+            /* non-fatal — revalidatePath already refreshed the server list */
+          }
+        }}
       />
 
       {/* Inline Error Display */}

@@ -95,6 +95,10 @@ import {
 import { maskPhone, maskEmail } from "@/lib/pii-masking";
 import { toWhatsAppNumber } from "@/lib/phone";
 import { trackEvent, AnalyticsEvent } from "../../../lib/analytics";
+import { Upload } from "lucide-react";
+import { ImportWizard } from "../../../components/import/ImportWizard";
+import { CUSTOMER_IMPORT_CONFIG } from "../../../components/import/import-config";
+import { validateCustomerImport, commitCustomerImport } from "../../actions/customer-import";
 
 // ─── Pipeline Stage Config ────────────────────────────────────────────────────
 
@@ -1886,6 +1890,9 @@ export default function CrmView({
   const [showAddModal, setShowAddModal] = React.useState(false);
   const [newCustomer, setNewCustomer] = React.useState(EMPTY_NEW_CUSTOMER);
 
+  // CX-010 bulk import
+  const [showImport, setShowImport] = React.useState(false);
+
   // Add modal — property linking (seeded server-side; refreshed by loadData())
   const [pageAvailableUnits, setPageAvailableUnits] = React.useState<any[]>(initialAvailableUnits);
   const [newCustUnitSearch, setNewCustUnitSearch] = React.useState("");
@@ -2881,6 +2888,18 @@ export default function CrmView({
             )}
             {canWrite && (
               <Button
+                variant="outline"
+                size="sm"
+                style={{ display: "inline-flex" }}
+                className="gap-2"
+                onClick={() => setShowImport(true)}
+              >
+                <Upload className="h-3.5 w-3.5" />
+                {lang === "ar" ? "استيراد" : "Import"}
+              </Button>
+            )}
+            {canWrite && (
+              <Button
                 variant="primary"
                 size="sm"
                 style={{ display: "inline-flex" }}
@@ -2893,6 +2912,19 @@ export default function CrmView({
             )}
           </>
         }
+      />
+
+      {/* CX-010: bulk customer import wizard */}
+      <ImportWizard
+        open={showImport}
+        onOpenChange={setShowImport}
+        config={CUSTOMER_IMPORT_CONFIG}
+        parsePermission="customers:write"
+        onValidate={validateCustomerImport}
+        onCommit={commitCustomerImport}
+        onImported={() => {
+          void loadData();
+        }}
       />
 
       {/* ── Error Banner ── */}

@@ -11,6 +11,7 @@
 # Verification artifacts (local screenshots + run logs + CX-audit report)
 verification-screenshots/
 verification/
+verification-v*/
 
 # Claude Code
 .claude/
