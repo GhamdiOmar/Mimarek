@@ -25,6 +25,8 @@
     "packages/db/prisma/seed.ts",
     "packages/db/prisma/seed-demo.ts",
     "docs/demo-deck/**",
+    "future-plans/**",
+    "FUTURE_PLANS.md",
     "UI/**",
     "cspell.config.json",
     "Individual data Absher.json",
@@ -188,7 +190,8 @@
     "SSOT",
     "TTFB",
     "tatweel",
-    "numericish"
+    "numericish",
+    "triaging"
   ],
   "ignoreRegExpList": [
     "[\\u0600-\\u06FF\\u0750-\\u077F\\uFB50-\\uFDFF\\uFE70-\\uFEFF]+",
