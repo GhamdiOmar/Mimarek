@@ -275,6 +275,123 @@ export async function getReservationById(reservationId: string) {
   return JSON.parse(JSON.stringify(reservation));
 }
 
+// ─── CX-010: Bulk Operations ────────────────────────────────────────────────
+
+export async function bulkUpdateReservationStatus(
+  ids: string[],
+  status: "CANCELLED"
+) {
+  if (!ids.length) return { updated: 0 };
+  const session = await requirePermission("deals:write");
+
+  // Verify all reservations belong to the org
+  const reservations = await db.reservation.findMany({
+    where: { id: { in: ids }, customer: { organizationId: session.organizationId } },
+    include: { customer: true },
+  });
+
+  if (reservations.length !== ids.length) {
+    throw new Error(
+      "One or more reservations do not belong to your organization. Please refresh and try again."
+    );
+  }
+
+  // Only update reservations that are cancellable (PENDING or CONFIRMED)
+  const cancellable = reservations.filter(
+    (r) => r.status === "PENDING" || r.status === "CONFIRMED"
+  );
+
+  if (!cancellable.length) return { updated: 0 };
+
+  const updated = await db.$transaction(async (tx) => {
+    // Cancel each reservation and free its unit
+    const results = await Promise.all(
+      cancellable.map(async (res) => {
+        const updated = await tx.reservation.update({
+          where: { id: res.id },
+          data: { status },
+        });
+        await tx.unit.update({
+          where: { id: res.unitId },
+          data: { status: "AVAILABLE" },
+        });
+        return updated;
+      })
+    );
+    return results;
+  });
+
+  logAuditEvent({
+    userId: session.userId,
+    userEmail: session.email,
+    userRole: session.role,
+    action: "UPDATE",
+    resource: "Reservation",
+    resourceId: "bulk",
+    metadata: { bulkStatus: status, count: updated.length, ids: cancellable.map((r) => r.id) },
+    organizationId: session.organizationId,
+  });
+
+  revalidatePath("/dashboard/reservations");
+  return { updated: updated.length };
+}
+
+export async function bulkDeleteReservations(ids: string[]) {
+  if (!ids.length) return { deleted: 0 };
+  const session = await requirePermission("deals:delete");
+
+  // Verify all reservations belong to the org
+  const reservations = await db.reservation.findMany({
+    where: { id: { in: ids }, customer: { organizationId: session.organizationId } },
+    include: { customer: true },
+  });
+
+  if (reservations.length !== ids.length) {
+    throw new Error(
+      "One or more reservations do not belong to your organization. Please refresh and try again."
+    );
+  }
+
+  await db.$transaction(async (tx) => {
+    // Free units for non-terminal reservations before deleting
+    const activeStatuses = ["PENDING", "CONFIRMED"] as const;
+    const active = reservations.filter((r) =>
+      (activeStatuses as readonly string[]).includes(r.status)
+    );
+    await Promise.all(
+      active.map((res) =>
+        tx.unit.update({
+          where: { id: res.unitId },
+          data: { status: "AVAILABLE" },
+        })
+      )
+    );
+
+    // Delete reservation extensions first (FK constraint)
+    await tx.reservationExtension.deleteMany({
+      where: { reservationId: { in: ids } },
+    });
+
+    await tx.reservation.deleteMany({
+      where: { id: { in: ids }, customer: { organizationId: session.organizationId } },
+    });
+  });
+
+  logAuditEvent({
+    userId: session.userId,
+    userEmail: session.email,
+    userRole: session.role,
+    action: "DELETE",
+    resource: "Reservation",
+    resourceId: "bulk",
+    metadata: { count: reservations.length, ids },
+    organizationId: session.organizationId,
+  });
+
+  revalidatePath("/dashboard/reservations");
+  return { deleted: reservations.length };
+}
+
 // ─── RED: Auto-Expire Batch (for cron job) ──────────────────────────────────
 
 export async function autoExpireReservations() {

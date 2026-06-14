@@ -139,6 +139,18 @@ The "journey-first transformation" CI-as-gate exception that once lived here is 
 
 **Violating this rule is worse than a slow plan.** Editing before approval breaks the working agreement and forces reverts.
 
+### 3.11 Mandatory QA Gate — `/mimaric-qa` per implementation (standing rule, 2026-06-14)
+
+**Rule:** every implementation/enhancement runs the **`/mimaric-qa`** skill (a senior-QA / solution-architect / code-review audit of this repo) via a dedicated subagent as a QA gate BEFORE the § 3.9 verification + § 7 release cycle. Sequence for every change-set:
+
+1. Implement (manager mode — delegate to subagents, § 3.2).
+2. Main-thread validation: read every diff + `npm run build` green (§ 3.4 / § 3.8).
+3. **Spawn a subagent that runs `/mimaric-qa`** on the change-set (it runs build/lint/typecheck/tests, then fans out severity-ranked, evidence-cited findings across architecture / frontend-UX / backend-server-actions / DB / security / tests / marketplace-readiness).
+4. **Triage and FIX every finding it reports**, then re-run `/mimaric-qa` (or a targeted re-check) until clean. Per § 3.8, validate each finding against the code yourself — `/mimaric-qa` output is a subagent claim, not gospel: fix the real ones, dismiss false positives with a one-line reason (e.g. a rule-exempt `export type`).
+5. Only then proceed to the full § 3.9 preview gate + § 7 release ritual.
+
+`/mimaric-qa` is the **primary pre-release QA gate** and subsumes ad-hoc code-review/adversarial subagents (still run a focused § 3.8 adversarial pass on any security-critical *absence* claim). This is a model-process rule (encoded here + in the `feedback_mimaric_qa_gate` memory), NOT a settings.json hook — spawning a QA subagent and triaging its findings is agentic, not a deterministic command a hook could run.
+
 ---
 
 ## 4. Key Technical Notes

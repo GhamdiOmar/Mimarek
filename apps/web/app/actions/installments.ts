@@ -221,6 +221,71 @@ export async function recordPayment(
   return JSON.parse(JSON.stringify(txResult.row));
 }
 
+// ─── CX-010: Bulk Operations ────────────────────────────────────────────────
+
+export async function bulkMarkInstallmentsPaid(ids: string[]) {
+  if (!ids.length) return { updated: 0 };
+  // Gate on finance:write to match single-row recordPayment — the bulk path must
+  // never be more permissive than the single-row money mutation (QA H1).
+  const session = await requirePermission("finance:write");
+
+  // Verify all installments belong to the org via lease → customer → organizationId
+  const installments = await db.rentInstallment.findMany({
+    where: {
+      id: { in: ids },
+      lease: { customer: { organizationId: session.organizationId } },
+    },
+    include: {
+      lease: { include: { customer: true } },
+    },
+  });
+
+  if (installments.length !== ids.length) {
+    throw new Error(
+      "One or more installments do not belong to your organization. Please refresh and try again."
+    );
+  }
+
+  // Skip already-paid installments gracefully
+  const payable = installments.filter((i) => i.status !== "PAID");
+  if (!payable.length) return { updated: 0 };
+
+  const now = new Date();
+
+  const updated = await db.$transaction(
+    payable.map((inst) =>
+      db.rentInstallment.update({
+        where: { id: inst.id },
+        data: {
+          status: "PAID",
+          // AGENTS §4: always write paidAmount alongside status
+          paidAmount: inst.amount,
+          paidAt: now,
+        },
+      })
+    )
+  );
+
+  logAuditEvent({
+    userId: session.userId,
+    userEmail: session.email,
+    userRole: session.role,
+    action: "UPDATE",
+    resource: "RentInstallment",
+    resourceId: "bulk",
+    metadata: {
+      action: "bulkMarkPaid",
+      count: updated.length,
+      ids: payable.map((i) => i.id),
+    },
+    organizationId: session.organizationId,
+  });
+
+  revalidatePath("/dashboard/payments");
+  revalidatePath("/dashboard/finance");
+  return { updated: updated.length };
+}
+
 export async function markOverdueInstallments() {
   const session = await requirePermission("finance:write");
 

@@ -10,6 +10,7 @@ import {
   AlertCircle,
   AlertTriangle,
   Plus,
+  CheckCircle,
 } from "lucide-react";
 import {
   Button,
@@ -32,11 +33,12 @@ import {
   AlertDescription,
   IconButton,
   DataTable,
+  ConfirmDialog,
   type ColumnDef,
 } from "@repo/ui";
 import { useLanguage } from "../../../components/LanguageProvider";
 import { usePermissions } from "../../../hooks/usePermissions";
-import { getInstallments, recordPayment } from "../../actions/installments";
+import { getInstallments, recordPayment, bulkMarkInstallmentsPaid } from "../../actions/installments";
 import { getPaymentPlan, recordInstallmentPayment } from "../../actions/payment-plans";
 import {
   getSavedViews,
@@ -196,6 +198,31 @@ export default function PaymentsPage() {
   // Modal-scoped idempotency key: minted once per modal open so double-submit
   // replays safely on the server (same key → server short-circuits, no double-write).
   const paymentReferenceRef = React.useRef<string>("");
+
+  // Bulk mark-paid state
+  const [bulkMarkPaidOpen, setBulkMarkPaidOpen] = React.useState(false);
+  const [bulkSelected, setBulkSelected] = React.useState<PaymentEntry[]>([]);
+  const [bulkWorking, setBulkWorking] = React.useState(false);
+
+  async function handleBulkMarkPaid() {
+    if (!bulkSelected.length) return;
+    setBulkWorking(true);
+    try {
+      const result = await bulkMarkInstallmentsPaid(bulkSelected.map((e) => e.id));
+      toast.success(
+        lang === "ar"
+          ? `تم تسجيل ${result.updated} دفعة`
+          : `${result.updated} payment(s) marked as paid`
+      );
+      setBulkMarkPaidOpen(false);
+      setBulkSelected([]);
+      loadData();
+    } catch (err: unknown) {
+      toast.error(sanitizeError(err, lang));
+    } finally {
+      setBulkWorking(false);
+    }
+  }
 
   function loadData() {
     setLoading(true);
@@ -847,6 +874,31 @@ export default function PaymentsPage() {
           pagination
           pageSize={10}
           getRowId={(r) => r.id}
+          enableSelection
+          bulkActions={(selected) => (
+            <div className="flex items-center gap-2">
+              {canWritePayments && (
+                <Button
+                  size="sm"
+                  variant="success"
+                  style={{ display: "inline-flex" }}
+                  className="gap-1"
+                  disabled={bulkWorking}
+                  onClick={() => {
+                    setBulkSelected(selected as PaymentEntry[]);
+                    setBulkMarkPaidOpen(true);
+                  }}
+                >
+                  {bulkWorking
+                    ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    : <CheckCircle className="h-3.5 w-3.5" />}
+                  {lang === "ar"
+                    ? `تسجيل كمدفوع (${selected.length})`
+                    : `Mark as paid (${selected.length})`}
+                </Button>
+              )}
+            </div>
+          )}
           enableColumnReorder
           exportable
           onExport={({ rows, columns: exportColumns }) =>
@@ -1010,6 +1062,25 @@ export default function PaymentsPage() {
       </ResponsiveDialog>
     </div>
     </div>
+
+    {/* Bulk Mark Paid Confirm — financial action, always gated */}
+    <ConfirmDialog
+      open={bulkMarkPaidOpen}
+      onOpenChange={setBulkMarkPaidOpen}
+      title={
+        lang === "ar"
+          ? `تسجيل ${bulkSelected.length} دفعة كمدفوعة`
+          : `Mark ${bulkSelected.length} payment(s) as paid`
+      }
+      description={
+        lang === "ar"
+          ? `سيتم تسجيل ${bulkSelected.length} قسط كمدفوع بالمبلغ الكامل. الأقساط المسدّدة بالفعل لن تتأثر.`
+          : `${bulkSelected.length} installment(s) will be marked as fully paid. Already-paid installments will be skipped.`
+      }
+      confirmLabel={lang === "ar" ? "تسجيل كمدفوع" : "Mark as paid"}
+      cancelLabel={lang === "ar" ? "تراجع" : "Go back"}
+      onConfirm={handleBulkMarkPaid}
+    />
     </>
   );
 }

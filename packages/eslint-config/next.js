@@ -230,6 +230,9 @@ export const nextJsConfig = [
     files: [
       "app/actions/customers.ts",
       "app/actions/marketplace.ts",
+      // CX-010 bulk import: writes pre-encrypted Customer rows via createMany
+      // (encryptCustomerData) — the deliberate, documented third PII creator.
+      "app/actions/customer-import.ts",
       "**/e2e/**",
       "**/scripts/**",
       "**/seed.ts",

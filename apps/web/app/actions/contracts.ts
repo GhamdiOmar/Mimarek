@@ -15,6 +15,42 @@ const FREQUENCY_MONTHS: Record<string, number> = {
   ANNUAL: 12,
 };
 
+/**
+ * Compute the rent-installment schedule for a lease term.
+ *
+ * Single source of truth for the schedule shape — used by BOTH createContract
+ * (initial generation) and updateContract (recreation when lease terms change).
+ * Returns the per-installment rows WITHOUT a leaseId so each caller can attach
+ * the lease id it owns. Keeping this pure (no `tx`) lets both paths reuse the
+ * exact same date/amount math, so an edited lease can never drift from a freshly
+ * created one. (`"use server"` files may export only async functions — see § 4 —
+ * so this stays a module-private non-exported helper, not an `export`.)
+ */
+function buildRentInstallments(input: {
+  startDate: Date;
+  endDate: Date;
+  amount: number;
+  paymentFrequency: string;
+}): Array<{ dueDate: Date; amount: number; status: "UNPAID" }> {
+  const { startDate, endDate, amount, paymentFrequency } = input;
+  const freqMonths = FREQUENCY_MONTHS[paymentFrequency] || 1;
+  const totalMonths = Math.max(
+    1,
+    (endDate.getFullYear() - startDate.getFullYear()) * 12 +
+      (endDate.getMonth() - startDate.getMonth()),
+  );
+  const installmentCount = Math.max(1, Math.ceil(totalMonths / freqMonths));
+  const installmentAmount = amount / installmentCount;
+
+  const installments: Array<{ dueDate: Date; amount: number; status: "UNPAID" }> = [];
+  for (let i = 0; i < installmentCount; i++) {
+    const dueDate = new Date(startDate);
+    dueDate.setMonth(dueDate.getMonth() + i * freqMonths);
+    installments.push({ dueDate, amount: installmentAmount, status: "UNPAID" });
+  }
+  return installments;
+}
+
 export async function createContract(data: {
   customerId: string;
   unitId: string;
@@ -85,10 +121,9 @@ export async function createContract(data: {
     // Create Lease + Installments + Contract in transaction
     const start = new Date(data.startDate);
     const end = new Date(data.endDate);
-    const freqMonths = FREQUENCY_MONTHS[data.paymentFrequency] || 1;
-    const totalMonths = Math.max(1, (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth()));
-    const installmentCount = Math.max(1, Math.ceil(totalMonths / freqMonths));
-    const installmentAmount = data.amount / installmentCount;
+    // Capture the narrowed frequency in a local const — the outer `if` narrowing
+    // does not survive into the async tx closure (data could mutate before run).
+    const paymentFrequency = data.paymentFrequency;
 
     contract = await db.$transaction(async (tx) => {
       // Generate contract number atomically via sequence counter (race-safe)
@@ -114,18 +149,13 @@ export async function createContract(data: {
         },
       });
 
-      // Generate rent installments
-      const installments = [];
-      for (let i = 0; i < installmentCount; i++) {
-        const dueDate = new Date(start);
-        dueDate.setMonth(dueDate.getMonth() + i * freqMonths);
-        installments.push({
-          leaseId: lease.id,
-          dueDate,
-          amount: installmentAmount,
-          status: "UNPAID" as const,
-        });
-      }
+      // Generate rent installments (shared schedule logic — see buildRentInstallments)
+      const installments = buildRentInstallments({
+        startDate: start,
+        endDate: end,
+        amount: data.amount,
+        paymentFrequency,
+      }).map((inst) => ({ ...inst, leaseId: lease.id }));
       await tx.rentInstallment.createMany({ data: installments });
 
       // Create Contract linked to Lease
@@ -405,6 +435,184 @@ export async function updateContractStatus(
   return JSON.parse(JSON.stringify(updated));
 }
 
+/**
+ * Edit a DRAFT contract's core terms (CX-011).
+ *
+ * DRAFT is the only freely-editable state (state-machine.ts): once a contract is
+ * SENT/SIGNED/CANCELLED/VOID its terms are locked. This is enforced on BOTH the
+ * server (throw below) and the client (the Edit button only renders for DRAFT).
+ *
+ * For LEASE contracts, if the term-defining inputs (startDate / endDate /
+ * paymentFrequency / amount) change, the rent-installment schedule is REGENERATED
+ * from scratch (delete + recreate via the shared buildRentInstallments helper) so
+ * no stale installment rows survive an edit. The lease row's dates/totalAmount are
+ * updated in the same atomic transaction.
+ */
+export async function updateContract(
+  contractId: string,
+  data: {
+    customerId: string;
+    unitId: string;
+    amount: number;
+    notes?: string;
+    // LEASE-only term fields
+    startDate?: string;
+    endDate?: string;
+    paymentFrequency?: string;
+  },
+) {
+  const session = await requirePermission("contracts:write");
+
+  // Load the contract (org-scoped) + its lease so we can diff term changes.
+  const contract = await db.contract.findFirst({
+    where: { id: contractId, customer: { organizationId: session.organizationId } },
+    include: { lease: true },
+  });
+  if (!contract) {
+    throw new Error("Contract not found or you don't have access. Please verify the contract exists.");
+  }
+
+  // DRAFT-only — only draft contracts can be edited (server enforcement).
+  if (contract.status !== "DRAFT") {
+    throw new Error("Forbidden: only DRAFT contracts can be edited");
+  }
+
+  // Validate amount
+  if (!data.amount || data.amount <= 0 || !Number.isFinite(data.amount)) {
+    throw new Error("Please enter a valid contract amount. The amount must be a positive number.");
+  }
+
+  // Verify the (possibly changed) customer + unit belong to the org.
+  const customer = await db.customer.findFirst({
+    where: { id: data.customerId, organizationId: session.organizationId },
+  });
+  if (!customer) {
+    throw new Error("Customer not found or you don't have access. Please verify the customer exists in your organization.");
+  }
+  const unit = await db.unit.findFirst({
+    where: { id: data.unitId, organizationId: session.organizationId },
+  });
+  if (!unit) {
+    throw new Error("Unit not found or you don't have access. Please verify the unit exists in your organization.");
+  }
+
+  const isLease = contract.type === "LEASE";
+
+  // LEASE term validation (mirrors createContract's Ejar rules for edited terms).
+  if (isLease) {
+    if (!data.startDate || !data.endDate) {
+      throw new Error("Start date and end date are required for lease contracts. Please provide both dates.");
+    }
+    if (!data.paymentFrequency) {
+      throw new Error("Payment frequency is required for lease contracts. Please select a payment schedule (monthly, quarterly, etc.).");
+    }
+  }
+
+  // Snapshot BEFORE for the audit field-diff.
+  const before: Record<string, unknown> = {
+    customerId: contract.customerId,
+    unitId: contract.unitId,
+    amount: contract.amount,
+    notes: contract.notes,
+    ...(isLease
+      ? {
+          startDate: contract.lease?.startDate ?? null,
+          endDate: contract.lease?.endDate ?? null,
+          paymentFrequency: contract.paymentFrequency ?? null,
+        }
+      : {}),
+  };
+
+  // Determine whether the lease schedule must be regenerated.
+  const newStart = data.startDate ? new Date(data.startDate) : null;
+  const newEnd = data.endDate ? new Date(data.endDate) : null;
+  const termChanged =
+    isLease &&
+    !!newStart &&
+    !!newEnd &&
+    (contract.lease?.startDate?.getTime() !== newStart.getTime() ||
+      contract.lease?.endDate?.getTime() !== newEnd.getTime() ||
+      contract.paymentFrequency !== data.paymentFrequency ||
+      Number(contract.amount) !== data.amount);
+
+  const updated = await db.$transaction(async (tx) => {
+    // 1) Update core contract terms.
+    const c = await tx.contract.update({
+      where: { id: contractId },
+      data: {
+        customerId: data.customerId,
+        unitId: data.unitId,
+        amount: data.amount,
+        notes: data.notes,
+        ...(isLease
+          ? { paymentFrequency: data.paymentFrequency as any }
+          : {}),
+      },
+    });
+
+    // 2) LEASE: keep the linked lease row in sync, and recreate installments
+    //    whenever a term-defining input changed (no stale rows left behind).
+    if (isLease && contract.leaseId && newStart && newEnd) {
+      await tx.lease.update({
+        where: { id: contract.leaseId },
+        data: {
+          customerId: data.customerId,
+          unitId: data.unitId,
+          startDate: newStart,
+          endDate: newEnd,
+          totalAmount: data.amount,
+        },
+      });
+
+      if (termChanged) {
+        // Delete-and-regenerate the schedule via the SAME logic as createContract.
+        await tx.rentInstallment.deleteMany({ where: { leaseId: contract.leaseId } });
+        const installments = buildRentInstallments({
+          startDate: newStart,
+          endDate: newEnd,
+          amount: data.amount,
+          paymentFrequency: data.paymentFrequency!,
+        }).map((inst) => ({ ...inst, leaseId: contract.leaseId! }));
+        await tx.rentInstallment.createMany({ data: installments });
+      }
+    }
+
+    return c;
+  });
+
+  // Snapshot AFTER — drives logAuditEvent's fieldChanges diff.
+  const after: Record<string, unknown> = {
+    customerId: data.customerId,
+    unitId: data.unitId,
+    amount: data.amount,
+    notes: data.notes ?? null,
+    ...(isLease
+      ? {
+          startDate: newStart,
+          endDate: newEnd,
+          paymentFrequency: data.paymentFrequency ?? null,
+        }
+      : {}),
+  };
+
+  logAuditEvent({
+    userId: session.userId,
+    userEmail: session.email,
+    userRole: session.role,
+    action: "UPDATE",
+    resource: "Contract",
+    resourceId: contractId,
+    before,
+    after,
+    metadata: { installmentsRecreated: termChanged },
+    organizationId: session.organizationId,
+  });
+
+  revalidatePath("/dashboard/contracts");
+  revalidatePath(`/dashboard/contracts/${contractId}`);
+  return JSON.parse(JSON.stringify(updated));
+}
+
 export async function deleteContract(contractId: string) {
   const session = await requirePermission("contracts:delete");
 
@@ -437,6 +645,171 @@ export async function deleteContract(contractId: string) {
 
   revalidatePath("/dashboard/contracts");
   revalidatePath("/dashboard/units");
+}
+
+// ─── CX-010: Bulk operations on contracts ───────────────────────────────────
+
+/**
+ * Bulk status transition (CX-010) — e.g. "Send selected" / "Cancel selected".
+ *
+ * Each contract's transition is validated independently via the state machine
+ * (isValidContractTransition); ids whose current status can't reach the target
+ * are SKIPPED (collected + reported back), never forced. All valid transitions
+ * commit in one atomic transaction so a mid-batch failure rolls the whole batch
+ * back. Org scope is enforced by the findMany filter. Destructive targets
+ * (CANCELLED / VOID) require contracts:delete; others require contracts:write.
+ */
+export async function bulkUpdateContractStatus(
+  ids: string[],
+  targetStatus: "SENT" | "SIGNED" | "CANCELLED" | "VOID",
+) {
+  const permission =
+    targetStatus === "CANCELLED" || targetStatus === "VOID" ? "contracts:delete" : "contracts:write";
+  const session = await requirePermission(permission);
+
+  if (!Array.isArray(ids) || ids.length === 0) {
+    throw new Error("No contracts were selected. Please select at least one contract.");
+  }
+
+  // Org-scoped load — anything not in the caller's org simply isn't returned.
+  const contracts = await db.contract.findMany({
+    where: { id: { in: ids }, customer: { organizationId: session.organizationId } },
+    select: { id: true, status: true, type: true, unitId: true, customerId: true, leaseId: true },
+  });
+
+  const eligible = contracts.filter((c) => isValidContractTransition(c.status, targetStatus));
+  const skipped = contracts
+    .filter((c) => !isValidContractTransition(c.status, targetStatus))
+    .map((c) => c.id);
+  // ids the caller passed that weren't found in their org (also skipped).
+  const foundIds = new Set(contracts.map((c) => c.id));
+  const notFound = ids.filter((id) => !foundIds.has(id));
+
+  if (eligible.length === 0) {
+    throw new Error(
+      "None of the selected contracts can move to the requested status. Please check their current statuses.",
+    );
+  }
+
+  await db.$transaction(async (tx) => {
+    for (const c of eligible) {
+      await tx.contract.update({
+        where: { id: c.id },
+        data: {
+          status: targetStatus,
+          ...(targetStatus === "SIGNED" ? { signedAt: new Date() } : {}),
+        },
+      });
+
+      // Side-effects mirror updateContractStatus so unit/lease/customer state
+      // stays consistent for the transitions exposed in the bulk toolbar.
+      if (targetStatus === "SIGNED") {
+        if (c.type === "SALE") {
+          await tx.unit.update({ where: { id: c.unitId }, data: { status: "SOLD" } });
+        } else {
+          await tx.unit.update({ where: { id: c.unitId }, data: { status: "RENTED" } });
+          await tx.customer.update({ where: { id: c.customerId }, data: { status: "ACTIVE_TENANT" } });
+          if (c.leaseId) {
+            await tx.lease.update({ where: { id: c.leaseId }, data: { status: "ACTIVE" } });
+          }
+        }
+      }
+
+      if (targetStatus === "CANCELLED" || targetStatus === "VOID") {
+        const currentUnit = await tx.unit.findUnique({ where: { id: c.unitId } });
+        if (currentUnit && (currentUnit.status === "SOLD" || currentUnit.status === "RENTED")) {
+          await tx.unit.update({ where: { id: c.unitId }, data: { status: "AVAILABLE" } });
+        }
+        if (c.leaseId) {
+          await tx.lease.update({ where: { id: c.leaseId }, data: { status: "TERMINATED" } });
+        }
+      }
+    }
+  });
+
+  // One audit event for the whole batch (§ — bulk = single event).
+  logAuditEvent({
+    userId: session.userId,
+    userEmail: session.email,
+    userRole: session.role,
+    action: "UPDATE",
+    resource: "Contract",
+    metadata: {
+      bulk: true,
+      targetStatus,
+      updatedIds: eligible.map((c) => c.id),
+      updatedCount: eligible.length,
+      skippedIds: [...skipped, ...notFound],
+    },
+    organizationId: session.organizationId,
+  });
+
+  revalidatePath("/dashboard/contracts");
+  revalidatePath("/dashboard/units");
+  return {
+    updatedCount: eligible.length,
+    skippedCount: skipped.length + notFound.length,
+    skippedIds: [...skipped, ...notFound],
+  };
+}
+
+/**
+ * Bulk delete contracts (CX-010) — DRAFT-only, server-enforced.
+ *
+ * Any non-DRAFT id in the batch makes the whole call throw (no partial delete of
+ * a mixed selection), matching deleteContract's single-row rule. Org scope via
+ * the findMany filter; requires contracts:delete; one atomic transaction; one
+ * audit event. Linked leases + their installments are removed first (same
+ * unlink-then-delete order as deleteContract).
+ */
+export async function bulkDeleteContracts(ids: string[]) {
+  const session = await requirePermission("contracts:delete");
+
+  if (!Array.isArray(ids) || ids.length === 0) {
+    throw new Error("No contracts were selected. Please select at least one contract.");
+  }
+
+  const contracts = await db.contract.findMany({
+    where: { id: { in: ids }, customer: { organizationId: session.organizationId } },
+    select: { id: true, status: true, leaseId: true },
+  });
+
+  const foundIds = new Set(contracts.map((c) => c.id));
+  const notFound = ids.filter((id) => !foundIds.has(id));
+  if (notFound.length > 0) {
+    throw new Error("Some selected contracts could not be found or you don't have access to them.");
+  }
+
+  // DRAFT-only — reject the whole batch if any contract is not a draft.
+  const nonDraft = contracts.filter((c) => c.status !== "DRAFT");
+  if (nonDraft.length > 0) {
+    throw new Error("Only draft contracts can be deleted. Use Cancel or Void for active contracts.");
+  }
+
+  await db.$transaction(async (tx) => {
+    for (const c of contracts) {
+      if (c.leaseId) {
+        await tx.rentInstallment.deleteMany({ where: { leaseId: c.leaseId } });
+        await tx.contract.update({ where: { id: c.id }, data: { leaseId: null } });
+        await tx.lease.delete({ where: { id: c.leaseId } });
+      }
+      await tx.contract.delete({ where: { id: c.id } });
+    }
+  });
+
+  logAuditEvent({
+    userId: session.userId,
+    userEmail: session.email,
+    userRole: session.role,
+    action: "DELETE",
+    resource: "Contract",
+    metadata: { bulk: true, deletedIds: contracts.map((c) => c.id), deletedCount: contracts.length },
+    organizationId: session.organizationId,
+  });
+
+  revalidatePath("/dashboard/contracts");
+  revalidatePath("/dashboard/units");
+  return { deletedCount: contracts.length };
 }
 
 // ─── RED: Contract Amount & Signature Enhancements ──────────────────────────

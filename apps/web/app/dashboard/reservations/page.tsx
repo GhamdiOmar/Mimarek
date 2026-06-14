@@ -13,6 +13,7 @@ import {
   Filter,
   Handshake,
   AlertTriangle,
+  Trash2,
 } from "lucide-react";
 import {
   Button,
@@ -36,6 +37,7 @@ import {
   BottomSheet,
   Alert,
   AlertDescription,
+  ConfirmDialog,
   cn,
 } from "@repo/ui";
 import { useForm, Controller } from "react-hook-form";
@@ -48,6 +50,8 @@ import {
   getReservations,
   createReservation,
   updateReservationStatus,
+  bulkUpdateReservationStatus,
+  bulkDeleteReservations,
 } from "../../actions/reservations";
 import { getCustomers } from "../../actions/customers";
 import { getUnitsWithBuildings } from "../../actions/units";
@@ -190,6 +194,55 @@ export default function ReservationsPage() {
   // Cancel confirm
   const [cancelDeal, setCancelDeal] = React.useState<Reservation | null>(null);
   const [cancelling, setCancelling] = React.useState(false);
+
+  // Bulk operation state
+  const [bulkCancelOpen, setBulkCancelOpen] = React.useState(false);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = React.useState(false);
+  const [bulkSelected, setBulkSelected] = React.useState<Reservation[]>([]);
+  const [bulkWorking, setBulkWorking] = React.useState(false);
+
+  async function handleBulkCancel() {
+    if (!bulkSelected.length) return;
+    setBulkWorking(true);
+    try {
+      const result = await bulkUpdateReservationStatus(
+        bulkSelected.map((r) => r.id),
+        "CANCELLED"
+      );
+      toast.success(
+        lang === "ar"
+          ? `تم إلغاء ${result.updated} حجز`
+          : `${result.updated} reservation(s) cancelled`
+      );
+      setBulkCancelOpen(false);
+      setBulkSelected([]);
+      loadDeals();
+    } catch (err: unknown) {
+      toast.error(sanitizeError(err, lang));
+    } finally {
+      setBulkWorking(false);
+    }
+  }
+
+  async function handleBulkDelete() {
+    if (!bulkSelected.length) return;
+    setBulkWorking(true);
+    try {
+      const result = await bulkDeleteReservations(bulkSelected.map((r) => r.id));
+      toast.success(
+        lang === "ar"
+          ? `تم حذف ${result.deleted} حجز`
+          : `${result.deleted} reservation(s) deleted`
+      );
+      setBulkDeleteOpen(false);
+      setBulkSelected([]);
+      loadDeals();
+    } catch (err: unknown) {
+      toast.error(sanitizeError(err, lang));
+    } finally {
+      setBulkWorking(false);
+    }
+  }
 
   function loadDeals() {
     setLoading(true);
@@ -931,6 +984,49 @@ export default function ReservationsPage() {
           pagination
           pageSize={10}
           getRowId={(r) => r.id}
+          enableSelection
+          bulkActions={(selected) => (
+            <div className="flex items-center gap-2">
+              {canWriteDeals && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  style={{ display: "inline-flex" }}
+                  className="gap-1"
+                  disabled={bulkWorking}
+                  onClick={() => {
+                    setBulkSelected(selected as Reservation[]);
+                    setBulkCancelOpen(true);
+                  }}
+                >
+                  <Ban className="h-3.5 w-3.5" />
+                  {lang === "ar"
+                    ? `إلغاء (${selected.length})`
+                    : `Cancel selected (${selected.length})`}
+                </Button>
+              )}
+              {can("deals:delete") && (
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  style={{ display: "inline-flex" }}
+                  className="gap-1"
+                  disabled={bulkWorking}
+                  onClick={() => {
+                    setBulkSelected(selected as Reservation[]);
+                    setBulkDeleteOpen(true);
+                  }}
+                >
+                  {bulkWorking
+                    ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    : <Trash2 className="h-3.5 w-3.5" />}
+                  {lang === "ar"
+                    ? `حذف (${selected.length})`
+                    : `Delete (${selected.length})`}
+                </Button>
+              )}
+            </div>
+          )}
           enableColumnReorder
           exportable
           onExport={({ rows, columns: exportColumns }) =>
@@ -1385,6 +1481,45 @@ export default function ReservationsPage() {
       </ResponsiveDialog>
     </div>
     </div>
+
+    {/* Bulk Cancel Confirm */}
+    <ConfirmDialog
+      open={bulkCancelOpen}
+      onOpenChange={setBulkCancelOpen}
+      title={
+        lang === "ar"
+          ? `إلغاء ${bulkSelected.length} حجز`
+          : `Cancel ${bulkSelected.length} reservation(s)`
+      }
+      description={
+        lang === "ar"
+          ? `سيتم إلغاء ${bulkSelected.length} حجز وتحرير الوحدات المرتبطة بها. الحجوزات المنتهية أو الملغاة بالفعل لن تتأثر.`
+          : `${bulkSelected.length} reservation(s) will be cancelled and their units released. Already expired or cancelled reservations will be skipped.`
+      }
+      confirmLabel={lang === "ar" ? "إلغاء الحجوزات" : "Cancel reservations"}
+      cancelLabel={lang === "ar" ? "تراجع" : "Go back"}
+      onConfirm={handleBulkCancel}
+    />
+
+    {/* Bulk Delete Confirm */}
+    <ConfirmDialog
+      open={bulkDeleteOpen}
+      onOpenChange={setBulkDeleteOpen}
+      title={
+        lang === "ar"
+          ? `حذف ${bulkSelected.length} حجز`
+          : `Delete ${bulkSelected.length} reservation(s)`
+      }
+      description={
+        lang === "ar"
+          ? `سيتم حذف ${bulkSelected.length} حجز نهائياً. لا يمكن التراجع عن هذه العملية.`
+          : `${bulkSelected.length} reservation(s) will be permanently deleted. This action cannot be undone.`
+      }
+      confirmLabel={lang === "ar" ? "حذف" : "Delete"}
+      cancelLabel={lang === "ar" ? "تراجع" : "Go back"}
+      onConfirm={handleBulkDelete}
+      variant="destructive"
+    />
     </>
   );
 }
