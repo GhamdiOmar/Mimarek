@@ -1,11 +1,59 @@
 # Mimaric — Consolidated Remaining Work
 
 **Created:** 2026-06-13 (post-v4.18.0) · **Owner:** Omar Alghamdi
-**Status of baseline:** v4.18.0 is **shipped** (PR #23 `74af715`, tag + GitHub release live, CI green). F4 (route-guards SSOT) and F5 (domain-label registry) shipped in v4.18.0.
+**Last revised against `main`:** 2026-06-16 · `main` = **v4.26.0** (`100547e`, tag `v4.26.0`).
+**Status of baseline:** the **entire CX-audit remediation (CX-001…CX-022) is shipped** across v4.19.1 → v4.26.0 (22/22 findings addressed). What's left is a small polish tail + the separate QA-audit / governance programs — all gathered in the **Master Status** section immediately below.
 
 This is the **single backlog** — it folds in everything from the former `v4.18.0-plan`, `v4.18.0-followups`, `architecture-required-fixes`, `performance-and-load`, `v4.11-followups`, `v4.16-handover`, and the five `UI/*.txt` change-request specs (all now deleted). It is self-contained; no external doc references remain.
 
-Order: **(0)** must-do prod ops → **(1)** v4.18.0 follow-ups → **(2)** housekeeping → **(3)** near-term backlog → **(4) LATER IMPLEMENTATION** → **(5)** open product question → **(6)** pending UI features → **(7)** load-bearing patterns (reference).
+Order: **(0)** must-do prod ops → **(1)** v4.18.0 follow-ups that still apply → **(2)** housekeeping → **(3)** near-term backlog → **(4) LATER IMPLEMENTATION** → **(5)** open product question → **(6)** UI backlog / already-shipped plan cleanup → **(7)** load-bearing patterns (reference).
+
+---
+
+## ★ MASTER STATUS — all remaining work (as of v4.26.0 · 2026-06-16)
+
+This is the single, current top-of-funnel. The dated sections below (§0–§7) are the historical detail; where they conflict with this block, **this block wins**.
+
+**Shipped since this file's old v4.23.0 baseline:**
+- **v4.24.0** — CX-010 bulk ops (Payments/Reservations/Contracts) + CSV/Excel import wizard (customers+units) + CX-011 DRAFT contract edit.
+- **v4.25.0** — CX-003 **pt1**: RSC conversion of 5 list pages (contracts, reservations, payments, marketplace, documents) → no first-paint waterfall; + CX-018 USER→`/portal` lockout (closed a real `dashboard:read` leak).
+- **v4.26.0** — CX-017 axe gate expanded 5 routes → **all 16 tenant + 8 platform routes** (new system-role spec). CX-003 **pt2** (RSC CrmView) was found **already done** (CrmView already RSC-seeded) → no code needed.
+- ⇒ **§3.4 (F8 RSC) and §3.7 (axe closeout) below are now largely DONE** — see the inline ✅ marks.
+
+**ALL REMAINING WORK, by cluster** (each names the doc that owns the detail):
+
+**A · CX-audit polish tail → v4.27 (small; the last of the CX program).**
+- **CX-006** — CRM add-customer form → RHF + zod (the one form still on `useState`; ~300-line / 13-field + property-linking form in `CrmView`). Owns detail: `CX-REMEDIATION-HANDOVER.md` §4/§12.
+- **CX-017 Lighthouse CI** (≥95) — new `@lhci/cli` dep + a CI job; verify CI carefully.
+- **a11y debt the expanded axe gate baselined** (un-baseline each as it's fixed, in `e2e/accessibility.{admin,system}.spec.ts`): `color-contrast` (~5 non-success-badge instances), `select-name` (~63 native `<select>` → a governed `<Select>` primitive), `label` (inputs missing `htmlFor` → a governed `<Field>` primitive). Owns detail: `QA-AUDIT-REMEDIATION.md` QA-FE-01 / QA-FE-03.
+
+**B · QA-audit remediation (security · DB · architecture · marketplace) — NOT started; its own program.** Owns detail: **`QA-AUDIT-REMEDIATION.md`** (P0 security hotfixes · P1 DB governance + schema correctness · P2 a11y + architecture · P3 marketplace lawful redesign). Still-open highlights: unguarded `"use server"` exports (QA-SEC-01), coupon authz + redemption race (QA-SEC-02), security headers / JWT idle-timeout (QA-SEC-03/04), money precision `Decimal(65,30)` → `Decimal(14,2)` (QA-DB-02), cascade-delete of financial/audit rows → Restrict (QA-DB-03), tenant tables lacking a direct `organizationId` (QA-DB-04), client god-objects / abandoned seams (QA-ARCH-01/02), marketplace proof-gated facilitation + REGA license gating (QA-MKT — gated on the §5 product question + licensing).
+
+**C · Standing engineering backlog (still valid — detail in §1–§3 + §6 below):** marketplace cross-org E2E un-`fixme` (§1.1) · native review of 5 Arabic marketplace-status strings (§1.2) · true HTTP-403 edge middleware (§3.1) · registration email-verification layer (§3.2) · `/dashboard/more` decommission, 4 wire points (§3.6) · full `t()` migration, touched-file only (§3.8) · F9 verification-tooling + `@repo/ui` hygiene (§3.5) · load-test baseline / k6 (§3.9) · `@repo/ui` specs: **system-wide date-picker replacement** (§6.2) + **Alert compound API** (§6.4). (Theme-toggle, notification-center, CircleMenu radial nav = already shipped.)
+
+**D · Parked by Omar (do not schedule):** DB region move **Sydney → Bahrain `me-south-1`** (§4.1 — ops; the raw-latency lever for CX-003, ~10–15×) · **ZATCA e-invoicing** module (§4.2 — blocked on the external clearance pipeline).
+
+**Open product question (gates marketplace compliance scope):** marketplace **inquiry-only vs reserve-and-buy** (§5) — Omar's call; prerequisite for scoping the QA-MKT legal/compliance work.
+
+---
+
+## Current-main audit summary (2026-06-15)
+
+**Correct and confirmed against `main`:**
+- Current DB governance is still `prisma db push` + generated/manual RLS SQL, not Prisma Migrate. Proof: `.github/workflows/ci.yml` runs `cd packages/db && npx prisma db push --accept-data-loss`; `packages/db/prisma/migrations/` is absent on `main`; `AGENTS.md` §4 explicitly says schema changes use `db push`.
+- `SavedTableView` and DataTable saved views/reorder/export are no longer future work. Proof: `packages/db/prisma/schema.prisma` has `model SavedTableView`; `apps/web/app/actions/saved-views.ts` exists; Payments, Reservations, and Contracts pass `enableColumnReorder`, `exportable`, and `savedViews` into `DataTable`.
+- Marketplace cross-org E2E is still a real follow-up. Proof: `apps/web/e2e/marketplace.cross-org.spec.ts` still has `test.fixme(...)` on the publish → browse → inquire → convert → settlement flow.
+- The true HTTP-403 contract is still deferred. Proof: `apps/web/lib/auth-helpers.ts` documents inline `<AccessDenied>` and rejects the experimental `forbidden()` path.
+
+**Partially correct:**
+- The axe baseline section was stale. `color-contrast` still appears in `KNOWN_BASELINE_RULES`, but v4.20.0 added `--success-strong`; current work should first remove/confirm that exclusion, not blindly retune success colors again. `aria-allowed-attr` remains a live baseline item.
+- USER portal work is smaller than originally scoped. `/portal` exists, `app/portal/layout.tsx` gates `role === "USER"`, and `loginAction` routes tenant-mode logins to `/portal`; the remaining question is explicit direct `/dashboard` landing/redirect behavior for USER.
+- Notification center and ThemeToggle are implemented in `apps/web`, not `@repo/ui`; future work is extraction/polish only.
+
+**Incorrect or stale:**
+- Any plan that treats `FUTURE_PLANS.md` as a `main` file is branch-local/stale; it is not tracked on `main` at v4.23.0.
+- The deleted main-only `future-plans/crm-kanban-card-enrichment.md` should not be resurrected as written: `Customer.stageEnteredAt DateTime? @default(now())` already exists on `main`, so the old "schema gap" premise is outdated. If the item returns, scope it as UI rendering + write-path verification.
+- The old "build CircleMenu" plan is stale. `apps/web/components/shell/CircleMenu.tsx`, `CircleMenuOverlay.tsx`, and `radial-groups.ts` already ship the radial menu.
 
 ---
 
@@ -31,8 +79,8 @@ Order: **(0)** must-do prod ops → **(1)** v4.18.0 follow-ups → **(2)** house
 ## 2. Repo housekeeping (status)
 
 - **Done in this cleanup:** removed audit artifacts (screenshots, QA HTML reports, slop study, UI/UX PDFs, v4.11 status/verified-audit), old `verification-v4.15.1/`, Zone.Identifier junk + stray `git`/`gitignore`, the shipped `v4.18.0-plan.md` + `v4.18.0-followups.md` + the 4 future-plans detail docs + the 5 `UI/*.txt` specs (folded here), and the `Individual data Absher.json` PII file.
-- **Kept, untracked, worth committing if wanted:** `future-plans/REMAINING-WORK.md` (this file — committed), `UI/mimaric_v4.11_design_direction.md` (cited by AGENTS.md §6.8 — KEEP), `env.example`, `docs/`, `user-guides/`, `FUTURE_PLANS.md`.
-- **Decide deliberately:** `packages/db/prisma/migrations/` **contradicts AGENTS.md §4** (this repo has NO migration history; uses `db push`) — delete it, or do the full CI conversion to `prisma migrate` in one change. `CI-CD-Pipeline-Proposal/` is a study (AGENTS.md "Do NOT touch") — keep ignored or commit as a labeled study. `scripts/capture-v4151.mjs` is an old one-off capture script — delete or fold into the F9 capture library (§3).
+- **Current `main` reality:** `future-plans/REMAINING-WORK.md` is tracked; `future-plans/crm-kanban-card-enrichment.md` exists on `main` but is deleted in this working branch; `future-plans/QA-AUDIT-REMEDIATION.md` and `future-plans/CX-REMEDIATION-HANDOVER.md` are branch-local additions. `FUTURE_PLANS.md` is also branch-local, not a `main` source.
+- **Decide deliberately:** `packages/db/prisma/migrations/` is not tracked on `main` and **contradicts AGENTS.md §4** if introduced accidentally. Delete any untracked migrations directory, or run a separately approved, atomic CI+AGENTS conversion to Prisma Migrate. `CI-CD-Pipeline-Proposal/` is a study — keep ignored or commit as a clearly labeled study. `scripts/capture-v4151.mjs` is an old one-off capture script — delete or fold into the F9 capture library (§3).
 - **Trivial:** delete stale remote branch `v4.16.1-permission-forbidden` (`git push origin --delete v4.16.1-permission-forbidden`).
 
 ---
@@ -48,7 +96,9 @@ Email verification before activation + `PENDING_VERIFICATION` org quarantine + a
 ### 3.3 Ciphertext envelope + DB CHECK constraint
 Versioned prefix on encrypted values + a `CHECK` validating it (the only layer that would have caught the P1-1 plaintext leak at write time). Requires a format migration of all encrypted columns; revisit with the next PII schema work.
 
-### 3.4 F8 — RSC page+View migration (ongoing)
+### 3.4 F8 — RSC page+View migration — ✅ mostly DONE (v4.25.0 / v4.26.0)
+**Shipped:** contracts, reservations, payments, **marketplace, documents** all converted to the `finance/` RSC pattern (server `page.tsx` shell → props-driven client `*View.tsx`; mount-fetch waterfall removed) in **v4.25.0**; **`crm/CrmView.tsx` was found already RSC-seeded** (verified v4.26.0 — no waterfall). **Remaining (opportunistic):** `settings/page.tsx` (~1,372 lines), help, billing, admin sub-routes — convert when touched. Original guidance below.
+
 Convert client pages to the `finance/` RSC pattern (server `page.tsx` = guard + `parseRangeParams` + `Promise.all` + render; props-driven client `XView.tsx`). **Order:** contracts (`page.tsx` ~1,421 lines) → reservations → payments; then opportunistically `crm/CrmView.tsx` (3,481 lines), `settings/page.tsx` (~1,372), help, billing, admin sub-routes. Per conversion: bank the F5 label registry + F6 seams (`serialize`/`ActionResult`), migrate `lang==="ar"` ternaries to `t()` (touched-file rule), full §3.9 gate.
 
 ### 3.5 F9 — verification tooling + @repo/ui hygiene (opportunistic)
@@ -62,8 +112,11 @@ Convert client pages to the `finance/` RSC pattern (server `page.tsx` = guard + 
 ### 3.6 `/dashboard/more` decommission (4 wire points — don't delete the route without all four)
 1. `auth.config.ts` — system-user allowlist includes `/dashboard/more`; remove. 2. `components/shell/MobileUserMenuSheet.tsx` — links to it; update/remove. 3. `app/dashboard/DashboardClientLayout.tsx` — references it; audit/remove. 4. `app/dashboard/more/profile/` child route — delete after confirming nothing links to it. Then `grep -r "/dashboard/more" apps/web` must be empty before tagging.
 
-### 3.7 axe baseline closeout (two rules in `KNOWN_BASELINE_RULES`, `e2e/accessibility.admin.spec.ts`)
-1. **`color-contrast`** — success badge (`bg-success/10 text-success`) is 4.28:1 (< 4.5:1 AA). Darken the badge text or lift the bg; verify the `--secondary` dark-mode HSL before touching the light token. 2. **`aria-allowed-attr`** — a Radix `asChild` trigger renders a `<span>` with `aria-expanded`; make the `asChild` target a `<button>`. Remove both from the baseline, then per-route axe scan the radial nav + all 8 RSC dashboards.
+### 3.7 axe baseline closeout — ✅ scan EXPANDED (v4.26.0); debt fixes remain (→ v4.27, cluster A)
+**Shipped (v4.26.0):** the scan was expanded from 5 tenant-admin routes → **all 16 tenant + 8 platform routes × both audiences** (new `accessibility.system.spec.ts` + system auth-setup). **Finding:** removing the `color-contrast` exclusion was tried and **reverted** — v4.20's `--success-strong` fixed only the *success badge*; the expansion surfaced ~5 OTHER `color-contrast` + 2 `label` + widespread `select-name` violations. Current `KNOWN_BASELINE_RULES = [aria-allowed-attr, color-contrast, select-name, label]`, each documented. **Remaining:** fix that debt + un-baseline each rule (Master Status cluster A) and `aria-allowed-attr` (make the Radix trigger a real `<button>`). Original notes below.
+
+1. **`color-contrast` exclusion is likely stale.** v4.20.0 introduced `--success-strong`, but `apps/web/e2e/accessibility.admin.spec.ts` still disables `color-contrast`. First remove only that exclusion and run the current axe suite; if it passes, keep the token as-is and delete the stale comment. If it fails on a new selector, fix that specific surface.
+2. **`aria-allowed-attr` remains live.** A Radix/asChild path still needs direct verification; make the trigger target a real `<button>` or otherwise remove the invalid `aria-expanded` target. Then expand the scan from 5 tenant-admin routes to all dashboard routes by audience.
 
 ### 3.8 Other standing items
 - **Full `t()` migration** of remaining ~2,000 inline `lang==="ar"` ternaries — touched-file only, never big-bang (F5 already centralized the densest cluster).
@@ -100,31 +153,20 @@ The dominant felt-latency lever. **Measured baseline:** TCP RTT app→Supabase =
 
 > All five are new `@repo/ui` component work, untouched by v4.18.0. Each must follow AGENTS.md §6 (RTL-first, 4-theme verification, 44px targets, governed primitives). Replace any prototype `useState`/raw-button stubs in the source specs with the real wiring noted below.
 
-### 6.1 Theme toggle button
-Pill toggle (`w-16 h-8` rounded-full, Sun+Moon icons, active icon in a sliding filled circle) → `packages/ui/src/components/ThemeToggle.tsx`. Wire to `next-themes` `useTheme()` (`resolvedTheme`/`setTheme`), not local state. Neutral shell colors (dark `bg-zinc-950 border-zinc-800` / light `bg-white border-zinc-200`) — deliberately NOT Mimaric Purple. Dynamic bilingual `aria-label` ("Switch to dark/light mode" / "التحويل إلى الوضع الداكن/الفاتح"), `role="switch"` + `aria-checked` (prefer the shared `<Switch>` primitive, §6.6.8), 44px target, RTL-safe slide direction (logical, leading=active). Place in desktop top nav + optionally settings. Keyboard-operable; no flash on toggle; persists across nav.
+### 6.1 Theme toggle button — ✅ shipped in `apps/web`
+Already implemented as `apps/web/components/ThemeToggle.tsx`, wired to `next-themes`, Radix Switch, bilingual `aria-label`, RTL-safe logical thumb positioning, and used in auth, portal, and topbar surfaces. Future work only if we deliberately extract it to `@repo/ui`; do not rebuild it from this old spec.
 
 ### 6.2 Date picker — system-wide replacement
 Replace EVERY date / date-range picker with a stack on `react-aria-components` + `@internationalized/date`, all in `packages/ui/src/components/`: `date-range-picker.tsx` (`DatePicker`/`DateRangePicker`/`JollyDatePicker`/`JollyDateRangePicker`), `calendar.tsx` (`Calendar`/`RangeCalendar`/`CalendarHeading`… — `CalendarHeading` already flips chevrons via `useLocale()`, **preserve**), `datefield.tsx`, `field.tsx`, and a `react-aria`-based `popover.tsx` that must **coexist** with the existing Radix `Popover` (do not shadow/rename it). Deps: `react-aria-components`, `@internationalized/date`. **Mimaric musts:** RTL chevron flip; **Hijri toggle** (`calendar="islamic"` / `showHijriToggle`) wired to the per-user pref (AGENTS.md §6.15.3, `lib/hijri.ts`) — don't break the existing `saudi/HijriDatePicker`; migrate the dashboard range picker (`lib/use-date-range-query.ts` + `lib/dashboard-range.ts`) to `JollyDateRangePicker` without changing the query-string interface; tabular-nums on segments; 44px cells/nav; label-above + `--ring` focus to match Saudi input primitives. **Acceptance:** all date inputs migrated (none left on the old impl); RTL chevrons; Hijri toggle persists; 4-theme pass on a form date field + dashboard range header + contracts page.
 
-### 6.3 Notification center (popover + category filter)
-Bell trigger in top nav with unread-count `<Badge>` (hidden at 0) → `packages/ui/src/components/NotificationsFilter.tsx`. 320px popover (`side="bottom"`, `align` end-LTR/start-RTL). Header "Notifications" + `<Filter>` icon; category pills **All/Updates/Alerts/Reminders** (الكل/التحديثات/التنبيهات/التذكيرات) — active=`primary`, inactive=`subtle`, `size="sm"`, `rounded-full`, `aria-pressed` (§6.6.8). Scrollable list (`max-h-80`), rows = category icon (`updates→Info`, `alerts→AlertCircle`, `reminders→Calendar`) + bold title + muted desc + relative time, hover `bg-muted/50`. Empty-filtered: "No notifications in this category / لا توجد إشعارات في هذه الفئة" + Clear-filter (§6.12). **Wire to the real `Notification` DB model** (re-fetch on open; unread count = unread only). Add **mark-as-read** on row click (server action + optimistic, decrements badge) and **mark-all-read** in the header. RTL: badge `inset-inline-end`; `--popover` token (no hardcoded bg). **Acceptance:** correct badge count; filter updates immediately; read marking works; 4-theme popover-open screenshots.
+### 6.3 Notification center — ✅ shipped in app shell
+Already implemented in `components/shell/AppTopbar.tsx` and `MobileNotificationsSheet.tsx`, backed by `app/actions/notifications.ts` (`getMyNotifications`, `getUnreadCount`, `markAsRead`, `markAllAsRead`) and shared `notification-categories.ts`. Future work: extract to a reusable `@repo/ui` component only if another app needs it, and run 4-theme popover/sheet screenshots when touched.
 
 ### 6.4 System alert banners (compound `Alert` redesign)
-Rebuild `packages/ui/src/components/Alert.tsx` as a compound component (named exports `Alert`/`AlertContent`/`AlertTitle`/`AlertDescription`/`AlertIcon`/`AlertToolbar`). Variants `secondary|primary|destructive|success|info|warning|mono` × appearances `solid|outline|light|stroke` × sizes `sm|md|lg`; `close` prop → `<IconButton icon={X} aria-label="Dismiss" variant="ghost">` firing `onClose` (caller owns visibility). **Map appearances to Mimaric HSL tokens, NOT the spec's `color-mix()`/`oklch()`:** `solid success`→`bg-secondary` (Circuit Green), `solid info`→`bg-info`, etc.; `light`→`bg-<v>/10 border-<v>/20 text-foreground` with `[data-slot=alert-icon]:text-<v>`. Add/verify tokens in `globals.css`: `--info: 210 65% 50%`, `--info-foreground`, `--warning-foreground`. Map to §6.11.2 banner taxonomy (Info/Success/Warning/Error/Promotional); page banner=`lg`, section=`md`, inline=`sm`; ≤2 stacked (collapse-to-count). RTL: `×` on inline-end, icon on inline-start. Audit + migrate existing shadcn `Alert` usages (`grep -r "from.*alert" apps/web --include="*.tsx"`) — no second button impl. **Acceptance:** all 7×4 combos render light+dark; dismiss works; usages migrated; 4-theme variant-demo screenshot.
+Partially done: `packages/ui/src/primitives/alert.tsx` already has tokenized `variant × appearance` support for `default|primary|destructive|success|info|warning` and `solid|outline|light`. Remaining work is the compound API (`AlertContent`/`AlertIcon`/`AlertToolbar`), `mono`/`stroke`/size variants if still wanted, dismiss ownership via `IconButton`, usage migration, and a 4-theme variant-demo verification. Do not create a second `packages/ui/src/components/Alert.tsx` that conflicts with the existing primitive export; extend or wrap the existing primitive deliberately.
 
-### 6.5 Navigation — radial `CircleMenu` (two-level hub-and-spoke)
-**Recorded decision (locked 2026-06-09; never built — re-confirm before starting, it's a large change):** the radial CircleMenu **fully replaces** the sidebar (desktop) **and** the mobile BottomNav; the **cmdk command palette is the mandatory WCAG keyboard/SR twin** (cmdk already installed). Research caveat (NN/G, Hopkins pie-menu studies): radial beats linear on Fitts's-law speed but loses the gain if unfamiliar and breaks past ~8 items — Mimaric has ~45, so the design must get 45 items through an 8-slot door.
-
-**The design that makes it work — two-level hub-and-spoke:** 6 category spokes → each expands to ≤8 children (one nesting level max, never a flat 45-wheel). A new `radialGroup` field on `nav-items.ts` maps the real nav into 6 groups (Dashboard, Properties, CRM & Contracts, Finance, Operations, System) — one source of truth, same audience filter (§8.3 preserved). **Build cmdk first** (grouped, audience-filtered, via a shared `filterNavItems()` helper) as the accessible source-of-truth model; the radial is the visual layer on top of an already-accessible path.
-
-**Component** `packages/ui/src/components/CircleMenu.tsx`: 48px pill trigger (animated `Menu`↔`X` blur, `framer-motion` `AnimatePresence`) fanning 46px item buttons onto a circle (radius 125px, spring `stiffness 300/damping 30`, open stagger 0.02s; close = sequential scale-pulse "collection" + −360° rotate + blur, stagger 0.07s). Items = `<a href>` from the navItem (icon + `t(ar,en)` label).
-- **A11y:** `role=menu/menuitem`, roving tabindex, focus trap + return-to-trigger, Escape laddering, `aria-current`, per-item `aria-label` (icon-only), **`prefers-reduced-motion` → instant positions (no spring)**, 44×44 wedge targets.
-- **RTL:** mirror the angular layout (leading-edge first), flip arrow-key mapping; never mirror clocks/media/logos; numbers stay LTR.
-- **Mobile:** 180° bottom-anchored half-wheel (not 360°, avoids thumb occlusion) + first-run coach-mark.
-- **Tech:** `framer-motion` via `LazyMotion` + `domAnimation` (~5KB), lazy-loaded chunk; layout math framework-agnostic so it renders without motion.
-- **Safety-net caveat (UI-First §3.1 + WCAG §6.17):** removing ALL linear nav is the one residual risk — strongly consider keeping cmdk + a slim collapsible sidebar as the always-available fallback even though the locked decision says "fully replaces." Resolve this (full replace vs radial-primary + slim safety-net) before shipping.
-
-**Acceptance:** cmdk palette ships first and is fully keyboard/SR navigable; radial animates correctly with live role/audience-filtered items via `radialGroup`; bilingual labels; reduced-motion = instant; mobile 180° half-wheel; 4-theme screenshots desktop + mobile (375px).
+### 6.5 Navigation — radial `CircleMenu` — ✅ shipped in `apps/web`
+The radial menu is already the live shell: `DashboardClientLayout.tsx` renders `components/shell/CircleMenu.tsx`, which lazy-loads `CircleMenuOverlay.tsx`; `radial-groups.ts` resolves the two-level groups from `navItems` with audience filtering. It uses a dialog/nav/link model rather than `role="menu"` (correct for site navigation), supports Escape/focus trap/arrow enhancement, reduced motion, RTL mirroring, and a mobile half-wheel. Future work: audit discoverability and keyboard coverage during any shell change, keep Cmd-K as the accessible twin, and do not rebuild this from the pre-implementation spec.
 
 ---
 
