@@ -27,7 +27,7 @@ model Organization {
   registrationStatus  RegistrationStatus? // MOC: active, expired, suspended, etc.
   registrationDate    DateTime? // CR registration date
   expiryDate          DateTime? // CR expiry date
-  capitalAmountSar    Decimal? // Declared capital in SAR
+  capitalAmountSar    Decimal?                    @db.Decimal(14, 2) // Declared capital in SAR
   mainActivityCode    String? // ISIC activity code
   mainActivityNameAr  String? // Primary activity name (Arabic)
   contactInfo         Json? // {mobileNumber, phoneNumber, email, websiteUrl}
@@ -186,9 +186,9 @@ model Unit {
   organizationId              String
   organization                Organization                @relation("UnitOrganization", fields: [organizationId], references: [id])
   area                        Float? // sqm
-  price                       Decimal? // Base/cost price
-  markupPrice                 Decimal? // Selling price (for sale/reservation)
-  rentalPrice                 Decimal? // Rental price (for lease contracts)
+  price                       Decimal?                    @db.Decimal(14, 2) // Base/cost price
+  markupPrice                 Decimal?                    @db.Decimal(14, 2) // Selling price (for sale/reservation)
+  rentalPrice                 Decimal?                    @db.Decimal(14, 2) // Rental price (for lease contracts)
   floor                       Int? // Floor number
   buildingName                String?
   addressLine                 String?
@@ -211,6 +211,9 @@ model Unit {
   transferredFromUnitId       String?
   transferredFromUnit         Unit?                       @relation("UnitTransferProvenance", fields: [transferredFromUnitId], references: [id])
   transferredToUnits          Unit[]                      @relation("UnitTransferProvenance")
+  // QA-DB-05: immutable cross-org provenance snapshots (set once at transfer time,
+  // never used in a WHERE filter — read only as per-row sentinels). No FK (cross-org,
+  // must survive the other org's lifecycle), no @@index (never queried by these cols).
   transferredFromOrgId        String?
   transferredToOrgId          String?
   soldTransferredAt           DateTime?
@@ -250,7 +253,7 @@ model Customer {
   companyDocuments     Json? // For corporate buyers
   status               CustomerStatus             @default(NEW)
   source               String?
-  budget               Decimal? // Customer's budget in SAR
+  budget               Decimal?                   @db.Decimal(14, 2) // Customer's budget in SAR
   propertyTypeInterest String? // e.g. "APARTMENT", "VILLA", "OFFICE"
   lostReason           String? // Reason for LOST status
   organizationId       String
@@ -273,6 +276,8 @@ model Customer {
 
   @@index([organizationId])
   @@index([agentId])
+  // QA-DB-06: tenant-leading composite for the CRM status-filtered customer list.
+  @@index([organizationId, status])
   // Blind-index lookups are tenant-scoped exact matches. Composite btree indexes
   // (hash-type indexes are single-column equality-only and can't be tenant-scoped).
   @@index([organizationId, phoneHash])
@@ -320,17 +325,21 @@ model Reservation {
   userId               String? // The agent/user who created the reservation
   status               ReservationStatus      @default(PENDING)
   expiresAt            DateTime
-  amount               Decimal?
+  amount               Decimal?               @db.Decimal(14, 2)
   // RED: Enhanced reservation fields
   depositRequired      Boolean                @default(false)
-  depositAmount        Decimal?
+  depositAmount        Decimal?               @db.Decimal(14, 2)
   depositPaidAt        DateTime?
   extensions           ReservationExtension[]
   // ── Marketplace cross-org bridge (null for normal single-org deals) ──
   marketplaceInquiryId String?                @unique
   marketplaceInquiry   MarketplaceInquiry?    @relation(fields: [marketplaceInquiryId], references: [id])
+  // QA-DB-05: immutable cross-org snapshots — no FK (cross-org), no @@index (not queried).
   buyerOrgId           String?
   sellerOrgId          String?
+  // QA-DB-04: denormalized tenant column (NULLABLE this release; backfilled via
+  // 2026-06-orgid-backfill.sql ← unit.organizationId; FK + NOT-NULL are deferred).
+  organizationId       String?
   createdAt            DateTime               @default(now())
   updatedAt            DateTime               @updatedAt
 
@@ -338,6 +347,10 @@ model Reservation {
   @@index([unitId])
   @@index([userId])
   @@index([expiresAt, status])
+  // QA-DB-04/06: tenant-leading composite — also serves org-only lookups via its
+  // leading column, so no standalone @@index([organizationId]) is needed (effective
+  // once organizationId is backfilled — see 2026-06-orgid-backfill.sql).
+  @@index([organizationId, status])
 }
 
 // RED: Reservation extension requests
@@ -381,7 +394,7 @@ model Contract {
   status     ContractStatus @default(DRAFT)
   type       ContractType   @default(SALE)
   fileUrl    String?
-  amount     Decimal
+  amount     Decimal        @db.Decimal(14, 2)
   signedAt   DateTime?
   createdAt  DateTime       @default(now())
   updatedAt  DateTime       @updatedAt
@@ -395,7 +408,7 @@ model Contract {
 
   // Ejar fields (type=LEASE)
   paymentFrequency          RecurrenceType?
-  securityDeposit           Decimal?
+  securityDeposit           Decimal?        @db.Decimal(14, 2)
   autoRenewal               Boolean?
   maintenanceResponsibility String? // "LANDLORD" or "TENANT"
   noticePeriodDays          Int?
@@ -407,9 +420,9 @@ model Contract {
   termsAndConditions   String?
   notes                String?
   // RED: Amount breakdown
-  grossAmount          Decimal?
-  discountAmount       Decimal?
-  netAmount            Decimal?
+  grossAmount          Decimal?        @db.Decimal(14, 2)
+  discountAmount       Decimal?        @db.Decimal(14, 2)
+  netAmount            Decimal?        @db.Decimal(14, 2)
   // RED: Template & signatures
   templateId           String?
   templateVersion      Int?
@@ -419,6 +432,8 @@ model Contract {
   // RED: Relations
   paymentPlan          PaymentPlan?
   // ── Marketplace cross-org bridge (null for normal single-org contracts) ──
+  // QA-DB-05: buyer/sellerOrgId are immutable cross-org snapshots — written at deal
+  // time, never used in a WHERE filter. No FK (cross-org), no @@index (not queried).
   marketplaceInquiryId String?
   buyerOrgId           String?
   sellerOrgId          String?
@@ -451,8 +466,8 @@ model PaymentPlan {
   contractId     String                   @unique
   contract       Contract                 @relation(fields: [contractId], references: [id])
   name           String?
-  totalAmount    Decimal
-  downPayment    Decimal?
+  totalAmount    Decimal                  @db.Decimal(14, 2)
+  downPayment    Decimal?                 @db.Decimal(14, 2)
   status         PaymentPlanStatus        @default(DRAFT_PLAN)
   installments   PaymentPlanInstallment[]
   organizationId String?
@@ -472,19 +487,26 @@ model PaymentPlanInstallment {
   paymentPlanId     String
   paymentPlan       PaymentPlan       @relation(fields: [paymentPlanId], references: [id])
   installmentNumber Int
-  amount            Decimal
+  amount            Decimal           @db.Decimal(14, 2)
   dueDate           DateTime
   status            InstallmentStatus @default(UNPAID)
   paidAt            DateTime?
-  paidAmount        Decimal?
+  paidAmount        Decimal?          @db.Decimal(14, 2)
   paymentMethod     String?
   referenceNumber   String?
   paymentReference  String?
+  // QA-DB-04: denormalized tenant column (NULLABLE this release; backfilled via
+  // 2026-06-orgid-backfill.sql ← paymentPlan.organizationId; FK + NOT-NULL are deferred).
+  organizationId    String?
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
 
   @@index([paymentPlanId])
   @@unique([paymentPlanId, paymentReference])
+  // QA-DB-04/06: tenant-leading composite — also serves org-only lookups via its
+  // leading column, so no standalone @@index([organizationId]) is needed (effective
+  // once organizationId is backfilled — see 2026-06-orgid-backfill.sql).
+  @@index([organizationId, status])
 }
 
 enum InstallmentStatus {
@@ -540,16 +562,20 @@ model Lease {
   customer       Customer          @relation(fields: [customerId], references: [id])
   startDate      DateTime
   endDate        DateTime
-  totalAmount    Decimal
+  totalAmount    Decimal           @db.Decimal(14, 2)
   status         LeaseStatus       @default(DRAFT)
   installments   RentInstallment[]
   ejarContractId String? // For Ejar integration
   contract       Contract? // Linked contract (reverse relation)
+  // QA-DB-04: denormalized tenant column (NULLABLE this release; backfilled via
+  // 2026-06-orgid-backfill.sql ← unit.organizationId; FK + NOT-NULL are deferred).
+  organizationId String?
   createdAt      DateTime          @default(now())
   updatedAt      DateTime          @updatedAt
 
   @@index([unitId])
   @@index([customerId])
+  @@index([organizationId])
 }
 
 enum LeaseStatus {
@@ -567,10 +593,10 @@ model RentInstallment {
   leaseId          String
   lease            Lease         @relation(fields: [leaseId], references: [id])
   dueDate          DateTime
-  amount           Decimal
+  amount           Decimal       @db.Decimal(14, 2)
   status           PaymentStatus @default(UNPAID)
   paidAt           DateTime?
-  paidAmount       Decimal?
+  paidAmount       Decimal?      @db.Decimal(14, 2)
   paymentMethod    String?
   referenceNumber  String?
   paymentReference String?
@@ -647,8 +673,8 @@ model MaintenanceRequest {
   completedAt   DateTime?
 
   // Cost tracking
-  estimatedCost Decimal?
-  actualCost    Decimal?
+  estimatedCost Decimal?            @db.Decimal(14, 2)
+  actualCost    Decimal?            @db.Decimal(14, 2)
   laborHours    Float?
 
   // Work order notes
@@ -672,6 +698,8 @@ model MaintenanceRequest {
   @@index([status])
   @@index([dueDate])
   @@index([category])
+  // QA-DB-06: tenant-leading composite for the open-tickets-by-org dashboard query.
+  @@index([organizationId, status])
 }
 
 // ─── Preventive Maintenance Plan ──────────────────────────────────────────────
@@ -695,7 +723,7 @@ model PreventiveMaintenancePlan {
   nextRunDate        DateTime
 
   // Cost estimation
-  estimatedCost  Decimal?
+  estimatedCost  Decimal?       @db.Decimal(14, 2)
   estimatedHours Float?
 
   // Assignment
@@ -1084,8 +1112,8 @@ model Plan {
   nameAr        String // Display name (Arabic)
   descriptionEn String?
   descriptionAr String?
-  priceMonthly  Decimal  @default(0) // SAR per month
-  priceAnnual   Decimal  @default(0) // SAR per year (discounted)
+  priceMonthly  Decimal  @default(0) @db.Decimal(14, 2) // SAR per month
+  priceAnnual   Decimal  @default(0) @db.Decimal(14, 2) // SAR per year (discounted)
   currency      String   @default("SAR")
   trialDays     Int      @default(14)
   isPublic      Boolean  @default(true) // Visible on pricing page
@@ -1136,9 +1164,9 @@ model Subscription {
   pausedAt           DateTime?
   resumesAt          DateTime?
   nextBillingDate    DateTime?
-  priceAtRenewal     Decimal? // Locked-in price for next renewal
+  priceAtRenewal     Decimal?           @db.Decimal(14, 2) // Locked-in price for next renewal
   metadata           Json?
-  mrrSar             Decimal? // ex-VAT, denormalized monthly recurring revenue at current price
+  mrrSar             Decimal?           @db.Decimal(14, 2) // ex-VAT, denormalized monthly recurring revenue at current price
   acquiredMonth      String? // "YYYY-MM", set on first TRIALING transition (or ACTIVE if no trial)
   activatedMonth     String? // "YYYY-MM", set on first ACTIVE transition
   createdAt          DateTime           @default(now())
@@ -1160,14 +1188,14 @@ model Subscription {
 model SubscriptionEvent {
   id             String              @id @default(cuid())
   subscriptionId String
-  subscription   Subscription        @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  subscription   Subscription        @relation(fields: [subscriptionId], references: [id], onDelete: Restrict)
   fromStatus     SubscriptionStatus?
   toStatus       SubscriptionStatus
   triggeredBy    String // "system", "webhook", "admin:<userId>", "user:<userId>"
   reason         String?
   metadata       Json? // Additional context (e.g., gateway response, dunning attempt #)
   eventCategory  String? // NEW | EXPANSION | CONTRACTION | CHURN | REACTIVATION | TRIAL_STARTED | TRIAL_CONVERTED | REFUND_ADJUSTMENT
-  mrrDeltaSar    Decimal? // Signed ex-VAT delta; positive for new/expansion, negative for contraction/churn/refund
+  mrrDeltaSar    Decimal?            @db.Decimal(14, 2) // Signed ex-VAT delta; positive for new/expansion, negative for contraction/churn/refund
   idempotencyKey String?             @unique // Format: "<subscriptionId>:<occurredAt>:<eventCategory>"
   createdAt      DateTime            @default(now())
 
@@ -1181,11 +1209,11 @@ model SubscriptionEvent {
 model SubscriptionMrrSnapshot {
   id             String             @id @default(cuid())
   organizationId String
-  organization   Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization   Organization       @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   subscriptionId String
-  subscription   Subscription       @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  subscription   Subscription       @relation(fields: [subscriptionId], references: [id], onDelete: Restrict)
   snapshotMonth  String // "YYYY-MM" — first of month captured
-  mrrSar         Decimal            @default(0) // ex-VAT MRR at snapshot time
+  mrrSar         Decimal            @default(0) @db.Decimal(14, 2) // ex-VAT MRR at snapshot time
   status         SubscriptionStatus // Subscription status at snapshot time
   planId         String // Plan ID at snapshot time
   createdAt      DateTime           @default(now())
@@ -1226,11 +1254,11 @@ model Invoice {
   subscription   Subscription? @relation(fields: [subscriptionId], references: [id])
   status         InvoiceStatus @default(DRAFT)
   billingCycle   BillingCycle?
-  subtotal       Decimal // Before VAT
-  vatRate        Decimal       @default(0.15) // 15% Saudi VAT
-  vatAmount      Decimal
-  discountAmount Decimal       @default(0)
-  total          Decimal // subtotal + vatAmount - discountAmount
+  subtotal       Decimal       @db.Decimal(14, 2) // Before VAT
+  vatRate        Decimal       @default(0.15) @db.Decimal(6, 4) // 15% Saudi VAT (rate, not money)
+  vatAmount      Decimal       @db.Decimal(14, 2)
+  discountAmount Decimal       @default(0) @db.Decimal(14, 2)
+  total          Decimal       @db.Decimal(14, 2) // subtotal + vatAmount - discountAmount
   currency       String        @default("SAR")
   issuedAt       DateTime?
   dueDate        DateTime?
@@ -1270,10 +1298,10 @@ model InvoiceLineItem {
   description   String
   descriptionAr String?
   quantity      Int     @default(1)
-  unitPrice     Decimal
-  vatRate       Decimal @default(0.15)
-  vatAmount     Decimal
-  total         Decimal // quantity * unitPrice + vatAmount
+  unitPrice     Decimal @db.Decimal(14, 2)
+  vatRate       Decimal @default(0.15) @db.Decimal(6, 4) // rate, not money
+  vatAmount     Decimal @db.Decimal(14, 2)
+  total         Decimal @db.Decimal(14, 2) // quantity * unitPrice + vatAmount
   sortOrder     Int     @default(0)
 
   @@index([invoiceId])
@@ -1289,11 +1317,11 @@ model PaymentTransaction {
   paymentMethod   PaymentMethod?    @relation(fields: [paymentMethodId], references: [id])
   gateway         String // "moyasar", "hyperpay", "paytabs"
   gatewayRef      String? // Gateway-specific transaction ID
-  amount          Decimal
+  amount          Decimal           @db.Decimal(14, 2)
   currency        String            @default("SAR")
   status          TransactionStatus @default(PENDING)
   failureReason   String?
-  refundedAmount  Decimal?
+  refundedAmount  Decimal?          @db.Decimal(14, 2)
   metadata        Json? // Raw gateway response
   initiatedAt     DateTime          @default(now())
   completedAt     DateTime?
@@ -1365,14 +1393,14 @@ model Coupon {
   descriptionEn     String?
   descriptionAr     String?
   type              CouponType
-  value             Decimal // Percentage (0-100) or fixed SAR amount
+  value             Decimal    @db.Decimal(14, 2) // Percentage (0-100) or fixed SAR amount — (14,2) covers both
   currency          String     @default("SAR")
   maxRedemptions    Int? // Null = unlimited
   currentUses       Int        @default(0)
   validFrom         DateTime   @default(now())
   validUntil        DateTime?
   isActive          Boolean    @default(true)
-  minPurchaseAmount Decimal? // Minimum invoice amount
+  minPurchaseAmount Decimal?   @db.Decimal(14, 2) // Minimum invoice amount
   applicableCycles  Json? // ["MONTHLY", "ANNUAL"] or null = all
   metadata          Json?
   createdAt         DateTime   @default(now())
@@ -1394,9 +1422,13 @@ model CouponRedemption {
   coupon          Coupon       @relation(fields: [couponId], references: [id])
   organizationId  String
   organization    Organization @relation(fields: [organizationId], references: [id])
-  discountApplied Decimal // Actual SAR discount given
+  discountApplied Decimal      @db.Decimal(14, 2) // Actual SAR discount given
   redeemedAt      DateTime     @default(now())
 
+  // QA-SEC-02: one redemption per coupon per org (prevents double-redeem race).
+  // SAFE on the populated DB only if no duplicate (couponId, organizationId) rows
+  // exist — run the precheck SELECT in 2026-06-v4.28-manual-steps.md before `db push`.
+  @@unique([couponId, organizationId])
   @@index([couponId])
   @@index([organizationId])
 }
@@ -1437,7 +1469,7 @@ model Deal {
   intent            PropertyIntent
   status            InterestStatus @default(ACTIVE)
   stage             DealStage      @default(NEW)
-  value             Decimal?
+  value             Decimal?       @db.Decimal(14, 2) // SAR deal/opportunity value (pipeline weighting with probability)
   probability       Int?
   expectedCloseDate DateTime?
   lostReason        String?
@@ -1592,7 +1624,7 @@ model MarketplaceListing {
   // Curated public view fields — never expose raw Unit across orgs
   title             String?
   description       String?
-  price             Decimal?
+  price             Decimal?                    @db.Decimal(14, 2)
   area              Float?
   city              String?
   district          String?

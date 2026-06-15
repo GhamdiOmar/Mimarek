@@ -1,5 +1,30 @@
 # Changelog — Mimaric PropTech
 
+## [4.28.0] — 2026-06-16 — Schema correctness & DB governance (QA-DB-01…06 · QA-SEC-02 schema)
+
+Second release of the v4.30 program. Tightens database correctness across money precision, tenant scoping, referential actions, and uniqueness. **Schema-only** — no app-code change; the Prisma client types are unchanged (Decimal stays Decimal). Validated by CI's ephemeral `db push` + a real precheck against the populated local DB.
+
+### Money precision (QA-DB-02)
+- Every SAR-monetary `Decimal` field is now explicit **`@db.Decimal(14,2)`** (43 fields across Unit/Customer/Reservation/Contract/PaymentPlan/Lease/Invoice/Payment/Subscription/Coupon/Deal/Marketplace…) instead of Prisma's default `decimal(65,30)`; the two `vatRate` columns → **`@db.Decimal(6,4)`**. Postgres `numeric` is the exact type for money; the wide default invited drift.
+- **Precheck run against the live DB:** all money values fit except 5 `mrrSar` rows (`399.1666…` = a 4790-SAR annual plan ÷ 12 — a legit computed MRR), which round to `399.17`. The runbook (`packages/db/sql/2026-06-v4.28-manual-steps.md`) carries the explicit round-first remediation so the cast is provably lossless.
+
+### Tenant scoping (QA-DB-04) + indexes (QA-DB-06)
+- Denormalized **`organizationId`** (nullable this release) + `@@index` added to `Lease`, `Reservation`, `PaymentPlanInstallment` so their list/AR queries stop joining through Unit/PaymentPlan to scope by org. Tenant-leading composite `@@index([organizationId, status])` added to `Customer`, `MaintenanceRequest`, `Reservation`, `PaymentPlanInstallment`. Backfill SQL (`2026-06-orgid-backfill.sql`, idempotent, transitive-join) + the NOT-NULL tightening are deferred post-backfill follow-ups (a NOT-NULL column with no default aborts `db push` on a populated table — §4).
+
+### Referential actions (QA-DB-03) + uniqueness (QA-SEC-02 schema)
+- `onDelete: Cascade → Restrict` on `SubscriptionEvent.subscription` and `SubscriptionMrrSnapshot.subscription`/`.organization` — audit/financial-history rows must never cascade (verified no org-delete flow relies on the cascade). `@@unique([couponId, organizationId])` on `CouponRedemption` completes the v4.27 coupon-redemption race fix (precheck: 0 existing rows → safe).
+
+### Governance (QA-DB-01)
+- Removed the stray untracked `packages/db/prisma/migrations/` directory — the repo deliberately uses `prisma db push`, not Migrate (§4). No new tables → `2026-06-enable-rls.sql` unchanged (`rls:check` green, 50 tables).
+
+### Manual populated-DB steps (owed on every long-lived env)
+- `packages/db/sql/2026-06-v4.28-manual-steps.md` is the ordered runbook: money/coupon prechecks (done for local) → round `mrrSar` → `db push` → org-id backfill → (deferred) NOT-NULL tightening. CI's ephemeral DB needs none of it; the populated DB does.
+
+### Gates
+- `prisma generate` + `prisma validate` + `rls:check` green; `db:generate` + **check-types green (web + portal)**; `npm run build` green. CI `prisma db push --accept-data-loss` (ephemeral) + seed + payment tests are the schema-applies-cleanly proof. No UI change → no §3.9 preview walk (the §3.9 gate scopes to UI-touching releases).
+
+**Full diff:** https://github.com/GhamdiOmar/Mimaric/compare/v4.27.0...v4.28.0
+
 ## [4.27.0] — 2026-06-16 — P0 security hardening (QA-SEC-01…07 · QA-BE-01)
 
 First release of the **v4.30 "finish the backlog" program**. Closes every reproducing P0/P1 finding from the full-repo QA audit (`future-plans/QA-AUDIT-REMEDIATION.md`). Code-only — no schema change. Every finding was re-validated against `main` before the fix, and every diff was main-thread-audited (§3.8).
