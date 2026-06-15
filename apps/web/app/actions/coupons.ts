@@ -2,7 +2,7 @@
 
 import { db } from "@repo/db";
 import { revalidatePath } from "next/cache";
-import { requirePermission, getTenantSessionOrThrow } from "../../lib/auth-helpers";
+import { requirePermission, requireTenantPermission } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
 import { ROUTES } from "../../lib/routes";
 
@@ -15,7 +15,7 @@ import { ROUTES } from "../../lib/routes";
  * Used during checkout before applying.
  */
 export async function validateCoupon(code: string, planId?: string) {
-  await getTenantSessionOrThrow();
+  await requireTenantPermission("billing:read");
 
   const coupon = await db.coupon.findUnique({
     where: { code: code.toUpperCase().trim() },
@@ -65,9 +65,14 @@ export async function validateCoupon(code: string, planId?: string) {
 
 /**
  * Apply a coupon to an invoice and record the redemption.
+ *
+ * Security: requires billing:write (QA-SEC-02 authz fix).
+ * Race fix: the currentUses increment is a conditional updateMany inside an
+ * interactive transaction — the WHERE clause enforces the maxRedemptions cap
+ * atomically, so two concurrent calls cannot both slip through the limit check.
  */
 export async function applyCoupon(couponId: string, invoiceId: string) {
-  const session = await getTenantSessionOrThrow();
+  const session = await requireTenantPermission("billing:write");
 
   const [coupon, invoice] = await Promise.all([
     db.coupon.findUnique({ where: { id: couponId } }),
@@ -79,7 +84,7 @@ export async function applyCoupon(couponId: string, invoiceId: string) {
   if (!coupon) throw new Error("Coupon code not found. Please check the code and try again.");
   if (!invoice) throw new Error("Invoice not found or you don't have access. Please verify the invoice number.");
 
-  // Check if already redeemed by this org
+  // Check if already redeemed by this org (outside tx — fast early-exit, not the race-guard)
   const existing = await db.couponRedemption.findFirst({
     where: { couponId, organizationId: session.organizationId },
   });
@@ -105,8 +110,28 @@ export async function applyCoupon(couponId: string, invoiceId: string) {
   const vatAmount = newSubtotal * Number(invoice.vatRate);
   const total = newSubtotal + vatAmount;
 
-  await db.$transaction([
-    db.invoice.update({
+  // Interactive transaction: conditional increment FIRST to close the race window.
+  // updateMany's WHERE clause acts as an atomic compare-and-increment:
+  //   - if maxRedemptions is null  → no cap, always matches
+  //   - if currentUses < maxRedemptions → still under cap, matches
+  //   - otherwise (cap hit)        → count === 0, we throw before writing the invoice
+  await db.$transaction(async (tx) => {
+    const capResult = await tx.coupon.updateMany({
+      where: {
+        id: couponId,
+        OR: [
+          { maxRedemptions: null },
+          { currentUses: { lt: coupon.maxRedemptions! } },
+        ],
+      },
+      data: { currentUses: { increment: 1 } },
+    });
+
+    if (capResult.count !== 1) {
+      throw new Error("This coupon has reached its maximum redemptions.");
+    }
+
+    await tx.invoice.update({
       where: { id: invoiceId },
       data: {
         discountAmount,
@@ -114,19 +139,16 @@ export async function applyCoupon(couponId: string, invoiceId: string) {
         total,
         couponId,
       },
-    }),
-    db.couponRedemption.create({
+    });
+
+    await tx.couponRedemption.create({
       data: {
         couponId,
         organizationId: session.organizationId,
         discountApplied: discountAmount,
       },
-    }),
-    db.coupon.update({
-      where: { id: couponId },
-      data: { currentUses: { increment: 1 } },
-    }),
-  ]);
+    });
+  });
 
   revalidatePath("/dashboard/billing");
   return { discountAmount, newTotal: total };

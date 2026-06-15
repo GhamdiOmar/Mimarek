@@ -6,6 +6,7 @@ import { z } from "zod";
 import { requirePermission } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
 import { checkLimit, FEATURE_KEYS } from "../../lib/entitlements";
+import { isValidUnitTransition } from "../../lib/units/state-machine";
 
 // Module-private — NOT exported (this is a "use server" file; only async functions may be exported)
 const CreateUnitSchema = z.object({
@@ -87,16 +88,89 @@ export async function massUpdateUnits(
 ) {
   const session = await requirePermission("units:write");
 
-  // Verify all units belong to org
+  // Verify all units belong to org (also gives us current status for SM validation)
   const unitIds = units.map((u) => u.id);
   const existingUnits = await db.unit.findMany({
     where: { id: { in: unitIds }, organizationId: session.organizationId },
+    select: { id: true, number: true, status: true },
   });
 
   if (existingUnits.length !== unitIds.length) {
     throw new Error("One or more units do not belong to your organization. Please verify the selected units.");
   }
 
+  // Build a lookup for current status by id
+  const currentById = new Map(existingUnits.map((u) => [u.id, u]));
+
+  // ── State-machine validation (QA-BE-01) ──────────────────────────────────────
+  // Collect every invalid transition and reject the whole batch with one error.
+  const invalidTransitions: string[] = [];
+
+  for (const u of units) {
+    if (!u.status) continue; // price-only update, no status change
+    const current = currentById.get(u.id);
+    if (!current) continue; // already caught above
+    if (current.status === u.status) continue; // same-status no-op, always allowed
+
+    if (!isValidUnitTransition(current.status, u.status)) {
+      invalidTransitions.push(
+        `Unit "${current.number}": ${current.status} → ${u.status} is not a valid transition`
+      );
+    }
+  }
+
+  if (invalidTransitions.length > 0) {
+    throw new Error(
+      `Status transition rejected for ${invalidTransitions.length} unit(s):\n` +
+      invalidTransitions.join("\n")
+    );
+  }
+
+  // ── Active-contract / active-lease guard ─────────────────────────────────────
+  // Block transitions to AVAILABLE or RESERVED when the unit has an active
+  // SIGNED contract or a non-ended lease — these transitions would silently
+  // contradict live business records.
+  const unitsGoingAvailableOrReserved = units.filter(
+    (u) => u.status === "AVAILABLE" || u.status === "RESERVED"
+  );
+
+  if (unitsGoingAvailableOrReserved.length > 0) {
+    const targetIds = unitsGoingAvailableOrReserved.map((u) => u.id);
+
+    const [activeContracts, activeLeases] = await Promise.all([
+      db.contract.findMany({
+        where: {
+          unitId: { in: targetIds },
+          status: "SIGNED",
+        },
+        select: { unitId: true },
+      }),
+      db.lease.findMany({
+        where: {
+          unitId: { in: targetIds },
+          endDate: { gt: new Date() },
+        },
+        select: { unitId: true },
+      }),
+    ]);
+
+    const blockedUnitIds = new Set([
+      ...activeContracts.map((c) => c.unitId),
+      ...activeLeases.map((l) => l.unitId),
+    ]);
+
+    if (blockedUnitIds.size > 0) {
+      const blockedNumbers = [...blockedUnitIds]
+        .map((id) => currentById.get(id)?.number ?? id)
+        .join(", ");
+      throw new Error(
+        `Cannot mark unit(s) as AVAILABLE or RESERVED while an active signed contract or lease exists: ${blockedNumbers}. ` +
+        `Resolve the contract or lease first.`
+      );
+    }
+  }
+
+  // ── Execute batch update ──────────────────────────────────────────────────────
   const results = await db.$transaction(
     units.map((u) =>
       db.unit.update({

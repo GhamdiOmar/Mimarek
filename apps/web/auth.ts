@@ -65,7 +65,8 @@ async function recordLoginFailure(email: string): Promise<void> {
 const result = NextAuth({
   ...authConfig,
   adapter: PrismaAdapter(db),
-  session: { strategy: "jwt" },
+  // 7-day absolute max; token refreshed silently every 24 h of activity.
+  session: { strategy: "jwt", maxAge: 60 * 60 * 24 * 7, updateAge: 60 * 60 * 24 },
   providers: [
     Credentials({
       credentials: {

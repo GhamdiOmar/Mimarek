@@ -4,7 +4,7 @@ import { db } from "@repo/db";
 import { revalidatePath } from "next/cache";
 import { requirePermission } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
-import { syncDealStageForUnit } from "./customer-interests";
+import { syncDealStageForUnit } from "../../lib/server/pipeline-sync";
 import { getNextSequenceValue, GLOBAL_SEQUENCE_SCOPE } from "../../lib/sequence";
 import { CONTRACT_TRANSITIONS, isValidContractTransition } from "../../lib/contracts/state-machine";
 

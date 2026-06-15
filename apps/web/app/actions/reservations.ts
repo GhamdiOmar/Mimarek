@@ -4,7 +4,7 @@ import { db } from "@repo/db";
 import { revalidatePath } from "next/cache";
 import { requirePermission } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
-import { syncDealStageForUnit } from "./customer-interests";
+import { syncDealStageForUnit } from "../../lib/server/pipeline-sync";
 
 export async function createReservation(data: {
   customerId: string;
@@ -392,37 +392,7 @@ export async function bulkDeleteReservations(ids: string[]) {
   return { deleted: reservations.length };
 }
 
-// ─── RED: Auto-Expire Batch (for cron job) ──────────────────────────────────
-
-export async function autoExpireReservations() {
-  const now = new Date();
-
-  const expired = await db.reservation.findMany({
-    where: {
-      status: "PENDING",
-      expiresAt: { lt: now },
-    },
-    select: { id: true, unitId: true, customerId: true },
-  });
-
-  for (const res of expired) {
-    let revertToQualified = false;
-    await db.$transaction(async (tx) => {
-      await tx.reservation.update({ where: { id: res.id }, data: { status: "EXPIRED" } });
-      await tx.unit.update({ where: { id: res.unitId }, data: { status: "AVAILABLE" } });
-      // Revert pipeline if no other active reservations
-      const otherActive = await tx.reservation.count({
-        where: { customerId: res.customerId, id: { not: res.id }, status: { in: ["PENDING", "CONFIRMED"] } },
-      });
-      if (otherActive === 0) {
-        revertToQualified = true;
-      }
-    });
-    // Pipeline status is derived from the Deal entity now (R3).
-    if (revertToQualified) {
-      await syncDealStageForUnit(res.customerId, res.unitId, "QUALIFIED");
-    }
-  }
-
-  return { expired: expired.length };
-}
+// ─── Auto-Expire Batch ──────────────────────────────────────────────────────
+// Moved to `lib/server/reservation-expiry.ts` (QA-SEC-01): a cron-only batch
+// helper must not be an exported `"use server"` RPC. The cron route imports it
+// from there directly.

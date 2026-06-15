@@ -20,37 +20,22 @@ export async function loginAction(formData: FormData) {
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
   const mode = (formData.get("mode") as string) === "tenant" ? "tenant" : "management";
-  const normalizedEmail = email.toLowerCase().trim();
 
-  // Look up user's preferred landing page
-  let redirectTo = "/dashboard";
-  try {
-    const user = await db.user.findUnique({
-      where: { email: normalizedEmail },
-      select: { preferences: true, role: true },
-    });
-    if (mode === "tenant") {
-      if (user && user.role !== "USER") return { error: "USE_MANAGEMENT_MODE" };
-      redirectTo = "/portal";
-    } else if (user?.role === "USER") {
-      return { error: "USE_TENANT_MODE" };
-    }
-    const prefs = user?.preferences as any;
-    if (mode === "management" && prefs?.landingPage && ALLOWED_LANDING_PAGES.includes(prefs.landingPage)) {
-      redirectTo = prefs.landingPage;
-    }
-  } catch {}
-
+  // ── Step 1: verify credentials first ──────────────────────────────────────
+  // IMPORTANT (QA-SEC-05): we MUST NOT query the DB for the user's role before
+  // password verification completes.  Returning role-specific error codes
+  // (USE_MANAGEMENT_MODE / USE_TENANT_MODE) before auth reveals whether an
+  // email exists and which account type it belongs to — a classic enumeration
+  // vector.  Credential verification happens inside signIn(); only after it
+  // succeeds do we check the mode, so an attacker learns nothing extra.
   try {
     await signIn("credentials", {
       email,
       password,
       redirect: false,
     });
-    return { success: true, redirectTo };
   } catch (error: any) {
     if (error instanceof AuthError) {
-      // The error message might be wrapped by NextAuth
       const message = error.cause?.err?.message || error.message;
 
       if (message === "INVALID_CREDENTIALS") {
@@ -71,14 +56,38 @@ export async function loginAction(formData: FormData) {
       }
     }
 
-    // For non-AuthErrors that might bubble up (like redirects in Next.js which are actually errors)
     if (error.message?.includes("NEXT_REDIRECT")) {
-        throw error;
+      throw error;
     }
 
     console.error("Login action error:", error);
     return { error: "UNKNOWN_ERROR" };
   }
+
+  // ── Step 2: credentials verified — now check mode + resolve redirect ───────
+  // At this point the user is authenticated; mode-mismatch is a UX redirect
+  // hint, not a security gate.  Returning USE_MANAGEMENT_MODE / USE_TENANT_MODE
+  // here is safe because the password check already passed.
+  const normalizedEmail = email.toLowerCase().trim();
+  let redirectTo = "/dashboard";
+  try {
+    const user = await db.user.findUnique({
+      where: { email: normalizedEmail },
+      select: { preferences: true, role: true },
+    });
+    if (mode === "tenant") {
+      if (user && user.role !== "USER") return { error: "USE_MANAGEMENT_MODE" };
+      redirectTo = "/portal";
+    } else if (user?.role === "USER") {
+      return { error: "USE_TENANT_MODE" };
+    }
+    const prefs = user?.preferences as any;
+    if (mode === "management" && prefs?.landingPage && ALLOWED_LANDING_PAGES.includes(prefs.landingPage)) {
+      redirectTo = prefs.landingPage;
+    }
+  } catch {}
+
+  return { success: true, redirectTo };
 }
 
 export async function registerUser(data: {

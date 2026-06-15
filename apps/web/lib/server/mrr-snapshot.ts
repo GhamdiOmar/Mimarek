@@ -1,6 +1,6 @@
-"use server";
+import "server-only";
 
-import { db } from "./_shared";
+import { db } from "../../app/actions/admin-analytics/_shared";
 
 /**
  * Upsert one SubscriptionMrrSnapshot row per currently-active subscription
@@ -14,8 +14,11 @@ import { db } from "./_shared";
  * Both invocations are idempotent — the @@unique([subscriptionId,
  * snapshotMonth]) constraint guarantees one row per (sub, month).
  *
- * NOT a user-callable server action — server-side helper called by cron
- * routes only. Kept here so the same logic powers both schedules.
+ * Server-side helper called by cron routes only. Lives in a `server-only`
+ * module (NOT a "use server" file) so it is NOT exposed as a network-reachable
+ * RPC — an exported async fn in a "use server" file is a public POST endpoint
+ * regardless of its comment (QA-SEC-01). Kept in one place so the same logic
+ * powers both schedules.
  */
 export async function snapshotMrrForMonth(snapshotMonth: string): Promise<{
   snapshotMonth: string;

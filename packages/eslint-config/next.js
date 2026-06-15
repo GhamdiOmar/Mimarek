@@ -73,6 +73,159 @@ const noNonAsyncExportInUseServer = {
 };
 
 /**
+ * Custom rule: `mimaric/require-action-guard` (QA-SEC-01).
+ *
+ * Every exported async function in a `"use server"` file under
+ * `app/actions/**` is a network-reachable POST RPC — anyone who can reach the
+ * app can invoke it with attacker-controlled arguments. Each MUST contain a
+ * call to one of the recognised auth/authorization guard helpers somewhere in
+ * its body, so it cannot run as an unauthenticated/cross-tenant mutation.
+ *
+ * Guard helpers (any CallExpression to one of these counts):
+ *   requirePermission, requireTenantPermission, requireSystem, requireTenant,
+ *   getTenantSessionOrThrow, getSessionOrThrow, getSessionWithPermissions,
+ *   getTenantPageAccess.
+ *
+ * Escape hatch for genuinely-public actions (e.g. signup, public marketplace
+ * inquiry): an inline `// eslint-disable-next-line mimaric/require-action-guard`
+ * on the function — document why it is intentionally unguarded.
+ *
+ * Surfaces as a WARNING because eslint-plugin-only-warn downgrades errors —
+ * that is fine/intended; the value is catching a NEW unguarded action.
+ */
+const GUARD_HELPERS = new Set([
+  "requirePermission",
+  "requireTenantPermission",
+  "requireSystem",
+  "requireTenant",
+  "getTenantSessionOrThrow",
+  "getSessionOrThrow",
+  "getSessionWithPermissions",
+  "getTenantPageAccess",
+]);
+
+const requireActionGuard = {
+  meta: {
+    type: "problem",
+    docs: {
+      description:
+        "Every exported async function in a app/actions/** \"use server\" file must call an auth/authorization guard helper.",
+    },
+    messages: {
+      noGuard:
+        'Exported "use server" action "{{name}}" has no call to an authorization guard ' +
+        "(requirePermission / requireTenantPermission / requireSystem / requireTenant / " +
+        "getTenantSessionOrThrow / getSessionOrThrow / getSessionWithPermissions / getTenantPageAccess). " +
+        "Every exported async fn in a \"use server\" file is a network-reachable POST RPC — guard it, or, " +
+        "for a genuinely-public action, add an inline `// eslint-disable-next-line mimaric/require-action-guard` " +
+        "with a reason (QA-SEC-01).",
+    },
+    schema: [],
+  },
+  create(context) {
+    // Only enforce in app/actions/** files. The flat-config `files` glob below
+    // already scopes registration, but guard the directory here too so the rule
+    // is inert if ever loaded more broadly.
+    const filename = context.filename || context.getFilename();
+    const normalized = filename.replace(/\\/g, "/");
+    const inActions = /\/app\/actions\//.test(normalized);
+
+    let isUseServer = false;
+
+    // Walk a function body for any CallExpression whose callee resolves to a
+    // guard helper name (bare `requirePermission(...)` or `x.requirePermission(...)`).
+    const bodyHasGuardCall = (fnNode) => {
+      const sourceCode = context.sourceCode || context.getSourceCode();
+      let found = false;
+      const visit = (node) => {
+        if (!node || found || typeof node.type !== "string") return;
+        if (node.type === "CallExpression") {
+          const callee = node.callee;
+          if (callee) {
+            if (callee.type === "Identifier" && GUARD_HELPERS.has(callee.name)) {
+              found = true;
+              return;
+            }
+            if (
+              callee.type === "MemberExpression" &&
+              callee.property &&
+              callee.property.type === "Identifier" &&
+              GUARD_HELPERS.has(callee.property.name)
+            ) {
+              found = true;
+              return;
+            }
+          }
+        }
+        // Recurse over child nodes / arrays of nodes; skip nested function
+        // definitions (a guard inside a nested closure that is never invoked
+        // would not protect the action — but in practice guards are called at
+        // the top of the action body, so we still descend to be permissive).
+        for (const key of Object.keys(node)) {
+          if (key === "parent") continue;
+          const child = node[key];
+          if (Array.isArray(child)) {
+            for (const c of child) {
+              if (c && typeof c.type === "string") visit(c);
+            }
+          } else if (child && typeof child.type === "string") {
+            visit(child);
+          }
+        }
+      };
+      visit(fnNode.body);
+      return found;
+    };
+
+    const checkExportedFn = (fnNode, nameNode, name) => {
+      if (!isUseServer || !inActions) return;
+      if (!isAsyncFn(fnNode)) return; // non-async handled by the other rule
+      if (bodyHasGuardCall(fnNode)) return;
+      context.report({
+        node: nameNode || fnNode,
+        messageId: "noGuard",
+        data: { name: name || "(anonymous)" },
+      });
+    };
+
+    return {
+      Program(node) {
+        const first = node.body[0];
+        isUseServer =
+          !!first &&
+          first.type === "ExpressionStatement" &&
+          first.expression.type === "Literal" &&
+          first.expression.value === "use server";
+      },
+      ExportNamedDeclaration(node) {
+        if (!isUseServer || !inActions) return;
+        const d = node.declaration;
+        if (!d) return; // `export { ... }` specifier lists out of scope
+        if (d.type === "FunctionDeclaration" && d.async) {
+          checkExportedFn(d, d.id, d.id && d.id.name);
+        } else if (d.type === "VariableDeclaration") {
+          for (const decl of d.declarations) {
+            if (isAsyncFn(decl.init)) {
+              checkExportedFn(
+                decl.init,
+                decl.id,
+                decl.id && decl.id.type === "Identifier" ? decl.id.name : undefined,
+              );
+            }
+          }
+        }
+      },
+      ExportDefaultDeclaration(node) {
+        if (!isUseServer || !inActions) return;
+        if (isAsyncFn(node.declaration)) {
+          checkExportedFn(node.declaration, null, "default");
+        }
+      },
+    };
+  },
+};
+
+/**
  * A custom ESLint configuration for libraries that use Next.js.
  *
  * @type {import("eslint").Linter.Config[]}
@@ -191,11 +344,15 @@ export const nextJsConfig = [
       mimaric: {
         rules: {
           "no-non-async-export-in-use-server": noNonAsyncExportInUseServer,
+          // QA-SEC-01: every exported "use server" action under app/actions/**
+          // must call an authorization guard helper.
+          "require-action-guard": requireActionGuard,
         },
       },
     },
     rules: {
       "mimaric/no-non-async-export-in-use-server": "error",
+      "mimaric/require-action-guard": "error",
       "no-restricted-syntax": [
         "error",
         {
