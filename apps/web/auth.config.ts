@@ -20,6 +20,19 @@ export const authConfig = {
       if (isOnDashboard) {
         if (!isLoggedIn) return false; // Redirect to login
 
+        const role = (auth?.user as any)?.role;
+
+        // CX-018 — Tenants (USER role) live in the self-service portal, never the
+        // tenant dashboard. The role holds `dashboard:read`, so without this edge
+        // redirect a Tenant could reach the PropertyOwner Dashboard/Leasing/Finance
+        // pages by typing the URL directly (login routes them to /portal, but
+        // nothing blocked manual navigation). Redirect BEFORE the onboarding check
+        // so a Tenant is never bounced to /dashboard/onboarding — org onboarding is
+        // a PropertyOwner flow, not a Tenant one.
+        if (role === "USER") {
+          return Response.redirect(new URL("/portal", nextUrl));
+        }
+
         // Redirect un-onboarded users to onboarding wizard
         const onboardingDone = (auth?.user as any)?.onboardingCompleted !== false;
         if (!onboardingDone && !isOnboarding) {
@@ -41,7 +54,6 @@ export const authConfig = {
         // "everything else under /dashboard = tenant" semantics. The old
         // hardcoded allowlist (admin* = platform; more, notifications* = shared)
         // is reproduced by the corresponding ROUTE_GUARDS entries.
-        const role = (auth?.user as any)?.role;
         const isSystemRole = role === "SYSTEM_ADMIN" || role === "SYSTEM_SUPPORT";
         if (isSystemRole) {
           const audience = audienceForPath(nextUrl.pathname);

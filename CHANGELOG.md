@@ -1,5 +1,26 @@
 # Changelog — Mimaric PropTech
 
+## [4.25.0] — 2026-06-15 — RSC server-rendering (no first-paint waterfall) · Tenant→portal lockout
+
+Sixth CX-audit remediation release. Closes **CX-003 part 1** (server-render the heavy list pages — kill the client mount-fetch "waterfall") and **CX-018** (route the Tenant `USER` role away from the owner dashboard). No schema change.
+
+### RSC conversion of 5 list pages (CX-003 pt1)
+- **Contracts, Reservations, Payments, Marketplace, Documents** are converted from `"use client"` god-components that fetched their list *after* mount (empty skeleton → round-trip to the DB → flash of content) into **Server Components**: each `page.tsx` now `requirePermission`s and fetches the list server-side, passing it to a new client island (`ContractsView` / `ReservationsView` / `PaymentsView` / `MarketplaceView` / `DocumentsView`). The page arrives **already filled** — no first-paint client fetch. (This is a *perceived*-latency fix; the raw ~223 ms Sydney round-trip is still paid server-side — the 10–15× lever is the deferred Bahrain DB move. `CrmView` RSC is deferred to v4.26.)
+- The client islands seed state from props and keep their existing `loadX()` for post-mutation refresh (create / edit / sign / bulk / record-payment / upload) and their lazy lookups (customers/units on modal open) — so no behaviour changes. **Marketplace** additionally threads `searchParams` into the server fetch and adds a first-run skip so a filter change still re-fetches but the initial render does not double-fetch.
+- **Permission parity:** each server shell requires the *same* key its list action enforces — `contracts:read`, `reservations:read`, `documents:read`, `finance:read` (payments), `marketplace:read` — so a forbidden role gets a clean denial instead of an empty shell.
+- `getDocuments` now `serialize()`s its rows (consistent with the other list actions; hardens the RSC prop boundary).
+
+### Tenant → portal lockout (CX-018)
+- The `USER` (Tenant) role holds `dashboard:read`, which gated the **Dashboard home, Leasing, and Finance** pages — so a Tenant could open the **owner's financial KPIs** by typing the URL (login routed them to `/portal`, but nothing blocked direct navigation). `auth.config.ts` now redirects any `role === "USER"` off **every** `/dashboard/**` to `/portal`, placed **before** the onboarding redirect (a Tenant is never bounced to `/dashboard/onboarding`, an org-owner flow). System and PropertyOwner routing unchanged.
+
+### QA gate (AGENTS.md §3.11)
+- A `/mimaric-qa` subagent audit gated this release (GO, no Critical/High). Findings fixed: **M-1** `getDocuments` now serializes at the RSC boundary; **L-1** `DocumentsView` dead `loading`/`loadError` state replaced with a real `loadDocs()` refresh (cleared 2 lint warnings + restored the skeleton/error states).
+
+### Gates
+- `npm run build` green (all 5 pages emit as `ƒ` dynamic / server-rendered); `check-types` + lint (0 errors) + cspell green. §3.9: 25 screenshots (5 pages × light·dark × AR·EN + 3 mobile) — **0 console errors**; probes: every page renders + no Decimal leak; contracts list HTML present in the **first server response** (no waterfall); CX-018 — a Tenant is redirected from `/dashboard`, `/dashboard/finance`, `/dashboard/contracts`, `/dashboard/crm`, `/dashboard/onboarding` to `/portal`, and `/dashboard/finance` shows the portal (not owner KPIs). No schema/RLS change.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimaric/compare/v4.24.0...v4.25.0
+
 ## [4.24.0] — 2026-06-15 — Bulk ops · CSV/Excel import · DRAFT contract edit
 
 Fifth CX-audit remediation release. Closes **CX-010** (bulk operations + CSV/Excel import) and **CX-011** (DRAFT contract editing). No schema change.

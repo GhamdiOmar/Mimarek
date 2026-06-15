@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requirePermission } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
+import { serialize } from "../../lib/serialize";
 
 // UploadThing CDN origins for this app (app ID: c5k2lwc5ws).
 // utfs.io  — legacy shared CDN (still serves files from v6 era and older uploads)
@@ -125,12 +126,16 @@ export async function getDocuments(filters?: {
   const pageSize = Math.min(100, Math.max(1, filters?.pageSize ?? 50));
   const skip = (page - 1) * pageSize;
 
-  return db.document.findMany({
-    where,
-    orderBy: { createdAt: "desc" },
-    skip,
-    take: pageSize,
-  });
+  // serialize() so the rows are plain JSON — safe to pass as RSC props from the
+  // documents server shell (consistent with the other list actions / the seam).
+  return serialize(
+    await db.document.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      skip,
+      take: pageSize,
+    }),
+  );
 }
 
 export async function deleteDocument(documentId: string) {
