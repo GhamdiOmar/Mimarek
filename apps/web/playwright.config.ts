@@ -25,6 +25,7 @@ export default defineConfig({
     { name: 'auth-pm', testMatch: /auth\.pm\.setup\.ts/ },
     { name: 'auth-sales', testMatch: /auth\.sales\.setup\.ts/ },
     { name: 'auth-tech', testMatch: /auth\.tech\.setup\.ts/ },
+    { name: 'auth-system', testMatch: /auth\.system\.setup\.ts/ },
 
     // Unauthenticated tests (e.g. login page)
     {
@@ -75,6 +76,18 @@ export default defineConfig({
         storageState: 'e2e/.auth/tech.json',
       },
       dependencies: ['auth-tech'],
+    },
+
+    // System (platform staff) role tests — CX-017 accessibility scan of the
+    // /dashboard/admin/* platform surfaces.
+    {
+      name: 'system-tests',
+      testMatch: /.*\.system\.spec\.ts/,
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: 'e2e/.auth/system.json',
+      },
+      dependencies: ['auth-system'],
     },
 
     // Marketplace cross-org tests — use inline login() (no storageState dep), so

@@ -1,5 +1,28 @@
 # Changelog — Mimaric PropTech
 
+## [4.26.0] — 2026-06-15 — Accessibility CI gate: all routes × tenant + system (CX-017)
+
+Final CX-audit remediation wave. Expands the automated axe-core gate and closes the **CX-017** accessibility-CI portion. **Test-only change** — no application/runtime code touched.
+
+### Accessibility gate expansion (CX-017)
+- The axe-core scan went from **5 routes under 1 role** to **all 16 tenant dashboard routes (ADMIN)** + **8 platform routes (new SYSTEM_ADMIN role)** — i.e. "all routes × system + tenant". New `e2e/auth.system.setup.ts` + `system-tests` Playwright project (storageState for `system@mimaric.sa`) + `e2e/accessibility.system.spec.ts`.
+- The gate now enforces **every** critical/serious WCAG 2.1 A/AA rule across that full surface, except the documented pre-existing-debt baseline.
+
+### Honest correction — `color-contrast` baseline stays
+- The roadmap expected to **drop** the `color-contrast` baseline (v4.20's `--success-strong`). Verified against the running app, that claim was **partial**: v4.20 fixed the *success badge* specifically, but the route expansion surfaced **~5 other** `color-contrast` (serious) violations plus **2 `label`** (critical) and widespread **`select-name`** (critical, native `<select>` with no accessible name). These are pre-existing **QA-FE-01 / QA-FE-03** debt, SURFACED — not introduced — by the expansion. They are baselined with accurate per-rule documentation; the gate catches every other rule. Fixing them is the governed `Field` / `Select` primitive effort (tracked in `future-plans/QA-AUDIT-REMEDIATION.md`).
+
+### CX-003 part 2 — already satisfied (no code)
+- The audit's CX-003 pt2 (RSC `CrmView`) was found **already done**: `crm/page.tsx` is a Server Component that fetches server-side and `CrmView` seeds from props (`loadData()` is a post-mutation refetch only, never a mount fetch). The first-paint waterfall is already gone, so the risky 3,756-line decomposition is intentionally **not** undertaken (no user-facing benefit; §3.5/§3.7).
+
+### Deferred to v4.27
+- **CX-006** — the CRM add-customer form RHF migration (a ~300-line, 13-field + property-linking form in `CrmView`) deserves its own verified §3.9 cycle.
+- **CX-017 Lighthouse CI** — adds a new CI dependency + job that needs careful CI verification.
+
+### Gates
+- `check-types` + lint (0 errors) + cspell green; **axe suite green locally** — 26/26 (16 tenant + 8 system routes + setups), 0 critical/serious outside the documented baseline. No app code changed, so no §3.9 preview walk applies; the axe suite (re-run in CI) is the verification.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimaric/compare/v4.25.0...v4.26.0
+
 ## [4.25.0] — 2026-06-15 — RSC server-rendering (no first-paint waterfall) · Tenant→portal lockout
 
 Sixth CX-audit remediation release. Closes **CX-003 part 1** (server-render the heavy list pages — kill the client mount-fetch "waterfall") and **CX-018** (route the Tenant `USER` role away from the owner dashboard). No schema change.
