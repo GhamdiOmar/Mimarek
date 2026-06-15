@@ -13,6 +13,7 @@ import {
 } from "../../lib/marketplace/listing-view";
 import { encryptCustomerData } from "../../lib/pii-crypto";
 import { normalizeSaudiPhoneE164 } from "../../lib/phone";
+import { checkRateLimit } from "../../lib/rate-limit";
 
 // Saudi National Address short code: 4 letters + 4 digits (e.g. "RRRA2929").
 const SHORT_ADDRESS_RE = /^[A-Z]{4}\d{4}$/;
@@ -446,6 +447,32 @@ export async function confirmMarketplaceInterest(
   payload: { message?: string; contactName?: string; contactPhone?: string },
 ) {
   const session = await requirePermission("marketplace:inquiry:write");
+
+  // ── Rate limiting (QA-SEC-07) ─────────────────────────────────────────────
+  // Per-org: 10 inquiries / hour (prevents bulk spam from a single tenant).
+  const orgRl = await checkRateLimit(
+    `mkt-inquiry:${session.organizationId}`,
+    10,
+    3600000,
+  );
+  if (!orgRl.allowed) {
+    throw new Error(
+      "Too many inquiries. Please try again later. " +
+        "عدد كبير من الاستفسارات، حاول لاحقاً.",
+    );
+  }
+  // Per-(org, listing): 3 inquiries / day (prevents re-submitting the same listing).
+  const listingRl = await checkRateLimit(
+    `mkt-inquiry:${session.organizationId}:${listingId}`,
+    3,
+    86400000,
+  );
+  if (!listingRl.allowed) {
+    throw new Error(
+      "Too many inquiries. Please try again later. " +
+        "عدد كبير من الاستفسارات، حاول لاحقاً.",
+    );
+  }
 
   // Validate and normalize the contact phone (required — seller needs a real callback number).
   const normalizedPhone = normalizeSaudiPhoneE164(payload.contactPhone);

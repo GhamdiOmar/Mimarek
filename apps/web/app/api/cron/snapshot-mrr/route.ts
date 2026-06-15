@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { snapshotMrrForMonth } from "../../../actions/admin-analytics/snapshotMrrForMonth";
+import { snapshotMrrForMonth } from "../../../../lib/server/mrr-snapshot";
 import { isAuthorizedCronRequest } from "../../../../lib/cron-auth";
 
 /**

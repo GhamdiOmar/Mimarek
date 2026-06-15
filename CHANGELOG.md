@@ -1,5 +1,45 @@
 # Changelog — Mimaric PropTech
 
+## [4.27.0] — 2026-06-16 — P0 security hardening (QA-SEC-01…07 · QA-BE-01)
+
+First release of the **v4.30 "finish the backlog" program**. Closes every reproducing P0/P1 finding from the full-repo QA audit (`future-plans/QA-AUDIT-REMEDIATION.md`). Code-only — no schema change. Every finding was re-validated against `main` before the fix, and every diff was main-thread-audited (§3.8).
+
+### Server-action authorization (QA-SEC-01)
+- Every exported async function in a `"use server"` file is a network-reachable POST RPC. Internal helpers that wrote tenant data on **caller-supplied IDs** are no longer exported actions: `syncCustomerPipelineStatus` / `syncDealStageForUnit` → `lib/server/pipeline-sync.ts`, `snapshotMrrForMonth` → `lib/server/mrr-snapshot.ts`, `autoExpireReservations` → `lib/server/reservation-expiry.ts` — all now `import "server-only"` modules, imported by their guarded callers / CRON_SECRET-gated routes. The dead arbitrary-query action `paginated.ts` (zero importers, arbitrary model + `where`, no guard) was deleted.
+- **New ESLint rule `mimaric/require-action-guard`** (`packages/eslint-config`): every exported async fn in `app/actions/**` `"use server"` must call an auth guard (`requirePermission` / `requireTenantPermission` / `requireSystem` / `getTenantSessionOrThrow` / …) or carry an inline disable with a reason.
+
+### Coupon authorization + redemption race (QA-SEC-02)
+- `applyCoupon` now requires `billing:write`, `validateCoupon` requires `billing:read` (`requireTenantPermission`) — previously any tenant role could rewrite invoice `total`/`discountAmount`/`vatAmount`. The redemption increment is now an **atomic conditional `updateMany`** (`currentUses < maxRedemptions`) inside an interactive `$transaction` — two concurrent redemptions can no longer both slip past the cap. (The `@@unique([couponId, organizationId])` belt-and-suspenders constraint lands in v4.28.0.)
+
+### Unit bulk-update state machine (QA-BE-01)
+- `massUpdateUnits` validated caller-supplied `status` against a new `UNIT_TRANSITIONS` state machine (`lib/units/state-machine.ts`, mirroring contracts) and **blocks `→ AVAILABLE`/`→ RESERVED` while a SIGNED contract or active lease exists** on the unit. Invalid transitions reject the whole batch with the offending unit codes.
+
+### Security headers (QA-SEC-03)
+- Global `headers()` now sets `X-Frame-Options: DENY`, `Strict-Transport-Security` (2y; includeSubDomains; preload), `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy`, and a **`Content-Security-Policy-Report-Only`** baseline (ships Report-Only first; promoted to enforcing in a later tag once violations are reviewed).
+
+### Session lifetime (QA-SEC-04)
+- JWT session now carries an explicit `maxAge` (7 days) + `updateAge` (24h) instead of the implicit 30-day default.
+
+### Login account/role enumeration (QA-SEC-05)
+- `loginAction` now verifies credentials via `signIn()` **first** and only resolves the management/tenant-mode routing **after** auth succeeds — the `USE_MANAGEMENT_MODE` / `USE_TENANT_MODE` hints can no longer reveal whether an email exists or its account type before a password is proven.
+
+### Encryption integrity (QA-SEC-06)
+- `decrypt()` no longer fails **open**: a value in valid `iv:tag:ciphertext` shape whose GCM `final()` throws (tampering / wrong key) now logs a security event and **re-throws** instead of silently returning the ciphertext. The legacy-plaintext convenience (non-`:` / non-3-part input → return as-is) is preserved.
+
+### Marketplace inquiry rate-limit (QA-SEC-07)
+- `confirmMarketplaceInterest` (the public-facing inquiry write) is now rate-limited: **10/org/hour** + **3/(org,listing)/day** via the existing Postgres limiter.
+
+### Guard-coverage gate (QA-TEST-01)
+- New deterministic `__tests__/guard-coverage.test.ts` (TS-AST) asserts **every** exported `"use server"` action in `app/actions/**` either calls a guard or is in an audited `GUARD_EXEMPT` allowlist (15 entries, each with a reason) — a NEW unguarded action now fails the test, even though lint warnings are tolerated. Includes a "no stale exemptions" honesty check.
+
+### QA gate (AGENTS.md §3.11)
+- A `/mimaric-qa` subagent audit gated this release (**GO**, no Critical/High). Fixed **M-1**: the fail-closed `decrypt()` (QA-SEC-06) could 500 a list render if one row had stale-key/tampered ciphertext — `decryptCustomerData` / `decryptOrgManagerId` now degrade per-field gracefully (`safeDecryptField` → masks + logs, never returns ciphertext) so a corrupt row reads "unavailable" instead of taking the page down. Added `lib/encryption.test.ts` (round-trip · tamper→throw · wrong-key→throw · legacy-plaintext passthrough). Two Lows accepted/deferred: coupon per-org duplicate race → the `@@unique([couponId, organizationId])` constraint in v4.28.0 (`applyCoupon` has no UI callers yet); rate-limit-on-failed-inquiry → intentional safe ordering (blocks pre-validation spam).
+
+### Gates
+- `npm run build` green; `check-types` + lint (**0 errors**, warnings only) + cspell green; **vitest 126/126** (122 existing + 4 guard-coverage). §3.9 preview walk + the security claim checks (headers present, login works, CSP Report-Only console-clean, CRM PII still decrypts/renders) posted in the release thread. No schema/RLS change.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimaric/compare/v4.26.0...v4.27.0
+
 ## [4.26.0] — 2026-06-15 — Accessibility CI gate: all routes × tenant + system (CX-017)
 
 Final CX-audit remediation wave. Expands the automated axe-core gate and closes the **CX-017** accessibility-CI portion. **Test-only change** — no application/runtime code touched.

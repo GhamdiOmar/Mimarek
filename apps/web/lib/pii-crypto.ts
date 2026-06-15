@@ -2,6 +2,28 @@ import { encrypt, decrypt, hashForSearch } from "./encryption";
 import { normalizeSaudiPhoneE164 } from "./phone";
 
 /**
+ * Decrypt one PII field, degrading gracefully (QA-SEC-06 caller-resilience).
+ *
+ * `decrypt()` now fails CLOSED — it throws on a GCM auth-tag mismatch (tampering
+ * or a stale/wrong key) instead of silently returning the ciphertext. That is the
+ * correct behaviour for the crypto PRIMITIVE, but a single corrupt row must not
+ * 500 an entire list render. At the data-access layer we catch that throw, log a
+ * security event (no secrets), and return an empty string so the affected row
+ * degrades to "unavailable" while the rest of the page renders. We do NOT return
+ * the ciphertext — that would re-introduce the fail-open behaviour QA-SEC-06 fixed.
+ */
+function safeDecryptField(value: string, field: string): string {
+  try {
+    return decrypt(value);
+  } catch {
+    console.error(
+      `[pii-crypto] decrypt failed for field "${field}" — possible stale key or tampered ciphertext; rendering as unavailable.`,
+    );
+    return "";
+  }
+}
+
+/**
  * Search-key for a phone: HMAC over the E.164-normalized form when the value is
  * a valid Saudi mobile, else over the raw value. The SEARCH path in customers.ts
  * MUST mirror this exactly (hashForSearch(normalizeSaudiPhoneE164(x) ?? x)) so a
@@ -45,9 +67,9 @@ export function decryptCustomerData<T extends Record<string, any>>(customer: T):
 
   return {
     ...customer,
-    nationalId: customer.nationalId ? decrypt(customer.nationalId) : customer.nationalId,
-    phone: customer.phone ? decrypt(customer.phone) : customer.phone,
-    email: customer.email ? decrypt(customer.email) : customer.email,
+    nationalId: customer.nationalId ? safeDecryptField(customer.nationalId, "nationalId") : customer.nationalId,
+    phone: customer.phone ? safeDecryptField(customer.phone, "phone") : customer.phone,
+    email: customer.email ? safeDecryptField(customer.email, "email") : customer.email,
   };
 }
 
@@ -76,6 +98,6 @@ export function decryptOrgManagerId(managerInfo: any): any {
   if (!managerInfo || !managerInfo.managerId) return managerInfo;
   return {
     ...managerInfo,
-    managerId: decrypt(managerInfo.managerId),
+    managerId: safeDecryptField(managerInfo.managerId, "managerId"),
   };
 }

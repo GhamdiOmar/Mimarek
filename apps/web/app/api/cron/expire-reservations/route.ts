@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { autoExpireReservations } from "../../../actions/reservations";
+import { autoExpireReservations } from "../../../../lib/server/reservation-expiry";
 import { isAuthorizedCronRequest } from "../../../../lib/cron-auth";
 
 /**
