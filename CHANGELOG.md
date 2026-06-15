@@ -32,6 +32,9 @@ First release of the **v4.30 "finish the backlog" program**. Closes every reprod
 ### Guard-coverage gate (QA-TEST-01)
 - New deterministic `__tests__/guard-coverage.test.ts` (TS-AST) asserts **every** exported `"use server"` action in `app/actions/**` either calls a guard or is in an audited `GUARD_EXEMPT` allowlist (15 entries, each with a reason) — a NEW unguarded action now fails the test, even though lint warnings are tolerated. Includes a "no stale exemptions" honesty check.
 
+### QA gate (AGENTS.md §3.11)
+- A `/mimaric-qa` subagent audit gated this release (**GO**, no Critical/High). Fixed **M-1**: the fail-closed `decrypt()` (QA-SEC-06) could 500 a list render if one row had stale-key/tampered ciphertext — `decryptCustomerData` / `decryptOrgManagerId` now degrade per-field gracefully (`safeDecryptField` → masks + logs, never returns ciphertext) so a corrupt row reads "unavailable" instead of taking the page down. Added `lib/encryption.test.ts` (round-trip · tamper→throw · wrong-key→throw · legacy-plaintext passthrough). Two Lows accepted/deferred: coupon per-org duplicate race → the `@@unique([couponId, organizationId])` constraint in v4.28.0 (`applyCoupon` has no UI callers yet); rate-limit-on-failed-inquiry → intentional safe ordering (blocks pre-validation spam).
+
 ### Gates
 - `npm run build` green; `check-types` + lint (**0 errors**, warnings only) + cspell green; **vitest 126/126** (122 existing + 4 guard-coverage). §3.9 preview walk + the security claim checks (headers present, login works, CSP Report-Only console-clean, CRM PII still decrypts/renders) posted in the release thread. No schema/RLS change.
 
