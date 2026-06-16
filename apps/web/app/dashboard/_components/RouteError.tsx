@@ -54,7 +54,7 @@ export function RouteError({ error, reset }: RouteErrorProps) {
         }
       />
       {error.digest && (
-        <p className="-mt-6 font-mono text-[11px] text-muted-foreground/70">
+        <p className="-mt-6 font-mono text-[11px] text-muted-foreground">
           {referenceLabel}: {error.digest}
         </p>
       )}

@@ -702,10 +702,11 @@ export default function OrgSettingsPage() {
                 }
               >
                 <div className="space-y-2">
-                  <label className="text-xs font-medium text-muted-foreground">
+                  <label htmlFor="settings-org-name" className="text-xs font-medium text-muted-foreground">
                     {lang === "ar" ? "اسم المنظمة" : "Organization Name"} *
                   </label>
                   <Input
+                    id="settings-org-name"
                     value={form.name}
                     onChange={(e) => set("name", e.target.value)}
                     className={fieldErrors.name ? "border-destructive focus-visible:ring-destructive" : ""}
@@ -719,20 +720,22 @@ export default function OrgSettingsPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground">
+                    <label htmlFor="settings-name-arabic" className="text-xs font-medium text-muted-foreground">
                       {lang === "ar" ? "الاسم الرسمي بالعربي" : "Official Arabic Name"}
                     </label>
                     <Input
+                      id="settings-name-arabic"
                       value={form.nameArabic}
                       onChange={(e) => set("nameArabic", e.target.value)}
                       dir="rtl"
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground">
+                    <label htmlFor="settings-name-english" className="text-xs font-medium text-muted-foreground">
                       {lang === "ar" ? "الاسم الرسمي بالإنجليزي" : "Official English Name"}
                     </label>
                     <Input
+                      id="settings-name-english"
                       value={form.nameEnglish}
                       onChange={(e) => set("nameEnglish", e.target.value)}
                       dir="ltr"
@@ -800,10 +803,11 @@ export default function OrgSettingsPage() {
               >
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground">
+                    <label htmlFor="settings-entity-type" className="text-xs font-medium text-muted-foreground">
                       {lang === "ar" ? "نوع المنشأة" : "Entity Type"}
                     </label>
                     <select
+                      id="settings-entity-type"
                       value={form.entityType}
                       onChange={(e) => set("entityType", e.target.value)}
                       className={selectClass}
@@ -823,10 +827,11 @@ export default function OrgSettingsPage() {
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground">
+                    <label htmlFor="settings-legal-form" className="text-xs font-medium text-muted-foreground">
                       {lang === "ar" ? "الشكل القانوني" : "Legal Form"}
                     </label>
                     <select
+                      id="settings-legal-form"
                       value={form.legalForm}
                       onChange={(e) => set("legalForm", e.target.value)}
                       className={selectClass}
@@ -859,10 +864,11 @@ export default function OrgSettingsPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground">
+                    <label htmlFor="settings-reg-status" className="text-xs font-medium text-muted-foreground">
                       {lang === "ar" ? "حالة التسجيل" : "Registration Status"}
                     </label>
                     <select
+                      id="settings-reg-status"
                       value={form.registrationStatus}
                       onChange={(e) => set("registrationStatus", e.target.value)}
                       className={selectClass}
@@ -898,10 +904,11 @@ export default function OrgSettingsPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground">
+                    <label htmlFor="settings-reg-date" className="text-xs font-medium text-muted-foreground">
                       {lang === "ar" ? "تاريخ التسجيل" : "Registration Date"}
                     </label>
                     <Input
+                      id="settings-reg-date"
                       type="date"
                       value={form.registrationDate}
                       onChange={(e) => set("registrationDate", e.target.value)}
@@ -909,10 +916,11 @@ export default function OrgSettingsPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground">
+                    <label htmlFor="settings-expiry-date" className="text-xs font-medium text-muted-foreground">
                       {lang === "ar" ? "تاريخ الانتهاء" : "Expiry Date"}
                     </label>
                     <Input
+                      id="settings-expiry-date"
                       type="date"
                       value={form.expiryDate}
                       onChange={(e) => set("expiryDate", e.target.value)}
@@ -949,20 +957,22 @@ export default function OrgSettingsPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground">
+                    <label htmlFor="settings-trade-arabic" className="text-xs font-medium text-muted-foreground">
                       {lang === "ar" ? "الاسم التجاري بالعربي" : "Trade Name (Arabic)"}
                     </label>
                     <Input
+                      id="settings-trade-arabic"
                       value={form.tradeNameArabic}
                       onChange={(e) => set("tradeNameArabic", e.target.value)}
                       dir="rtl"
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground">
+                    <label htmlFor="settings-trade-english" className="text-xs font-medium text-muted-foreground">
                       {lang === "ar" ? "الاسم التجاري بالإنجليزي" : "Trade Name (English)"}
                     </label>
                     <Input
+                      id="settings-trade-english"
                       value={form.tradeNameEnglish}
                       onChange={(e) => set("tradeNameEnglish", e.target.value)}
                       dir="ltr"
@@ -1071,10 +1081,11 @@ export default function OrgSettingsPage() {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground">
+                    <label htmlFor="settings-addr-street" className="text-xs font-medium text-muted-foreground">
                       {lang === "ar" ? "اسم الشارع" : "Street"}
                     </label>
                     <Input
+                      id="settings-addr-street"
                       value={form.addrStreet}
                       onChange={(e) => set("addrStreet", e.target.value)}
                     />
@@ -1264,7 +1275,11 @@ export default function OrgSettingsPage() {
                 ? "اختر الصفحة التي تفتح بعد تسجيل الدخول."
                 : "Choose which page opens after login."}
             </p>
+            <label htmlFor="settings-landing-page" className="sr-only">
+              {lang === "ar" ? "الصفحة الرئيسية" : "Landing page"}
+            </label>
             <select
+              id="settings-landing-page"
               value={landingPage}
               onChange={async (e) => {
                 const value = e.target.value;

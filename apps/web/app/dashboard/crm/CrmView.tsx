@@ -106,7 +106,7 @@ const PIPELINE_STAGES = [
   {
     key: "NEW",
     label: { ar: "جديد", en: "New Lead" },
-    color: "bg-info/10 text-info border-info/30",
+    color: "bg-info/10 text-info-strong border-info/30",
     dotColor: "bg-info",
   },
   {
@@ -118,13 +118,13 @@ const PIPELINE_STAGES = [
   {
     key: "QUALIFIED",
     label: { ar: "مؤهل", en: "Qualified" },
-    color: "bg-warning/10 text-warning border-warning/30",
+    color: "bg-warning/10 text-warning-strong border-warning/30",
     dotColor: "bg-warning",
   },
   {
     key: "VIEWING",
     label: { ar: "معاينة", en: "Viewing" },
-    color: "bg-warning/10 text-warning border-warning/30",
+    color: "bg-warning/10 text-warning-strong border-warning/30",
     dotColor: "bg-warning",
   },
   {
@@ -173,7 +173,7 @@ const ALL_STATUS_CONFIGS = [
   {
     key: "RESERVED",
     label: { ar: "محجوز", en: "Reserved" },
-    color: "bg-info/10 text-info border-info/30",
+    color: "bg-info/10 text-info-strong border-info/30",
     dotColor: "bg-info",
   },
   {
@@ -191,7 +191,7 @@ const ALL_STATUS_CONFIGS = [
   {
     key: "ACTIVE_TENANT",
     label: { ar: "مستأجر نشط", en: "Active Tenant" },
-    color: "bg-info/10 text-info border-info/30",
+    color: "bg-info/10 text-info-strong border-info/30",
     dotColor: "bg-info",
   },
   {
@@ -912,7 +912,7 @@ function CustomerDrawer({
                               className={cn(
                                 "text-[10px] font-semibold px-2 py-0.5 rounded-full border",
                                 interest.intent === "BUY"
-                                  ? "bg-info/10 text-info border-info/30"
+                                  ? "bg-info/10 text-info-strong border-info/30"
                                   : "bg-primary/10 text-primary border-primary/30"
                               )}
                             >
@@ -926,7 +926,7 @@ function CustomerDrawer({
                                 interest.status === "ACTIVE"
                                   ? "bg-success/10 text-success-strong border-success/30"
                                   : interest.status === "CONVERTED"
-                                    ? "bg-warning/10 text-warning border-warning/30"
+                                    ? "bg-warning/10 text-warning-strong border-warning/30"
                                     : "bg-muted text-muted-foreground border-border"
                               )}
                             >
@@ -1388,7 +1388,7 @@ function CustomerDrawer({
                     className={cn(
                       "py-2 text-sm h-auto justify-center",
                       linkIntent === "BUY"
-                        ? "border-info/50 bg-info/10 text-info hover:bg-info/15"
+                        ? "border-info/50 bg-info/10 text-info-strong hover:bg-info/15"
                         : ""
                     )}
                     onClick={() => setLinkIntent("BUY")}
@@ -1609,7 +1609,7 @@ function KanbanCard({
       : daysInStage <= 7
         ? "bg-muted text-muted-foreground"
         : daysInStage <= 14
-          ? "bg-warning/15 text-warning"
+          ? "bg-warning/15 text-warning-strong"
           : "bg-destructive/15 text-destructive";
   const stageDayLabel =
     daysInStage === null
@@ -1787,7 +1787,7 @@ function KanbanCard({
                   ? `المسؤول: ${customer.agent.name}`
                   : `Owner: ${customer.agent.name}`
               }
-              className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-secondary/20 text-secondary text-[9px] font-semibold"
+              className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-secondary/20 text-success-strong text-[9px] font-semibold"
             >
               {agentInitials}
             </span>
@@ -2019,7 +2019,7 @@ export default function CrmView({
     };
     return {
       label: lang === "ar" ? "أقل من الميزانية" : "Under Budget",
-      color: "text-info bg-info/10",
+      color: "text-info-strong bg-info/10",
     };
   }
 
@@ -2809,7 +2809,7 @@ export default function CrmView({
                 className={cn(
                   "rounded-full gap-2 px-3 py-1.5 text-xs h-auto",
                   showPii
-                    ? "border-warning/40 bg-warning/10 text-warning hover:bg-warning/20"
+                    ? "border-warning/40 bg-warning/10 text-warning-strong hover:bg-warning/20"
                     : ""
                 )}
                 onClick={() => setShowPii((v) => !v)}
@@ -2863,7 +2863,7 @@ export default function CrmView({
                 className={cn(
                   "gap-1.5 text-xs",
                   showPii
-                    ? "border-warning/50 bg-warning/10 text-warning hover:bg-warning/20"
+                    ? "border-warning/50 bg-warning/10 text-warning-strong hover:bg-warning/20"
                     : ""
                 )}
                 onClick={() => setShowPii((v) => !v)}
@@ -3499,7 +3499,7 @@ export default function CrmView({
                           <span className={cn(
                             "text-[10px] font-bold px-1.5 py-0.5 rounded-full",
                             newCustIntent === "BUY"
-                              ? "bg-info/15 text-info"
+                              ? "bg-info/15 text-info-strong"
                               : "bg-primary/15 text-primary"
                           )}>
                             {newCustIntent === "BUY" ? (lang === "ar" ? "شراء" : "BUY") : (lang === "ar" ? "إيجار" : "RENT")}

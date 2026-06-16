@@ -710,9 +710,9 @@ export default function MaintenanceDetailPage() {
       {/* Status Workflow Buttons */}
       {validTransitions.length > 0 && (() => {
         const statusButtonStyles: Record<string, string> = {
-          ASSIGNED: "bg-info/10 text-info border border-info/30 hover:bg-info/20",
-          IN_PROGRESS: "bg-warning/10 text-warning border border-warning/30 hover:bg-warning/20",
-          ON_HOLD: "bg-warning/10 text-warning border border-warning/30 hover:bg-warning/20",
+          ASSIGNED: "bg-info/10 text-info-strong border border-info/30 hover:bg-info/20",
+          IN_PROGRESS: "bg-warning/10 text-warning-strong border border-warning/30 hover:bg-warning/20",
+          ON_HOLD: "bg-warning/10 text-warning-strong border border-warning/30 hover:bg-warning/20",
           RESOLVED: "bg-secondary/10 text-secondary border border-secondary/30 hover:bg-secondary/20",
           CLOSED: "bg-primary/10 text-primary border border-primary/30 hover:bg-primary/20",
         };

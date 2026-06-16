@@ -151,8 +151,8 @@ export default function TicketDetailPage() {
   function priorityBadge(priority: string) {
     const map: Record<string, string> = {
       LOW: "bg-muted text-muted-foreground",
-      MEDIUM: "bg-info/10 text-info",
-      HIGH: "bg-warning/10 text-warning",
+      MEDIUM: "bg-info/10 text-info-strong",
+      HIGH: "bg-warning/10 text-warning-strong",
       URGENT: "bg-destructive/10 text-destructive",
     };
     const label = PRIORITY_LABELS[priority] ?? { ar: priority, en: priority };
@@ -318,7 +318,7 @@ export default function TicketDetailPage() {
                       {msg.user?.name ?? msg.user?.email}
                     </span>
                     {isStaff && (
-                      <span className="inline-flex items-center rounded-full bg-info/15 text-info px-1.5 py-0.5 text-[10px] font-semibold">
+                      <span className="inline-flex items-center rounded-full bg-info/15 text-info-strong px-1.5 py-0.5 text-[10px] font-semibold">
                         {lang === "ar" ? "فريق الدعم" : "Staff"}
                       </span>
                     )}
@@ -566,7 +566,7 @@ export default function TicketDetailPage() {
                       {msg.user?.name ?? msg.user?.email}
                     </span>
                     {isStaff && (
-                      <span className="text-[10px] bg-info/15 text-info px-1.5 py-0.5 rounded-full font-medium">
+                      <span className="text-[10px] bg-info/15 text-info-strong px-1.5 py-0.5 rounded-full font-medium">
                         {lang === "ar" ? "فريق الدعم" : "Staff"}
                       </span>
                     )}

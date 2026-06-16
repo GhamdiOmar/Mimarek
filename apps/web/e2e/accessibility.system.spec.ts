@@ -26,12 +26,12 @@ const ROUTES = [
 
 const BLOCKING_IMPACT = ["critical", "serious"] as const;
 
-// Same documented pre-existing a11y debt baseline as the tenant scan (see
-// accessibility.admin.spec.ts for the rationale): a Radix asChild aria-allowed-attr,
-// remaining color-contrast instances (success badge fixed in v4.20; others pending the
-// §6.2 follow-up), native <select> with no accessible name (QA-FE-03), and a few inputs
-// missing a <label> (QA-FE-01). The gate enforces every other rule on the platform routes.
-const KNOWN_BASELINE_RULES = ["aria-allowed-attr", "color-contrast", "select-name", "label"];
+// v4.29.0 — the four QA-FE-01/FE-03 a11y-debt rules are FIXED and UN-BASELINED on the
+// platform routes too (see accessibility.admin.spec.ts for the fixes): shared AppTopbar
+// trigger → real <button>; `--info-strong`/`--warning-strong` tokens; admin/tickets +
+// admin/seo native <select>s given aria-label. The gate now enforces EVERY critical/serious
+// WCAG 2.1 A/AA rule across the platform routes.
+const KNOWN_BASELINE_RULES: string[] = [];
 
 test.describe("Accessibility — axe-core WCAG 2.1 A/AA (System)", () => {
   for (const route of ROUTES) {

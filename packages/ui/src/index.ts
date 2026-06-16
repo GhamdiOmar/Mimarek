@@ -20,7 +20,9 @@ export * from "./components/StatusBadge";
 export * from "./components/StatCard";
 export * from "./components/DataTable";
 export * from "./components/FormSection";
-export * from "./components/FormField"; /* exports FieldWrapper */
+export * from "./components/FormField"; /* exports FieldWrapper (legacy) */
+export * from "./components/Field"; /* governed Field — useId label wiring (a11y `label`) */
+export * from "./components/SelectField"; /* governed native-select wrapper (a11y `select-name`) */
 export * from "./components/PageIntro";
 export * from "./components/DirectionalIcon";
 export * from "./components/IconButton";

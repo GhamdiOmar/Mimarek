@@ -139,8 +139,8 @@ function getPaymentTone(entry: {
   if (isAging) {
     return {
       rowClass: "bg-warning/5",
-      amountClass: "text-warning",
-      dueDateClass: "text-warning",
+      amountClass: "text-warning-strong",
+      dueDateClass: "text-warning-strong",
     };
   }
 

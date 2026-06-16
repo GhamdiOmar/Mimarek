@@ -145,7 +145,7 @@ export default function BillingDashboardPage() {
   const statusColors: Record<string, string> = {
     TRIALING: "bg-primary/10 text-primary",
     ACTIVE: "bg-success/10 text-success-strong",
-    PAST_DUE: "bg-warning/10 text-warning",
+    PAST_DUE: "bg-warning/10 text-warning-strong",
     UNPAID: "bg-destructive/10 text-destructive",
     CANCELED: "bg-muted text-muted-foreground",
     PAUSED: "bg-secondary/10 text-secondary",
@@ -210,7 +210,7 @@ export default function BillingDashboardPage() {
             <div className="flex items-start gap-3 p-4 rounded-lg bg-warning/10 border border-warning/20">
               <AlertTriangle className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-warning">{t.pastDueBanner}</p>
+                <p className="text-sm font-medium text-warning-strong">{t.pastDueBanner}</p>
                 <p className="text-xs text-muted-foreground mt-1">{t.pastDueDescription}</p>
                 <Button
                   variant="secondary"
@@ -257,7 +257,7 @@ export default function BillingDashboardPage() {
                 </span>
               </p>
               {subscription.trialEndsAt && subscription.status === "TRIALING" && (
-                <p className="text-xs text-info mt-1">
+                <p className="text-xs text-info-strong mt-1">
                   {t.trialEnds}:{" "}
                   <span className="tabular-nums">
                     {new Date(subscription.trialEndsAt).toLocaleDateString(
@@ -419,8 +419,8 @@ export default function BillingDashboardPage() {
             <div className="flex items-center gap-3 p-4 rounded-lg bg-warning/10 border border-warning/30">
               <AlertTriangle className="w-5 h-5 text-warning flex-shrink-0" />
               <div className="flex-1">
-                <p className="text-sm font-medium text-warning">{t.pastDueBanner}</p>
-                <p className="text-xs text-warning mt-1">{t.pastDueDescription}</p>
+                <p className="text-sm font-medium text-warning-strong">{t.pastDueBanner}</p>
+                <p className="text-xs text-warning-strong mt-1">{t.pastDueDescription}</p>
               </div>
               <Button variant="secondary" size="sm" style={{ display: "inline-flex" }} className="gap-1.5" disabled={updatingPayment}>
                 {updatingPayment && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
@@ -467,7 +467,7 @@ export default function BillingDashboardPage() {
                       </span>
                     </p>
                     {subscription.trialEndsAt && subscription.status === "TRIALING" && (
-                      <p className="text-sm text-info mt-1">
+                      <p className="text-sm text-info-strong mt-1">
                         {t.trialEnds}: {new Date(subscription.trialEndsAt).toLocaleDateString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-US")}
                       </p>
                     )}

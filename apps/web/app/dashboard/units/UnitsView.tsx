@@ -939,7 +939,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
               <Badge variant="available" className="bg-success/10 text-success-strong border-success/20">{unitStatusLabels.AVAILABLE?.[lang]} {statusCounts.available}</Badge>
               <Badge variant="reserved" className="bg-primary/10 text-primary border-primary/20">{unitStatusLabels.RESERVED?.[lang]} {statusCounts.reserved}</Badge>
               <Badge variant="sold" className="bg-muted text-muted-foreground border-muted">{unitStatusLabels.SOLD?.[lang]}/{unitStatusLabels.RENTED?.[lang]} {statusCounts.sold + statusCounts.rented}</Badge>
-              <Badge variant="draft" className="bg-warning/10 text-warning border-warning/20">{unitStatusLabels.MAINTENANCE?.[lang]} {statusCounts.maintenance}</Badge>
+              <Badge variant="draft" className="bg-warning/10 text-warning-strong border-warning/20">{unitStatusLabels.MAINTENANCE?.[lang]} {statusCounts.maintenance}</Badge>
             </div>
           </div>
 
@@ -949,10 +949,10 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
               {filteredUnits.map((unit: any) => {
                 const statusChipClasses: Record<string, string> = {
                   AVAILABLE: "bg-success/10 text-success-strong border border-success/20",
-                  RESERVED: "bg-info/10 text-info border border-info/20",
+                  RESERVED: "bg-info/10 text-info-strong border border-info/20",
                   SOLD: "bg-primary/10 text-primary border border-primary/20",
                   RENTED: "bg-secondary/10 text-secondary border border-secondary/20",
-                  MAINTENANCE: "bg-warning/10 text-warning border border-warning/20",
+                  MAINTENANCE: "bg-warning/10 text-warning-strong border border-warning/20",
                 };
                 const chipClass =
                   statusChipClasses[unit.status] ??

@@ -401,6 +401,13 @@ export default function MaintenanceView({
             : dominantEntry.priority === "HIGH"
             ? "text-warning"
             : "text-foreground";
+        // Strong variant for rendered text (WCAG AA on tinted bg); icon keeps base token (aria-hidden)
+        const dominantTextStrongClass =
+          dominantEntry.priority === "URGENT"
+            ? "text-destructive"
+            : dominantEntry.priority === "HIGH"
+            ? "text-warning-strong"
+            : "text-foreground";
 
         const urgencyLabel =
           URGENCY_LABEL[dominantEntry.priority]?.[lang];
@@ -428,11 +435,11 @@ export default function MaintenanceView({
                       className={["h-5 w-5 shrink-0", dominantTextClass].join(" ")}
                       aria-hidden="true"
                     />
-                    <span className={["text-sm font-semibold", dominantTextClass].join(" ")}>
+                    <span className={["text-sm font-semibold", dominantTextStrongClass].join(" ")}>
                       {PRIORITY_LABELS[dominantEntry.priority]?.[lang] ?? dominantEntry.priority}
                     </span>
                   </div>
-                  <p className={["text-4xl font-bold tabular-nums leading-none", dominantTextClass].join(" ")}>
+                  <p className={["text-4xl font-bold tabular-nums leading-none", dominantTextStrongClass].join(" ")}>
                     {fmt(dominantEntry.count)}
                   </p>
                   {urgencyLabel && (

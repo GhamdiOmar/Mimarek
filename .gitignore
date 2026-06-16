@@ -13,6 +13,15 @@ verification-screenshots/
 verification/
 verification-v*/
 
+# Lighthouse CI local output
+.lighthouseci/
+
+# Local verification/capture scripts (contain the local seed login password —
+# one-off tooling, kept out of the repo; the password-free precheck-*.mjs stays tracked)
+scripts/capture-v*.mjs
+scripts/axe-scan-*.mjs
+axe-scope-*.json
+
 # Claude Code
 .claude/
 

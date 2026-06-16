@@ -553,6 +553,7 @@ export default function SeoSettingsPage() {
               <div className="space-y-1.5">
                 <label className="text-sm font-medium">{lang === "ar" ? "لغة Open Graph" : "OG Locale"}</label>
                 <select
+                  aria-label={lang === "ar" ? "لغة Open Graph" : "OG Locale"}
                   className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
                   value={ogLocale}
                   onChange={(e) => setOgLocale(e.target.value)}
@@ -568,6 +569,7 @@ export default function SeoSettingsPage() {
               <div className="space-y-1.5">
                 <label className="text-sm font-medium">{lang === "ar" ? "نوع Twitter Card" : "Twitter Card Type"}</label>
                 <select
+                  aria-label={lang === "ar" ? "نوع Twitter Card" : "Twitter Card Type"}
                   className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
                   value={twitterCard}
                   onChange={(e) => setTwitterCard(e.target.value)}
@@ -652,7 +654,7 @@ export default function SeoSettingsPage() {
                 {lang === "ar" ? "إدارة العلامات والتحليلات" : "Tag Management & Analytics"}
               </h3>
               <div className="mt-2 rounded-md bg-info/10 border border-info/30 px-4 py-3">
-                <p className="text-sm text-info">
+                <p className="text-sm text-info-strong">
                   {lang === "ar"
                     ? "💡 GTM موصى به — يتيح لك إضافة GA4، Meta Pixel، TikTok، Snapchat، LinkedIn، وX من واجهة GTM دون أي تغييرات في الكود."
                     : "💡 GTM is recommended — it lets you add GA4, Meta Pixel, TikTok, Snapchat, LinkedIn, and X from the GTM interface without touching code."}
@@ -784,7 +786,7 @@ export default function SeoSettingsPage() {
                   </h3>
                   <div className="flex items-center gap-1 rounded-md bg-warning/10 border border-warning/30 px-2 py-0.5">
                     <AlertTriangle className="h-3.5 w-3.5 text-warning" />
-                    <span className="text-xs text-warning font-medium">
+                    <span className="text-xs text-warning-strong font-medium">
                       {lang === "ar" ? "تحذير" : "Warning"}
                     </span>
                   </div>

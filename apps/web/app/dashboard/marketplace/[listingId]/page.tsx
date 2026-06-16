@@ -51,7 +51,7 @@ const PROPERTY_TYPE_LABELS: Record<string, { ar: string; en: string }> = {
 
 const COMPLIANCE_LABELS: Record<string, { ar: string; en: string; cls: string }> = {
   APPROVED: { ar: "موافق عليه", en: "Approved", cls: "bg-success/15 text-success-strong" },
-  PENDING_REVIEW: { ar: "قيد المراجعة", en: "Pending Review", cls: "bg-warning/15 text-warning" },
+  PENDING_REVIEW: { ar: "قيد المراجعة", en: "Pending Review", cls: "bg-warning/15 text-warning-strong" },
   REJECTED: { ar: "مرفوض", en: "Rejected", cls: "bg-destructive/15 text-destructive" },
 };
 
