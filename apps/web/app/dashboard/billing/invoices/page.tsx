@@ -102,7 +102,7 @@ export default function InvoicesPage() {
 
   const statusConfig: Record<string, { color: string; labelAr: string; labelEn: string }> = {
     DRAFT: { color: "bg-muted text-muted-foreground", labelAr: "مسودة", labelEn: "Draft" },
-    ISSUED: { color: "bg-info/15 text-info", labelAr: "صادرة", labelEn: "Issued" },
+    ISSUED: { color: "bg-info/15 text-info-strong", labelAr: "صادرة", labelEn: "Issued" },
     PAID: { color: "bg-success/15 text-success-strong", labelAr: "مدفوعة", labelEn: "Paid" },
     OVERDUE: { color: "bg-destructive/15 text-destructive", labelAr: "متأخرة", labelEn: "Overdue" },
     CANCELED: { color: "bg-muted text-muted-foreground", labelAr: "ملغاة", labelEn: "Canceled" },

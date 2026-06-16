@@ -518,13 +518,14 @@ export default function AdminTicketsPage() {
         </div>
 
         {[
-          { value: status, setter: setStatus, options: STATUS_OPTIONS },
-          { value: priority, setter: setPriority, options: PRIORITY_OPTIONS },
-          { value: category, setter: setCategory, options: CATEGORY_OPTIONS },
+          { value: status, setter: setStatus, options: STATUS_OPTIONS, label: { ar: "تصفية حسب الحالة", en: "Filter by status" } },
+          { value: priority, setter: setPriority, options: PRIORITY_OPTIONS, label: { ar: "تصفية حسب الأولوية", en: "Filter by priority" } },
+          { value: category, setter: setCategory, options: CATEGORY_OPTIONS, label: { ar: "تصفية حسب الفئة", en: "Filter by category" } },
         ].map((f, i) => (
           <div key={i} className="relative">
-            <Filter className="absolute start-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+            <Filter className="absolute start-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" aria-hidden="true" />
             <select
+              aria-label={f.label[lang]}
               value={f.value}
               onChange={handleFilterChange(f.setter)}
               className="appearance-none rounded-md border border-input bg-background ps-8 pe-8 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 cursor-pointer"

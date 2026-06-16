@@ -313,7 +313,7 @@ export default function AdminPlansPage() {
               {plan.nameEn}
             </span>
             {plan.isDefault && (
-              <span className="mt-1 inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-info/15 text-info">
+              <span className="mt-1 inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-info/15 text-info-strong">
                 {t.default}
               </span>
             )}
@@ -442,7 +442,7 @@ export default function AdminPlansPage() {
             </span>
           </div>
           {plan.isDefault && (
-            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-info/15 text-info w-fit">
+            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-info/15 text-info-strong w-fit">
               {t.default}
             </span>
           )}

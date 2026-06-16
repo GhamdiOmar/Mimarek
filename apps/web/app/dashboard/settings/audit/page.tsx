@@ -48,14 +48,14 @@ type AuditLog = {
 
 const actionColors: Record<string, string> = {
   CREATE: "bg-success/10 text-success-strong",
-  READ: "bg-info/10 text-info",
-  UPDATE: "bg-warning/10 text-warning",
+  READ: "bg-info/10 text-info-strong",
+  UPDATE: "bg-warning/10 text-warning-strong",
   DELETE: "bg-destructive/10 text-destructive",
   READ_PII: "bg-primary/10 text-primary",
   EXPORT: "bg-primary/10 text-primary",
-  LOGIN: "bg-info/10 text-info",
+  LOGIN: "bg-info/10 text-info-strong",
   LOGOUT: "bg-muted text-muted-foreground",
-  PASSWORD_CHANGE: "bg-warning/10 text-warning",
+  PASSWORD_CHANGE: "bg-warning/10 text-warning-strong",
   PASSWORD_RESET: "bg-destructive/10 text-destructive",
 };
 
@@ -462,8 +462,9 @@ export default function AuditLogPage() {
         {/* Filters */}
         <div className="flex flex-wrap gap-3 mb-4">
           <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-muted-foreground" />
+            <Filter className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
             <select
+              aria-label={t.filterAction}
               value={actionFilter}
               onChange={(e) => { setActionFilter(e.target.value); setPage(1); }}
               className="text-xs bg-surface border border-border rounded-md px-2 py-1.5"
@@ -474,6 +475,7 @@ export default function AuditLogPage() {
               ))}
             </select>
             <select
+              aria-label={t.filterResource}
               value={resourceFilter}
               onChange={(e) => { setResourceFilter(e.target.value); setPage(1); }}
               className="text-xs bg-surface border border-border rounded-md px-2 py-1.5"

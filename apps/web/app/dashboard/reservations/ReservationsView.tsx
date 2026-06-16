@@ -746,7 +746,7 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
                 countdown.tone === "destructive"
                   ? "text-destructive"
                   : countdown.tone === "warning"
-                    ? "text-warning"
+                    ? "text-warning-strong"
                     : countdown.tone === "success"
                       ? "text-success"
                       : "text-muted-foreground";
@@ -1075,7 +1075,7 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
               countdown.tone === "destructive"
                 ? "text-destructive"
                 : countdown.tone === "warning"
-                  ? "text-warning"
+                  ? "text-warning-strong"
                   : countdown.tone === "success"
                     ? "text-success"
                     : "text-muted-foreground";

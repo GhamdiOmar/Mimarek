@@ -488,7 +488,7 @@ export default function CouponManagementPage() {
                 {coupon.isActive ? labels.active : labels.inactive}
               </span>
               {(isExpired || isMaxedOut) && (
-                <span className="text-xs text-warning">
+                <span className="text-xs text-warning-strong">
                   {isExpired
                     ? lang === "ar"
                       ? "(منتهي)"

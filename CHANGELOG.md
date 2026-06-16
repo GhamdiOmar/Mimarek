@@ -1,5 +1,31 @@
 # Changelog — Mimaric PropTech
 
+## [4.29.0] — 2026-06-16 — Accessibility-green + governed primitives + Lighthouse CI (QA-FE-01/03 · CX-017)
+
+Third release of the v4.30 program. Closes the accessibility debt the v4.26 axe-gate expansion baselined, behind new governed primitives, and adds a Lighthouse CI gate. **The axe-core gate now enforces every critical/serious WCAG 2.1 A/AA rule across all 16 tenant + 8 platform routes with an EMPTY baseline — 26/26 green.**
+
+### Governed accessibility primitives (`@repo/ui`)
+- **`Field`** — mints a stable `useId()` and wires `<label htmlFor>` ↔ control `id` + `aria-invalid` + `aria-describedby` + `role="alert"` errors, via a render-prop. Removes the "label with no `htmlFor`" class of bug (QA-FE-01).
+- **`SelectField`** — a thin governed wrapper over a NATIVE `<select>` that guarantees an accessible name (label-associated or `aria-label`), keeping value/onChange/`<option>` semantics so migration is near-mechanical (QA-FE-03).
+- **`Alert`** compound API — `AlertIcon` / `AlertContent` / `AlertToolbar` + an `IconButton`-owned dismiss, extending the existing tokenized `variant × appearance` primitive (§6.4).
+
+### A11y debt fixed → all 4 baselined rules un-baselined
+- **`aria-allowed-attr` (was 19 nodes, one shared cause):** the AppTopbar notifications `PopoverTrigger asChild` wrapped a `<span>` (invalid `aria-haspopup`/`aria-expanded`/`type`) — now wraps the real-`<button>` `IconButton`, with the unread badge positioned via the parent.
+- **`color-contrast`:** new **`--info-strong`** + **`--warning-strong`** tokens (mirroring v4.20's `--success-strong`) for text-on-tint badges; applied to the billing trial-expiry text, audit event badges, invoice ISSUED badge, Units RESERVED/MAINTENANCE chips, CRM assignee initial, and a muted `RouteError` line.
+- **`label` / `select-name`:** the flagged inputs/selects (reports date pickers, settings org form, admin/tickets + admin/seo filters) now use `<Field>` / `<SelectField>` / `htmlFor`+`id` / `aria-label`.
+- Both `accessibility.admin.spec.ts` and `accessibility.system.spec.ts` now carry `KNOWN_BASELINE_RULES = []`.
+
+### Lighthouse CI (CX-017)
+- Added `@lhci/cli` + `lighthouserc.json` + a CI step auditing the **public** `/auth/login` page (no auth script needed; authenticated-route a11y is gated more thoroughly by the axe suite). Assertions: **accessibility ≥ 0.95 (error)**, best-practices/SEO (warn). Verified locally — the login page passes the 0.95 a11y gate.
+
+### Deferred to the v4.30 capstone
+- **QA-ARCH-02** seam adoption (UNIT_STATUS label, serialize/ROUTES) and **QA-FE-02** (Units/Maintenance form RHF) — both touch files the capstone reworks (CrmView/forms), so they ride there with CX-006.
+
+### Gates
+- **axe-core e2e 26/26 green** (empty baseline, all routes × both audiences); a live re-scan confirms label/select-name/color-contrast/aria-allowed-attr = 0. `npm run build` + check-types (web+portal) + lint (0 errors) green; Lighthouse local pass. §3.9: 13 screenshots (settings/billing/audit/reports × themes + topbar popover), 0 console errors.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimaric/compare/v4.28.0...v4.29.0
+
 ## [4.28.0] — 2026-06-16 — Schema correctness & DB governance (QA-DB-01…06 · QA-SEC-02 schema)
 
 Second release of the v4.30 program. Tightens database correctness across money precision, tenant scoping, referential actions, and uniqueness. **Schema-only** — no app-code change; the Prisma client types are unchanged (Decimal stays Decimal). Validated by CI's ephemeral `db push` + a real precheck against the populated local DB.

@@ -222,20 +222,32 @@ export function AppTopbar() {
           }
           setShowNotifs(open);
         }}>
-          <PopoverTrigger asChild>
-            <span className="relative inline-flex">
+          {/* Wrap in a relative container so the badge can be positioned over the button.
+              PopoverTrigger asChild targets IconButton directly (renders <button>) — no
+              intermediate <span>, which would produce aria-allowed-attr violations because
+              aria-haspopup/aria-expanded/aria-controls are invalid on <span>. */}
+          <div className="relative inline-flex">
+            <PopoverTrigger asChild>
               <IconButton
                 icon={Bell}
-                aria-label={lang === "ar" ? "الإشعارات" : "Notifications"}
+                aria-label={
+                  unreadCount > 0
+                    ? lang === "ar"
+                      ? `الإشعارات، ${unreadCount} غير مقروء`
+                      : `Notifications, ${unreadCount} unread`
+                    : lang === "ar"
+                      ? "الإشعارات"
+                      : "Notifications"
+                }
                 variant="ghost"
               />
-              {unreadCount > 0 && (
-                <span className="pointer-events-none absolute top-1 end-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground ring-2 ring-card">
-                  {unreadCount > 9 ? "9+" : unreadCount}
-                </span>
-              )}
-            </span>
-          </PopoverTrigger>
+            </PopoverTrigger>
+            {unreadCount > 0 && (
+              <span className="pointer-events-none absolute top-1 end-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground ring-2 ring-card" aria-hidden="true">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            )}
+          </div>
           <PopoverContent align="start" sideOffset={8} className="w-[calc(100vw-2rem)] sm:w-96 p-0 max-h-[480px] overflow-hidden rounded-xl">
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/20">

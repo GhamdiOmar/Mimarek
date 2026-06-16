@@ -91,6 +91,13 @@ jobs:
       - name: Run Playwright Tests
         run: cd apps/web && npx playwright test
 
+      # CX-017 — Lighthouse CI on the PUBLIC auth surface (no login script needed).
+      # Authenticated-route accessibility is gated by the axe-core e2e suite above;
+      # lhci here adds best-practices/SEO/perf + a11y on the public page. Config:
+      # lighthouserc.json at the repo root (starts `next start`, audits /auth/login).
+      - name: Lighthouse CI (public pages)
+        run: npx lhci autorun
+
       - name: Upload Playwright Artifacts
         if: always()
         uses: actions/upload-artifact@v4

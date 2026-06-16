@@ -1,7 +1,11 @@
+"use client"
+
 import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
+import { X } from "lucide-react"
 
 import { cn } from "../lib/utils"
+import { IconButton } from "../components/IconButton"
 
 /**
  * Alert — variant × appearance model (v4.11 Phase 3).
@@ -109,4 +113,92 @@ const AlertDescription = React.forwardRef<
 ))
 AlertDescription.displayName = "AlertDescription"
 
-export { Alert, AlertTitle, AlertDescription, alertVariants }
+/**
+ * Compound API (§6.4) — opt-in flex layout for richer alerts.
+ *
+ * The legacy single-child usage (`<Alert><svg/><AlertTitle/><AlertDescription/></Alert>`)
+ * still works via the `[&>svg]:absolute` rule in `alertVariants`. For an alert
+ * with an icon, a content block, and a trailing action/dismiss, compose the
+ * subcomponents in a flex row instead:
+ *
+ * ```tsx
+ * <Alert variant="warning" className="flex items-start gap-3">
+ *   <AlertIcon icon={AlertTriangle} />
+ *   <AlertContent>
+ *     <AlertTitle>Trial ending</AlertTitle>
+ *     <AlertDescription>Your trial ends in 3 days.</AlertDescription>
+ *   </AlertContent>
+ *   <AlertToolbar onDismiss={() => setOpen(false)} dismissLabel={t("Dismiss", "إغلاق")}>
+ *     <Button size="sm" variant="primary">Upgrade</Button>
+ *   </AlertToolbar>
+ * </Alert>
+ * ```
+ *
+ * Because `AlertIcon` wraps the icon in a `<span>`, the icon is NOT a direct
+ * `>svg` child of `Alert`, so the legacy absolute-positioning rule does not
+ * apply to it — the flex layout owns placement instead.
+ */
+
+const AlertIcon = React.forwardRef<
+  HTMLSpanElement,
+  React.HTMLAttributes<HTMLSpanElement> & {
+    /** Lucide (or any) icon component to render. */
+    icon?: React.ComponentType<{ className?: string }>
+  }
+>(({ className, icon: Icon, children, ...props }, ref) => (
+  <span
+    ref={ref}
+    aria-hidden="true"
+    className={cn("mt-0.5 flex shrink-0 items-center [&>svg]:h-4 [&>svg]:w-4", className)}
+    {...props}
+  >
+    {Icon ? <Icon className="h-4 w-4" /> : children}
+  </span>
+))
+AlertIcon.displayName = "AlertIcon"
+
+const AlertContent = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div ref={ref} className={cn("min-w-0 flex-1", className)} {...props} />
+))
+AlertContent.displayName = "AlertContent"
+
+const AlertToolbar = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement> & {
+    /** When provided, renders a governed IconButton dismiss control. */
+    onDismiss?: () => void
+    /** Accessible label for the dismiss button (bilingual — pass from `t()`). */
+    dismissLabel?: string
+  }
+>(({ className, children, onDismiss, dismissLabel = "Dismiss", ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn("ms-auto flex shrink-0 items-center gap-2", className)}
+    {...props}
+  >
+    {children}
+    {onDismiss && (
+      <IconButton
+        icon={X}
+        aria-label={dismissLabel}
+        variant="ghost"
+        className="h-8 w-8"
+        onClick={onDismiss}
+      />
+    )}
+  </div>
+))
+AlertToolbar.displayName = "AlertToolbar"
+
+export {
+  Alert,
+  AlertTitle,
+  AlertDescription,
+  AlertIcon,
+  AlertContent,
+  AlertToolbar,
+  alertVariants,
+}

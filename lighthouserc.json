@@ -1,0 +1,21 @@
+{
+  "$comment": "CX-017 Lighthouse CI. Audits the PUBLIC auth surface (no login script needed) for the broad Lighthouse categories. Authenticated-route accessibility is gated more thoroughly by the axe-core e2e suite (accessibility.{admin,system}.spec.ts) — Lighthouse here complements it with best-practices/SEO/perf on the public page.",
+  "ci": {
+    "collect": {
+      "startServerCommand": "npm run start --workspace=apps/web",
+      "startServerReadyPattern": "Ready in",
+      "startServerReadyTimeout": 60000,
+      "url": ["http://localhost:3000/auth/login"],
+      "numberOfRuns": 1,
+      "settings": { "preset": "desktop", "skipAudits": ["uses-http2", "canonical"] }
+    },
+    "assert": {
+      "assertions": {
+        "categories:accessibility": ["error", { "minScore": 0.95 }],
+        "categories:best-practices": ["warn", { "minScore": 0.9 }],
+        "categories:seo": ["warn", { "minScore": 0.85 }]
+      }
+    },
+    "upload": { "target": "temporary-public-storage" }
+  }
+}

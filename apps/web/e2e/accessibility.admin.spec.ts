@@ -50,24 +50,17 @@ const ROUTES = [
 // backlog of lower-severity issues has been worked through.
 const BLOCKING_IMPACT = ["critical", "serious"] as const;
 
-// Known PRE-EXISTING violations, tracked as a follow-up a11y backlog. Excluded so the
-// gate catches every OTHER critical/serious rule (and any NEW violation outside this set).
-// Remove an entry once fixed:
-//   • aria-allowed-attr — a Radix trigger renders as a <span> with aria-expanded (asChild
-//                         pattern). Belongs to the shared primitive, not this release.
-//   • color-contrast    — v4.20's `--success-strong` fixed the SUCCESS BADGE specifically,
-//                         but the CX-017 route expansion surfaced ~5 OTHER color-contrast
-//                         violations (muted text / secondary controls). The blanket rule
-//                         stays baselined until those are tuned (design-system §6.2 follow-up).
-//   • select-name       — native <select> elements lack an accessible name across many pages
-//                         (QA-FE-03: ~63 native selects) → governed `Select` primitive.
-//   • label             — a few inputs lack an associated <label>/htmlFor (QA-FE-01) →
-//                         governed `Field` primitive.
-// All four are PRE-EXISTING debt SURFACED (not introduced) by the CX-017 expansion from
-// 5 routes / 1 audience → all tenant + system routes. The gate still enforces every OTHER
-// critical/serious WCAG rule across that full surface (and any NEW violation in these rules
-// elsewhere). Remove an entry as its debt is fixed.
-const KNOWN_BASELINE_RULES = ["aria-allowed-attr", "color-contrast", "select-name", "label"];
+// v4.29.0 — the four QA-FE-01/FE-03 a11y-debt rules are FIXED and UN-BASELINED
+// (verified clean by a live axe scan across all tenant + system routes):
+//   • aria-allowed-attr — the AppTopbar notifications Popover trigger now wraps the real
+//                         <button> IconButton (was PopoverTrigger asChild → <span>).
+//   • color-contrast    — added `--info-strong` / `--warning-strong` tokens for text-on-tint
+//                         badges (mirrors v4.20's `--success-strong`).
+//   • select-name       — flagged native <select>s migrated to <SelectField> or given aria-label.
+//   • label             — flagged inputs use the governed <Field> (useId + htmlFor) or sr-only
+//                         labels; htmlFor/id added where simpler.
+// The gate now enforces EVERY critical/serious WCAG 2.1 A/AA rule across the full surface.
+const KNOWN_BASELINE_RULES: string[] = [];
 
 test.describe("Accessibility — axe-core WCAG 2.1 A/AA (Admin)", () => {
   for (const route of ROUTES) {

@@ -60,7 +60,7 @@ const statusConfig: Record<
   },
   ISSUED: {
     label: { ar: "صادرة", en: "Issued" },
-    className: "bg-info/15 text-info",
+    className: "bg-info/15 text-info-strong",
   },
   OVERDUE: {
     label: { ar: "متأخرة", en: "Overdue" },

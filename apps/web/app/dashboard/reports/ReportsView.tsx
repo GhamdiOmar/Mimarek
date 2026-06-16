@@ -432,14 +432,22 @@ export default function ReportsView({ loadedAt }: { loadedAt: string }) {
 
   const datePickerActions = (
     <div className="flex items-center gap-3">
+      <label htmlFor="reports-start-date" className="sr-only">
+        {lang === "ar" ? "تاريخ البداية" : "Start date"}
+      </label>
       <input
+        id="reports-start-date"
         type="date"
         value={startDate}
         onChange={(e) => setStartDate(e.target.value)}
         className="border border-border rounded-md px-3 py-1.5 text-sm text-foreground bg-card"
       />
-      <span className="text-muted-foreground text-sm">إلى</span>
+      <span className="text-muted-foreground text-sm" aria-hidden="true">إلى</span>
+      <label htmlFor="reports-end-date" className="sr-only">
+        {lang === "ar" ? "تاريخ النهاية" : "End date"}
+      </label>
       <input
+        id="reports-end-date"
         type="date"
         value={endDate}
         onChange={(e) => setEndDate(e.target.value)}

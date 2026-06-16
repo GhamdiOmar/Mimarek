@@ -96,7 +96,7 @@ const LISTING_STATUS_BADGE: Record<
 };
 
 const INQUIRY_STATUS_STYLES: Record<string, string> = {
-  OPEN: "bg-info/15 text-info",
+  OPEN: "bg-info/15 text-info-strong",
   WITHDRAWN: "bg-muted text-muted-foreground",
   CONVERTED_TO_DEAL: "bg-success/15 text-success-strong",
   CLOSED_WON: "bg-success/15 text-success-strong",
