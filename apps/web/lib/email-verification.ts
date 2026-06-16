@@ -55,7 +55,15 @@ export async function issueEmailVerificationToken(userId: string, email: string)
   return rawToken;
 }
 
-export type ConsumeResult = { ok: boolean; reason?: "invalid" | "expired" | "used" };
+export type ConsumeResult = {
+  ok: boolean;
+  reason?: "invalid" | "expired" | "used";
+  // Returned on success so the caller can write an EMAIL_VERIFIED audit event
+  // (captured from the user.update return — no extra query).
+  userId?: string;
+  userEmail?: string;
+  userRole?: string;
+};
 
 /**
  * Consume a verification token and activate the user — atomic + single-use.
@@ -86,10 +94,17 @@ export async function consumeEmailVerificationToken(rawToken: string): Promise<C
           select: { userId: true },
         });
         if (token) {
-          await tx.user.update({
+          const updated = await tx.user.update({
             where: { id: token.userId },
             data: { emailVerified: now },
+            select: { id: true, email: true, role: true },
           });
+          return {
+            ok: true,
+            userId: updated.id,
+            userEmail: updated.email,
+            userRole: updated.role,
+          };
         }
         return { ok: true };
       }

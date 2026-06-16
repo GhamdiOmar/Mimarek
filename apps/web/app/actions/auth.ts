@@ -225,6 +225,17 @@ export async function registerUser(data: {
 export async function confirmEmailVerificationAction(token: string) {
   const result = await consumeEmailVerificationToken(token);
   if (result.ok) {
+    if (result.userId && result.userEmail && result.userRole) {
+      logAuditEvent({
+        userId: result.userId,
+        userEmail: result.userEmail,
+        userRole: result.userRole,
+        action: "EMAIL_VERIFIED",
+        resource: "User",
+        resourceId: result.userId,
+        organizationId: null,
+      });
+    }
     return { success: true };
   }
   return { error: result.reason ?? "invalid" };
