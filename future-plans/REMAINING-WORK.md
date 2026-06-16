@@ -106,12 +106,20 @@ The audit found **no falsely-marked-done defects**: marketplace P3's 5-gate sett
 
 ## D. Data lifecycle / compliance — **P2**
 
-### D1. Retention/partition for audit & notification tables — `QA-DB-07`
-- **Gap:** No retention or partition strategy for `AuditLog` / `ConsentLog` / `Notification` / `WebhookEvent`. Unbounded growth **and** a **PDPL data-minimization** concern (indefinite ConsentLog/AuditLog PII retention).
-- **Reason:** Out-of-`db-push` scheduled-job; rated LOW; silently dropped (no tracked deferral).
-- **Location:** The only purge cron is `apps/web/app/api/cron/clean-expired-email-tokens` (unrelated). No retention anywhere else.
-- **What to do:** Add a scheduled purge — a cron route under `app/api/cron/` (guarded by `isAuthorizedCronRequest`) or a Supabase `pg_cron` job — that retains AuditLog/ConsentLog per a **documented PDPL window** and prunes delivered Notification/WebhookEvent older than N days. For very large tables, range-partition by month + drop old partitions (manual SQL).
-- **Effort:** M · **Priority:** P2 (PDPL angle).
+### D1. Retention/destruction for audit & notification tables — platform-admin UI + scheduler — `QA-DB-07`
+- **Gap:** No retention or destruction strategy for `AuditLog` / `ConsentLog` / `Notification` / `WebhookEvent`. Unbounded growth **and** a **PDPL data-minimization** concern (indefinite ConsentLog/AuditLog PII retention). There is also no operator-facing way to see or control it.
+- **Reason:** Out-of-`db-push` scheduled-job; rated LOW; silently dropped (no tracked deferral). No UI was ever planned for it.
+- **Location:** The only purge cron is `apps/web/app/api/cron/clean-expired-email-tokens` (unrelated). No retention anywhere else; no admin surface.
+- **What to do — build a platform-admin Data-Retention & Destruction console (UI-driven, §3.1) + an unattended scheduler.** Treat it as a small feature, not just a cron:
+  - **UI surface (§8 platform-only).** New route `/dashboard/admin/data-retention`, `requireSystem()` + SYSTEM-audience gate, `ROUTE_GUARDS` entry + admin-nav link (NOT a tenant surface — it spans all tenants' data). The page shows, per table (AuditLog / ConsentLog / Notification / WebhookEvent): **row count, oldest-record age, est. size**, the **configured retention window**, and **last-run / next-scheduled-run**.
+  - **Configure (persisted in `SystemConfig`).** Per-table retention window (a **documented PDPL default** for ConsentLog/AuditLog — never below the lawful-basis/ROPA minimum), and a **scheduler** toggle + frequency (daily/weekly) for the automated run.
+  - **Manual "Run destruction now" (governed destructive action).** A platform server action (`requireSystem` + audience) that first returns a **dry-run preview** (rows that *would* be deleted per table for the current windows) → an explicit **`ConfirmDialog`** (§6.6.4, destructive) → then executes a **batched/chunked** delete (avoid long table locks).
+  - **Every run is audit-logged** (actor, timestamp, per-table rows deleted, window applied). Hard rule: the AuditLog purge must **never** delete its own destruction-run records inside the retention window (self-referential safety).
+  - **Unattended path:** a cron route under `app/api/cron/` (guarded by `isAuthorizedCronRequest`) that reads the same `SystemConfig` windows and runs the identical batched purge on schedule (so the schedule runs without a human). The UI button and the cron call the **same** underlying destruction function.
+  - **Scale:** for very large tables, range-partition by month + drop old partitions (manual SQL in `packages/db/sql/`) instead of row-deletes.
+  - **Schema:** additive `SystemConfig` fields for the per-table windows + scheduler settings (no RLS owed — existing table); optionally a `DataRetentionRun` log table (then add it to `2026-06-enable-rls.sql` + the live Supabase ALTER per §4).
+- **PDPL note:** the retention windows + the destruction process are themselves a **documented, audited** control (record in CHANGELOG/ROPA); ConsentLog destruction must respect the lawful-basis retention minimum.
+- **Effort:** L (UI + scheduler + server action + cron + schema, sharing one destruction core) · **Priority:** P2 (PDPL angle).
 
 ---
 
