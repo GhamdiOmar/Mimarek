@@ -18,7 +18,6 @@ import {
   CalendarCheck,
   UserCircle,
   Download,
-  Globe,
   Filter,
 } from "lucide-react";
 import { exportToExcel } from "../../../../lib/export";
@@ -802,12 +801,6 @@ export default function MaintenancePage() {
               <Download className="h-4 w-4" />
               {lang === "ar" ? "تصدير" : "Export"}
             </Button>
-            <Link href="/dashboard/gis/assets">
-              <Button variant="outline" size="sm" style={{ display: "inline-flex" }}>
-                <Globe className="w-4 h-4 me-1.5" />
-                {lang === "ar" ? "خريطة الأصول" : "Asset Map"}
-              </Button>
-            </Link>
             <Link href="/dashboard/maintenance/preventive">
               <Button variant="outline" size="sm" className="gap-2" style={{ display: "inline-flex" }}>
                 <CalendarCheck className="h-4 w-4" />
