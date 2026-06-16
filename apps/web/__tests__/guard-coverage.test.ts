@@ -78,8 +78,6 @@ const GUARD_EXEMPT: Record<string, string> = {
   // ── Pure/static helpers — read no per-tenant data, mutate nothing ──────────
   "maintenance.ts#getValidTransitions":
     "Pure function over a static VALID_TRANSITIONS map — no DB access, no per-tenant data, no mutation. Exposing the maintenance status state-machine reveals nothing sensitive.",
-  "marketplace.ts#isValidShortAddress":
-    "Pure regex validator over the input string — no DB access, no tenant data, no mutation. Idempotent format check.",
 
   // ── Best-effort audit write (fail-open by contract) ────────────────────────
   "consent.ts#recordConsent":

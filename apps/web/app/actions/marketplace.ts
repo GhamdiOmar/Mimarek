@@ -24,9 +24,6 @@ import {
 
 // Saudi National Address short code: 4 letters + 4 digits (e.g. "RRRA2929").
 const SHORT_ADDRESS_RE = /^[A-Z]{4}\d{4}$/;
-export async function isValidShortAddress(value: string): Promise<boolean> {
-  return SHORT_ADDRESS_RE.test(value.trim().toUpperCase());
-}
 
 function genListingNumber(): string {
   const rand = Math.random().toString(36).slice(2, 8).toUpperCase();
