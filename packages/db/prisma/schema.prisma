@@ -1552,6 +1552,13 @@ model SystemConfig {
   schemaOrgLinkedIn  String?
   schemaOrgInstagram String?
 
+  // ─── REGA / Real-Estate Compliance ──────────────────────────────────────────
+  // Mimaric's own REGA electronic-real-estate-platform FAL license number
+  // (required to lawfully host marketplace advertisements; REGA mandates the
+  // license be displayed). Surfaced on the login / landing pages as a compliance
+  // affordance and set by platform admin. Placeholder until issued.
+  regaPlatformFalLicense String?
+
   // Transactional Email (Hostinger SMTP)
   emailProvider         String?   @default("HOSTINGER_SMTP")
   emailEnabled          Boolean   @default(false)
