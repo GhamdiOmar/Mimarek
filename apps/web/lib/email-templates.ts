@@ -59,6 +59,30 @@ export function passwordResetEmail(input: { name?: string | null; resetUrl: stri
   };
 }
 
+export function verificationEmail(input: { name?: string | null; verifyUrl: string; lang?: EmailLang }) {
+  const ar = input.lang !== "en";
+  const title = ar ? "تأكيد بريدك الإلكتروني" : "Verify your email";
+  const body = ar
+    ? `<p style="margin:0 0 12px;line-height:1.7">مرحباً${input.name ? ` ${input.name}` : ""}،</p>
+       <p style="margin:0 0 12px;line-height:1.7">شكراً لإنشاء حسابك في ميماريك. أكّد بريدك الإلكتروني لتفعيل الحساب وتسجيل الدخول. ينتهي الرابط خلال 24 ساعة.</p>
+       ${cta("تأكيد البريد الإلكتروني", input.verifyUrl)}
+       <p style="margin:0;line-height:1.7;color:#667085">إذا لم تنشئ هذا الحساب، يمكنك تجاهل هذه الرسالة بأمان.</p>
+       ${linkFallback(input.verifyUrl)}`
+    : `<p style="margin:0 0 12px;line-height:1.7">Hello${input.name ? ` ${input.name}` : ""},</p>
+       <p style="margin:0 0 12px;line-height:1.7">Thanks for creating your Mimaric account. Verify your email to activate your account and sign in. This link expires in 24 hours.</p>
+       ${cta("Verify email", input.verifyUrl)}
+       <p style="margin:0;line-height:1.7;color:#667085">If you didn't create an account, you can safely ignore this email.</p>
+       ${linkFallback(input.verifyUrl)}`;
+
+  return {
+    subject: ar ? "أكّد بريدك الإلكتروني في ميماريك" : "Verify your Mimaric email",
+    html: shell(title, body),
+    text: ar
+      ? `تأكيد البريد الإلكتروني: ${input.verifyUrl}`
+      : `Verify your Mimaric email: ${input.verifyUrl}`,
+  };
+}
+
 export function invitationEmail(input: {
   inviteUrl: string;
   organizationName: string;

@@ -14,6 +14,8 @@ export type AuditAction =
   | "PASSWORD_RESET_REQUEST"
   | "PASSWORD_RESET"
   | "REGISTER"
+  | "EMAIL_VERIFICATION_REQUEST"
+  | "EMAIL_VERIFIED"
   // Marketplace lifecycle (cross-org B2B trading)
   | "MARKETPLACE_LISTING_PUBLISHED"
   | "MARKETPLACE_LISTING_UPDATED"

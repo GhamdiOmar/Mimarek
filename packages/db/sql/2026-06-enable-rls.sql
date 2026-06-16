@@ -63,6 +63,7 @@ ALTER TABLE IF EXISTS public."Document"                  ENABLE ROW LEVEL SECURI
 ALTER TABLE IF EXISTS public."MaintenanceRequest"        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public."PreventiveMaintenancePlan" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public."PasswordResetToken"        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public."EmailVerificationToken"    ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public."AuditLog"                  ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public."ConsentLog"                ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public."Notification"              ENABLE ROW LEVEL SECURITY;

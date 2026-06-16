@@ -116,12 +116,14 @@ model User {
   organization         Organization?        @relation(fields: [organizationId], references: [id])
   accountType          String? // "individual" | "company"
   onboardingCompleted  Boolean              @default(false)
+  emailVerified        DateTime? // null = unverified → login denied (EMAIL_NOT_VERIFIED). Set on confirm. Existing rows backfilled to now().
   invitedBy            String? // userId of the person who invited this user
   invitedVia           String? // "registration" | "invitation" | "direct" | "join_request"
   customers            Customer[]           @relation("AssignedCustomers")
   assignedMaintenance  MaintenanceRequest[] @relation("AssignedMaintenance")
   preferences          Json?
   resetTokens          PasswordResetToken[]
+  emailVerificationTokens EmailVerificationToken[]
   notifications        Notification[]
   permissionRequests   PermissionRequest[]  @relation("PermissionRequests")
   reviewedRequests     PermissionRequest[]  @relation("ReviewedRequests")
@@ -799,6 +801,26 @@ model PasswordResetToken {
 
   @@index([token])
   @@index([userId])
+}
+
+// ─── Email Verification Token (OWASP: hash-at-rest, single-use, 24h expiry) ──
+// Stores ONLY the SHA-256 hash of the token (`tokenHash`); the raw token lives
+// only in the emailed link. Single-use via an atomic updateMany(usedAt: null).
+// GET /auth/verify-email renders a confirm page; POST activates (so email-scanner
+// prefetch can't consume the token). Expired/used rows purged by the daily cron.
+model EmailVerificationToken {
+  id        String    @id @default(cuid())
+  tokenHash String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  email     String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([tokenHash])
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 // ─── Audit Log (PDPL Article 32 compliance) ────────────────────────────────

@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { Globe, ArrowRight, Loader2, Eye, EyeOff } from "lucide-react";
 import { MimaricLogo } from "../../../components/brand/MimaricLogo";
 import { ThemeToggle } from "../../../components/ThemeToggle";
-import { loginAction } from "../../actions/auth";
+import { loginAction, resendVerificationAction } from "../../actions/auth";
 
 export default function LoginClient({ falLicense }: { falLicense?: string | null }) {
   const [lang, setLang] = React.useState<"ar" | "en">("ar");
@@ -18,7 +18,22 @@ export default function LoginClient({ falLicense }: { falLicense?: string | null
   const [error, setError] = React.useState<string | null>(null);
   const [rateLimitSeconds, setRateLimitSeconds] = React.useState(0);
   const [showPassword, setShowPassword] = React.useState(false);
+  const [needsVerification, setNeedsVerification] = React.useState(false);
+  const [resending, setResending] = React.useState(false);
+  const [resent, setResent] = React.useState(false);
   const router = useRouter();
+
+  const handleResendVerification = async () => {
+    setResending(true);
+    try {
+      await resendVerificationAction(email);
+    } catch {
+      // Anti-enumeration: still show the generic confirmation.
+    } finally {
+      setResending(false);
+      setResent(true);
+    }
+  };
 
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -40,6 +55,10 @@ export default function LoginClient({ falLicense }: { falLicense?: string | null
     INVALID_CREDENTIALS: {
       ar: "البريد الإلكتروني أو كلمة المرور غير صحيحة.",
       en: "Invalid email or password."
+    },
+    EMAIL_NOT_VERIFIED: {
+      ar: "يرجى تأكيد بريدك الإلكتروني أولاً. تحقّق من بريدك أو أعد إرسال رابط التأكيد.",
+      en: "Please verify your email first. Check your inbox or resend the verification link."
     },
     DATABASE_ERROR: {
       ar: "فشل الاتصال بقاعدة البيانات. يرجى المحاولة لاحقاً.",
@@ -88,6 +107,8 @@ export default function LoginClient({ falLicense }: { falLicense?: string | null
   const handleLogin = async () => {
     setLoading(true);
     setError(null);
+    setNeedsVerification(false);
+    setResent(false);
 
     const formData = new FormData();
     formData.append("email", email);
@@ -105,6 +126,9 @@ export default function LoginClient({ falLicense }: { falLicense?: string | null
             : `Too many attempts. Try again in ${seconds} seconds.`);
           setLoading(false);
           return;
+        }
+        if (result.error === "EMAIL_NOT_VERIFIED") {
+          setNeedsVerification(true);
         }
         const msg = errorMessages[result.error] ||
                    (lang === "ar" ? "حدث خطأ ما." : "Something went wrong.");
@@ -230,6 +254,30 @@ export default function LoginClient({ falLicense }: { falLicense?: string | null
                 <div className="p-3 bg-destructive/10 border border-destructive/20 text-destructive text-sm rounded-lg">
                   {error}
                 </div>
+              )}
+
+              {needsVerification && (
+                resent ? (
+                  <div className="p-3 bg-secondary/10 border border-secondary/20 text-foreground text-sm rounded-lg">
+                    {lang === "ar"
+                      ? "إذا كان الحساب يحتاج إلى تأكيد، فقد أرسلنا رابطاً جديداً."
+                      : "If an account needs verification, we've sent a new link."}
+                  </div>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="w-full"
+                    onClick={handleResendVerification}
+                    disabled={resending || !email}
+                  >
+                    {resending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      lang === "ar" ? "إعادة إرسال رابط التأكيد" : "Resend verification email"
+                    )}
+                  </Button>
+                )
               )}
 
               <div className="space-y-1.5">
