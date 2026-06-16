@@ -14,9 +14,7 @@ import {
   UserPlus,
   TrendingUp,
   Phone,
-  ChevronRight,
   AlertTriangle,
-  Link2,
   Filter,
   Handshake,
   Building2,
@@ -35,9 +33,6 @@ import {
   CustomerCard,
   BottomSheet,
   FAB,
-  NationalIdInput,
-  SaudiPhoneInput,
-  SARAmountInput,
   DataTable,
   EmptyState,
   type ColumnDef,
@@ -45,14 +40,12 @@ import {
 import { cn } from "@repo/ui/lib/utils";
 import {
   getCustomers,
-  createCustomer,
   deleteCustomer,
   getCustomerUnitAssignments,
 } from "../../actions/customers";
 import { getTeamMembers } from "../../actions/team";
 import { usePermissions } from "../../../hooks/usePermissions";
 import {
-  addCustomerInterest,
   getAvailableUnitsForInterest,
   setCustomerPipelineStage,
 } from "../../actions/customer-interests";
@@ -68,11 +61,11 @@ import {
   LOST_REASONS,
   PROPERTY_TYPES,
   SOURCE_LABELS,
-  EMPTY_NEW_CUSTOMER,
 } from "./crm-config";
 import { getStatusConfig, formatSAR } from "./crm-helpers";
 import { KanbanCard } from "./KanbanCard";
 import { CustomerDrawer } from "./CustomerDrawer";
+import { AddCustomerModal } from "./AddCustomerModal";
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
@@ -100,20 +93,18 @@ export default function CrmView({
   const [statusFilter, setStatusFilter] = React.useState("");
   const [showLost, setShowLost] = React.useState(false);
   const [showPii, setShowPii] = React.useState(false);
-  const [saving, setSaving] = React.useState(false);
 
-  // Add modal
+  // Add modal — the form + property-linking now live inside AddCustomerModal.
+  // `addInitialStatus` lets the Kanban per-column "Add" button preset the stage.
   const [showAddModal, setShowAddModal] = React.useState(false);
-  const [newCustomer, setNewCustomer] = React.useState(EMPTY_NEW_CUSTOMER);
+  const [addInitialStatus, setAddInitialStatus] = React.useState<string>("NEW");
 
   // CX-010 bulk import
   const [showImport, setShowImport] = React.useState(false);
 
-  // Add modal — property linking (seeded server-side; refreshed by loadData())
+  // Available units seeded server-side (refreshed by loadData()); passed to the
+  // add-customer modal for its property-linking search.
   const [pageAvailableUnits, setPageAvailableUnits] = React.useState<any[]>(initialAvailableUnits);
-  const [newCustUnitSearch, setNewCustUnitSearch] = React.useState("");
-  const [newCustSelectedUnit, setNewCustSelectedUnit] = React.useState<any | null>(null);
-  const [newCustIntent, setNewCustIntent] = React.useState<"BUY" | "RENT" | null>(null);
 
   // Delete dialog
   const [showDeleteDialog, setShowDeleteDialog] = React.useState(false);
@@ -207,42 +198,6 @@ export default function CrmView({
       return matchSearch && matchStatus && (statusFilter ? true : matchLost);
     });
   }, [customers, search, statusFilter, showLost]);
-
-  // ─── Add modal: unit search + budget comparison ─────────────────────────────
-
-  const newCustFilteredUnits = React.useMemo(() => {
-    if (!newCustUnitSearch.trim()) return [];
-    const q = newCustUnitSearch.toLowerCase().trim();
-    return pageAvailableUnits.filter((u) =>
-      u.number?.toLowerCase().includes(q) ||
-      u.city?.toLowerCase().includes(q) ||
-      u.type?.toLowerCase().includes(q) ||
-      u.buildingName?.toLowerCase().includes(q)
-    ).slice(0, 8);
-  }, [newCustUnitSearch, pageAvailableUnits]);
-
-  function getBudgetTag(unitPrice: number | null | undefined, budget: string, intent: "BUY" | "RENT" | null) {
-    const b = Number(budget);
-    if (!unitPrice || !b || b <= 0) return null;
-    const ratio = unitPrice / b;
-    if (ratio > 1.05) return {
-      label: lang === "ar" ? "فوق الميزانية" : "Over Budget",
-      color: "text-destructive bg-destructive/10",
-    };
-    if (ratio >= 0.9) return {
-      label: lang === "ar" ? "ضمن الميزانية" : "On Budget",
-      color: "text-success-strong bg-success/10",
-    };
-    return {
-      label: lang === "ar" ? "أقل من الميزانية" : "Under Budget",
-      color: "text-info-strong bg-info/10",
-    };
-  }
-
-  function getUnitPrice(unit: any, intent: "BUY" | "RENT" | null) {
-    if (intent === "RENT") return unit.rentalPrice ?? null;
-    return unit.markupPrice ?? unit.price ?? null;
-  }
 
   // ─── KPIs ───────────────────────────────────────────────────────────────────
 
@@ -518,63 +473,9 @@ export default function CrmView({
   }
 
   // ─── Add Customer ────────────────────────────────────────────────────────────
-
-  async function handleAddCustomer() {
-    if (!newCustomer.name.trim() || !newCustomer.phone.trim()) {
-      setError(
-        lang === "ar"
-          ? "الاسم والهاتف حقلان مطلوبان."
-          : "Name and phone are required."
-      );
-      return;
-    }
-    setSaving(true);
-    setError(null);
-    try {
-      const created = await createCustomer({
-        name: newCustomer.name,
-        phone: newCustomer.phone,
-        email: newCustomer.email || undefined,
-        nationalId: newCustomer.nationalId || undefined,
-        nameArabic: newCustomer.nameArabic || undefined,
-        source: newCustomer.source || undefined,
-        status: newCustomer.status || undefined,
-        personType: (newCustomer.personType as any) || undefined,
-        gender: (newCustomer.gender as any) || undefined,
-        dateOfBirth: newCustomer.dateOfBirth || undefined,
-        nationality: newCustomer.nationality || undefined,
-        maritalStatus: newCustomer.maritalStatus || undefined,
-        budget: newCustomer.budget ? Number(newCustomer.budget) : undefined,
-        agentId: newCustomer.agentId || undefined,
-      });
-
-      // Link property interest if a unit + intent was selected
-      if (newCustSelectedUnit && newCustIntent) {
-        await addCustomerInterest(created.id, newCustSelectedUnit.id, newCustIntent);
-      }
-
-      setCustomers((prev) => [created, ...prev]);
-      trackEvent(AnalyticsEvent.CustomerCreated, { source: newCustomer.source || "manual" });
-      setShowAddModal(false);
-      setNewCustomer(EMPTY_NEW_CUSTOMER);
-      setNewCustSelectedUnit(null);
-      setNewCustIntent(null);
-      setNewCustUnitSearch("");
-    } catch (err: any) {
-      // Only surface friendly messages — never raw Prisma/technical errors
-      const msg = err?.message ?? "";
-      const isFriendly = msg.length < 200 && !msg.includes("Prisma") && !msg.includes("Invalid `") && !msg.includes("invocation");
-      setError(
-        isFriendly && msg
-          ? msg
-          : lang === "ar"
-            ? "تعذّر حفظ جهة الاتصال. يرجى التحقق من البيانات والمحاولة مجدداً."
-            : "Failed to save contact. Please check the details and try again."
-      );
-    } finally {
-      setSaving(false);
-    }
-  }
+  // The create flow (form + validation + createCustomer/addCustomerInterest/
+  // trackEvent) now lives in <AddCustomerModal>. CrmView only opens the modal and
+  // receives the created record via onCreated → optimistic setCustomers insert.
 
   // ─── Delete ──────────────────────────────────────────────────────────────────
 
@@ -780,10 +681,8 @@ export default function CrmView({
   }
 
   function openAddCustomerModal() {
-    setNewCustomer(EMPTY_NEW_CUSTOMER);
-    setNewCustSelectedUnit(null);
-    setNewCustIntent(null);
-    setNewCustUnitSearch("");
+    // The modal resets its own form + property-linking state on open.
+    setAddInitialStatus("NEW");
     setShowAddModal(true);
   }
 
@@ -1370,7 +1269,7 @@ export default function CrmView({
                     style={{ display: "inline-flex", width: "100%" }}
                     className="mt-auto gap-1.5 p-2 rounded-xl border-2 border-dashed text-muted-foreground hover:border-primary/40 hover:text-primary h-auto text-xs justify-center"
                     onClick={() => {
-                      setNewCustomer((prev) => ({ ...prev, status: status.key }));
+                      setAddInitialStatus(status.key);
                       setShowAddModal(true);
                     }}
                   >
@@ -1581,400 +1480,15 @@ export default function CrmView({
     </div>
 
       {/* ── Add Modal ── */}
-      {showAddModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-300">
-          <div
-            className="bg-card w-full max-w-lg rounded-xl shadow-2xl border border-border animate-in zoom-in-95 duration-300 max-h-[90vh] overflow-y-auto"
-            dir={lang === "ar" ? "rtl" : "ltr"}
-          >
-            <div className="flex items-center justify-between p-6 border-b border-border">
-              <h2 className="text-lg font-bold text-foreground">
-                {lang === "ar" ? "إضافة عميل جديد" : "Add New Customer"}
-              </h2>
-              <IconButton
-                icon={X}
-                aria-label={lang === "ar" ? "إغلاق" : "Close"}
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => setShowAddModal(false)}
-              />
-            </div>
-
-            <div className="p-6 space-y-4">
-              {/* Required fields */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2 space-y-1">
-                  <label className="text-xs font-bold text-muted-foreground">
-                    {lang === "ar" ? "الاسم الكامل *" : "Full Name *"}
-                  </label>
-                  <Input
-                    value={newCustomer.name}
-                    onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })}
-                    placeholder={lang === "ar" ? "الاسم بالكامل" : "Full name"}
-                    autoFocus
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-muted-foreground">
-                    {lang === "ar" ? "الاسم بالعربية" : "Arabic Name"}
-                  </label>
-                  <Input
-                    value={newCustomer.nameArabic}
-                    onChange={(e) => setNewCustomer({ ...newCustomer, nameArabic: e.target.value })}
-                    placeholder="الاسم بالعربية"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-muted-foreground">
-                    {lang === "ar" ? "رقم الجوال *" : "Phone *"}
-                  </label>
-                  <SaudiPhoneInput
-                    value={newCustomer.phone}
-                    onChange={(e164) => setNewCustomer({ ...newCustomer, phone: e164 })}
-                    placeholder="+966 5x xxx xxxx"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-muted-foreground">
-                    {lang === "ar" ? "البريد الإلكتروني" : "Email"}
-                  </label>
-                  <Input
-                    type="email"
-                    value={newCustomer.email}
-                    onChange={(e) => setNewCustomer({ ...newCustomer, email: e.target.value })}
-                    placeholder="email@example.com"
-                    dir="ltr"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-muted-foreground">
-                    {lang === "ar" ? "المصدر" : "Source"}
-                  </label>
-                  <select
-                    value={newCustomer.source}
-                    onChange={(e) => setNewCustomer({ ...newCustomer, source: e.target.value })}
-                    className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  >
-                    <option value="">{lang === "ar" ? "اختر المصدر" : "Select source"}</option>
-                    {Object.entries(SOURCE_LABELS).map(([key, label]) => (
-                      <option key={key} value={key}>{label[lang]}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-muted-foreground">
-                    {lang === "ar" ? "الحالة" : "Status"}
-                  </label>
-                  <select
-                    value={newCustomer.status}
-                    onChange={(e) => setNewCustomer({ ...newCustomer, status: e.target.value })}
-                    className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  >
-                    {PIPELINE_STAGES.map((s) => (
-                      <option key={s.key} value={s.key}>{s.label[lang]}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* CRM fields: Budget + Property Type */}
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-muted-foreground">
-                    {lang === "ar" ? "الميزانية (ريال)" : "Budget (SAR)"}
-                  </label>
-                  <SARAmountInput
-                    value={newCustomer.budget === "" ? null : Number(newCustomer.budget)}
-                    onChange={(n) => setNewCustomer({ ...newCustomer, budget: n == null ? "" : String(n) })}
-                    placeholder={lang === "ar" ? "مثال: 500000" : "e.g. 500000"}
-                    locale={lang}
-                  />
-                </div>
-                {/* ── Link Property (Optional) ── */}
-                <div className="col-span-2 space-y-2 pt-1">
-                  <label className="text-xs font-bold text-muted-foreground flex items-center gap-1.5">
-                    <Link2 className="h-3.5 w-3.5" />
-                    {lang === "ar" ? "ربط عقار (اختياري)" : "Link Property (Optional)"}
-                  </label>
-
-                  {/* Selected unit pill */}
-                  {newCustSelectedUnit ? (
-                    <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-primary/5 border border-primary/20">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-sm font-medium text-foreground truncate">
-                          {newCustSelectedUnit.number}
-                        </span>
-                        <span className="text-xs text-muted-foreground">·</span>
-                        <span className="text-xs text-muted-foreground">{newCustSelectedUnit.type}</span>
-                        {newCustSelectedUnit.city && (
-                          <>
-                            <span className="text-xs text-muted-foreground">·</span>
-                            <span className="text-xs text-muted-foreground">{newCustSelectedUnit.city}</span>
-                          </>
-                        )}
-                        {newCustIntent && (
-                          <span className={cn(
-                            "text-[10px] font-bold px-1.5 py-0.5 rounded-full",
-                            newCustIntent === "BUY"
-                              ? "bg-info/15 text-info-strong"
-                              : "bg-primary/15 text-primary"
-                          )}>
-                            {newCustIntent === "BUY" ? (lang === "ar" ? "شراء" : "BUY") : (lang === "ar" ? "إيجار" : "RENT")}
-                          </span>
-                        )}
-                      </div>
-                      <IconButton
-                        icon={X}
-                        aria-label={lang === "ar" ? "إزالة" : "Remove"}
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 shrink-0"
-                        onClick={() => { setNewCustSelectedUnit(null); setNewCustIntent(null); setNewCustUnitSearch(""); }}
-                      />
-                    </div>
-                  ) : (
-                    <>
-                      {/* Search input */}
-                      <div className="relative">
-                        <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-                        <Input
-                          value={newCustUnitSearch}
-                          onChange={(e) => setNewCustUnitSearch(e.target.value)}
-                          placeholder={lang === "ar" ? "ابحث برقم الوحدة أو المدينة..." : "Search by unit number or city..."}
-                          className="ps-9 text-sm"
-                        />
-                      </div>
-
-                      {/* Results list */}
-                      {newCustUnitSearch.trim() ? (
-                        newCustFilteredUnits.length > 0 ? (
-                          <div className="border border-border rounded-lg overflow-hidden divide-y divide-border max-h-48 overflow-y-auto">
-                            {newCustFilteredUnits.map((unit) => {
-                              const price = getUnitPrice(unit, newCustIntent);
-                              const tag = getBudgetTag(price, newCustomer.budget, newCustIntent);
-                              return (
-                                <Button
-                                  key={unit.id}
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  style={{ display: "flex", width: "100%" }}
-                                  className="items-center justify-between gap-3 px-3 py-2.5 text-start h-auto rounded-none"
-                                  onClick={() => { setNewCustSelectedUnit(unit); setNewCustUnitSearch(""); }}
-                                >
-                                  <div className="flex items-center gap-1.5 min-w-0 text-sm">
-                                    <span className="font-medium text-foreground truncate">{unit.number}</span>
-                                    <span className="text-muted-foreground">·</span>
-                                    <span className="text-muted-foreground text-xs">{unit.type}</span>
-                                    {unit.city && (
-                                      <>
-                                        <span className="text-muted-foreground">·</span>
-                                        <span className="text-muted-foreground text-xs truncate">{unit.city}</span>
-                                      </>
-                                    )}
-                                  </div>
-                                  <div className="flex items-center gap-2 shrink-0">
-                                    {price && (
-                                      <span className="text-xs font-mono text-muted-foreground" dir="ltr">
-                                        {Number(price).toLocaleString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-SA")} {lang === "ar" ? "ر.س" : "SAR"}
-                                      </span>
-                                    )}
-                                    {tag && (
-                                      <span className={cn("text-[10px] font-semibold px-1.5 py-0.5 rounded-full", tag.color)}>
-                                        {tag.label}
-                                      </span>
-                                    )}
-                                  </div>
-                                </Button>
-                              );
-                            })}
-                          </div>
-                        ) : (
-                          <p className="text-xs text-muted-foreground text-center py-3">
-                            {lang === "ar" ? "لا توجد وحدات مطابقة للبحث" : "No units match your search"}
-                          </p>
-                        )
-                      ) : (
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground py-2 px-1">
-                          <Search className="h-3.5 w-3.5 shrink-0" />
-                          {lang === "ar" ? "ابدأ البحث للعثور على وحدات متاحة" : "Search to find available units"}
-                        </div>
-                      )}
-                    </>
-                  )}
-
-                  {/* Intent selection — shown after unit is selected */}
-                  {newCustSelectedUnit && (
-                    <div className="space-y-1.5">
-                      <label className="text-[11px] font-medium text-muted-foreground">
-                        {lang === "ar" ? "نوع الاهتمام" : "Interest Type"}
-                      </label>
-                      <div className="flex gap-2">
-                        <Button
-                          type="button"
-                          variant={newCustIntent === "BUY" ? "primary" : "outline"}
-                          size="sm"
-                          style={{ display: "inline-flex", flex: 1 }}
-                          className={cn(
-                            "py-2 text-sm h-auto justify-center",
-                            newCustIntent === "BUY"
-                              ? "bg-info text-info-foreground border-info hover:bg-info/90"
-                              : ""
-                          )}
-                          onClick={() => setNewCustIntent("BUY")}
-                        >
-                          {lang === "ar" ? "شراء" : "Buy"}
-                        </Button>
-                        <Button
-                          type="button"
-                          variant={newCustIntent === "RENT" ? "primary" : "outline"}
-                          size="sm"
-                          style={{ display: "inline-flex", flex: 1 }}
-                          className="py-2 text-sm h-auto justify-center"
-                          onClick={() => setNewCustIntent("RENT")}
-                        >
-                          {lang === "ar" ? "إيجار" : "Rent"}
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Agent Assignment */}
-                {teamMembers.length > 0 && (
-                  <div className="col-span-2 space-y-1">
-                    <label className="text-xs font-bold text-muted-foreground">
-                      {lang === "ar" ? "تعيين المسؤول" : "Assign Agent"}
-                    </label>
-                    <select
-                      value={newCustomer.agentId}
-                      onChange={(e) => setNewCustomer({ ...newCustomer, agentId: e.target.value })}
-                      className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    >
-                      <option value="">{lang === "ar" ? "غير معين" : "Unassigned"}</option>
-                      {teamMembers.map((m: any) => (
-                        <option key={m.id} value={m.id}>{m.name ?? m.email}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-              </div>
-
-              {/* Optional Absher fields */}
-              <details className="group">
-                <summary className="cursor-pointer text-xs font-bold text-muted-foreground hover:text-foreground transition-colors list-none flex items-center gap-2 py-1">
-                  {/* Disclosure caret (rotates to open), not a nav arrow — do not wrap in DirectionalIcon */}
-                  <ChevronRight className="h-3.5 w-3.5 transition-transform group-open:rotate-90" />
-                  {lang === "ar" ? "بيانات إضافية (أبشر)" : "Additional Details (Absher)"}
-                </summary>
-                <div className="pt-3 grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-muted-foreground">
-                      {lang === "ar" ? "رقم الهوية" : "National ID"}
-                    </label>
-                    <NationalIdInput
-                      value={newCustomer.nationalId}
-                      onChange={(raw) => setNewCustomer({ ...newCustomer, nationalId: raw })}
-                      placeholder="10x xxx xxxx"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-muted-foreground">
-                      {lang === "ar" ? "نوع الشخص" : "Person Type"}
-                    </label>
-                    <select
-                      value={newCustomer.personType}
-                      onChange={(e) => setNewCustomer({ ...newCustomer, personType: e.target.value })}
-                      className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    >
-                      <option value="">—</option>
-                      <option value="INDIVIDUAL">{lang === "ar" ? "فرد" : "Individual"}</option>
-                      <option value="COMPANY">{lang === "ar" ? "شركة" : "Company"}</option>
-                    </select>
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-muted-foreground">
-                      {lang === "ar" ? "الجنس" : "Gender"}
-                    </label>
-                    <select
-                      value={newCustomer.gender}
-                      onChange={(e) => setNewCustomer({ ...newCustomer, gender: e.target.value })}
-                      className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    >
-                      <option value="">—</option>
-                      <option value="MALE">{lang === "ar" ? "ذكر" : "Male"}</option>
-                      <option value="FEMALE">{lang === "ar" ? "أنثى" : "Female"}</option>
-                    </select>
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-muted-foreground">
-                      {lang === "ar" ? "الجنسية" : "Nationality"}
-                    </label>
-                    <Input
-                      value={newCustomer.nationality}
-                      onChange={(e) => setNewCustomer({ ...newCustomer, nationality: e.target.value })}
-                      placeholder={lang === "ar" ? "سعودي" : "Saudi"}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-muted-foreground">
-                      {lang === "ar" ? "الحالة الاجتماعية" : "Marital Status"}
-                    </label>
-                    <select
-                      value={newCustomer.maritalStatus}
-                      onChange={(e) => setNewCustomer({ ...newCustomer, maritalStatus: e.target.value })}
-                      className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    >
-                      <option value="">—</option>
-                      <option value="SINGLE">{lang === "ar" ? "أعزب" : "Single"}</option>
-                      <option value="MARRIED">{lang === "ar" ? "متزوج" : "Married"}</option>
-                      <option value="DIVORCED">{lang === "ar" ? "مطلق" : "Divorced"}</option>
-                      <option value="WIDOWED">{lang === "ar" ? "أرمل" : "Widowed"}</option>
-                    </select>
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-muted-foreground">
-                      {lang === "ar" ? "تاريخ الميلاد" : "Date of Birth"}
-                    </label>
-                    <Input
-                      type="date"
-                      value={newCustomer.dateOfBirth}
-                      onChange={(e) => setNewCustomer({ ...newCustomer, dateOfBirth: e.target.value })}
-                    />
-                  </div>
-                </div>
-              </details>
-
-              {/* Inline error */}
-              {error && (
-                <p className="text-sm text-destructive bg-destructive/10 border border-destructive/30 rounded-lg px-3 py-2">
-                  {error}
-                </p>
-              )}
-            </div>
-
-            <div className="flex items-center justify-end gap-3 px-6 pb-6">
-              <Button
-                variant="secondary"
-                style={{ display: "inline-flex" }}
-                onClick={() => { setShowAddModal(false); setError(null); setNewCustSelectedUnit(null); setNewCustIntent(null); setNewCustUnitSearch(""); }}
-                disabled={saving}
-              >
-                {lang === "ar" ? "إلغاء" : "Cancel"}
-              </Button>
-              <Button
-                onClick={handleAddCustomer}
-                disabled={saving}
-                style={{ display: "inline-flex" }}
-                className="gap-2"
-              >
-                {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-                {lang === "ar" ? "حفظ جهة الاتصال" : "Save Contact"}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
+      <AddCustomerModal
+        open={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        pageAvailableUnits={pageAvailableUnits}
+        teamMembers={teamMembers}
+        lang={lang}
+        initialStatus={addInitialStatus}
+        onCreated={(created) => setCustomers((prev) => [created, ...prev])}
+      />
     {/* ── Profile Drawer (shared across mobile + desktop) ── */}
     {drawerCustomer && (
       <CustomerDrawer
