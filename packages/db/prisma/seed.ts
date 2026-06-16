@@ -412,6 +412,21 @@ async function main() {
 
   console.log("Created plans (Starter, Professional, Enterprise) & subscriptions");
 
+  // ── Marketplace (P3 conveyance) ─────────────────────────────────────────────
+  // NOTE: this seed intentionally creates NO marketplaceListing rows. As of the P3
+  // conveyance gate, a seller can no longer self-publish — submitting a listing
+  // lands it in PENDING_REVIEW (complianceStatus PENDING_REVIEW), and only platform
+  // moderation (moderateApproveListing) flips it to PUBLISHED + complianceStatus
+  // APPROVED so buyers can see it. The cross-org reserve-and-buy rail additionally
+  // requires the marketplaceConveyanceEnabled flag (SystemConfig), a VERIFIED
+  // OrgRegaAuthorization for BOTH orgs, and a VERIFIED MarketplaceDeedProof.
+  //
+  // If you ever seed demo marketplace content, create the listings as
+  //   { status: "PUBLISHED", complianceStatus: "APPROVED", publishedAt: new Date() }
+  // (otherwise the demo marketplace is empty behind the moderation gate), and seed
+  // a SELF_ASSERTED OrgRegaAuthorization for the test org so the admin REGA-
+  // verification queue (/dashboard/admin/marketplace → REGA tab) has content.
+
   console.log("Seed complete!");
 }
 

@@ -324,8 +324,8 @@ export default function ListingDetailPage() {
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <FileText className="h-4 w-4 shrink-0" aria-hidden="true" />
             <span>
-              {lang === "ar" ? "رقم الرخصة:" : "License #:"}{" "}
-              <span className="font-mono text-foreground">{listing.adLicenseNumber}</span>
+              {lang === "ar" ? "رقم ترخيص الإعلان (فال):" : "REGA Ad License:"}{" "}
+              <span className="font-mono text-foreground" dir="ltr">{listing.adLicenseNumber}</span>
             </span>
           </div>
         )}

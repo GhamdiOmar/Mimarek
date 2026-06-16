@@ -426,7 +426,16 @@ export async function listIncomingMarketplaceInquiries() {
     include: {
       listing: { select: { id: true, listingNumber: true, title: true } },
       reservation: { select: { id: true, status: true } },
-      transfer: { select: { id: true, status: true } },
+      transfer: {
+        select: {
+          id: true,
+          status: true,
+          // Deed-proof status lets the seller UI show PENDING/VERIFIED/REJECTED
+          // and decide whether to offer "Submit deed proof" vs "Settle". No PII
+          // is selected here — only the proof's lifecycle status.
+          deedProof: { select: { status: true } },
+        },
+      },
     },
     orderBy: { createdAt: "desc" },
   });
@@ -1443,6 +1452,44 @@ export async function getDeedProofForTransfer(transferId: string) {
     rejectedReason: proof.rejectedReason,
     submittedAt: proof.submittedAt,
   });
+}
+
+/**
+ * List the transfers that carry a deed proof awaiting platform review (status
+ * PENDING). Platform staff only (marketplace:moderate). Returns NO decrypted PII
+ * — the verifier opens an individual proof via getDeedProofForTransfer (which
+ * audits the READ_PII). This is the deed-proofs moderation queue.
+ */
+export async function listPendingDeedProofs() {
+  await requirePermission("marketplace:moderate");
+  const proofs = await db.marketplaceDeedProof.findMany({
+    where: { status: "PENDING" },
+    include: {
+      transfer: {
+        select: {
+          id: true,
+          status: true,
+          sellerOrg: { select: { id: true, name: true, nameEnglish: true } },
+          buyerOrg: { select: { id: true, name: true, nameEnglish: true } },
+          listing: { select: { id: true, listingNumber: true, title: true } },
+        },
+      },
+    },
+    orderBy: { submittedAt: "desc" },
+    take: 300,
+  });
+  // Strip the encrypted PII columns — the queue shows metadata only.
+  return serialize(
+    proofs.map((p) => ({
+      id: p.id,
+      transferId: p.transferId,
+      status: p.status,
+      deedDocUrl: p.deedDocUrl,
+      rettCertRef: p.rettCertRef,
+      submittedAt: p.submittedAt,
+      transfer: p.transfer,
+    })),
+  );
 }
 
 // ─── P3: Legal-gate kill-switch (SYSTEM_ADMIN only) ─────────────────────────
