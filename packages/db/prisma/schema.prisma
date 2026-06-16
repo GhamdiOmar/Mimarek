@@ -793,14 +793,14 @@ enum RecurrenceType {
 
 model PasswordResetToken {
   id        String    @id @default(cuid())
-  token     String    @unique
+  tokenHash String    @unique @map("token")
   userId    String
   user      User      @relation(fields: [userId], references: [id])
   expiresAt DateTime
   usedAt    DateTime?
   createdAt DateTime  @default(now())
 
-  @@index([token])
+  @@index([tokenHash])
   @@index([userId])
 }
 
