@@ -1,5 +1,21 @@
 # Changelog — Mimaric PropTech
 
+## [4.30.1] — 2026-06-16 — Security patch: password-reset token hash-at-rest + completeness-audit follow-ups
+
+A focused patch after an exhaustive multi-agent re-verification of every audit/backlog source against the shipped v4.30.0 code.
+
+### Security
+- **`PasswordResetToken` now hashed at rest (OWASP Forgot Password).** It previously stored the reset token in **plaintext** (`requestPasswordReset` wrote `randomBytes(32).toString("hex")` raw; `resetPassword` looked it up by the raw value) — a DB read (leaked backup/log/Supabase) could use any live token directly. Now: a shared `lib/token-hash.ts` (`sha256Hex`) used by both the reset and email-verification flows; the schema field is `tokenHash @map("token")` (additive `db push`, no RLS change); generation emits a base64url raw token but persists **only** its SHA-256 hash; consume looks up by hash, **validates the password before consuming** (a weak password no longer burns the token), and claims single-use **atomically** in one `$transaction` (`updateMany(usedAt:null, expiresAt>now)` gated on `count===1`) — **closing the previous non-atomic double-spend race**. All four error codes the reset page consumes are preserved. Stale plaintext rows cleared from the live DB.
+- **`QA-TEST-01` regression locks.** New runtime-mocked vitest suites (no DB/CI infra) exercising the **real** guard chain: `tenant-isolation.test.ts` (a foreign-org session is refused by 8 representative tenant actions — the §8 contract, with positive controls) and `coupon-redemption-race.test.ts` (N-parallel `applyCoupon` vs the cap → exactly N win — locks the QA-SEC-02 atomic redemption). vitest **149/149**.
+
+### Accessibility
+- Added an `aria-label` to the Units bulk-status `<select>` (`UnitsView.tsx`) — a real unguarded violation the axe page-load gate couldn't see (it renders only after row-selection).
+
+### Audit follow-ups (tracked, not dropped)
+- `future-plans/v4.30-audit-followups.md` records the verified verdict (CX-Audit **22/22**, CX-Handover 26 done + 5 deferred, QA-Audit 19/2/3/6, Remaining-Work 36/8/3/10/1; **no falsely-marked-done** defects) and **tracks** the genuinely-missed items the critic found were being silently dropped — notably the **§3.3 ciphertext-envelope + DB CHECK** write-time integrity guard (MEDIUM) and **QA-DB-07** audit/consent-log retention (LOW, PDPL). The four known deferrals (ZATCA, DB-region-move, full `t()` tail, HTTP-403) are confirmed legitimate.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimaric/compare/v4.30.0...v4.30.1
+
 ## [4.30.0] — 2026-06-16 — Capstone: Marketplace P3 reserve-and-buy + refactors + registration verification
 
 The v4.30 program capstone — delivered as a stack of QA-gated, preview-verified sprint-commits on one branch, one merge. Lights up the headline **proof-gated cross-org conveyance** (shipped DARK behind a kill-switch), decomposes the CRM god-component, swaps the date pickers to react-aria, and adds email-verification-before-activation. After this, the only remaining backlog is the two explicitly-parked ops/regulatory items (DB region move, ZATCA) + the deferred `t()` maintainability sweep.
