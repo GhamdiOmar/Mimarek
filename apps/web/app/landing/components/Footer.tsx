@@ -10,10 +10,12 @@ export default function Footer({
   lang,
   onToggleLang,
   toggleLangHref,
+  falLicense,
 }: {
   lang: "ar" | "en";
   onToggleLang?: () => void;
   toggleLangHref?: string;
+  falLicense?: string | null;
 }) {
   const t = translations[lang];
 
@@ -119,9 +121,16 @@ export default function Footer({
 
         {/* Bottom bar */}
         <div className="mt-10 flex flex-col items-center gap-3 border-t border-border pt-6 sm:flex-row sm:justify-between">
-          <p className="text-center text-xs text-muted-foreground">
-            &copy; {new Date().getFullYear()} Mimaric. {t.allRightsReserved}
-          </p>
+          <div className="flex flex-col items-center gap-1 sm:items-start">
+            <p className="text-center text-xs text-muted-foreground sm:text-start">
+              &copy; {new Date().getFullYear()} Mimaric. {t.allRightsReserved}
+            </p>
+            <p className="text-xs text-muted-foreground/60" dir="ltr">
+              {falLicense
+                ? (lang === "ar" ? `رخصة فال: ${falLicense}` : `REGA FAL License: ${falLicense}`)
+                : (lang === "ar" ? "رخصة فال: قيد الإصدار" : "REGA FAL License: pending issuance")}
+            </p>
+          </div>
           <button
             type="button"
             onClick={openCookiePreferences}

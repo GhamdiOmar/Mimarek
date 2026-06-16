@@ -92,6 +92,7 @@ const result = NextAuth({
               id: true, email: true, name: true, password: true,
               role: true, organizationId: true,
               onboardingCompleted: true, accountType: true,
+              emailVerified: true,
             },
           });
 
@@ -109,6 +110,14 @@ const result = NextAuth({
           if (!isValid) {
             await recordLoginFailure(email);
             throw new Error("INVALID_CREDENTIALS");
+          }
+
+          // Gate login on email verification. Placed AFTER the successful bcrypt
+          // compare so it cannot be used to enumerate accounts (an attacker who
+          // does not know the password never reaches this branch). emailVerified
+          // is null for unverified users; existing rows were backfilled to now().
+          if (!user.emailVerified) {
+            throw new Error("EMAIL_NOT_VERIFIED");
           }
 
           // Success — counters expire naturally; no active clear needed.
@@ -133,7 +142,11 @@ const result = NextAuth({
             accountType: (user as any).accountType ?? null,
           };
         } catch (error: any) {
-          if (error.message === "INVALID_CREDENTIALS" || error.message.startsWith("RATE_LIMITED")) {
+          if (
+            error.message === "INVALID_CREDENTIALS" ||
+            error.message === "EMAIL_NOT_VERIFIED" ||
+            error.message.startsWith("RATE_LIMITED")
+          ) {
             throw error;
           }
           console.error("Auth error:", error);

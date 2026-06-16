@@ -209,6 +209,11 @@ export async function acceptInvitation(data: {
             role: invitation.role,
             organizationId: invitation.organizationId,
             onboardingCompleted: true,
+            // Accepting a tokenized invitation emailed to this address already
+            // proves email control, so the account is verified on creation —
+            // otherwise the auto-sign-in below would hit the new
+            // EMAIL_NOT_VERIFIED gate (auth.ts) and lock the invitee out.
+            emailVerified: new Date(),
             invitedVia: "invitation",
             invitedBy: invitation.invitedById,
           },

@@ -7,6 +7,7 @@ import type { LucideIcon } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { arSA, enUS } from "date-fns/locale";
 import { cn } from "../../lib/utils";
+import { buildSparklinePath } from "../../lib/sparkline";
 import type { KPIAccent, KPIDelta, KPITier } from "../KPICard";
 
 export type { KPIAccent, KPIDelta, KPITier } from "../KPICard";
@@ -86,21 +87,6 @@ const STROKE: Record<KPIAccent, string> = {
   info: "hsl(var(--info))",
   accent: "hsl(var(--accent))",
 };
-
-function buildSparklinePath(points: number[], w: number, h: number): string {
-  if (points.length < 2) return "";
-  const max = Math.max(...points);
-  const min = Math.min(...points);
-  const span = max - min || 1;
-  const stepX = w / (points.length - 1);
-  return points
-    .map((p, i) => {
-      const x = i * stepX;
-      const y = h - ((p - min) / span) * h;
-      return `${i === 0 ? "M" : "L"}${x.toFixed(2)},${y.toFixed(2)}`;
-    })
-    .join(" ");
-}
 
 function isKPIDelta(d: KPIDelta | MobileKPIDelta): d is KPIDelta {
   return (

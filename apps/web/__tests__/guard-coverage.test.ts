@@ -58,6 +58,10 @@ const GUARD_EXEMPT: Record<string, string> = {
     "Public sign-in. Credentials verified inside signIn(); deliberately gated by NextAuth + rate-limit, not a session guard (a session can't exist yet).",
   "auth.ts#registerUser":
     "Public self-service signup — creates the org+user. Protected by password-policy validation + per-IP/per-email rate limiting, not a session guard.",
+  "auth.ts#confirmEmailVerificationAction":
+    "Public pre-auth email-verification — the single-use SHA-256-hashed token IS the credential (consumed atomically, 24h TTL); activates the account on POST only, so no session can exist yet.",
+  "auth.ts#resendVerificationAction":
+    "Public pre-auth resend — rate-limited per email + per IP and anti-enumeration (identical generic response in every branch). No session exists before activation.",
   "password.ts#requestPasswordReset":
     "Public 'forgot password' entry point — rate-limited, always returns success to prevent account enumeration. No session exists yet.",
   "password.ts#resetPassword":
@@ -78,8 +82,6 @@ const GUARD_EXEMPT: Record<string, string> = {
   // ── Pure/static helpers — read no per-tenant data, mutate nothing ──────────
   "maintenance.ts#getValidTransitions":
     "Pure function over a static VALID_TRANSITIONS map — no DB access, no per-tenant data, no mutation. Exposing the maintenance status state-machine reveals nothing sensitive.",
-  "marketplace.ts#isValidShortAddress":
-    "Pure regex validator over the input string — no DB access, no tenant data, no mutation. Idempotent format check.",
 
   // ── Best-effort audit write (fail-open by contract) ────────────────────────
   "consent.ts#recordConsent":

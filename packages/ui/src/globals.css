@@ -24,6 +24,10 @@
 
   --accent: 40 55% 48%;
   --accent-foreground: 210 60% 15%;
+  /* Text-on-light accent (a11y fix): the base gold is only ~2.6:1 as small text on
+     `bg-accent/10`. This darker gold lets `text-accent-strong` clear WCAG AA 4.5:1 as
+     badge/label text on white/tint. The base `--accent` (premium fills) stays vivid. */
+  --accent-strong: 40 72% 27%;
 
   --green-bright: 155 55% 38%;
 
@@ -46,6 +50,10 @@
   /* Semantic */
   --destructive: 0 72% 51%;
   --destructive-foreground: 0 0% 100%;
+  /* Text-on-light destructive (a11y fix): darker so `text-destructive-strong` as small
+     text on white/card/`bg-destructive/10` clears WCAG AA 4.5:1. The base `--destructive`
+     (used for solid buttons / filled bg, which pair with white foreground) stays vivid. */
+  --destructive-strong: 0 74% 36%;
 
   --success: 158 50% 32%;
   --success-foreground: 0 0% 100%;
@@ -135,6 +143,8 @@
 
   --accent: 42 50% 55%;
   --accent-foreground: 0 0% 100%;
+  /* Dark: lighter than the fill so text-on-dark accent tint clears AA. */
+  --accent-strong: 42 70% 70%;
 
   --green-bright: 155 55% 45%;
 
@@ -156,6 +166,8 @@
   /* Semantic */
   --destructive: 0 62% 55%;
   --destructive-foreground: 0 0% 100%;
+  /* Dark: lighter than the fill so text-on-dark destructive tint/surface clears AA. */
+  --destructive-strong: 0 80% 74%;
 
   --success: 160 45% 42%;
   --success-foreground: 0 0% 100%;
@@ -248,6 +260,7 @@
 
   --color-accent: hsl(var(--accent));
   --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-accent-strong: hsl(var(--accent-strong));
 
   --color-green-bright: hsl(var(--green-bright));
 
@@ -267,6 +280,7 @@
 
   --color-destructive: hsl(var(--destructive));
   --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-destructive-strong: hsl(var(--destructive-strong));
 
   /* Semantic Status */
   --color-success: hsl(var(--success));

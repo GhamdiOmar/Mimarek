@@ -21,6 +21,7 @@ import {
   Image as ImageIcon,
   ChevronRight,
   ShieldAlert,
+  FileCheck2,
 } from "lucide-react";
 import Image from "next/image";
 import {
@@ -152,6 +153,9 @@ export default function SeoSettingsPage() {
   const [schemaOrgLinkedIn, setSchemaOrgLinkedIn] = useState("");
   const [schemaOrgInstagram, setSchemaOrgInstagram] = useState("");
 
+  // Section G — REGA Platform License
+  const [regaPlatformFalLicense, setRegaPlatformFalLicense] = useState("");
+
   const loadConfig = useCallback(async () => {
     try {
       const config = await getSeoConfig();
@@ -183,6 +187,7 @@ export default function SeoSettingsPage() {
       setSchemaOrgTwitter(config.schemaOrgTwitter ?? "");
       setSchemaOrgLinkedIn(config.schemaOrgLinkedIn ?? "");
       setSchemaOrgInstagram(config.schemaOrgInstagram ?? "");
+      setRegaPlatformFalLicense(config.regaPlatformFalLicense ?? "");
     } finally {
       setLoading(false);
     }
@@ -271,6 +276,7 @@ export default function SeoSettingsPage() {
       schemaOrgLinkedIn: schemaOrgLinkedIn || null,
       schemaOrgInstagram: schemaOrgInstagram || null,
       robotsTxtRules: JSON.stringify(robotsRules),
+      regaPlatformFalLicense: regaPlatformFalLicense || null,
     });
   };
 
@@ -426,6 +432,23 @@ export default function SeoSettingsPage() {
                 <Input dir="ltr" value={schemaOrgInstagram} onChange={(e) => setSchemaOrgInstagram(e.target.value)} />
               </div>
             </section>
+
+            <section className="space-y-3">
+              <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                {lang === "ar" ? "رخصة المنصة (فال)" : "REGA Platform License"}
+              </h2>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">
+                  {lang === "ar" ? "رقم رخصة فال للمنصة" : "REGA FAL License Number"}
+                </label>
+                <Input
+                  dir="ltr"
+                  value={regaPlatformFalLicense}
+                  onChange={(e) => setRegaPlatformFalLicense(e.target.value)}
+                  placeholder="FAL-XXXXXXXX"
+                />
+              </div>
+            </section>
           </div>
 
           <div className="fixed inset-x-0 bottom-0 bg-card/95 backdrop-blur-md border-t p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] z-mobile-fab">
@@ -493,6 +516,10 @@ export default function SeoSettingsPage() {
           <TabsTrigger value="schema" className="gap-2">
             <Building2 className="h-4 w-4" />
             Schema.org
+          </TabsTrigger>
+          <TabsTrigger value="rega" className="gap-2">
+            <FileCheck2 className="h-4 w-4" />
+            {lang === "ar" ? "رخصة فال" : "REGA License"}
           </TabsTrigger>
         </TabsList>
 
@@ -937,6 +964,51 @@ export default function SeoSettingsPage() {
             >
               <Save className="h-4 w-4 me-2" />
               {saving === "schema" ? (lang === "ar" ? "جارٍ الحفظ..." : "Saving...") : (lang === "ar" ? "حفظ بيانات Schema" : "Save Schema Data")}
+            </Button>
+          </Card>
+        </TabsContent>
+
+        {/* ─── G: REGA Platform License ────────────────────────────────── */}
+        <TabsContent value="rega">
+          <Card className="p-6 space-y-5">
+            <div>
+              <h3 className="font-semibold text-primary">
+                {lang === "ar" ? "رخصة المنصة الإلكترونية (فال)" : "REGA Platform License"}
+              </h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                {lang === "ar"
+                  ? "رقم رخصة فال للمنصة الإلكترونية العقارية الصادرة من الهيئة العامة للعقار — مطلوب لنشر إعلانات السوق."
+                  : "Mimaric's REGA electronic-real-estate-platform advertising license — required before the marketplace can publish listings."}
+              </p>
+            </div>
+
+            <div className="space-y-1.5">
+              <label htmlFor="rega-fal-license" className="text-sm font-medium">
+                {lang === "ar" ? "رقم رخصة فال للمنصة" : "REGA FAL License Number"}
+              </label>
+              <Input
+                id="rega-fal-license"
+                value={regaPlatformFalLicense}
+                onChange={(e) => setRegaPlatformFalLicense(e.target.value)}
+                placeholder="FAL-XXXXXXXX"
+                dir="ltr"
+              />
+              <p className="text-xs text-muted-foreground">
+                {lang === "ar"
+                  ? "يُعرض هذا الرقم كسطر امتثال صغير في صفحة تسجيل الدخول والصفحة الرئيسية. اتركه فارغاً لعرض «قيد الإصدار»."
+                  : "Displayed as a small compliance line on the login and landing pages. Leave blank to show \"pending issuance\"."}
+              </p>
+            </div>
+
+            <Button
+              onClick={() => save("rega", { regaPlatformFalLicense: regaPlatformFalLicense || null })}
+              disabled={saving === "rega"}
+              style={{ display: "inline-flex" }}
+            >
+              <Save className="h-4 w-4 me-2" />
+              {saving === "rega"
+                ? (lang === "ar" ? "جارٍ الحفظ..." : "Saving...")
+                : (lang === "ar" ? "حفظ رقم الرخصة" : "Save License Number")}
             </Button>
           </Card>
         </TabsContent>

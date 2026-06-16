@@ -52,7 +52,7 @@ export default function ProfilePage() {
       <AppBar
         title={lang === "ar" ? "الملف الشخصي" : "Profile"}
         lang={lang}
-        onBack={() => router.push("/dashboard/more")}
+        onBack={() => router.back()}
         centered
       />
 

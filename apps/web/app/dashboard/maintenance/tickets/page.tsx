@@ -18,7 +18,6 @@ import {
   CalendarCheck,
   UserCircle,
   Download,
-  Globe,
   Filter,
 } from "lucide-react";
 import { exportToExcel } from "../../../../lib/export";
@@ -39,7 +38,14 @@ import {
   BottomSheet,
   FAB,
   EmptyState,
+  Field,
+  SelectField,
+  Input,
 } from "@repo/ui";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useUnsavedChanges } from "../../../../hooks/useUnsavedChanges";
 import {
   getMaintenanceRequests,
   getMaintenanceStats,
@@ -84,8 +90,41 @@ export default function MaintenancePage() {
   const [showModal, setShowModal] = React.useState(false);
   const [editingId, setEditingId] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
-  const [formErrors, setFormErrors] = React.useState<Record<string, string>>({});
-  const [form, setForm] = React.useState({
+  // Form-level save error (§6.11.4 — never fail silently). Parity with Units.
+  const [saveError, setSaveError] = React.useState<string | null>(null);
+
+  // ── RHF + zod (QA-FE-02) — schema rebuilt per lang/edit-mode so messages and
+  // the create-only `unitId` requirement track the current state. ────────────
+  const ticketSchema = React.useMemo(
+    () =>
+      z.object({
+        title: z
+          .string()
+          .min(1, lang === "ar" ? "العنوان مطلوب" : "Title is required"),
+        description: z
+          .string()
+          .min(1, lang === "ar" ? "الوصف مطلوب" : "Description is required"),
+        category: z
+          .string()
+          .min(1, lang === "ar" ? "التصنيف مطلوب" : "Category is required"),
+        priority: z
+          .string()
+          .min(1, lang === "ar" ? "الأولوية مطلوبة" : "Priority is required"),
+        // Unit is required only when creating; the edit path does not send it.
+        unitId: editingId
+          ? z.string().optional()
+          : z.string().min(1, lang === "ar" ? "الوحدة مطلوبة" : "Unit is required"),
+        assignedToId: z.string().optional(),
+        scheduledDate: z.string().optional(),
+        estimatedCost: z.string().optional(),
+        notes: z.string().optional(),
+      }),
+    [lang, editingId],
+  );
+
+  type TicketFormValues = z.infer<typeof ticketSchema>;
+
+  const EMPTY_DEFAULTS: TicketFormValues = {
     title: "",
     description: "",
     category: "GENERAL",
@@ -95,7 +134,15 @@ export default function MaintenancePage() {
     scheduledDate: "",
     estimatedCost: "",
     notes: "",
+  };
+
+  const { control, handleSubmit, reset, formState } = useForm<TicketFormValues>({
+    resolver: zodResolver(ticketSchema),
+    mode: "onTouched",
+    defaultValues: EMPTY_DEFAULTS,
   });
+
+  useUnsavedChanges(formState.isDirty);
 
   React.useEffect(() => {
     load();
@@ -139,111 +186,81 @@ export default function MaintenancePage() {
     return () => clearTimeout(timer);
   }, [search, filterStatus, filterPriority, filterCategory]);
 
-  function updateField(field: string, value: string) {
-    setForm((prev) => ({ ...prev, [field]: value }));
-    if (formErrors[field]) {
-      setFormErrors((prev) => {
-        const next = { ...prev };
-        delete next[field];
-        return next;
-      });
-    }
-  }
-
   function openCreate() {
     setEditingId(null);
-    setFormErrors({});
-    setForm({
-      title: "",
-      description: "",
-      category: "GENERAL",
-      priority: "MEDIUM",
+    setSaveError(null);
+    reset({
+      ...EMPTY_DEFAULTS,
       unitId: units[0]?.id ?? "",
-      assignedToId: "",
-      scheduledDate: "",
-      estimatedCost: "",
-      notes: "",
     });
     setShowModal(true);
   }
 
   function openEdit(req: any) {
     setEditingId(req.id);
-    setFormErrors({});
-    setForm({
-      title: req.title,
+    setSaveError(null);
+    reset({
+      title: req.title ?? "",
       description: req.description ?? "",
       category: req.category ?? "GENERAL",
       priority: req.priority ?? "MEDIUM",
       unitId: req.unitId ?? "",
       assignedToId: req.assignedToId ?? "",
-      scheduledDate: req.scheduledDate ? new Date(req.scheduledDate).toISOString().slice(0, 10) ?? "" : "",
+      scheduledDate: req.scheduledDate
+        ? new Date(req.scheduledDate).toISOString().slice(0, 10)
+        : "",
       estimatedCost: req.estimatedCost?.toString() ?? "",
       notes: req.notes ?? "",
     });
     setShowModal(true);
   }
 
-  async function handleSave() {
-    const errors: Record<string, string> = {};
-    if (!form.title.trim()) {
-      errors.title = lang === "ar" ? "العنوان مطلوب" : "Title is required";
-    }
-    if (!form.description.trim()) {
-      errors.description = lang === "ar" ? "الوصف مطلوب" : "Description is required";
-    }
-    if (!form.category) {
-      errors.category = lang === "ar" ? "التصنيف مطلوب" : "Category is required";
-    }
-    if (!form.priority) {
-      errors.priority = lang === "ar" ? "الأولوية مطلوبة" : "Priority is required";
-    }
-    if (!editingId && !form.unitId) {
-      errors.unitId = lang === "ar" ? "الوحدة مطلوبة" : "Unit is required";
-    }
-    if (Object.keys(errors).length > 0) {
-      setFormErrors(errors);
-      return;
-    }
-    setFormErrors({});
+  const onSubmit = handleSubmit(async (values) => {
     setSaving(true);
+    setSaveError(null);
     try {
       if (editingId) {
         await updateMaintenanceRequest(editingId, {
-          title: form.title,
-          description: form.description || undefined,
-          category: form.category,
-          priority: form.priority,
-          assignedToId: form.assignedToId || null,
-          scheduledDate: form.scheduledDate || null,
-          estimatedCost: form.estimatedCost ? parseFloat(form.estimatedCost) : null,
-          notes: form.notes || null,
+          title: values.title,
+          description: values.description || undefined,
+          category: values.category,
+          priority: values.priority,
+          assignedToId: values.assignedToId || null,
+          scheduledDate: values.scheduledDate || null,
+          estimatedCost: values.estimatedCost ? parseFloat(values.estimatedCost) : null,
+          notes: values.notes || null,
         });
       } else {
         await createMaintenanceRequest({
-          title: form.title,
-          description: form.description || undefined,
-          category: form.category,
-          priority: form.priority,
-          unitId: form.unitId,
-          assignedToId: form.assignedToId || undefined,
-          scheduledDate: form.scheduledDate || undefined,
-          estimatedCost: form.estimatedCost ? parseFloat(form.estimatedCost) : undefined,
-          notes: form.notes || undefined,
+          title: values.title,
+          description: values.description || undefined,
+          category: values.category,
+          priority: values.priority,
+          unitId: values.unitId ?? "",
+          assignedToId: values.assignedToId || undefined,
+          scheduledDate: values.scheduledDate || undefined,
+          estimatedCost: values.estimatedCost ? parseFloat(values.estimatedCost) : undefined,
+          notes: values.notes || undefined,
         });
         trackEvent(AnalyticsEvent.MaintenanceTicketCreated, {
-          category: form.category,
-          priority: form.priority,
+          category: values.category,
+          priority: values.priority,
         });
       }
       setShowModal(false);
+      reset(EMPTY_DEFAULTS);
       await load();
     } catch (e) {
       console.error(e);
+      setSaveError(
+        lang === "ar"
+          ? "تعذّر حفظ الطلب. حاول مرة أخرى أو تواصل مع الدعم."
+          : "We couldn't save the request. Try again or contact support.",
+      );
     } finally {
       setSaving(false);
     }
-  }
+  });
 
   function handleDelete(id: string) {
     setPendingDeleteId(id);
@@ -784,12 +801,6 @@ export default function MaintenancePage() {
               <Download className="h-4 w-4" />
               {lang === "ar" ? "تصدير" : "Export"}
             </Button>
-            <Link href="/dashboard/gis/assets">
-              <Button variant="outline" size="sm" style={{ display: "inline-flex" }}>
-                <Globe className="w-4 h-4 me-1.5" />
-                {lang === "ar" ? "خريطة الأصول" : "Asset Map"}
-              </Button>
-            </Link>
             <Link href="/dashboard/maintenance/preventive">
               <Button variant="outline" size="sm" className="gap-2" style={{ display: "inline-flex" }}>
                 <CalendarCheck className="h-4 w-4" />
@@ -968,143 +979,214 @@ export default function MaintenancePage() {
       >
         <form
           id="maintenance-request-form"
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleSave();
-          }}
+          onSubmit={onSubmit}
           className="space-y-4 py-4"
         >
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-muted-foreground">
-              {lang === "ar" ? "العنوان *" : "Title *"}
-            </label>
-            <input
-              value={form.title}
-              onChange={(e) => updateField("title", e.target.value)}
-              className={`${inputClass} ${formErrors.title ? "border-destructive focus-visible:ring-destructive/30" : ""}`}
-              placeholder={lang === "ar" ? "مثال: تسريب ماء في الحمام" : "e.g. Water leak in bathroom"}
-            />
-            {formErrors.title && <p className="text-xs text-destructive">{formErrors.title}</p>}
-          </div>
+          <p className="text-xs text-muted-foreground">
+            {lang === "ar"
+              ? "الحقول المطلوبة معلّمة بـ *"
+              : "Required fields marked with *"}
+          </p>
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-muted-foreground">
-              {lang === "ar" ? "الوصف *" : "Description *"}
-            </label>
-            <textarea
-              value={form.description}
-              onChange={(e) => updateField("description", e.target.value)}
-              className={`${inputClass} h-20 py-2 ${formErrors.description ? "border-destructive focus-visible:ring-destructive/30" : ""}`}
-            />
-            {formErrors.description && <p className="text-xs text-destructive">{formErrors.description}</p>}
-          </div>
+          {saveError && (
+            <p
+              role="alert"
+              className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+            >
+              {saveError}
+            </p>
+          )}
+
+          <Controller
+            name="title"
+            control={control}
+            render={({ field, fieldState }) => (
+              <Field
+                label={lang === "ar" ? "العنوان" : "Title"}
+                required
+                error={fieldState.error?.message}
+              >
+                {(f) => (
+                  <Input
+                    {...f}
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    placeholder={
+                      lang === "ar"
+                        ? "مثال: تسريب ماء في الحمام"
+                        : "e.g. Water leak in bathroom"
+                    }
+                  />
+                )}
+              </Field>
+            )}
+          />
+
+          <Controller
+            name="description"
+            control={control}
+            render={({ field, fieldState }) => (
+              <Field
+                label={lang === "ar" ? "الوصف" : "Description"}
+                required
+                error={fieldState.error?.message}
+              >
+                {(f) => (
+                  <textarea
+                    {...f}
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    className={`${inputClass} h-20 py-2 aria-[invalid=true]:border-destructive aria-[invalid=true]:focus-visible:ring-destructive/30`}
+                  />
+                )}
+              </Field>
+            )}
+          />
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-muted-foreground">
-                {lang === "ar" ? "التصنيف *" : "Category *"}
-              </label>
-              <select
-                value={form.category}
-                onChange={(e) => updateField("category", e.target.value)}
-                className={`${inputClass} ${formErrors.category ? "border-destructive focus-visible:ring-destructive/30" : ""}`}
-              >
-                {Object.entries(categoryLabels).map(([k, v]) => (
-                  <option key={k} value={k}>{v[lang]}</option>
-                ))}
-              </select>
-              {formErrors.category && <p className="text-xs text-destructive">{formErrors.category}</p>}
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-muted-foreground">
-                {lang === "ar" ? "الأولوية *" : "Priority *"}
-              </label>
-              <select
-                value={form.priority}
-                onChange={(e) => updateField("priority", e.target.value)}
-                className={`${inputClass} ${formErrors.priority ? "border-destructive focus-visible:ring-destructive/30" : ""}`}
-              >
-                {Object.entries(priorityLabels).map(([k, v]) => (
-                  <option key={k} value={k}>{v[lang]}</option>
-                ))}
-              </select>
-              {formErrors.priority && <p className="text-xs text-destructive">{formErrors.priority}</p>}
-            </div>
+            <Controller
+              name="category"
+              control={control}
+              render={({ field, fieldState }) => (
+                <SelectField
+                  label={lang === "ar" ? "التصنيف" : "Category"}
+                  requiredMark
+                  error={fieldState.error?.message}
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                >
+                  {Object.entries(categoryLabels).map(([k, v]) => (
+                    <option key={k} value={k}>{v[lang]}</option>
+                  ))}
+                </SelectField>
+              )}
+            />
+            <Controller
+              name="priority"
+              control={control}
+              render={({ field, fieldState }) => (
+                <SelectField
+                  label={lang === "ar" ? "الأولوية" : "Priority"}
+                  requiredMark
+                  error={fieldState.error?.message}
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                >
+                  {Object.entries(priorityLabels).map(([k, v]) => (
+                    <option key={k} value={k}>{v[lang]}</option>
+                  ))}
+                </SelectField>
+              )}
+            />
           </div>
 
           {!editingId && (
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-muted-foreground">
-                {lang === "ar" ? "الوحدة *" : "Unit *"}
-              </label>
-              <select
-                value={form.unitId}
-                onChange={(e) => updateField("unitId", e.target.value)}
-                className={`${inputClass} ${formErrors.unitId ? "border-destructive focus-visible:ring-destructive/30" : ""}`}
-              >
-                <option value="">{lang === "ar" ? "اختر الوحدة" : "Select Unit"}</option>
-                {units.map((u: any) => (
-                  <option key={u.id} value={u.id}>
-                    {u.number}
-                  </option>
-                ))}
-              </select>
-              {formErrors.unitId && <p className="text-xs text-destructive">{formErrors.unitId}</p>}
-            </div>
+            <Controller
+              name="unitId"
+              control={control}
+              render={({ field, fieldState }) => (
+                <SelectField
+                  label={lang === "ar" ? "الوحدة" : "Unit"}
+                  requiredMark
+                  error={fieldState.error?.message}
+                  value={field.value ?? ""}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                >
+                  <option value="">{lang === "ar" ? "اختر الوحدة" : "Select Unit"}</option>
+                  {units.map((u: any) => (
+                    <option key={u.id} value={u.id}>
+                      {u.number}
+                    </option>
+                  ))}
+                </SelectField>
+              )}
+            />
           )}
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-muted-foreground">
-              {lang === "ar" ? "تعيين إلى" : "Assign To"}
-            </label>
-            <select
-              value={form.assignedToId}
-              onChange={(e) => updateField("assignedToId", e.target.value)}
-              className={inputClass}
-            >
-              <option value="">{lang === "ar" ? "— بدون تعيين —" : "— Unassigned —"}</option>
-              {users.map((u: any) => (
-                <option key={u.id} value={u.id}>{u.name} ({u.role})</option>
-              ))}
-            </select>
-          </div>
+          <Controller
+            name="assignedToId"
+            control={control}
+            render={({ field }) => (
+              <SelectField
+                label={lang === "ar" ? "تعيين إلى" : "Assign To"}
+                value={field.value ?? ""}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+              >
+                <option value="">{lang === "ar" ? "— بدون تعيين —" : "— Unassigned —"}</option>
+                {users.map((u: any) => (
+                  <option key={u.id} value={u.id}>{u.name} ({u.role})</option>
+                ))}
+              </SelectField>
+            )}
+          />
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-muted-foreground">
-                {lang === "ar" ? "تاريخ مجدول" : "Scheduled Date"}
-              </label>
-              <input
-                type="date"
-                value={form.scheduledDate}
-                onChange={(e) => updateField("scheduledDate", e.target.value)}
-                className={inputClass}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-muted-foreground">
-                {lang === "ar" ? "التكلفة التقديرية" : "Est. Cost"}
-              </label>
-              <input
-                type="number"
-                value={form.estimatedCost}
-                onChange={(e) => updateField("estimatedCost", e.target.value)}
-                className={inputClass}
-                placeholder="0.00"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-muted-foreground">
-              {lang === "ar" ? "ملاحظات" : "Notes"}
-            </label>
-            <textarea
-              value={form.notes}
-              onChange={(e) => updateField("notes", e.target.value)}
-              className={`${inputClass} h-16 py-2`}
+            <Controller
+              name="scheduledDate"
+              control={control}
+              render={({ field, fieldState }) => (
+                <Field
+                  label={lang === "ar" ? "تاريخ مجدول" : "Scheduled Date"}
+                  error={fieldState.error?.message}
+                >
+                  {(f) => (
+                    <Input
+                      {...f}
+                      type="date"
+                      value={field.value ?? ""}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                    />
+                  )}
+                </Field>
+              )}
+            />
+            <Controller
+              name="estimatedCost"
+              control={control}
+              render={({ field, fieldState }) => (
+                <Field
+                  label={lang === "ar" ? "التكلفة التقديرية" : "Est. Cost"}
+                  error={fieldState.error?.message}
+                >
+                  {(f) => (
+                    <Input
+                      {...f}
+                      type="number"
+                      value={field.value ?? ""}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      placeholder="0.00"
+                    />
+                  )}
+                </Field>
+              )}
             />
           </div>
+
+          <Controller
+            name="notes"
+            control={control}
+            render={({ field }) => (
+              <Field label={lang === "ar" ? "ملاحظات" : "Notes"}>
+                {(f) => (
+                  <textarea
+                    {...f}
+                    value={field.value ?? ""}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    className={`${inputClass} h-16 py-2`}
+                  />
+                )}
+              </Field>
+            )}
+          />
         </form>
       </ResponsiveDialog>
     </div>

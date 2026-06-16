@@ -12,7 +12,7 @@ import { normalizeSaudiPhoneE164 } from "./phone";
  * degrades to "unavailable" while the rest of the page renders. We do NOT return
  * the ciphertext — that would re-introduce the fail-open behaviour QA-SEC-06 fixed.
  */
-function safeDecryptField(value: string, field: string): string {
+export function safeDecryptField(value: string, field: string): string {
   try {
     return decrypt(value);
   } catch {

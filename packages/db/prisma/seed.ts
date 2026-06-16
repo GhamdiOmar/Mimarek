@@ -95,11 +95,16 @@ async function main() {
   });
   console.log("Organization:", org.name);
 
+  // Seeded accounts are pre-verified so re-seeding never locks out test logins
+  // (email-verification-before-activation gates login on a non-null emailVerified).
+  // Spread into BOTH the create and update path of every user upsert.
+  const VERIFIED = { emailVerified: new Date() };
+
   // 2. Company Admin User (customer admin test account)
   const hashedPassword = await bcryptHash("mimaric2026", 12);
   const admin = await prisma.user.upsert({
     where: { email: "admin@mimaric.sa" },
-    update: { password: hashedPassword, role: "ADMIN" },
+    update: { password: hashedPassword, role: "ADMIN", ...VERIFIED },
     create: {
       email: "admin@mimaric.sa",
       name: "Omar Al-Ghamdi",
@@ -108,6 +113,7 @@ async function main() {
       organizationId: org.id,
       onboardingCompleted: true,
       accountType: "company",
+      ...VERIFIED,
     },
   });
   console.log("Company Admin user:", admin.email);
@@ -118,7 +124,7 @@ async function main() {
 
   await prisma.user.upsert({
     where: { email: "ahmed@mimaric.sa" },
-    update: {},
+    update: { ...VERIFIED },
     create: {
       email: "ahmed@mimaric.sa",
       name: "Ahmed Al-Harbi",
@@ -127,12 +133,13 @@ async function main() {
       organizationId: org.id,
       onboardingCompleted: true,
       accountType: "company",
+      ...VERIFIED,
     },
   });
 
   await prisma.user.upsert({
     where: { email: "fatima@mimaric.sa" },
-    update: {},
+    update: { ...VERIFIED },
     create: {
       email: "fatima@mimaric.sa",
       name: "Fatima Al-Rashid",
@@ -141,12 +148,13 @@ async function main() {
       organizationId: org.id,
       onboardingCompleted: true,
       accountType: "company",
+      ...VERIFIED,
     },
   });
 
   await prisma.user.upsert({
     where: { email: "khalid@mimaric.sa" },
-    update: {},
+    update: { ...VERIFIED },
     create: {
       email: "khalid@mimaric.sa",
       name: "Khalid Al-Otaibi",
@@ -155,6 +163,7 @@ async function main() {
       organizationId: org.id,
       onboardingCompleted: true,
       accountType: "company",
+      ...VERIFIED,
     },
   });
 
@@ -163,61 +172,61 @@ async function main() {
 
   await prisma.user.upsert({
     where: { email: "dev_admin@mimaric.sa" },
-    update: { role: "SYSTEM_SUPPORT", organizationId: null },
-    create: { email: "dev_admin@mimaric.sa", name: "Saeed Al-Anzi", password: testPassword, role: "SYSTEM_SUPPORT", organizationId: null, onboardingCompleted: true, accountType: "company" },
+    update: { role: "SYSTEM_SUPPORT", organizationId: null, ...VERIFIED },
+    create: { email: "dev_admin@mimaric.sa", name: "Saeed Al-Anzi", password: testPassword, role: "SYSTEM_SUPPORT", organizationId: null, onboardingCompleted: true, accountType: "company", ...VERIFIED },
   });
   await prisma.user.upsert({
     where: { email: "pm@mimaric.sa" },
-    update: {},
-    create: { email: "pm@mimaric.sa", name: "Nasser Al-Zahrani", password: testPassword, role: "MANAGER", organizationId: org.id, onboardingCompleted: true, accountType: "company" },
+    update: { ...VERIFIED },
+    create: { email: "pm@mimaric.sa", name: "Nasser Al-Zahrani", password: testPassword, role: "MANAGER", organizationId: org.id, onboardingCompleted: true, accountType: "company", ...VERIFIED },
   });
   await prisma.user.upsert({
     where: { email: "sales_mgr@mimaric.sa" },
-    update: {},
-    create: { email: "sales_mgr@mimaric.sa", name: "Huda Al-Maliki", password: testPassword, role: "MANAGER", organizationId: org.id, onboardingCompleted: true, accountType: "company" },
+    update: { ...VERIFIED },
+    create: { email: "sales_mgr@mimaric.sa", name: "Huda Al-Maliki", password: testPassword, role: "MANAGER", organizationId: org.id, onboardingCompleted: true, accountType: "company", ...VERIFIED },
   });
   await prisma.user.upsert({
     where: { email: "property_mgr@mimaric.sa" },
-    update: {},
-    create: { email: "property_mgr@mimaric.sa", name: "Maryam Al-Subaie", password: testPassword, role: "MANAGER", organizationId: org.id, onboardingCompleted: true, accountType: "company" },
+    update: { ...VERIFIED },
+    create: { email: "property_mgr@mimaric.sa", name: "Maryam Al-Subaie", password: testPassword, role: "MANAGER", organizationId: org.id, onboardingCompleted: true, accountType: "company", ...VERIFIED },
   });
   await prisma.user.upsert({
     where: { email: "buyer@mimaric.sa" },
-    update: {},
-    create: { email: "buyer@mimaric.sa", name: "Turki Al-Fadhli", password: testPassword, role: "USER", organizationId: org.id, onboardingCompleted: true, accountType: "company" },
+    update: { ...VERIFIED },
+    create: { email: "buyer@mimaric.sa", name: "Turki Al-Fadhli", password: testPassword, role: "USER", organizationId: org.id, onboardingCompleted: true, accountType: "company", ...VERIFIED },
   });
   await prisma.user.upsert({
     where: { email: "tenant@mimaric.sa" },
-    update: {},
-    create: { email: "tenant@mimaric.sa", name: "Reem Al-Harthy", password: testPassword, role: "USER", organizationId: org.id, onboardingCompleted: true, accountType: "company" },
+    update: { ...VERIFIED },
+    create: { email: "tenant@mimaric.sa", name: "Reem Al-Harthy", password: testPassword, role: "USER", organizationId: org.id, onboardingCompleted: true, accountType: "company", ...VERIFIED },
   });
   await prisma.user.upsert({
     where: { email: "user@mimaric.sa" },
-    update: {},
-    create: { email: "user@mimaric.sa", name: "Lama Al-Jaber", password: testPassword, role: "USER", organizationId: org.id, onboardingCompleted: true, accountType: "company" },
+    update: { ...VERIFIED },
+    create: { email: "user@mimaric.sa", name: "Lama Al-Jaber", password: testPassword, role: "USER", organizationId: org.id, onboardingCompleted: true, accountType: "company", ...VERIFIED },
   });
   // Dedicated LEASING and FINANCE role users (for testing the v4.15.0 role permission sets)
   await prisma.user.upsert({
     where: { email: "leasing@mimaric.sa" },
-    update: { role: "LEASING", organizationId: org.id },
-    create: { email: "leasing@mimaric.sa", name: "Sara Al-Dossari", password: testPassword, role: "LEASING", organizationId: org.id, onboardingCompleted: true, accountType: "company" },
+    update: { role: "LEASING", organizationId: org.id, ...VERIFIED },
+    create: { email: "leasing@mimaric.sa", name: "Sara Al-Dossari", password: testPassword, role: "LEASING", organizationId: org.id, onboardingCompleted: true, accountType: "company", ...VERIFIED },
   });
   await prisma.user.upsert({
     where: { email: "finance@mimaric.sa" },
-    update: { role: "FINANCE", organizationId: org.id },
-    create: { email: "finance@mimaric.sa", name: "Yousef Al-Qahtani", password: testPassword, role: "FINANCE", organizationId: org.id, onboardingCompleted: true, accountType: "company" },
+    update: { role: "FINANCE", organizationId: org.id, ...VERIFIED },
+    create: { email: "finance@mimaric.sa", name: "Yousef Al-Qahtani", password: testPassword, role: "FINANCE", organizationId: org.id, onboardingCompleted: true, accountType: "company", ...VERIFIED },
   });
   // System Admin — Mimaric platform admin (for testing system-level ticket management)
   await prisma.user.upsert({
     where: { email: "system@mimaric.sa" },
-    update: { role: "SYSTEM_ADMIN", organizationId: null },
-    create: { email: "system@mimaric.sa", name: "Mimaric System Admin", password: testPassword, role: "SYSTEM_ADMIN", organizationId: null, onboardingCompleted: true, accountType: "company" },
+    update: { role: "SYSTEM_ADMIN", organizationId: null, ...VERIFIED },
+    create: { email: "system@mimaric.sa", name: "Mimaric System Admin", password: testPassword, role: "SYSTEM_ADMIN", organizationId: null, onboardingCompleted: true, accountType: "company", ...VERIFIED },
   });
   // System Support — Mimaric support/engineering team
   await prisma.user.upsert({
     where: { email: "support@mimaric.sa" },
-    update: { role: "SYSTEM_SUPPORT", organizationId: null },
-    create: { email: "support@mimaric.sa", name: "Mimaric Support Agent", password: testPassword, role: "SYSTEM_SUPPORT", organizationId: null, onboardingCompleted: true, accountType: "company" },
+    update: { role: "SYSTEM_SUPPORT", organizationId: null, ...VERIFIED },
+    create: { email: "support@mimaric.sa", name: "Mimaric Support Agent", password: testPassword, role: "SYSTEM_SUPPORT", organizationId: null, onboardingCompleted: true, accountType: "company", ...VERIFIED },
   });
   console.log("Created 11 role test users (9 operational + 2 system)");
 
@@ -258,23 +267,23 @@ async function main() {
 
   await prisma.user.upsert({
     where: { email: "dummy@demo.sa" },
-    update: { password: dummyPw, role: "ADMIN", organizationId: dummyOrg.id },
-    create: { email: "dummy@demo.sa", name: "Dummy Admin", password: dummyPw, role: "ADMIN", organizationId: dummyOrg.id, onboardingCompleted: true, accountType: "company" },
+    update: { password: dummyPw, role: "ADMIN", organizationId: dummyOrg.id, ...VERIFIED },
+    create: { email: "dummy@demo.sa", name: "Dummy Admin", password: dummyPw, role: "ADMIN", organizationId: dummyOrg.id, onboardingCompleted: true, accountType: "company", ...VERIFIED },
   });
   await prisma.user.upsert({
     where: { email: "pm@demo.sa" },
-    update: { password: dummyPw, role: "MANAGER", organizationId: dummyOrg.id },
-    create: { email: "pm@demo.sa", name: "Sara Al-Qahtani", password: dummyPw, role: "MANAGER", organizationId: dummyOrg.id, onboardingCompleted: true, accountType: "company" },
+    update: { password: dummyPw, role: "MANAGER", organizationId: dummyOrg.id, ...VERIFIED },
+    create: { email: "pm@demo.sa", name: "Sara Al-Qahtani", password: dummyPw, role: "MANAGER", organizationId: dummyOrg.id, onboardingCompleted: true, accountType: "company", ...VERIFIED },
   });
   await prisma.user.upsert({
     where: { email: "sales@demo.sa" },
-    update: { password: dummyPw, role: "AGENT", organizationId: dummyOrg.id },
-    create: { email: "sales@demo.sa", name: "Khalid Al-Dosari", password: dummyPw, role: "AGENT", organizationId: dummyOrg.id, onboardingCompleted: true, accountType: "company" },
+    update: { password: dummyPw, role: "AGENT", organizationId: dummyOrg.id, ...VERIFIED },
+    create: { email: "sales@demo.sa", name: "Khalid Al-Dosari", password: dummyPw, role: "AGENT", organizationId: dummyOrg.id, onboardingCompleted: true, accountType: "company", ...VERIFIED },
   });
   await prisma.user.upsert({
     where: { email: "tech@demo.sa" },
-    update: { password: dummyPw, role: "TECHNICIAN", organizationId: dummyOrg.id },
-    create: { email: "tech@demo.sa", name: "Fahad Al-Mutairi", password: dummyPw, role: "TECHNICIAN", organizationId: dummyOrg.id, onboardingCompleted: true, accountType: "company" },
+    update: { password: dummyPw, role: "TECHNICIAN", organizationId: dummyOrg.id, ...VERIFIED },
+    create: { email: "tech@demo.sa", name: "Fahad Al-Mutairi", password: dummyPw, role: "TECHNICIAN", organizationId: dummyOrg.id, onboardingCompleted: true, accountType: "company", ...VERIFIED },
   });
   console.log("Created 4 Dummy Org users");
 
@@ -402,6 +411,21 @@ async function main() {
   }
 
   console.log("Created plans (Starter, Professional, Enterprise) & subscriptions");
+
+  // ── Marketplace (P3 conveyance) ─────────────────────────────────────────────
+  // NOTE: this seed intentionally creates NO marketplaceListing rows. As of the P3
+  // conveyance gate, a seller can no longer self-publish — submitting a listing
+  // lands it in PENDING_REVIEW (complianceStatus PENDING_REVIEW), and only platform
+  // moderation (moderateApproveListing) flips it to PUBLISHED + complianceStatus
+  // APPROVED so buyers can see it. The cross-org reserve-and-buy rail additionally
+  // requires the marketplaceConveyanceEnabled flag (SystemConfig), a VERIFIED
+  // OrgRegaAuthorization for BOTH orgs, and a VERIFIED MarketplaceDeedProof.
+  //
+  // If you ever seed demo marketplace content, create the listings as
+  //   { status: "PUBLISHED", complianceStatus: "APPROVED", publishedAt: new Date() }
+  // (otherwise the demo marketplace is empty behind the moderation gate), and seed
+  // a SELF_ASSERTED OrgRegaAuthorization for the test org so the admin REGA-
+  // verification queue (/dashboard/admin/marketplace → REGA tab) has content.
 
   console.log("Seed complete!");
 }

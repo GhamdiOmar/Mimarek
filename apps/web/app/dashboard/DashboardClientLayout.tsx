@@ -28,9 +28,8 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     if (!isSystemRole(userRole)) return;
     // /dashboard/admin/** is platform-scoped — allowed.
     if (pathname.startsWith("/dashboard/admin")) return;
-    // Shared surfaces (profile, more, signout callback) — allowed.
+    // Shared surfaces (profile page, signout callback) — allowed.
     if (
-      pathname === "/dashboard/more" ||
       pathname.startsWith("/dashboard/more/") ||
       pathname.startsWith("/dashboard/settings") ||
       pathname.startsWith("/dashboard/billing")

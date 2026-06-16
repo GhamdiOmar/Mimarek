@@ -1,5 +1,46 @@
 # Changelog — Mimaric PropTech
 
+## [4.30.0] — 2026-06-16 — Capstone: Marketplace P3 reserve-and-buy + refactors + registration verification
+
+The v4.30 program capstone — delivered as a stack of QA-gated, preview-verified sprint-commits on one branch, one merge. Lights up the headline **proof-gated cross-org conveyance** (shipped DARK behind a kill-switch), decomposes the CRM god-component, swaps the date pickers to react-aria, and adds email-verification-before-activation. After this, the only remaining backlog is the two explicitly-parked ops/regulatory items (DB region move, ZATCA) + the deferred `t()` maintainability sweep.
+
+### Marketplace P3 — reserve-and-buy conveyance rails (behind `SystemConfig.marketplaceConveyanceEnabled`, default OFF)
+- **Lawful rails, shipped dark.** Full reserve-and-buy ownership-transfer flow built end-to-end but gated: the irreversible settlement re-reads the conveyance flag **uncached** on every call (instant kill-switch, fail-closed) and again **inside** the `$transaction` (TOCTOU). The adversarial security gate confirmed settlement **cannot** fire with the flag OFF, moderation **cannot** be bypassed, and deed PII **cannot** leak.
+- **Self-approve bug fixed.** `publishMarketplaceListing` can now only reach `PENDING_REVIEW`; only a SYSTEM `moderateApproveListing` (`marketplace:moderate`) sets `PUBLISHED`/`APPROVED`. `buyerVisibleWhere` now requires `complianceStatus=APPROVED` (single visibility chokepoint).
+- **Proof + authorization gates.** New `MarketplaceDeedProof` (deed# + owner national-ID **AES-256-GCM encrypted at rest**, doc URL/hash, RETT ref) and `OrgRegaAuthorization` (FAL/ad-license, `SELF_ASSERTED → VERIFIED`) tables (RLS enabled). Settlement gates: flag ON → SIGNED contract → deed proof `VERIFIED` → both orgs REGA `VERIFIED` → transfer `READY`. `MANUAL_ATTESTATION → API_VERIFIED` enum so a future REGA/ZATCA API needs **no migration**.
+- **State machine** (`lib/marketplace/state-machine.ts`) with validating CAS transitions; `verifyDeedTransferProof` advances `PENDING_SETTLEMENT → READY`, settlement claims `READY → COMPLETED` (idempotency sentinel + CAS double-lock kept).
+- **UI:** admin moderation page restructured into Listings / REGA Authorizations / Deed Proofs / **Conveyance** (the SYSTEM_ADMIN-only kill-switch + required legal-signoff note); seller deed-proof submit + org-REGA surface; public REGA-ad-license display.
+- **E2E:** the cross-org spec rewritten + un-`fixme`'d — **7 passing** (moderation gate, admin approval, cross-org inquiry PII-encryption, dark-launch kill-switch, settlement-refused-with-flag-OFF asserted at the gate layer).
+- **Go-live is gated externally** (Omar's action): platform FAL license, legal sign-off, PDPL DPIA, REGA/ZATCA verification process — the code ships ready, the flag stays OFF until those clear.
+
+### CrmView decompose (QA-ARCH-01) + CX-006
+- `CrmView.tsx` **3,788 → 1,518 LOC** — extracted `CustomerDrawer`, `KanbanCard`, `AddCustomerModal`, and config/helpers into co-located modules (verbatim moves, byte-identical behavior).
+- **CX-006:** the ~15-field add-customer form migrated to **react-hook-form + zod** + the v4.29 `Field`/`SelectField` primitives (after-blur validation); the `createCustomer` encrypt path, optimistic insert, and PII masking preserved exactly.
+
+### Date pickers → react-aria (Hijri-capable)
+- `DateRangePicker` + `HijriDatePicker` internals swapped to **`react-aria-components` + `@internationalized/date`**, public APIs byte-identical (all 5 dashboard consumers + Contracts untouched; the `?from=&to=` query contract preserved). `react-day-picker` removed.
+- RTL nav-arrow glyph flips via `useLocale()`; **Gregorian/Hijri display toggle** (Umm al-Qura via locale extension) that keeps the stored value Gregorian; **Western digits forced** in the Arabic calendar (§6.3.4). Timezone-correct Date⇄CalendarDate (local components, Gregorian-normalized) — verified by the QA gate.
+
+### Registration email-verification-before-activation (§3.2)
+- New users must verify their email before sign-in. OWASP token hygiene: `randomBytes(32)` emailed, **SHA-256 hash stored**, single-use atomic, 24h expiry. `authorize()` throws `EMAIL_NOT_VERIFIED` after the password check (no enumeration); the GET verify link renders a confirm page, activation only on POST (prefetch-safe). Resend rate-limited + anti-enumeration. New `User.emailVerified` (existing rows backfilled) + `EmailVerificationToken` (RLS); daily token-purge cron. Invitation acceptance auto-verifies (invite link proves email control).
+
+### QA-FE-02 + a11y + housekeeping
+- Units + Maintenance create forms → react-hook-form + zod + `Field`/`SelectField`.
+- **axe 26/26 green** maintained: new `--destructive-strong` + `--accent-strong` tokens fixed pre-existing data-dependent badge-text color-contrast (the `--success-strong` pattern; base `--destructive` unchanged).
+- Platform REGA **FAL-license** field (admin settings + login/landing placeholder). Removed a dead `/dashboard/gis/assets` link. `/dashboard/more` hub decommissioned; UNIT_STATUS registry + sparkline dedup + k6 baseline (standing backlog).
+- **`t()` best-effort** (Omar's call): DashboardView migrated (26 ternaries); the ~2,200-string tail deliberately deferred + logged (`future-plans/t-migration-deferred.md`) — zero-user-value churn, not a release blocker.
+
+### Database (applied to the live Supabase DB this cycle)
+- `db push` for: marketplace P3 tables/enums + `SystemConfig` conveyance/legal-signoff columns + `MarketplaceListingStatus.PENDING_REVIEW`; `User.emailVerified` + `EmailVerificationToken`. Both new-table sets RLS-enabled + verified (`relrowsecurity=t`); 21 existing users backfilled `emailVerified`. v4.28 money-precision/orgId-backfill manual steps also applied + verified.
+
+### Gates
+- Per-sprint `/mimaric-qa` security/QA gates (all SHIP; fixed an invitation-lockout regression + dead unguarded action). **`npm run build` + check-types green; axe-core e2e 26/26 green** (both audiences × both themes); marketplace E2E 7 passing. §3.9: 4-theme walk across all touched routes (CRM/units/maintenance/payments/contracts/reservations/marketplace/admin-marketplace/verify-email), mobile 375px no-overflow, 0 real console errors (residual = benign Next RSC prefetch-aborts on login).
+
+### Deferred (unchanged)
+- DB region move (Sydney → Bahrain), ZATCA e-invoicing — explicitly parked. The full `t()` migration tail. True HTTP-403 edge middleware (CVE-2025-29927 risk vs. marginal value — server-side guards already enforce).
+
+**Full diff:** https://github.com/GhamdiOmar/Mimaric/compare/v4.29.0...v4.30.0
+
 ## [4.29.0] — 2026-06-16 — Accessibility-green + governed primitives + Lighthouse CI (QA-FE-01/03 · CX-017)
 
 Third release of the v4.30 program. Closes the accessibility debt the v4.26 axe-gate expansion baselined, behind new governed primitives, and adds a Lighthouse CI gate. **The axe-core gate now enforces every critical/serious WCAG 2.1 A/AA rule across all 16 tenant + 8 platform routes with an EMPTY baseline — 26/26 green.**

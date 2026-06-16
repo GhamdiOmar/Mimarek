@@ -12,6 +12,10 @@
     {
       "path": "/api/cron/expire-reservations",
       "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/clean-expired-email-tokens",
+      "schedule": "0 3 * * *"
     }
   ]
 }

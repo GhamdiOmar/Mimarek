@@ -15,10 +15,12 @@ export default function LandingPage({
   lang,
   onToggleLang,
   toggleLangHref,
+  falLicense,
 }: {
   lang: "ar" | "en";
   onToggleLang?: () => void;
   toggleLangHref?: string;
+  falLicense?: string | null;
 }) {
   return (
     <div
@@ -39,7 +41,7 @@ export default function LandingPage({
         <FAQ lang={lang} />
         <FinalCTA lang={lang} />
       </main>
-      <Footer lang={lang} onToggleLang={onToggleLang} toggleLangHref={toggleLangHref} />
+      <Footer lang={lang} onToggleLang={onToggleLang} toggleLangHref={toggleLangHref} falLicense={falLicense} />
     </div>
   );
 }

@@ -52,7 +52,7 @@ export const authConfig = {
         // "tenant") is a prefix of every /dashboard/** path, so any unmapped
         // path under /dashboard falls through to "tenant" — exactly the old
         // "everything else under /dashboard = tenant" semantics. The old
-        // hardcoded allowlist (admin* = platform; more, notifications* = shared)
+        // hardcoded allowlist (admin* = platform; more/profile, notifications* = shared)
         // is reproduced by the corresponding ROUTE_GUARDS entries.
         const isSystemRole = role === "SYSTEM_ADMIN" || role === "SYSTEM_SUPPORT";
         if (isSystemRole) {

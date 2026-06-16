@@ -151,7 +151,7 @@ export default function DashboardView({
   userName: string;
   loadedAt: string;
 }) {
-  const { lang } = useLanguage();
+  const { lang, t } = useLanguage();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { range, setRange } = useDateRangeQuery();
@@ -188,7 +188,7 @@ export default function DashboardView({
   }, [hasCustomRange, range.from, range.to, lang]);
 
   const formatNumber = (n: number) => n.toLocaleString("en-US");
-  const firstName = (userName || (lang === "ar" ? "مستخدم" : "User")).split(" ")[0] ?? (lang === "ar" ? "مستخدم" : "User");
+  const firstName = (userName || t("مستخدم", "User")).split(" ")[0] ?? t("مستخدم", "User");
 
   const hour = new Date().getHours();
   const greeting =
@@ -217,7 +217,7 @@ export default function DashboardView({
       {/* ─── Mobile (< md) ───────────────────────────────────────── */}
       <div className="md:hidden -m-4 sm:-m-6 min-h-dvh flex flex-col bg-background">
         <AppBar
-          title={lang === "ar" ? "الرئيسية" : "Dashboard"}
+          title={t("الرئيسية", "Dashboard")}
           lang={lang}
         />
 
@@ -233,7 +233,7 @@ export default function DashboardView({
           {/* KPIs — 2×2 with sparklines */}
           <div className="grid grid-cols-2 gap-3">
             <MobileKPICard
-              label={lang === "ar" ? "إجمالي الوحدات" : "Total Units"}
+              label={t("إجمالي الوحدات", "Total Units")}
               value={formatNumber(stats.totalProperties)}
               icon={Building2}
               tone="primary"
@@ -241,7 +241,7 @@ export default function DashboardView({
               href="/dashboard/units"
             />
             <MobileKPICard
-              label={lang === "ar" ? "الحجوزات النشطة" : "Active Reservations"}
+              label={t("الحجوزات النشطة", "Active Reservations")}
               value={formatNumber(stats.activeDeals)}
               icon={Handshake}
               tone="blue"
@@ -249,7 +249,7 @@ export default function DashboardView({
               href="/dashboard/reservations"
             />
             <MobileKPICard
-              label={lang === "ar" ? "العقود الموقعة" : "Signed Contracts"}
+              label={t("العقود الموقعة", "Signed Contracts")}
               value={formatNumber(stats.signedContracts)}
               icon={FileText}
               tone="green"
@@ -257,7 +257,7 @@ export default function DashboardView({
               href="/dashboard/contracts"
             />
             <MobileKPICard
-              label={lang === "ar" ? "المدفوعات المعلقة" : "Pending Payments"}
+              label={t("المدفوعات المعلقة", "Pending Payments")}
               value={formatNumber(stats.pendingPayments)}
               icon={CreditCard}
               tone={stats.pendingPayments > 0 ? "amber" : "default"}
@@ -269,7 +269,7 @@ export default function DashboardView({
           {/* Today's Priorities */}
           <div className="rounded-2xl bg-card border border-border p-4">
             <h2 className="mb-2 text-sm font-semibold text-foreground">
-              {lang === "ar" ? "أولويات اليوم" : "Today's Priorities"}
+              {t("أولويات اليوم", "Today's Priorities")}
             </h2>
 
             <div className="-mb-3">
@@ -277,14 +277,11 @@ export default function DashboardView({
                 <DataCard
                   icon={Handshake}
                   iconTone="blue"
-                  title={
-                    lang === "ar" ? "حجوزات بانتظار التأكيد" : "Reservations pending approval"
-                  }
-                  subtitle={
-                    lang === "ar"
-                      ? `${formatNumber(pendingDeals)} حجز يحتاج مراجعة`
-                      : `${formatNumber(pendingDeals)} reservations need review`
-                  }
+                  title={t("حجوزات بانتظار التأكيد", "Reservations pending approval")}
+                  subtitle={t(
+                    `${formatNumber(pendingDeals)} حجز يحتاج مراجعة`,
+                    `${formatNumber(pendingDeals)} reservations need review`,
+                  )}
                   trailing={
                     <span className="font-semibold text-foreground">
                       {formatNumber(pendingDeals)}
@@ -300,20 +297,17 @@ export default function DashboardView({
                   iconTone={
                     stats.pendingPayments > 0 ? "amber" : "default"
                   }
-                  title={
-                    lang === "ar"
-                      ? "أقساط مستحقة قريباً"
-                      : "Upcoming payments due"
-                  }
+                  title={t("أقساط مستحقة قريباً", "Upcoming payments due")}
                   subtitle={
                     nextPayment
                       ? [
                           nextPayment.paymentPlan.contract.customer.name,
                           formatDueDate(nextPayment.dueDate, lang),
                         ]
-                      : lang === "ar"
-                      ? `${formatNumber(upcomingPaymentsCount)} قسط قادم`
-                      : `${formatNumber(upcomingPaymentsCount)} installments`
+                      : t(
+                          `${formatNumber(upcomingPaymentsCount)} قسط قادم`,
+                          `${formatNumber(upcomingPaymentsCount)} installments`,
+                        )
                   }
                   trailing={
                     nextPayment ? (
@@ -332,12 +326,11 @@ export default function DashboardView({
                 <DataCard
                   icon={AlertTriangle}
                   iconTone="red"
-                  title={lang === "ar" ? "مدفوعات متأخرة" : "Overdue payments"}
-                  subtitle={
-                    lang === "ar"
-                      ? `${formatNumber(stats.pendingPayments)} قسط متأخر غير مسدد`
-                      : `${formatNumber(stats.pendingPayments)} overdue unpaid installments`
-                  }
+                  title={t("مدفوعات متأخرة", "Overdue payments")}
+                  subtitle={t(
+                    `${formatNumber(stats.pendingPayments)} قسط متأخر غير مسدد`,
+                    `${formatNumber(stats.pendingPayments)} overdue unpaid installments`,
+                  )}
                   trailing={
                     <span className="font-semibold text-foreground">
                       {formatNumber(stats.pendingPayments)}
@@ -355,16 +348,11 @@ export default function DashboardView({
                       ? "amber"
                       : "blue"
                   }
-                  title={
-                    lang === "ar"
-                      ? "طلبات صيانة مفتوحة"
-                      : "Open maintenance requests"
-                  }
-                  subtitle={
-                    lang === "ar"
-                      ? `${formatNumber(openMaintenanceCount)} جديد · ${formatNumber(inProgressMaintenanceCount)} قيد التنفيذ`
-                      : `${formatNumber(openMaintenanceCount)} new · ${formatNumber(inProgressMaintenanceCount)} in progress`
-                  }
+                  title={t("طلبات صيانة مفتوحة", "Open maintenance requests")}
+                  subtitle={t(
+                    `${formatNumber(openMaintenanceCount)} جديد · ${formatNumber(inProgressMaintenanceCount)} قيد التنفيذ`,
+                    `${formatNumber(openMaintenanceCount)} new · ${formatNumber(inProgressMaintenanceCount)} in progress`,
+                  )}
                   trailing={
                     <span className="font-semibold text-foreground">
                       {formatNumber(
@@ -380,12 +368,11 @@ export default function DashboardView({
                 <DataCard
                   icon={TrendingUp}
                   iconTone="green"
-                  title={lang === "ar" ? "الإيرادات" : "Revenue"}
-                  subtitle={
-                    lang === "ar"
-                      ? `المدفوعات المحصلة · ${periodLabel}`
-                      : `Collected payments · ${periodLabel}`
-                  }
+                  title={t("الإيرادات", "Revenue")}
+                  subtitle={t(
+                    `المدفوعات المحصلة · ${periodLabel}`,
+                    `Collected payments · ${periodLabel}`,
+                  )}
                   trailing={
                     <SARAmount
                       value={stats.monthlyRevenue}
@@ -403,16 +390,14 @@ export default function DashboardView({
                 openMaintenanceCount + inProgressMaintenanceCount === 0 && (
                   <EmptyState
                     compact
-                    title={
-                      lang === "ar"
-                        ? "لا توجد أولويات لهذا اليوم"
-                        : "No priorities for today"
-                    }
-                    description={
-                      lang === "ar"
-                        ? "يومك هادئ — استمتع بوقتك."
-                        : "Your day looks clear — enjoy it."
-                    }
+                    title={t(
+                      "لا توجد أولويات لهذا اليوم",
+                      "No priorities for today",
+                    )}
+                    description={t(
+                      "يومك هادئ — استمتع بوقتك.",
+                      "Your day looks clear — enjoy it.",
+                    )}
                   />
                 )}
             </div>
@@ -426,7 +411,7 @@ export default function DashboardView({
         <div className="rounded-lg border border-border bg-card card-quiet p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-foreground">
-              {greeting}، {userName || (lang === "ar" ? "مستخدم" : "User")}
+              {greeting}، {userName || t("مستخدم", "User")}
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
               {new Date().toLocaleDateString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-US", {
@@ -451,18 +436,16 @@ export default function DashboardView({
         <div className="space-y-4">
           <KPICard
             tier="hero"
-            label={lang === "ar" ? "الإيرادات" : "Revenue"}
+            label={t("الإيرادات", "Revenue")}
             value={<SARAmount value={stats.monthlyRevenue} compact size={20} />}
-            subtitle={
-              lang === "ar"
-                ? `المدفوعات المحصلة · ${periodLabel}`
-                : `Payments collected · ${periodLabel}`
-            }
-            secondaryInsight={
-              lang === "ar"
-                ? `${formatNumber(stats.signedContracts)} عقد موقّع · ${formatNumber(stats.totalProperties)} وحدة بالمحفظة`
-                : `${formatNumber(stats.signedContracts)} signed contracts · ${formatNumber(stats.totalProperties)} units in portfolio`
-            }
+            subtitle={t(
+              `المدفوعات المحصلة · ${periodLabel}`,
+              `Payments collected · ${periodLabel}`,
+            )}
+            secondaryInsight={t(
+              `${formatNumber(stats.signedContracts)} عقد موقّع · ${formatNumber(stats.totalProperties)} وحدة بالمحفظة`,
+              `${formatNumber(stats.signedContracts)} signed contracts · ${formatNumber(stats.totalProperties)} units in portfolio`,
+            )}
             icon={<TrendingUp className="h-[18px] w-[18px]" />}
             accent="secondary"
             comparisonPeriod={periodLabel}
@@ -473,13 +456,12 @@ export default function DashboardView({
           />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <KPICard
-              label={lang === "ar" ? "الحجوزات النشطة" : "Active Reservations"}
+              label={t("الحجوزات النشطة", "Active Reservations")}
               value={formatNumber(stats.activeDeals)}
-              subtitle={
-                lang === "ar"
-                  ? "حجوزات معلقة أو مؤكدة"
-                  : "Pending or confirmed reservations"
-              }
+              subtitle={t(
+                "حجوزات معلقة أو مؤكدة",
+                "Pending or confirmed reservations",
+              )}
               icon={<Handshake className="h-[18px] w-[18px]" />}
               accent="info"
               trend={trends.pipeline.slice(-12)}
@@ -488,11 +470,9 @@ export default function DashboardView({
               locale={lang}
             />
             <KPICard
-              label={lang === "ar" ? "العقود الموقعة" : "Signed Contracts"}
+              label={t("العقود الموقعة", "Signed Contracts")}
               value={formatNumber(stats.signedContracts)}
-              subtitle={
-                lang === "ar" ? "عقود مكتملة الإجراءات" : "Fully executed contracts"
-              }
+              subtitle={t("عقود مكتملة الإجراءات", "Fully executed contracts")}
               icon={<FileText className="h-[18px] w-[18px]" />}
               accent="success"
               href="/dashboard/contracts"
@@ -500,13 +480,12 @@ export default function DashboardView({
               locale={lang}
             />
             <KPICard
-              label={lang === "ar" ? "المدفوعات المعلقة" : "Pending Payments"}
+              label={t("المدفوعات المعلقة", "Pending Payments")}
               value={formatNumber(stats.pendingPayments)}
-              subtitle={
-                lang === "ar"
-                  ? "أقساط متأخرة غير مسددة"
-                  : "Overdue installments unpaid"
-              }
+              subtitle={t(
+                "أقساط متأخرة غير مسددة",
+                "Overdue installments unpaid",
+              )}
               icon={<CreditCard className="h-[18px] w-[18px]" />}
               accent={stats.pendingPayments > 0 ? "warning" : "primary"}
               href="/dashboard/finance"
@@ -517,7 +496,7 @@ export default function DashboardView({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <KPICard
               tier="utility"
-              label={lang === "ar" ? "إجمالي الوحدات" : "Total Properties"}
+              label={t("إجمالي الوحدات", "Total Properties")}
               value={formatNumber(stats.totalProperties)}
               icon={<Building2 className="h-[18px] w-[18px]" />}
               accent="primary"
@@ -526,7 +505,7 @@ export default function DashboardView({
             />
             <KPICard
               tier="utility"
-              label={lang === "ar" ? "طلبات الصيانة" : "Open Maintenance"}
+              label={t("طلبات الصيانة", "Open Maintenance")}
               value={formatNumber(stats.openMaintenance)}
               icon={<Wrench className="h-[18px] w-[18px]" />}
               accent={stats.openMaintenance > 10 ? "warning" : "info"}
@@ -550,7 +529,7 @@ export default function DashboardView({
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
                 <Handshake className="h-4 w-4 text-muted-foreground" />
-                {lang === "ar" ? "آخر الحجوزات" : "Recent Reservations"}
+                {t("آخر الحجوزات", "Recent Reservations")}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -559,12 +538,11 @@ export default function DashboardView({
                   compact
                   variant="first-time"
                   icon={<Handshake className="h-8 w-8" />}
-                  title={lang === "ar" ? "لا توجد حجوزات بعد" : "No reservations yet"}
-                  description={
-                    lang === "ar"
-                      ? "ستظهر آخر الحجوزات هنا بمجرد إنشائها."
-                      : "Recent reservations show up here once created."
-                  }
+                  title={t("لا توجد حجوزات بعد", "No reservations yet")}
+                  description={t(
+                    "ستظهر آخر الحجوزات هنا بمجرد إنشائها.",
+                    "Recent reservations show up here once created.",
+                  )}
                   action={
                     <Button
                       variant="ghost"
@@ -572,7 +550,7 @@ export default function DashboardView({
                       onClick={() => router.push("/dashboard/reservations")}
                       style={{ display: "inline-flex" }}
                     >
-                      {lang === "ar" ? "فتح الحجوزات" : "Open reservations"}
+                      {t("فتح الحجوزات", "Open reservations")}
                     </Button>
                   }
                 />
@@ -589,7 +567,7 @@ export default function DashboardView({
                             {deal.customer.name}
                           </p>
                           <p className="text-[11px] text-muted-foreground font-latin">
-                            {lang === "ar" ? "وحدة" : "Unit"} {deal.unit.number}
+                            {t("وحدة", "Unit")} {deal.unit.number}
                             {" · "}
                             {formatRelativeDate(deal.createdAt, lang)}
                           </p>
@@ -608,7 +586,7 @@ export default function DashboardView({
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
-                {lang === "ar" ? "مواعيد الأقساط القادمة" : "Upcoming Payment Deadlines"}
+                {t("مواعيد الأقساط القادمة", "Upcoming Payment Deadlines")}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -616,12 +594,11 @@ export default function DashboardView({
                 <EmptyState
                   compact
                   icon={<Calendar className="h-8 w-8" />}
-                  title={lang === "ar" ? "لا توجد أقساط قادمة" : "No upcoming payments"}
-                  description={
-                    lang === "ar"
-                      ? "سنُنبّهك هنا عند اقتراب أي موعد استحقاق."
-                      : "We'll surface upcoming due dates here."
-                  }
+                  title={t("لا توجد أقساط قادمة", "No upcoming payments")}
+                  description={t(
+                    "سنُنبّهك هنا عند اقتراب أي موعد استحقاق.",
+                    "We'll surface upcoming due dates here.",
+                  )}
                 />
               ) : (
                 <div className="divide-y divide-border">
@@ -632,7 +609,7 @@ export default function DashboardView({
                           {inst.paymentPlan.contract.customer.name}
                         </p>
                         <p className="text-[11px] text-muted-foreground font-latin">
-                          {lang === "ar" ? "وحدة" : "Unit"} {inst.paymentPlan.contract.unit.number}
+                          {t("وحدة", "Unit")} {inst.paymentPlan.contract.unit.number}
                           {" · "}
                           {formatDueDate(inst.dueDate, lang)}
                         </p>
@@ -652,7 +629,7 @@ export default function DashboardView({
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
                 <Wrench className="h-4 w-4 text-muted-foreground" />
-                {lang === "ar" ? "حالة الصيانة" : "Maintenance Status"}
+                {t("حالة الصيانة", "Maintenance Status")}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -660,12 +637,11 @@ export default function DashboardView({
                 <EmptyState
                   compact
                   icon={<Wrench className="h-8 w-8" />}
-                  title={lang === "ar" ? "لا توجد طلبات صيانة" : "No maintenance requests"}
-                  description={
-                    lang === "ar"
-                      ? "كل الأصول تعمل بسلاسة — ستظهر الطلبات الجديدة هنا."
-                      : "All assets look healthy — new requests show up here."
-                  }
+                  title={t("لا توجد طلبات صيانة", "No maintenance requests")}
+                  description={t(
+                    "كل الأصول تعمل بسلاسة — ستظهر الطلبات الجديدة هنا.",
+                    "All assets look healthy — new requests show up here.",
+                  )}
                 />
               ) : (
                 <div className="space-y-3">

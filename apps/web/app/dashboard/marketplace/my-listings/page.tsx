@@ -11,6 +11,11 @@ import {
   Inbox,
   Users,
   ArrowRight,
+  Shield,
+  ShieldCheck,
+  ShieldAlert,
+  ScrollText,
+  CheckCircle2,
 } from "lucide-react";
 import {
   Button,
@@ -24,6 +29,7 @@ import {
   DataTable,
   IconButton,
   DirectionalIcon,
+  Field,
   type ColumnDef,
 } from "@repo/ui";
 import { useLanguage } from "../../../../components/LanguageProvider";
@@ -34,6 +40,9 @@ import {
   listIncomingMarketplaceInquiries,
   convertMarketplaceInquiryToDeal,
   settleMarketplaceTransfer,
+  getMyOrgRegaAuthorization,
+  submitOrgRegaAuthorization,
+  submitDeedTransferProof,
 } from "../../../actions/marketplace";
 import Link from "next/link";
 
@@ -59,8 +68,21 @@ type IncomingInquiry = {
   createdAt: string;
   listing: { id: string; listingNumber: string; title: string | null };
   reservation: { id: string; status: string } | null;
-  transfer: { id: string; status: string } | null;
+  transfer: {
+    id: string;
+    status: string;
+    deedProof: { status: string } | null;
+  } | null;
 };
+
+type OrgRega = {
+  id: string;
+  regaLicenseNumber: string | null;
+  status: string;
+  isSeller: boolean;
+  isBuyer: boolean;
+  rejectedReason: string | null;
+} | null;
 
 // ─── Status config ────────────────────────────────────────────────────────────
 
@@ -111,6 +133,21 @@ const INQUIRY_STATUS_LABELS: Record<string, { ar: string; en: string }> = {
   CLOSED_LOST: { ar: "مغلق", en: "Closed" },
 };
 
+const DEED_PROOF_STATUS_LABELS: Record<string, { ar: string; en: string }> = {
+  PENDING: { ar: "قيد المراجعة", en: "Pending review" },
+  VERIFIED: { ar: "موثّق", en: "Verified" },
+  REJECTED: { ar: "مرفوض", en: "Rejected" },
+};
+
+const DEED_PROOF_STATUS_VARIANT: Record<
+  string,
+  React.ComponentProps<typeof Badge>["variant"]
+> = {
+  PENDING: "warning",
+  VERIFIED: "success",
+  REJECTED: "error",
+};
+
 function formatSARLocal(amount: number | null, lang: "ar" | "en") {
   if (amount == null) return "—";
   return new Intl.NumberFormat(lang === "ar" ? "ar-SA-u-nu-latn" : "en-SA", {
@@ -124,6 +161,10 @@ function formatSARLocal(amount: number | null, lang: "ar" | "en") {
 
 export default function MyListingsPage() {
   const { lang } = useLanguage();
+  const t = React.useCallback(
+    (en: string, ar: string) => (lang === "ar" ? ar : en),
+    [lang],
+  );
 
   const [listings, setListings] = React.useState<MyListing[]>([]);
   const [loadingListings, setLoadingListings] = React.useState(true);
@@ -154,19 +195,41 @@ export default function MyListingsPage() {
   const [settling, setSettling] = React.useState(false);
   const [settleError, setSettleError] = React.useState<string | null>(null);
 
+  // Org REGA authorization
+  const [rega, setRega] = React.useState<OrgRega>(null);
+  const [loadingRega, setLoadingRega] = React.useState(true);
+  const [regaDialogOpen, setRegaDialogOpen] = React.useState(false);
+  const [regaLicense, setRegaLicense] = React.useState("");
+  const [regaIsSeller, setRegaIsSeller] = React.useState(true);
+  const [regaIsBuyer, setRegaIsBuyer] = React.useState(false);
+  const [regaSubmitting, setRegaSubmitting] = React.useState(false);
+  const [regaError, setRegaError] = React.useState<string | null>(null);
+
+  // Deed-proof submission dialog
+  const [proofTarget, setProofTarget] = React.useState<IncomingInquiry | null>(null);
+  const [deedNumber, setDeedNumber] = React.useState("");
+  const [ownerNationalId, setOwnerNationalId] = React.useState("");
+  const [deedDocUrl, setDeedDocUrl] = React.useState("");
+  const [rettCertRef, setRettCertRef] = React.useState("");
+  const [proofSubmitting, setProofSubmitting] = React.useState(false);
+  const [proofError, setProofError] = React.useState<string | null>(null);
+
   async function loadAll() {
     try {
-      const [l, i] = await Promise.all([
+      const [l, i, r] = await Promise.all([
         listMyMarketplaceListings(),
         listIncomingMarketplaceInquiries(),
+        getMyOrgRegaAuthorization(),
       ]);
       setListings(l as unknown as MyListing[]);
       setInquiries(i as unknown as IncomingInquiry[]);
+      setRega(r as unknown as OrgRega);
     } catch (err) {
       console.error(err);
     } finally {
       setLoadingListings(false);
       setLoadingInquiries(false);
+      setLoadingRega(false);
     }
   }
 
@@ -283,6 +346,72 @@ export default function MyListingsPage() {
       setSettleError(err instanceof Error ? err.message : (lang === "ar" ? "فشل تسوية التحويل" : "Failed to settle transfer"));
     } finally {
       setSettling(false);
+    }
+  }
+
+  // ── Org REGA authorization ─────────────────────────────────────────────────
+
+  function openRegaDialog() {
+    setRegaLicense(rega?.regaLicenseNumber ?? "");
+    setRegaIsSeller(rega?.isSeller ?? true);
+    setRegaIsBuyer(rega?.isBuyer ?? false);
+    setRegaError(null);
+    setRegaDialogOpen(true);
+  }
+
+  async function handleRegaSubmit() {
+    setRegaSubmitting(true);
+    setRegaError(null);
+    try {
+      const updated = await submitOrgRegaAuthorization({
+        regaLicenseNumber: regaLicense.trim() || undefined,
+        isSeller: regaIsSeller,
+        isBuyer: regaIsBuyer,
+      });
+      setRega(updated as unknown as OrgRega);
+      setRegaDialogOpen(false);
+    } catch (err: unknown) {
+      setRegaError(err instanceof Error ? err.message : t("Failed to submit authorization", "فشل إرسال الترخيص"));
+    } finally {
+      setRegaSubmitting(false);
+    }
+  }
+
+  // ── Deed-proof submission ──────────────────────────────────────────────────
+
+  function openProofDialog(inq: IncomingInquiry) {
+    setProofTarget(inq);
+    setDeedNumber("");
+    setOwnerNationalId("");
+    setDeedDocUrl("");
+    setRettCertRef("");
+    setProofError(null);
+  }
+
+  async function handleProofSubmit() {
+    if (!proofTarget?.transfer) return;
+    setProofSubmitting(true);
+    setProofError(null);
+    try {
+      await submitDeedTransferProof(proofTarget.transfer.id, {
+        deedNumber: deedNumber.trim() || undefined,
+        ownerNationalId: ownerNationalId.trim() || undefined,
+        deedDocUrl: deedDocUrl.trim() || undefined,
+        rettCertRef: rettCertRef.trim() || undefined,
+      });
+      // Reflect the now-PENDING proof on the matching inquiry.
+      setInquiries((prev) =>
+        prev.map((i) =>
+          i.id === proofTarget.id && i.transfer
+            ? { ...i, transfer: { ...i.transfer, deedProof: { status: "PENDING" } } }
+            : i,
+        ),
+      );
+      setProofTarget(null);
+    } catch (err: unknown) {
+      setProofError(err instanceof Error ? err.message : t("Failed to submit deed proof", "فشل إرسال سند الملكية"));
+    } finally {
+      setProofSubmitting(false);
     }
   }
 
@@ -437,12 +566,22 @@ export default function MyListingsPage() {
         id: "transfer",
         header: lang === "ar" ? "التحويل" : "Transfer",
         enableSorting: false,
-        cell: ({ row }) =>
-          row.original.transfer ? (
-            <span className="text-xs text-muted-foreground">{row.original.transfer.status}</span>
-          ) : (
-            "—"
-          ),
+        cell: ({ row }) => {
+          const tr = row.original.transfer;
+          if (!tr) return <span className="text-xs text-muted-foreground">—</span>;
+          const proof = tr.deedProof;
+          return (
+            <div className="flex flex-col gap-1">
+              <span className="text-xs text-muted-foreground">{tr.status}</span>
+              {proof && (
+                <Badge variant={DEED_PROOF_STATUS_VARIANT[proof.status] ?? "default"} size="sm">
+                  <ScrollText className="h-3 w-3" aria-hidden="true" />
+                  {DEED_PROOF_STATUS_LABELS[proof.status]?.[lang] ?? proof.status}
+                </Badge>
+              )}
+            </div>
+          );
+        },
       },
       {
         accessorKey: "message",
@@ -471,33 +610,38 @@ export default function MyListingsPage() {
         header: "",
         enableSorting: false,
         enableHiding: false,
-        cell: ({ row }) => (
-          <div className="flex items-center gap-1.5">
-            {row.original.status === "OPEN" && (
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={() => openConvert(row.original)}
-              >
-                <DirectionalIcon icon={ArrowRight} className="h-3.5 w-3.5 me-1" aria-hidden="true" />
-                {lang === "ar" ? "تحويل لصفقة" : "Convert to Deal"}
-              </Button>
-            )}
-            {row.original.transfer?.status === "PENDING_SETTLEMENT" && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => openSettle(row.original)}
-              >
-                <Handshake className="h-3.5 w-3.5 me-1" aria-hidden="true" />
-                {lang === "ar" ? "تسوية" : "Settle"}
-              </Button>
-            )}
-          </div>
-        ),
+        cell: ({ row }) => {
+          const tr = row.original.transfer;
+          const proofStatus = tr?.deedProof?.status ?? null;
+          const needsProof =
+            tr?.status === "PENDING_SETTLEMENT" &&
+            (proofStatus === null || proofStatus === "REJECTED");
+          return (
+            <div className="flex items-center gap-1.5">
+              {row.original.status === "OPEN" && (
+                <Button variant="primary" size="sm" onClick={() => openConvert(row.original)}>
+                  <DirectionalIcon icon={ArrowRight} className="h-3.5 w-3.5 me-1" aria-hidden="true" />
+                  {t("Convert to Deal", "تحويل لصفقة")}
+                </Button>
+              )}
+              {needsProof && (
+                <Button variant="outline" size="sm" onClick={() => openProofDialog(row.original)}>
+                  <ScrollText className="h-3.5 w-3.5 me-1" aria-hidden="true" />
+                  {t("Submit deed proof", "تقديم سند الملكية")}
+                </Button>
+              )}
+              {tr?.status === "READY" && (
+                <Button variant="primary" size="sm" onClick={() => openSettle(row.original)}>
+                  <Handshake className="h-3.5 w-3.5 me-1" aria-hidden="true" />
+                  {t("Settle", "تسوية")}
+                </Button>
+              )}
+            </div>
+          );
+        },
       },
     ],
-    [lang]
+    [lang, t]
   );
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -518,6 +662,88 @@ export default function MyListingsPage() {
             : "Manage your property listings and track incoming inquiries"
         }
       />
+
+      {/* ── Org REGA authorization ────────────────────────────────────────── */}
+      <section>
+        {loadingRega ? (
+          <Skeleton className="h-24 w-full" />
+        ) : (
+          <Card className="p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-3">
+                <div
+                  className={`rounded-lg p-2 shrink-0 ${
+                    rega?.status === "VERIFIED"
+                      ? "bg-success/10"
+                      : rega?.status === "REJECTED"
+                        ? "bg-destructive/10"
+                        : "bg-warning/10"
+                  }`}
+                >
+                  {rega?.status === "VERIFIED" ? (
+                    <ShieldCheck className="h-5 w-5 text-success-strong" aria-hidden="true" />
+                  ) : rega?.status === "REJECTED" ? (
+                    <ShieldAlert className="h-5 w-5 text-destructive" aria-hidden="true" />
+                  ) : (
+                    <Shield className="h-5 w-5 text-warning-strong" aria-hidden="true" />
+                  )}
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h2 className="text-sm font-semibold text-foreground">
+                      {t("REGA / FAL authorization", "ترخيص الهيئة العامة للعقار (فال)")}
+                    </h2>
+                    {!rega ? (
+                      <Badge variant="default" size="sm">{t("Not submitted", "لم يُقدَّم")}</Badge>
+                    ) : rega.status === "VERIFIED" ? (
+                      <Badge variant="success" size="sm">
+                        <CheckCircle2 className="h-3 w-3" aria-hidden="true" />
+                        {t("Verified", "موثّق")}
+                      </Badge>
+                    ) : rega.status === "REJECTED" ? (
+                      <Badge variant="error" size="sm">{t("Rejected", "مرفوض")}</Badge>
+                    ) : (
+                      <Badge variant="warning" size="sm">
+                        {t("Self-asserted (pending platform verification)", "إقرار ذاتي (بانتظار توثيق المنصة)")}
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed max-w-prose">
+                    {t(
+                      "Cross-org ownership transfer requires a platform-verified REGA authorization for your organization.",
+                      "يتطلب نقل الملكية بين المؤسسات ترخيص هيئة موثّقاً من المنصة لمؤسستك.",
+                    )}
+                  </p>
+                  {rega && (
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground pt-0.5">
+                      {rega.regaLicenseNumber && (
+                        <span className="font-mono text-foreground" dir="ltr">{rega.regaLicenseNumber}</span>
+                      )}
+                      {rega.isSeller && <Badge variant="outline" size="sm">{t("Seller", "بائع")}</Badge>}
+                      {rega.isBuyer && <Badge variant="outline" size="sm">{t("Buyer", "مشترٍ")}</Badge>}
+                    </div>
+                  )}
+                  {rega?.status === "REJECTED" && rega.rejectedReason && (
+                    <p className="text-xs text-destructive">
+                      {t("Reason:", "السبب:")} {rega.rejectedReason}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <Button
+                variant={rega?.status === "VERIFIED" ? "outline" : "primary"}
+                size="sm"
+                className="shrink-0 min-h-[44px]"
+                onClick={openRegaDialog}
+              >
+                {!rega
+                  ? t("Submit REGA authorization", "تقديم ترخيص الهيئة")
+                  : t("Update authorization", "تحديث الترخيص")}
+              </Button>
+            </div>
+          </Card>
+        )}
+      </section>
 
       {/* ── My Listings section ──────────────────────────────────────────── */}
       <section className="space-y-3">
@@ -678,6 +904,16 @@ export default function MyListingsPage() {
                 {inq.message && (
                   <p className="text-xs text-muted-foreground line-clamp-2">{inq.message}</p>
                 )}
+                {inq.transfer?.deedProof && (
+                  <Badge
+                    variant={DEED_PROOF_STATUS_VARIANT[inq.transfer.deedProof.status] ?? "default"}
+                    size="sm"
+                    className="w-fit"
+                  >
+                    <ScrollText className="h-3 w-3" aria-hidden="true" />
+                    {DEED_PROOF_STATUS_LABELS[inq.transfer.deedProof.status]?.[lang] ?? inq.transfer.deedProof.status}
+                  </Badge>
+                )}
                 <div className="flex flex-wrap gap-2 pt-1">
                   {inq.status === "OPEN" && (
                     <Button
@@ -687,18 +923,30 @@ export default function MyListingsPage() {
                       onClick={() => openConvert(inq)}
                     >
                       <DirectionalIcon icon={ArrowRight} className="h-3.5 w-3.5 me-1" aria-hidden="true" />
-                      {lang === "ar" ? "تحويل لصفقة" : "Convert to Deal"}
+                      {t("Convert to Deal", "تحويل لصفقة")}
                     </Button>
                   )}
-                  {inq.transfer?.status === "PENDING_SETTLEMENT" && (
+                  {inq.transfer?.status === "PENDING_SETTLEMENT" &&
+                    (inq.transfer.deedProof === null || inq.transfer.deedProof.status === "REJECTED") && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="min-h-[44px]"
+                        onClick={() => openProofDialog(inq)}
+                      >
+                        <ScrollText className="h-3.5 w-3.5 me-1" aria-hidden="true" />
+                        {t("Submit deed proof", "تقديم سند الملكية")}
+                      </Button>
+                    )}
+                  {inq.transfer?.status === "READY" && (
                     <Button
-                      variant="outline"
+                      variant="primary"
                       size="sm"
                       className="min-h-[44px]"
                       onClick={() => openSettle(inq)}
                     >
                       <Handshake className="h-3.5 w-3.5 me-1" aria-hidden="true" />
-                      {lang === "ar" ? "تسوية التحويل" : "Settle & Transfer"}
+                      {t("Settle & Transfer", "تسوية ونقل")}
                     </Button>
                   )}
                 </div>
@@ -863,8 +1111,8 @@ export default function MyListingsPage() {
         title={lang === "ar" ? "تسوية ونقل ملكية الوحدة" : "Settle & Transfer Unit"}
         description={
           lang === "ar"
-            ? `هل تريد تسوية ونقل الوحدة للمشتري نهائياً؟ تأكد من وجود عقد بيع موقّع قبل المتابعة. هذه العملية لا يمكن التراجع عنها.`
-            : `Confirm settlement and final transfer of the unit to the buyer. Ensure a signed sale contract exists before proceeding. This action cannot be undone.`
+            ? `هل تريد تسوية ونقل الوحدة للمشتري نهائياً؟ يتطلب ذلك عقد بيع موقّعاً وسند ملكية موثّقاً وترخيص هيئة موثّقاً لكلا المؤسستين وتفعيل نقل الملكية في المنصة. هذه العملية لا يمكن التراجع عنها.`
+            : `Confirm settlement and final transfer of the unit to the buyer. This requires a signed sale contract, a verified deed proof, both organizations REGA-verified, and conveyance enabled on the platform. This action cannot be undone.`
         }
         footer={
           <div className="flex justify-end gap-2">
@@ -884,6 +1132,166 @@ export default function MyListingsPage() {
             {settleError}
           </div>
         )}
+      </ResponsiveDialog>
+
+      {/* ── REGA authorization submit dialog ─────────────────────────────── */}
+      <ResponsiveDialog
+        open={regaDialogOpen}
+        onOpenChange={(open) => { if (!open && !regaSubmitting) setRegaDialogOpen(false); }}
+        title={t("REGA / FAL Authorization", "ترخيص الهيئة العامة للعقار (فال)")}
+        description={t(
+          "Submit your organization's REGA ad-license / FAL number. Platform staff will verify it before you can complete cross-org transfers. Re-submitting resets verification.",
+          "قدّم رقم ترخيص الإعلان (فال) لمؤسستك. سيوثّقه فريق المنصة قبل أن تتمكن من إتمام عمليات النقل بين المؤسسات. إعادة التقديم تُلغي التوثيق السابق.",
+        )}
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={() => setRegaDialogOpen(false)} disabled={regaSubmitting}>
+              {t("Cancel", "إلغاء")}
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleRegaSubmit}
+              disabled={regaSubmitting || (!regaIsSeller && !regaIsBuyer)}
+            >
+              {regaSubmitting && <Loader2 className="h-4 w-4 animate-spin me-1.5" aria-hidden="true" />}
+              {t("Submit", "إرسال")}
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-4 py-2">
+          {regaError && (
+            <div className="flex items-center gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
+              {regaError}
+            </div>
+          )}
+          <Field
+            label={t("REGA ad-license / FAL number", "رقم ترخيص الإعلان (فال)")}
+            hint={t("As issued by the Real Estate General Authority.", "كما هو صادر عن الهيئة العامة للعقار.")}
+          >
+            {(field) => (
+              <Input
+                {...field}
+                value={regaLicense}
+                onChange={(e) => setRegaLicense(e.target.value)}
+                placeholder={t("e.g. 1100xxxxxx", "مثال: 1100xxxxxx")}
+                dir="ltr"
+              />
+            )}
+          </Field>
+          <fieldset className="space-y-2">
+            <legend className="text-sm font-medium text-foreground">
+              {t("Authorized to act as", "مخوّل للتصرف كـ")}
+            </legend>
+            <label className="flex items-center gap-2 text-sm text-foreground min-h-[44px]">
+              <input
+                type="checkbox"
+                checked={regaIsSeller}
+                onChange={(e) => setRegaIsSeller(e.target.checked)}
+                className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+              />
+              {t("Seller (list & transfer out units)", "بائع (عرض ونقل الوحدات)")}
+            </label>
+            <label className="flex items-center gap-2 text-sm text-foreground min-h-[44px]">
+              <input
+                type="checkbox"
+                checked={regaIsBuyer}
+                onChange={(e) => setRegaIsBuyer(e.target.checked)}
+                className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+              />
+              {t("Buyer (receive transferred units)", "مشترٍ (استلام الوحدات المنقولة)")}
+            </label>
+            {!regaIsSeller && !regaIsBuyer && (
+              <p className="text-xs text-destructive">
+                {t("Select at least one role.", "اختر دوراً واحداً على الأقل.")}
+              </p>
+            )}
+          </fieldset>
+        </div>
+      </ResponsiveDialog>
+
+      {/* ── Deed-proof submission dialog ─────────────────────────────────── */}
+      <ResponsiveDialog
+        open={!!proofTarget}
+        onOpenChange={(open) => { if (!open && !proofSubmitting) setProofTarget(null); }}
+        title={t("Submit Deed-Transfer Proof", "تقديم سند نقل الملكية")}
+        description={t(
+          "Provide the deed details for this transfer. The deed number and owner national-ID are encrypted at rest and reviewed by platform staff before the transfer becomes ready.",
+          "أدخل بيانات الصك لهذا التحويل. يُشفَّر رقم الصك وهوية المالك عند التخزين ويراجعهما فريق المنصة قبل أن يصبح التحويل جاهزاً.",
+        )}
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={() => setProofTarget(null)} disabled={proofSubmitting}>
+              {t("Cancel", "إلغاء")}
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleProofSubmit}
+              disabled={proofSubmitting || !deedNumber.trim() || !ownerNationalId.trim()}
+            >
+              {proofSubmitting && <Loader2 className="h-4 w-4 animate-spin me-1.5" aria-hidden="true" />}
+              {t("Submit proof", "إرسال السند")}
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-4 py-2">
+          {proofError && (
+            <div className="flex items-center gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
+              {proofError}
+            </div>
+          )}
+          <Field label={t("Deed number", "رقم الصك")} required>
+            {(field) => (
+              <Input
+                {...field}
+                value={deedNumber}
+                onChange={(e) => setDeedNumber(e.target.value)}
+                placeholder={t("Deed number…", "رقم الصك…")}
+                dir="ltr"
+              />
+            )}
+          </Field>
+          <Field label={t("Owner national ID", "هوية المالك")} required>
+            {(field) => (
+              <Input
+                {...field}
+                value={ownerNationalId}
+                onChange={(e) => setOwnerNationalId(e.target.value)}
+                placeholder={t("10 digits", "10 أرقام")}
+                inputMode="numeric"
+                dir="ltr"
+              />
+            )}
+          </Field>
+          <Field
+            label={t("Deed document URL (optional)", "رابط وثيقة الصك (اختياري)")}
+            hint={t("Link to the uploaded deed file in your storage.", "رابط ملف الصك المرفوع في مساحة التخزين.")}
+          >
+            {(field) => (
+              <Input
+                {...field}
+                value={deedDocUrl}
+                onChange={(e) => setDeedDocUrl(e.target.value)}
+                placeholder="https://…"
+                dir="ltr"
+              />
+            )}
+          </Field>
+          <Field label={t("RETT certificate reference (optional)", "مرجع شهادة ضريبة التصرفات (اختياري)")}>
+            {(field) => (
+              <Input
+                {...field}
+                value={rettCertRef}
+                onChange={(e) => setRettCertRef(e.target.value)}
+                placeholder={t("ZATCA RETT reference…", "مرجع ضريبة التصرفات…")}
+                dir="ltr"
+              />
+            )}
+          </Field>
+        </div>
       </ResponsiveDialog>
     </div>
   );

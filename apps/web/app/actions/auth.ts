@@ -8,6 +8,13 @@ import { hash as bcryptHash } from "@node-rs/bcrypt";
 import { validatePassword } from "../../lib/password-policy";
 import { logAuditEvent } from "../../lib/audit";
 import { checkRateLimit } from "../../lib/rate-limit";
+import { sendTransactionalEmail } from "../../lib/email";
+import { verificationEmail } from "../../lib/email-templates";
+import {
+  issueEmailVerificationToken,
+  consumeEmailVerificationToken,
+  verifyEmailUrl,
+} from "../../lib/email-verification";
 
 const ALLOWED_LANDING_PAGES = [
   "/dashboard", "/dashboard/units",
@@ -40,6 +47,9 @@ export async function loginAction(formData: FormData) {
 
       if (message === "INVALID_CREDENTIALS") {
         return { error: "INVALID_CREDENTIALS" };
+      }
+      if (message === "EMAIL_NOT_VERIFIED") {
+        return { error: "EMAIL_NOT_VERIFIED" };
       }
       if (message === "DATABASE_ERROR") {
         return { error: "DATABASE_ERROR" };
@@ -151,6 +161,9 @@ export async function registerUser(data: {
           accountType,
           onboardingCompleted: false,
           invitedVia: "registration",
+          // Email-verification-before-activation: new accounts start unverified.
+          // Login is denied (EMAIL_NOT_VERIFIED) until the user confirms via email.
+          emailVerified: null,
         },
       });
 
@@ -175,19 +188,108 @@ export async function registerUser(data: {
     organizationId: user.organizationId,
   });
 
-  // Auto-sign-in the newly created user
+  // Email-verification-before-activation: do NOT auto-sign-in. Issue a single-use
+  // token and email a confirm link; the user activates by confirming, then logs in.
   try {
-    await signIn("credentials", {
-      email: data.email,
-      password: data.password,
-      redirect: false,
+    const rawToken = await issueEmailVerificationToken(user.id, user.email);
+    const template = verificationEmail({ name: user.name, verifyUrl: verifyEmailUrl(rawToken) });
+    const emailResult = await sendTransactionalEmail({
+      to: user.email,
+      subject: template.subject,
+      html: template.html,
+      text: template.text,
     });
-  } catch (error: any) {
-    // signIn may throw a redirect error in Next.js — that's fine
-    if (!error.message?.includes("NEXT_REDIRECT")) {
-      console.error("Auto-sign-in after registration failed:", error);
+    logAuditEvent({
+      userId: user.id,
+      userEmail: user.email,
+      userRole: user.role,
+      action: "EMAIL_VERIFICATION_REQUEST",
+      resource: "Auth",
+      metadata: { emailSent: emailResult.ok, emailCode: emailResult.code },
+      organizationId: user.organizationId,
+    });
+  } catch (error) {
+    // Never fail registration on email-send issues — the user can resend.
+    console.error("[register] verification email dispatch failed:", error);
+  }
+
+  return { ok: true, success: true, needsVerification: true, email: user.email };
+}
+
+/**
+ * Confirm an email-verification token (called from the POST button on the
+ * /auth/verify-email confirm page). Activation happens here — never on the GET —
+ * so link-prefetch / email scanners cannot consume the single-use token.
+ */
+// eslint-disable-next-line mimaric/require-action-guard -- public pre-auth flow: activates an account from an emailed single-use token; authorization IS the token (hash-matched, single-use, 24h TTL). No session exists yet.
+export async function confirmEmailVerificationAction(token: string) {
+  const result = await consumeEmailVerificationToken(token);
+  if (result.ok) {
+    if (result.userId && result.userEmail && result.userRole) {
+      logAuditEvent({
+        userId: result.userId,
+        userEmail: result.userEmail,
+        userRole: result.userRole,
+        action: "EMAIL_VERIFIED",
+        resource: "User",
+        resourceId: result.userId,
+        organizationId: null,
+      });
+    }
+    return { success: true };
+  }
+  return { error: result.reason ?? "invalid" };
+}
+
+/**
+ * Resend a verification email. Anti-enumeration: the response is IDENTICAL for
+ * not-found / already-verified / sent / rate-limited so an attacker learns
+ * nothing about whether an email exists or its verification state.
+ */
+// eslint-disable-next-line mimaric/require-action-guard -- public pre-auth flow: resends a verification email before the account is active (no session). Rate-limited per email+IP and anti-enumeration (identical generic response in all cases).
+export async function resendVerificationAction(email: string) {
+  const normalizedEmail = (email ?? "").toLowerCase().trim();
+
+  // Rate limit per email + per IP (mirrors registration / password-reset).
+  const h = await headers();
+  const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim();
+  if (ip) {
+    const ipRl = await checkRateLimit(`resend-verification:ip:${ip}`, 5, 60 * 60 * 1000);
+    if (!ipRl.allowed) {
+      return { success: true };
+    }
+  }
+  if (normalizedEmail) {
+    const emailRl = await checkRateLimit(`resend-verification:email:${normalizedEmail}`, 3, 60 * 60 * 1000);
+    if (!emailRl.allowed) {
+      return { success: true };
     }
   }
 
-  return { success: true, redirect: "/dashboard/onboarding" };
+  try {
+    const user = normalizedEmail
+      ? await db.user.findUnique({
+          where: { email: normalizedEmail },
+          select: { id: true, email: true, name: true, emailVerified: true },
+        })
+      : null;
+
+    // Only send when the account exists AND is still unverified. In every other
+    // case we return the same generic success below.
+    if (user && !user.emailVerified) {
+      const rawToken = await issueEmailVerificationToken(user.id, user.email);
+      const template = verificationEmail({ name: user.name, verifyUrl: verifyEmailUrl(rawToken) });
+      await sendTransactionalEmail({
+        to: user.email,
+        subject: template.subject,
+        html: template.html,
+        text: template.text,
+      });
+    }
+  } catch (error) {
+    console.error("[resend-verification] failed:", error);
+    // Still return generic success — do not leak the failure.
+  }
+
+  return { success: true };
 }

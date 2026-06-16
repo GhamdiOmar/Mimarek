@@ -1,7 +1,11 @@
 "use client";
 
 import { useLanguage } from "../../../components/LanguageProvider";
+import { useUnsavedChanges } from "../../../hooks/useUnsavedChanges";
 import * as React from "react";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import {
   Building2,
   Search,
@@ -32,7 +36,10 @@ import {
   IconButton,
   Badge,
   Input,
+  Field,
+  SelectField,
   SARAmount,
+  SARAmountInput,
   Card,
   DataTable,
   type ColumnDef,
@@ -70,6 +77,7 @@ import { Upload } from "lucide-react";
 import { ImportWizard } from "../../../components/import/ImportWizard";
 import { UNIT_IMPORT_CONFIG } from "../../../components/import/import-config";
 import { validateUnitImport, commitUnitImport } from "../../actions/unit-import";
+import { UNIT_STATUS_LABEL as unitStatusLabels } from "../../../lib/domain-labels";
 
 const unitTypeLabels: Record<string, { ar: string; en: string }> = {
   APARTMENT: { ar: "شقة", en: "Apartment" },
@@ -78,14 +86,6 @@ const unitTypeLabels: Record<string, { ar: string; en: string }> = {
   RETAIL: { ar: "محل تجاري", en: "Retail" },
   WAREHOUSE: { ar: "مستودع", en: "Warehouse" },
   PARKING: { ar: "موقف", en: "Parking" },
-};
-
-const unitStatusLabels: Record<string, { ar: string; en: string }> = {
-  AVAILABLE: { ar: "متاح", en: "Available" },
-  RESERVED: { ar: "محجوز", en: "Reserved" },
-  SOLD: { ar: "مباع", en: "Sold" },
-  RENTED: { ar: "مؤجر", en: "Rented" },
-  MAINTENANCE: { ar: "صيانة", en: "Maintenance" },
 };
 
 
@@ -108,15 +108,61 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
   const [mobileTypeFilter, setMobileTypeFilter] = React.useState<string>("");
   const [mobileMinPrice, setMobileMinPrice] = React.useState<string>("");
   const [mobileMaxPrice, setMobileMaxPrice] = React.useState<string>("");
-  const [newUnit, setNewUnit] = React.useState({
-    number: "",
-    type: "APARTMENT",
-    area: "",
-    price: "",
-    markupPrice: "",
-    rentalPrice: "",
-    status: "AVAILABLE",
+  // ── Add-Unit form (react-hook-form + zod, after-blur inline validation) ──
+  // `status` is intentionally NOT a form field: `createUnit` hard-codes the new
+  // unit's status to AVAILABLE server-side (units.ts "status is always AVAILABLE
+  // on create") and its zod schema strips any extra key — a status picker here
+  // would be ignored, so it is omitted.
+  const createSchema = React.useMemo(
+    () =>
+      z.object({
+        number: z
+          .string()
+          .min(1, lang === "ar" ? "رقم الوحدة مطلوب" : "Unit number is required"),
+        type: z
+          .string()
+          .min(1, lang === "ar" ? "نوع الوحدة مطلوب" : "Unit type is required"),
+        area: z
+          .number({ invalid_type_error: lang === "ar" ? "أدخل قيمة صحيحة" : "Enter a valid number" })
+          .positive(lang === "ar" ? "يجب أن تكون المساحة أكبر من صفر" : "Area must be greater than zero")
+          .optional(),
+        price: z
+          .number({ invalid_type_error: lang === "ar" ? "أدخل قيمة صحيحة" : "Enter a valid amount" })
+          .positive(lang === "ar" ? "يجب أن تكون القيمة أكبر من صفر" : "Amount must be greater than zero")
+          .optional(),
+        markupPrice: z
+          .number({ invalid_type_error: lang === "ar" ? "أدخل قيمة صحيحة" : "Enter a valid amount" })
+          .positive(lang === "ar" ? "يجب أن تكون القيمة أكبر من صفر" : "Amount must be greater than zero")
+          .optional(),
+        rentalPrice: z
+          .number({ invalid_type_error: lang === "ar" ? "أدخل قيمة صحيحة" : "Enter a valid amount" })
+          .positive(lang === "ar" ? "يجب أن تكون القيمة أكبر من صفر" : "Amount must be greater than zero")
+          .optional(),
+      }),
+    [lang],
+  );
+
+  type CreateFormValues = z.infer<typeof createSchema>;
+
+  const {
+    control,
+    handleSubmit,
+    reset,
+    formState,
+  } = useForm<CreateFormValues>({
+    resolver: zodResolver(createSchema),
+    mode: "onTouched",
+    defaultValues: {
+      number: "",
+      type: "APARTMENT",
+      area: undefined,
+      price: undefined,
+      markupPrice: undefined,
+      rentalPrice: undefined,
+    },
   });
+
+  useUnsavedChanges(formState.isDirty);
 
   // Error state for inline error display
   const [error, setError] = React.useState<string | null>(null);
@@ -202,37 +248,30 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
     }
   };
 
-  const handleAddUnit = async () => {
+  const onCreateSubmit = handleSubmit(async (values) => {
     setUpdating(true);
+    setError(null);
     try {
+      // values are already number|undefined from the zod resolver — pass straight
+      // through; payload shape is identical to the prior parseFloat-or-undefined
+      // version that `createUnit` consumes.
       const unit = await createUnit({
-        ...newUnit,
-        area: newUnit.area ? parseFloat(newUnit.area) : undefined,
-        price: newUnit.price ? parseFloat(newUnit.price) : undefined,
-        markupPrice: newUnit.markupPrice
-          ? parseFloat(newUnit.markupPrice)
-          : undefined,
-        rentalPrice: newUnit.rentalPrice
-          ? parseFloat(newUnit.rentalPrice)
-          : undefined,
+        number: values.number,
+        type: values.type,
+        area: values.area,
+        price: values.price,
+        markupPrice: values.markupPrice,
+        rentalPrice: values.rentalPrice,
       });
       setUnits((prev) => [...prev, unit]);
       setShowAddModal(false);
-      setNewUnit({
-        number: "",
-        type: "APARTMENT",
-        area: "",
-        price: "",
-        markupPrice: "",
-        rentalPrice: "",
-        status: "AVAILABLE",
-      });
+      reset();
     } catch (err) {
       setError(lang === "ar" ? "فشل إنشاء الوحدة" : "Failed to create unit");
     } finally {
       setUpdating(false);
     }
-  };
+  });
 
   const handleBulkPriceUpdate = async (ids?: string[]) => {
     if (!bulkPrice) return;
@@ -1720,7 +1759,8 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
               {lang === "ar" ? "إلغاء" : "Cancel"}
             </Button>
             <Button
-              onClick={handleAddUnit}
+              type="submit"
+              form="add-unit-form"
               disabled={updating}
               style={{ display: "inline-flex" }}
               className="gap-2"
@@ -1731,96 +1771,163 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
           </div>
         }
       >
-        <div className="space-y-4">
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-muted-foreground">
-              {lang === "ar" ? "رقم الوحدة" : "Unit Number"}
-            </label>
-            <Input
-              value={newUnit.number}
-              onChange={(e) =>
-                setNewUnit({ ...newUnit, number: e.target.value })
-              }
-              placeholder="e.g. A-101"
+        <form id="add-unit-form" onSubmit={onCreateSubmit} className="space-y-4">
+          {/* Required-fields legend */}
+          <p className="text-xs text-muted-foreground">
+            {lang === "ar"
+              ? "الحقول المطلوبة معلّمة بـ *"
+              : "Required fields marked with *"}
+          </p>
+
+          {/* Unit number — required */}
+          <Controller
+            name="number"
+            control={control}
+            render={({ field, fieldState }) => (
+              <Field
+                label={lang === "ar" ? "رقم الوحدة" : "Unit Number"}
+                required
+                error={fieldState.error?.message}
+              >
+                {(f) => (
+                  <Input
+                    {...f}
+                    value={field.value ?? ""}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    placeholder="e.g. A-101"
+                  />
+                )}
+              </Field>
+            )}
+          />
+
+          {/* Unit type — required (native select, semantics preserved) */}
+          <Controller
+            name="type"
+            control={control}
+            render={({ field, fieldState }) => (
+              <SelectField
+                label={lang === "ar" ? "نوع الوحدة" : "Unit Type"}
+                requiredMark
+                error={fieldState.error?.message}
+                value={field.value ?? ""}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+              >
+                {Object.entries(unitTypeLabels).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label[lang]}
+                  </option>
+                ))}
+              </SelectField>
+            )}
+          />
+
+          <div className="grid grid-cols-2 gap-4">
+            {/* Area — optional numeric */}
+            <Controller
+              name="area"
+              control={control}
+              render={({ field, fieldState }) => (
+                <Field
+                  label={lang === "ar" ? "المساحة (م²)" : "Area (sqm)"}
+                  error={fieldState.error?.message}
+                >
+                  {(f) => (
+                    <Input
+                      {...f}
+                      type="number"
+                      inputMode="decimal"
+                      value={field.value ?? ""}
+                      onChange={(e) =>
+                        field.onChange(
+                          e.target.value === "" ? undefined : e.target.valueAsNumber,
+                        )
+                      }
+                      onBlur={field.onBlur}
+                      placeholder="0.00"
+                    />
+                  )}
+                </Field>
+              )}
+            />
+
+            {/* Cost price — optional money */}
+            <Controller
+              name="price"
+              control={control}
+              render={({ field, fieldState }) => (
+                <Field
+                  label={lang === "ar" ? "سعر التكلفة" : "Cost Price"}
+                  error={fieldState.error?.message}
+                >
+                  {(f) => (
+                    <SARAmountInput
+                      {...f}
+                      value={field.value ?? null}
+                      onChange={(v) => field.onChange(v ?? undefined)}
+                      onBlur={field.onBlur}
+                      invalid={!!fieldState.error}
+                      locale={lang as "ar" | "en"}
+                      placeholder="0.00"
+                    />
+                  )}
+                </Field>
+              )}
             />
           </div>
 
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-muted-foreground">
-              {lang === "ar" ? "نوع الوحدة" : "Unit Type"}
-            </label>
-            <select
-              value={newUnit.type}
-              onChange={(e) =>
-                setNewUnit({ ...newUnit, type: e.target.value })
-              }
-              className="w-full flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {Object.entries(unitTypeLabels).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label[lang]}
-                </option>
-              ))}
-            </select>
-          </div>
+          <div className="grid grid-cols-2 gap-4">
+            {/* Selling price — optional money */}
+            <Controller
+              name="markupPrice"
+              control={control}
+              render={({ field, fieldState }) => (
+                <Field
+                  label={lang === "ar" ? "سعر البيع" : "Selling Price"}
+                  error={fieldState.error?.message}
+                >
+                  {(f) => (
+                    <SARAmountInput
+                      {...f}
+                      value={field.value ?? null}
+                      onChange={(v) => field.onChange(v ?? undefined)}
+                      onBlur={field.onBlur}
+                      invalid={!!fieldState.error}
+                      locale={lang as "ar" | "en"}
+                      placeholder="0.00"
+                    />
+                  )}
+                </Field>
+              )}
+            />
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-muted-foreground">
-                {lang === "ar" ? "المساحة (م²)" : "Area (sqm)"}
-              </label>
-              <Input
-                type="number"
-                value={newUnit.area}
-                onChange={(e) =>
-                  setNewUnit({ ...newUnit, area: e.target.value })
-                }
-                placeholder="0.00"
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-muted-foreground">
-                {lang === "ar" ? "سعر التكلفة" : "Cost Price"}
-              </label>
-              <Input
-                type="number"
-                value={newUnit.price}
-                onChange={(e) =>
-                  setNewUnit({ ...newUnit, price: e.target.value })
-                }
-                placeholder="0.00"
-              />
-            </div>
+            {/* Rental price — optional money */}
+            <Controller
+              name="rentalPrice"
+              control={control}
+              render={({ field, fieldState }) => (
+                <Field
+                  label={lang === "ar" ? "سعر الإيجار" : "Rental Price"}
+                  error={fieldState.error?.message}
+                >
+                  {(f) => (
+                    <SARAmountInput
+                      {...f}
+                      value={field.value ?? null}
+                      onChange={(v) => field.onChange(v ?? undefined)}
+                      onBlur={field.onBlur}
+                      invalid={!!fieldState.error}
+                      locale={lang as "ar" | "en"}
+                      placeholder="0.00"
+                    />
+                  )}
+                </Field>
+              )}
+            />
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-muted-foreground">
-                {lang === "ar" ? "سعر البيع" : "Selling Price"}
-              </label>
-              <Input
-                type="number"
-                value={newUnit.markupPrice}
-                onChange={(e) =>
-                  setNewUnit({ ...newUnit, markupPrice: e.target.value })
-                }
-                placeholder="0.00"
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-muted-foreground">
-                {lang === "ar" ? "سعر الإيجار" : "Rental Price"}
-              </label>
-              <Input
-                type="number"
-                value={newUnit.rentalPrice}
-                onChange={(e) =>
-                  setNewUnit({ ...newUnit, rentalPrice: e.target.value })
-                }
-                placeholder="0.00"
-              />
-            </div>
-          </div>
-        </div>
+        </form>
       </ResponsiveDialog>
 
       {/* Delete Confirmation Dialog */}

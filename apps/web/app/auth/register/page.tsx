@@ -38,8 +38,11 @@ export default function RegisterPage() {
         } else {
           setError(lang === "ar" ? "حدث خطأ." : "An error occurred.");
         }
+      } else if ((result as any).needsVerification) {
+        // Email-verification-before-activation: go to the check-inbox screen.
+        router.push(`/auth/verify-email/sent?email=${encodeURIComponent(email)}`);
       } else {
-        router.push(result.redirect || "/dashboard/onboarding");
+        router.push((result as any).redirect || "/dashboard/onboarding");
       }
     } catch {
       setError(lang === "ar" ? "حدث خطأ في النظام." : "System error.");
