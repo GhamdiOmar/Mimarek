@@ -21,7 +21,7 @@
 //   "tenant"   — customer-org users only. System (platform) users are redirected
 //                to /dashboard/admin when they hit one of these.
 //   "platform" — Mimaric platform staff only (SYSTEM_ADMIN / SYSTEM_SUPPORT).
-//   "shared"   — visible to both audiences (e.g. /dashboard/more, notifications).
+//   "shared"   — visible to both audiences (e.g. /dashboard/more/profile, notifications).
 //                System users are NOT redirected away from these.
 
 import type { Permission } from "./permissions";
@@ -91,9 +91,9 @@ export const ROUTE_GUARDS: Record<string, RouteGuard> = {
 
   // ── Shared (both audiences — system users NOT redirected away) ─────────────
   // These are not rendered as nav items; they exist so auth.config.ts's
-  // audience lookup keeps system users on them (matches the old hardcoded
-  // allowlist: /dashboard/more, /dashboard/notifications).
-  "/dashboard/more": { permission: "dashboard:read", audience: "shared" },
+  // audience lookup keeps system users on them.
+  // /dashboard/more hub was decommissioned — only the profile sub-route remains.
+  "/dashboard/more/profile": { permission: "dashboard:read", audience: "shared" },
   "/dashboard/notifications": { permission: "notifications:read", audience: "shared" },
 };
 

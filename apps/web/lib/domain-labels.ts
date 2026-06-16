@@ -26,6 +26,7 @@ import type {
   MaintenancePriority,
   MaintenanceCategory,
   MarketplaceListingStatus,
+  UnitStatus,
 } from "@repo/db";
 
 // ─── Badge variant union (mirrors packages/ui/src/components/Badge.tsx) ───────
@@ -154,26 +155,59 @@ export const MAINTENANCE_CATEGORY_LABEL = {
   { ar: string; en: string }
 >;
 
+// ─── UnitStatus ───────────────────────────────────────────────────────────────
+// QA-ARCH-02: added to registry so pages can import instead of declaring local maps.
+// Covers all 8 enum members: the 5 common ones + SUSPENDED/WITHDRAWN/HANDED_OVER.
+
+export const UNIT_STATUS_LABEL = {
+  AVAILABLE:    { ar: "متاح",           en: "Available" },
+  RESERVED:     { ar: "محجوز",          en: "Reserved" },
+  SOLD:         { ar: "مباع",           en: "Sold" },
+  RENTED:       { ar: "مؤجر",           en: "Rented" },
+  MAINTENANCE:  { ar: "صيانة",          en: "Maintenance" },
+  SUSPENDED:    { ar: "موقوف مؤقتاً",   en: "Suspended" },
+  WITHDRAWN:    { ar: "مسحوب",          en: "Withdrawn" },
+  HANDED_OVER:  { ar: "تم التسليم",     en: "Handed Over" },
+} satisfies Record<UnitStatus, { ar: string; en: string }> as Record<
+  string,
+  { ar: string; en: string }
+>;
+
+export const UNIT_STATUS_VARIANT = {
+  AVAILABLE:   "available",
+  RESERVED:    "reserved",
+  SOLD:        "sold",
+  RENTED:      "rented",
+  MAINTENANCE: "maintenance",
+  SUSPENDED:   "warning",
+  WITHDRAWN:   "default",
+  HANDED_OVER: "success",
+} satisfies Record<UnitStatus, BadgeVariant> as Record<string, BadgeVariant>;
+
 // ─── MarketplaceListingStatus ─────────────────────────────────────────────────
 // The admin/marketplace/page.tsx originally stored English-only strings.
-// Arabic strings have been added here; see NATIVE REVIEW notes below.
+// Arabic strings have been native-reviewed (F9, 2026-06-16); changes below.
 //
-// ⚠️ NATIVE REVIEW REQUIRED (strings inferred from context, not sourced from
-//    an existing per-page Arabic copy):
-//   UNDER_CONTRACT  — "تحت العقد"
-//   SOLD_TRANSFERRED — "مُنقَّل"
-//   UNPUBLISHED     — "غير منشور"
-//   REJECTED        — "مرفوض"  (also: value was absent from the original page map)
+// ⚠️ OMAR FINAL-REVIEW REQUESTED for SOLD_TRANSFERRED (see comment inline).
+// All other strings confirmed as standard Saudi PropTech usage.
 
 export const MARKETPLACE_LISTING_STATUS_LABEL = {
-  DRAFT: { ar: "مسودة", en: "Draft" },
-  PUBLISHED: { ar: "منشور", en: "Published" },
-  UNDER_CONTRACT: { ar: "تحت العقد", en: "Under Contract" }, // ⚠️ inferred — review
-  SOLD_TRANSFERRED: { ar: "مُنقَّل", en: "Transferred" },   // ⚠️ inferred — review
-  UNPUBLISHED: { ar: "غير منشور", en: "Unpublished" },       // ⚠️ inferred — review
-  EXPIRED: { ar: "منتهي", en: "Expired" },
-  REJECTED: { ar: "مرفوض", en: "Rejected" },                 // ⚠️ added — absent from original map; inferred
-  SUSPENDED: { ar: "موقوف", en: "Suspended" },
+  DRAFT:            { ar: "مسودة",          en: "Draft" },
+  PUBLISHED:        { ar: "منشور",           en: "Published" },
+  // "تحت العقد" is the standard Saudi RE term for a listing under a binding
+  // purchase contract (pre-transfer). Confirmed correct.
+  UNDER_CONTRACT:   { ar: "تحت العقد",       en: "Under Contract" },
+  // ⚠️ OMAR: changed from "مُنقَّل" (unusual shadda form) to "نُقلت الملكية"
+  // (standard Saudi deed-transfer phrasing used in Ejar/REGA docs).
+  // Alternative: "منقولة الملكية". Please confirm which matches your audience.
+  SOLD_TRANSFERRED: { ar: "نُقلت الملكية",   en: "Transferred" },
+  // "غير منشور" is the natural antonym of "منشور" in platform Arabic. Confirmed.
+  UNPUBLISHED:      { ar: "غير منشور",       en: "Unpublished" },
+  EXPIRED:          { ar: "منتهي",           en: "Expired" },
+  // "مرفوض" is standard for a moderation-rejected listing. Confirmed.
+  REJECTED:         { ar: "مرفوض",           en: "Rejected" },
+  // "موقوف" is the correct term for an admin-suspended listing. Confirmed.
+  SUSPENDED:        { ar: "موقوف",           en: "Suspended" },
 } satisfies Record<MarketplaceListingStatus, { ar: string; en: string }> as Record<
   string,
   { ar: string; en: string }

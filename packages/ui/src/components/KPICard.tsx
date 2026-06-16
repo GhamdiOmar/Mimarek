@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowUpRight, ArrowDownRight, Minus, Info } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "../lib/utils";
+import { buildSparklinePath } from "../lib/sparkline";
 import {
   Tooltip,
   TooltipContent,
@@ -127,21 +128,6 @@ const STROKE: Record<KPIAccent, string> = {
   info: "hsl(var(--info))",
   accent: "hsl(var(--accent))",
 };
-
-function sparkPath(points: number[], w: number, h: number): string {
-  if (points.length < 2) return "";
-  const max = Math.max(...points);
-  const min = Math.min(...points);
-  const span = max - min || 1;
-  const stepX = w / (points.length - 1);
-  return points
-    .map((p, i) => {
-      const x = i * stepX;
-      const y = h - ((p - min) / span) * h;
-      return `${i === 0 ? "M" : "L"}${x.toFixed(2)},${y.toFixed(2)}`;
-    })
-    .join(" ");
-}
 
 function resolveDirection(d?: KPIDelta): "up" | "down" | "flat" {
   if (!d) return "flat";
@@ -377,7 +363,7 @@ export function KPICard({
           aria-hidden="true"
         >
           <path
-            d={sparkPath(sparkline, 100, isHero ? 48 : 32)}
+            d={buildSparklinePath(sparkline, 100, isHero ? 48 : 32)}
             fill="none"
             stroke={STROKE[resolvedAccent]}
             strokeWidth={isHero ? 2 : 1.75}

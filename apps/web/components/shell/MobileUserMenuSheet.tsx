@@ -76,7 +76,7 @@ export function MobileUserMenuSheet({ open, onOpenChange, orgName }: MobileUserM
   return (
     <BottomSheet open={open} onOpenChange={onOpenChange}>
       <div className="space-y-4">
-        {/* Profile header → profile page (the only path to it since the bottom-tabs "More" was retired) */}
+        {/* Profile header → profile page */}
         <Link
           href="/dashboard/more/profile"
           onClick={() => onOpenChange(false)}

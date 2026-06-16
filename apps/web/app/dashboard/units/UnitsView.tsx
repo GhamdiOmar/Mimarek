@@ -70,6 +70,7 @@ import { Upload } from "lucide-react";
 import { ImportWizard } from "../../../components/import/ImportWizard";
 import { UNIT_IMPORT_CONFIG } from "../../../components/import/import-config";
 import { validateUnitImport, commitUnitImport } from "../../actions/unit-import";
+import { UNIT_STATUS_LABEL as unitStatusLabels } from "../../../lib/domain-labels";
 
 const unitTypeLabels: Record<string, { ar: string; en: string }> = {
   APARTMENT: { ar: "شقة", en: "Apartment" },
@@ -78,14 +79,6 @@ const unitTypeLabels: Record<string, { ar: string; en: string }> = {
   RETAIL: { ar: "محل تجاري", en: "Retail" },
   WAREHOUSE: { ar: "مستودع", en: "Warehouse" },
   PARKING: { ar: "موقف", en: "Parking" },
-};
-
-const unitStatusLabels: Record<string, { ar: string; en: string }> = {
-  AVAILABLE: { ar: "متاح", en: "Available" },
-  RESERVED: { ar: "محجوز", en: "Reserved" },
-  SOLD: { ar: "مباع", en: "Sold" },
-  RENTED: { ar: "مؤجر", en: "Rented" },
-  MAINTENANCE: { ar: "صيانة", en: "Maintenance" },
 };
 
 
