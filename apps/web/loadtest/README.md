@@ -48,7 +48,7 @@ Verify: `k6 version` should print `k6 v0.5x.x (go...)`.
 # Against staging (recommended — HTTP/2, real DB pool)
 BASE_URL=https://staging.mimaric.sa \
 TEST_EMAIL=admin@mimaric.sa \
-TEST_PASSWORD=mimaric2026 \
+TEST_PASSWORD="$SEED_PASSWORD" \
 k6 run apps/web/loadtest/login-and-browse.js
 ```
 
@@ -58,7 +58,7 @@ k6 run apps/web/loadtest/login-and-browse.js
 |---|---|---|
 | `BASE_URL` | `http://localhost:3000` | Full origin of the target instance. Must match `NEXTAUTH_URL` on the server exactly (CSRF check). |
 | `TEST_EMAIL` | `admin@mimaric.sa` | Login email (single-account mode). |
-| `TEST_PASSWORD` | `mimaric2026` | Login password (single-account mode). |
+| `TEST_PASSWORD` | _(required)_ | Login password (single-account mode). Supply from the env — the seed dev password is in AGENTS.md §9. |
 | `TEST_USER_POOL` | _(unset)_ | Comma-separated `email:password` pairs for multi-account mode. Use when `login_spike` scenario is enabled to avoid rate-limiter conflicts. Example: `a@x.sa:pass1,b@x.sa:pass2`. |
 
 ### Disabling the login_spike scenario

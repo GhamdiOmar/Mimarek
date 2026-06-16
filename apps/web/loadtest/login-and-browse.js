@@ -9,7 +9,7 @@
  * Run:
  *   BASE_URL=https://staging.mimaric.sa \
  *   TEST_EMAIL=admin@mimaric.sa \
- *   TEST_PASSWORD=mimaric2026 \
+ *   TEST_PASSWORD="$SEED_PASSWORD" \
  *   k6 run apps/web/loadtest/login-and-browse.js
  *
  * ─── §3.9 GOTCHAS ──────────────────────────────────────────────────────────
@@ -80,7 +80,9 @@ const USER_POOL = USER_POOL_RAW
   : [
       {
         email:    __ENV.TEST_EMAIL    || "admin@mimaric.sa",
-        password: __ENV.TEST_PASSWORD || "mimaric2026",
+        // No hardcoded default — TEST_PASSWORD must be supplied in the env (the
+        // seed login password is documented in AGENTS.md §9, not committed here).
+        password: __ENV.TEST_PASSWORD || "",
       },
     ];
 
