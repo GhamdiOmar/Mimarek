@@ -193,6 +193,8 @@ export const UNIT_STATUS_VARIANT = {
 
 export const MARKETPLACE_LISTING_STATUS_LABEL = {
   DRAFT:            { ar: "مسودة",          en: "Draft" },
+  // "قيد المراجعة" = awaiting platform moderation before publishing (P3 conveyance).
+  PENDING_REVIEW:   { ar: "قيد المراجعة",    en: "Pending Review" },
   PUBLISHED:        { ar: "منشور",           en: "Published" },
   // "تحت العقد" is the standard Saudi RE term for a listing under a binding
   // purchase contract (pre-transfer). Confirmed correct.
@@ -215,6 +217,7 @@ export const MARKETPLACE_LISTING_STATUS_LABEL = {
 
 export const MARKETPLACE_LISTING_STATUS_VARIANT = {
   DRAFT: "default",
+  PENDING_REVIEW: "warning",  // awaiting moderation — neutral-pending tone
   PUBLISHED: "success",
   UNDER_CONTRACT: "info",
   SOLD_TRANSFERRED: "sold",

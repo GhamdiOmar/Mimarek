@@ -93,6 +93,8 @@ ALTER TABLE IF EXISTS public."SystemConfig"              ENABLE ROW LEVEL SECURI
 ALTER TABLE IF EXISTS public."MarketplaceListing"        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public."MarketplaceInquiry"        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public."UnitTransferTransaction"   ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public."MarketplaceDeedProof"      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public."OrgRegaAuthorization"      ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public."SequenceCounter"           ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public."RateLimitCounter"          ENABLE ROW LEVEL SECURITY;
 

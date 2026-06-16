@@ -11,9 +11,16 @@ import {
   listSellerOrgsWithListings,
   type MarketplaceListingFilters,
 } from "../../lib/marketplace/listing-view";
-import { encryptCustomerData } from "../../lib/pii-crypto";
+import { encryptCustomerData, safeDecryptField } from "../../lib/pii-crypto";
+import { encrypt } from "../../lib/encryption";
 import { normalizeSaudiPhoneE164 } from "../../lib/phone";
 import { checkRateLimit } from "../../lib/rate-limit";
+import { isSystemRole } from "../../lib/permissions";
+import { isConveyanceEnabled } from "../../lib/marketplace/conveyance";
+import {
+  isValidListingTransition,
+  transitionTransfer,
+} from "../../lib/marketplace/state-machine";
 
 // Saudi National Address short code: 4 letters + 4 digits (e.g. "RRRA2929").
 const SHORT_ADDRESS_RE = /^[A-Z]{4}\d{4}$/;
@@ -240,25 +247,29 @@ export async function publishMarketplaceListing(
       ? new Date(Date.now() + payload.expiresInDays * 86400000)
       : null;
 
+    // A seller can NEVER self-publish/self-approve. Submitting always lands the
+    // listing in PENDING_REVIEW (compliance PENDING_REVIEW too); only platform
+    // moderation (moderateApproveListing) can take it PENDING_REVIEW → PUBLISHED
+    // / complianceStatus APPROVED. This closes the self-approve bug where an
+    // adLicenseNumber on the payload auto-approved the listing.
     const result = await tx.marketplaceListing.update({
       where: { id: listingId },
       data: {
-        status: "PUBLISHED",
+        status: "PENDING_REVIEW",
         title: payload.title.trim(),
         description: payload.description?.trim() || null,
         price: payload.price,
         shortAddress: shortAddr,
         adLicenseNumber: payload.adLicenseNumber?.trim() || null,
         buildingAge: payload.buildingAge ?? null,
-        complianceStatus: payload.adLicenseNumber?.trim() ? "APPROVED" : "PENDING_REVIEW",
-        publishedAt: new Date(),
+        complianceStatus: "PENDING_REVIEW",
         expiresAt,
         unpublishedReason: null,
       },
     });
     await tx.unit.update({
       where: { id: listing.unitId },
-      data: { marketplaceStatus: "PUBLISHED", currentMarketplaceListingId: listingId },
+      data: { marketplaceStatus: "PENDING_REVIEW", currentMarketplaceListingId: listingId },
     });
     return result;
   });
@@ -267,7 +278,7 @@ export async function publishMarketplaceListing(
     userId: session.userId,
     userEmail: session.email,
     userRole: session.role,
-    action: "MARKETPLACE_LISTING_PUBLISHED",
+    action: "MARKETPLACE_LISTING_SUBMITTED",
     resource: "MarketplaceListing",
     resourceId: listingId,
     organizationId: session.organizationId,
@@ -767,7 +778,7 @@ export async function settleMarketplaceTransfer(transferId: string) {
 
   const transfer = await db.unitTransferTransaction.findFirst({
     where: { id: transferId, sellerOrgId: session.organizationId },
-    include: { inquiry: true },
+    include: { inquiry: true, deedProof: true },
   });
   if (!transfer) throw new Error("Transfer not found for your organization.");
   if (transfer.status === "COMPLETED") {
@@ -777,7 +788,24 @@ export async function settleMarketplaceTransfer(transferId: string) {
     throw new Error("This transfer cannot be settled in its current state.");
   }
 
-  // Settlement gate: a SIGNED SALE contract must exist for the seller unit.
+  // ── Gate 1: conveyance kill-switch (UNCACHED, fail-closed). ────────────────
+  // The whole reserve-and-buy rail ships DARK behind this flag. Checked here
+  // (early reject) AND re-read inside the transaction (TOCTOU — Gate 6).
+  if (!(await isConveyanceEnabled())) {
+    logAuditEvent({
+      userId: session.userId,
+      userEmail: session.email,
+      userRole: session.role,
+      action: "MARKETPLACE_TRANSFER_BLOCKED",
+      resource: "UnitTransferTransaction",
+      resourceId: transferId,
+      metadata: { reason: "conveyance_disabled" },
+      organizationId: session.organizationId,
+    });
+    throw new Error("Marketplace conveyance is currently disabled on this platform.");
+  }
+
+  // ── Gate 2: a SIGNED SALE contract must exist for the seller unit. ─────────
   const settledContract = await db.contract.findFirst({
     where: {
       unitId: transfer.sellerUnitId,
@@ -793,6 +821,25 @@ export async function settleMarketplaceTransfer(transferId: string) {
     );
   }
 
+  // ── Gate 3: the deed-transfer proof must be VERIFIED by platform staff. ────
+  if (transfer.deedProof?.status !== "VERIFIED") {
+    throw new Error("Deed-transfer proof must be verified before settlement.");
+  }
+
+  // ── Gate 4: both the seller and buyer org must be REGA-verified. ───────────
+  const [sellerAuth, buyerAuth] = await Promise.all([
+    db.orgRegaAuthorization.findUnique({ where: { organizationId: transfer.sellerOrgId } }),
+    db.orgRegaAuthorization.findUnique({ where: { organizationId: transfer.buyerOrgId } }),
+  ]);
+  if (sellerAuth?.status !== "VERIFIED" || buyerAuth?.status !== "VERIFIED") {
+    throw new Error("Both organizations must be REGA-verified before settlement.");
+  }
+
+  // ── Gate 5: the transfer must be in READY (set by verifyDeedTransferProof). ─
+  if (transfer.status !== "READY") {
+    throw new Error("Transfer is not ready for settlement — deed proof must be verified first.");
+  }
+
   logAuditEvent({
     userId: session.userId,
     userEmail: session.email,
@@ -805,6 +852,13 @@ export async function settleMarketplaceTransfer(transferId: string) {
 
   try {
     const outcome = await db.$transaction(async (tx) => {
+      // ── Gate 6: re-read the kill-switch INSIDE the tx (TOCTOU). ─────────────
+      // A platform admin may have flipped conveyance OFF between the early gate
+      // and here; this aborts + rolls back the whole settlement.
+      if (!(await isConveyanceEnabled())) {
+        throw new Error("Conveyance disabled mid-settlement.");
+      }
+
       const sellerUnit = await tx.unit.findFirst({
         where: { id: transfer.sellerUnitId, organizationId: transfer.sellerOrgId },
       });
@@ -845,28 +899,21 @@ export async function settleMarketplaceTransfer(transferId: string) {
         data: { status: "CLOSED_WON" },
       });
 
-      // CAS: transition the transfer PENDING_SETTLEMENT → COMPLETED atomically.
-      // The sellerUnit.transferredToOrgId sentinel (checked above) is the primary
-      // idempotency guard; this CAS adds a second DB-level lock so a concurrent
+      // CAS: transition the transfer READY → COMPLETED atomically (via the shared
+      // state-machine helper). READY was set by verifyDeedTransferProof; the
+      // sellerUnit.transferredToOrgId sentinel (checked above) is the primary
+      // idempotency guard, and this CAS adds a second DB-level lock so a concurrent
       // settle attempt that passed the sentinel check before the tx committed will
       // also fail cleanly rather than double-completing.
-      const transferClaim = await tx.unitTransferTransaction.updateMany({
-        where: { id: transferId, status: "PENDING_SETTLEMENT" },
-        data: {
-          status: "COMPLETED",
-          buyerUnitId: buyerUnit.id,
-          contractId: settledContract.id,
-          settledAt: new Date(),
-          completedAt: new Date(),
-        },
+      const completed = await transitionTransfer(tx, transferId, "READY", "COMPLETED", {
+        buyerUnitId: buyerUnit.id,
+        contractId: settledContract.id,
+        settledAt: new Date(),
+        completedAt: new Date(),
       });
-      if (transferClaim.count === 0) {
+      if (completed.status !== "COMPLETED") {
         throw new Error("This transfer has already been completed.");
       }
-      // Re-fetch for the return value (updateMany does not return the record).
-      const completed = await tx.unitTransferTransaction.findUniqueOrThrow({
-        where: { id: transferId },
-      });
 
       // Transactional audit (NOT fire-and-forget) — ownership transfer is legal/financial.
       await tx.auditLog.create({
@@ -1001,4 +1048,458 @@ export async function moderateSuspendListing(listingId: string, reason: string) 
   revalidatePath("/dashboard/admin/marketplace");
   revalidatePath("/dashboard/marketplace");
   return serialize(updated);
+}
+
+// ─── P3: Platform moderation — approve / reject (PENDING_REVIEW gate) ────────
+
+export async function moderateApproveListing(listingId: string) {
+  const session = await requirePermission("marketplace:moderate");
+
+  const updated = await db.$transaction(async (tx) => {
+    const listing = await tx.marketplaceListing.findUnique({ where: { id: listingId } });
+    if (!listing) throw new Error("Listing not found.");
+    if (!isValidListingTransition(listing.status, "PUBLISHED")) {
+      throw new Error("Only listings pending review can be approved.");
+    }
+
+    const result = await tx.marketplaceListing.update({
+      where: { id: listingId },
+      data: {
+        status: "PUBLISHED",
+        complianceStatus: "APPROVED",
+        publishedAt: new Date(),
+        rejectedReason: null,
+      },
+    });
+    await tx.unit.updateMany({
+      where: { id: listing.unitId },
+      data: { marketplaceStatus: "PUBLISHED" },
+    });
+
+    // Transactional audit — moderation approval is a compliance decision.
+    await tx.auditLog.create({
+      data: {
+        userId: session.userId,
+        userEmail: session.email,
+        userRole: session.role,
+        action: "MARKETPLACE_LISTING_APPROVED",
+        resource: "MarketplaceListing",
+        resourceId: listingId,
+        organizationId: listing.sellerOrgId,
+      },
+    });
+    return result;
+  });
+
+  await notifyOrgAdmins(
+    updated.sellerOrgId,
+    "MARKETPLACE_APPROVED",
+    "تم اعتماد إعلانك",
+    "Your listing was approved",
+    `تم اعتماد إعلانك ${updated.listingNumber} ونُشر في السوق.`,
+    `Your listing ${updated.listingNumber} was approved and published to the marketplace.`,
+    `/dashboard/marketplace/my-listings`,
+  );
+
+  revalidatePath("/dashboard/admin/marketplace");
+  revalidatePath("/dashboard/marketplace");
+  revalidatePath("/dashboard/marketplace/my-listings");
+  return serialize(updated);
+}
+
+export async function moderateRejectListing(listingId: string, reason: string) {
+  const session = await requirePermission("marketplace:moderate");
+  if (!reason?.trim()) throw new Error("A rejection reason is required.");
+
+  const updated = await db.$transaction(async (tx) => {
+    const listing = await tx.marketplaceListing.findUnique({ where: { id: listingId } });
+    if (!listing) throw new Error("Listing not found.");
+    if (!isValidListingTransition(listing.status, "REJECTED")) {
+      throw new Error("Only listings pending review can be rejected.");
+    }
+
+    const result = await tx.marketplaceListing.update({
+      where: { id: listingId },
+      data: {
+        status: "REJECTED",
+        complianceStatus: "REJECTED",
+        rejectedReason: reason.trim(),
+      },
+    });
+    await tx.unit.updateMany({
+      where: { id: listing.unitId },
+      data: { marketplaceStatus: "REJECTED" },
+    });
+
+    await tx.auditLog.create({
+      data: {
+        userId: session.userId,
+        userEmail: session.email,
+        userRole: session.role,
+        action: "MARKETPLACE_LISTING_REJECTED",
+        resource: "MarketplaceListing",
+        resourceId: listingId,
+        metadata: { reason: reason.trim() },
+        organizationId: listing.sellerOrgId,
+      },
+    });
+    return result;
+  });
+
+  await notifyOrgAdmins(
+    updated.sellerOrgId,
+    "MARKETPLACE_REJECTED",
+    "تم رفض إعلانك",
+    "Your listing was rejected",
+    `تم رفض إعلانك ${updated.listingNumber}. السبب: ${reason.trim()}`,
+    `Your listing ${updated.listingNumber} was rejected. Reason: ${reason.trim()}`,
+    `/dashboard/marketplace/my-listings`,
+  );
+
+  revalidatePath("/dashboard/admin/marketplace");
+  revalidatePath("/dashboard/marketplace/my-listings");
+  return serialize(updated);
+}
+
+// ─── P3: Org REGA / FAL authorization (self-assert → staff verify) ──────────
+
+export type OrgRegaSubmitPayload = {
+  regaLicenseNumber?: string;
+  isSeller?: boolean;
+  isBuyer?: boolean;
+};
+
+export async function submitOrgRegaAuthorization(payload: OrgRegaSubmitPayload) {
+  const session = await requirePermission("marketplace:publish");
+
+  const result = await db.orgRegaAuthorization.upsert({
+    where: { organizationId: session.organizationId },
+    create: {
+      organizationId: session.organizationId,
+      regaLicenseNumber: payload.regaLicenseNumber?.trim() || null,
+      isSeller: payload.isSeller ?? false,
+      isBuyer: payload.isBuyer ?? false,
+      status: "SELF_ASSERTED",
+      method: "MANUAL_ATTESTATION",
+    },
+    update: {
+      regaLicenseNumber: payload.regaLicenseNumber?.trim() || null,
+      isSeller: payload.isSeller ?? false,
+      isBuyer: payload.isBuyer ?? false,
+      // Re-submission resets verification — staff must re-verify any change.
+      status: "SELF_ASSERTED",
+      verifiedByUserId: null,
+      verifiedAt: null,
+      rejectedReason: null,
+    },
+  });
+
+  logAuditEvent({
+    userId: session.userId,
+    userEmail: session.email,
+    userRole: session.role,
+    action: "ORG_REGA_SUBMITTED",
+    resource: "OrgRegaAuthorization",
+    resourceId: result.id,
+    metadata: { isSeller: result.isSeller, isBuyer: result.isBuyer },
+    organizationId: session.organizationId,
+  });
+  revalidatePath("/dashboard/marketplace/my-listings");
+  return serialize(result);
+}
+
+export async function verifyOrgRegaAuthorization(
+  organizationId: string,
+  payload: { approve: boolean; reason?: string },
+) {
+  const session = await requirePermission("marketplace:moderate");
+  if (!payload.approve && !payload.reason?.trim()) {
+    throw new Error("A rejection reason is required.");
+  }
+
+  const result = await db.$transaction(async (tx) => {
+    const existing = await tx.orgRegaAuthorization.findUnique({ where: { organizationId } });
+    if (!existing) throw new Error("No REGA authorization on file for this organization.");
+
+    const updated = await tx.orgRegaAuthorization.update({
+      where: { organizationId },
+      data: {
+        status: payload.approve ? "VERIFIED" : "REJECTED",
+        method: "MANUAL_ATTESTATION",
+        verifiedByUserId: session.userId,
+        verifiedAt: new Date(),
+        rejectedReason: payload.approve ? null : payload.reason?.trim() || null,
+      },
+    });
+
+    await tx.auditLog.create({
+      data: {
+        userId: session.userId,
+        userEmail: session.email,
+        userRole: session.role,
+        action: payload.approve ? "ORG_REGA_VERIFIED" : "ORG_REGA_REJECTED",
+        resource: "OrgRegaAuthorization",
+        resourceId: updated.id,
+        metadata: payload.approve ? {} : { reason: payload.reason?.trim() },
+        organizationId,
+      },
+    });
+    return updated;
+  });
+
+  revalidatePath("/dashboard/admin/marketplace");
+  return serialize(result);
+}
+
+export async function getMyOrgRegaAuthorization() {
+  const session = await requirePermission("marketplace:manage_own");
+  const auth = await db.orgRegaAuthorization.findUnique({
+    where: { organizationId: session.organizationId },
+  });
+  return auth ? serialize(auth) : null;
+}
+
+export async function listOrgRegaAuthorizations() {
+  await requirePermission("marketplace:moderate");
+  const rows = await db.orgRegaAuthorization.findMany({
+    include: { organization: { select: { id: true, name: true, nameEnglish: true } } },
+    orderBy: { updatedAt: "desc" },
+    take: 300,
+  });
+  return serialize(rows);
+}
+
+// ─── P3: Deed-transfer proof (encrypted PII → staff verify → READY) ─────────
+
+export type DeedProofSubmitPayload = {
+  deedNumber?: string;
+  ownerNationalId?: string;
+  deedDocUrl?: string;
+  deedDocHash?: string;
+  rettCertRef?: string;
+};
+
+export async function submitDeedTransferProof(
+  transferId: string,
+  payload: DeedProofSubmitPayload,
+) {
+  const session = await requirePermission("marketplace:transfer:execute");
+
+  // The transfer must belong to the seller org submitting the proof.
+  const transfer = await db.unitTransferTransaction.findFirst({
+    where: { id: transferId, sellerOrgId: session.organizationId },
+    select: { id: true },
+  });
+  if (!transfer) throw new Error("Transfer not found for your organization.");
+
+  // Encrypt the two highly-sensitive PII fields — NEVER store/log plaintext.
+  const deedNumberEnc = payload.deedNumber?.trim()
+    ? encrypt(payload.deedNumber.trim())
+    : null;
+  const ownerNationalIdEnc = payload.ownerNationalId?.trim()
+    ? encrypt(payload.ownerNationalId.trim())
+    : null;
+
+  const result = await db.marketplaceDeedProof.upsert({
+    where: { transferId },
+    create: {
+      transferId,
+      deedNumberEnc,
+      ownerNationalIdEnc,
+      deedDocUrl: payload.deedDocUrl?.trim() || null,
+      deedDocHash: payload.deedDocHash?.trim() || null,
+      rettCertRef: payload.rettCertRef?.trim() || null,
+      status: "PENDING",
+      method: "MANUAL_ATTESTATION",
+      submittedAt: new Date(),
+    },
+    update: {
+      deedNumberEnc,
+      ownerNationalIdEnc,
+      deedDocUrl: payload.deedDocUrl?.trim() || null,
+      deedDocHash: payload.deedDocHash?.trim() || null,
+      rettCertRef: payload.rettCertRef?.trim() || null,
+      // Re-submission resets verification.
+      status: "PENDING",
+      verifiedByUserId: null,
+      verifiedAt: null,
+      rejectedReason: null,
+      submittedAt: new Date(),
+    },
+  });
+
+  // Audit metadata MUST NOT contain the plaintext deed number / national ID.
+  logAuditEvent({
+    userId: session.userId,
+    userEmail: session.email,
+    userRole: session.role,
+    action: "DEED_PROOF_SUBMITTED",
+    resource: "MarketplaceDeedProof",
+    resourceId: result.id,
+    metadata: { transferId, hasDeedDoc: !!result.deedDocUrl, hasRettCert: !!result.rettCertRef },
+    organizationId: session.organizationId,
+  });
+  revalidatePath("/dashboard/marketplace/my-listings");
+  return serialize(result);
+}
+
+export async function verifyDeedTransferProof(
+  transferId: string,
+  payload: { approve: boolean; reason?: string },
+) {
+  const session = await requirePermission("marketplace:moderate");
+  if (!payload.approve && !payload.reason?.trim()) {
+    throw new Error("A rejection reason is required.");
+  }
+
+  const result = await db.$transaction(async (tx) => {
+    const proof = await tx.marketplaceDeedProof.findUnique({ where: { transferId } });
+    if (!proof) throw new Error("No deed-transfer proof on file for this transfer.");
+
+    const updated = await tx.marketplaceDeedProof.update({
+      where: { transferId },
+      data: {
+        status: payload.approve ? "VERIFIED" : "REJECTED",
+        method: "MANUAL_ATTESTATION",
+        verifiedByUserId: session.userId,
+        verifiedAt: new Date(),
+        rejectedReason: payload.approve ? null : payload.reason?.trim() || null,
+      },
+    });
+
+    // On approval, advance the transfer PENDING_SETTLEMENT → READY so settlement
+    // can claim READY → COMPLETED. transitionTransfer is idempotent + validating.
+    if (payload.approve) {
+      await transitionTransfer(tx, transferId, "PENDING_SETTLEMENT", "READY");
+    }
+
+    await tx.auditLog.create({
+      data: {
+        userId: session.userId,
+        userEmail: session.email,
+        userRole: session.role,
+        action: payload.approve ? "DEED_PROOF_VERIFIED" : "DEED_PROOF_REJECTED",
+        resource: "MarketplaceDeedProof",
+        resourceId: updated.id,
+        // No plaintext PII in metadata.
+        metadata: payload.approve ? { transferId } : { transferId, reason: payload.reason?.trim() },
+        organizationId: null,
+      },
+    });
+    return updated;
+  });
+
+  revalidatePath("/dashboard/admin/marketplace");
+  revalidatePath("/dashboard/marketplace/my-listings");
+  return serialize(result);
+}
+
+/**
+ * Decrypt the deed proof for the verifier view (deed number + owner national-ID).
+ * Visible to platform staff (marketplace:moderate) OR the seller org that owns
+ * the underlying transfer. Decryption degrades gracefully via safeDecryptField.
+ */
+export async function getDeedProofForTransfer(transferId: string) {
+  const session = await requirePermission("marketplace:transfer:execute");
+
+  const proof = await db.marketplaceDeedProof.findUnique({
+    where: { transferId },
+    include: { transfer: { select: { sellerOrgId: true, buyerOrgId: true } } },
+  });
+  if (!proof) return null;
+
+  // Audience scope: platform staff see any proof; tenant users only their own
+  // org's transfer (seller side owns deed submission).
+  const isSystem = isSystemRole(session.role);
+  if (!isSystem && proof.transfer.sellerOrgId !== session.organizationId) {
+    throw new Error("Deed proof not found for your organization.");
+  }
+
+  logAuditEvent({
+    userId: session.userId,
+    userEmail: session.email,
+    userRole: session.role,
+    action: "READ_PII",
+    resource: "MarketplaceDeedProof",
+    resourceId: proof.id,
+    metadata: { transferId },
+    organizationId: session.organizationId,
+  });
+
+  return serialize({
+    id: proof.id,
+    transferId: proof.transferId,
+    status: proof.status,
+    method: proof.method,
+    deedNumber: proof.deedNumberEnc ? safeDecryptField(proof.deedNumberEnc, "deedNumber") : null,
+    ownerNationalId: proof.ownerNationalIdEnc
+      ? safeDecryptField(proof.ownerNationalIdEnc, "ownerNationalId")
+      : null,
+    deedDocUrl: proof.deedDocUrl,
+    deedDocHash: proof.deedDocHash,
+    rettCertRef: proof.rettCertRef,
+    verifiedByUserId: proof.verifiedByUserId,
+    verifiedAt: proof.verifiedAt,
+    rejectedReason: proof.rejectedReason,
+    submittedAt: proof.submittedAt,
+  });
+}
+
+// ─── P3: Legal-gate kill-switch (SYSTEM_ADMIN only) ─────────────────────────
+
+export async function setMarketplaceConveyanceEnabled(payload: {
+  enabled: boolean;
+  note?: string;
+}) {
+  const session = await requirePermission("marketplace:moderate");
+  // marketplace:moderate is SYSTEM_ONLY, but assert the system role explicitly —
+  // flipping the irreversible-conveyance kill-switch is a SYSTEM_ADMIN duty and
+  // must never be reachable by a tenant role (defense-in-depth vs. matrix drift).
+  if (!isSystemRole(session.role)) {
+    throw new Error("Only platform administrators can change the conveyance setting.");
+  }
+
+  const result = await db.systemConfig.update({
+    where: { id: "system" },
+    data: {
+      marketplaceConveyanceEnabled: payload.enabled,
+      marketplaceLegalSignoffBy: session.email,
+      marketplaceLegalSignoffAt: new Date(),
+      marketplaceLegalSignoffNote: payload.note?.trim() || null,
+    },
+    select: {
+      marketplaceConveyanceEnabled: true,
+      marketplaceLegalSignoffBy: true,
+      marketplaceLegalSignoffAt: true,
+      marketplaceLegalSignoffNote: true,
+    },
+  });
+
+  logAuditEvent({
+    userId: session.userId,
+    userEmail: session.email,
+    userRole: session.role,
+    action: "MARKETPLACE_CONVEYANCE_TOGGLED",
+    resource: "SystemConfig",
+    resourceId: "system",
+    metadata: { enabled: payload.enabled, note: payload.note?.trim() || null },
+    organizationId: null,
+  });
+  revalidatePath("/dashboard/admin/marketplace");
+  return serialize(result);
+}
+
+export async function getMarketplaceConveyanceConfig() {
+  await requirePermission("marketplace:moderate");
+  const config = await db.systemConfig.findUnique({
+    where: { id: "system" },
+    select: {
+      marketplaceConveyanceEnabled: true,
+      marketplaceLegalSignoffBy: true,
+      marketplaceLegalSignoffAt: true,
+      marketplaceLegalSignoffNote: true,
+      regaPlatformFalLicense: true,
+    },
+  });
+  return config ? serialize(config) : null;
 }

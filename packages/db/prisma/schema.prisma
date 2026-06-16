@@ -60,6 +60,7 @@ model Organization {
   marketplaceSellerInquiries MarketplaceInquiry[]      @relation("MarketplaceSellerInquiries")
   marketplaceSellerTransfers UnitTransferTransaction[] @relation("MarketplaceSellerTransfers")
   marketplaceBuyerTransfers  UnitTransferTransaction[] @relation("MarketplaceBuyerTransfers")
+  regaAuthorization          OrgRegaAuthorization?     @relation("OrgRegaAuthorization")
 
   // ── DataTable saved-views (CX-014) ──
   savedTableViews SavedTableView[]
@@ -1581,6 +1582,17 @@ model SystemConfig {
   // affordance and set by platform admin. Placeholder until issued.
   regaPlatformFalLicense String?
 
+  // ─── Marketplace Conveyance (P3 reserve-and-buy) ─────────────────────────────
+  // Master kill-switch for the IRREVERSIBLE cross-org ownership transfer
+  // (settlement). Ships DARK (default false): every settlement call re-reads this
+  // UNCACHED from the DB, so flipping it off is an instant kill-switch. Lawful
+  // activation also needs platform-FAL licensing + legal sign-off (recorded below)
+  // + verified deed proof + REGA-verified seller & buyer orgs.
+  marketplaceConveyanceEnabled Boolean   @default(false)
+  marketplaceLegalSignoffBy    String?
+  marketplaceLegalSignoffAt    DateTime?
+  marketplaceLegalSignoffNote  String?   @db.Text
+
   // Transactional Email (Hostinger SMTP)
   emailProvider         String?   @default("HOSTINGER_SMTP")
   emailEnabled          Boolean   @default(false)
@@ -1606,6 +1618,7 @@ model SystemConfig {
 
 enum MarketplaceListingStatus {
   DRAFT
+  PENDING_REVIEW // P3: seller submitted; awaiting platform moderation (not buyer-visible)
   PUBLISHED
   UNDER_CONTRACT
   SOLD_TRANSFERRED
@@ -1613,6 +1626,25 @@ enum MarketplaceListingStatus {
   EXPIRED
   REJECTED
   SUSPENDED
+}
+
+// P3 conveyance — manual staff attestation now; API_VERIFIED reachable later with
+// NO schema change (the settlement guard checks the VERIFIED value, not the method).
+enum VerificationStatus {
+  SELF_ASSERTED
+  VERIFIED
+  REJECTED
+}
+
+enum DeedProofStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum VerificationMethod {
+  MANUAL_ATTESTATION
+  API_VERIFIED
 }
 
 enum MarketplaceInquiryStatus {
@@ -1721,6 +1753,7 @@ model UnitTransferTransaction {
   sellerUnitId  String
   buyerUnitId   String?
   status        UnitTransferStatus @default(PENDING_SETTLEMENT)
+  deedProof     MarketplaceDeedProof? // P3: 1:1 deed-transfer proof gating settlement
   failureReason String?
   settledAt     DateTime?
   completedAt   DateTime?
@@ -1729,6 +1762,56 @@ model UnitTransferTransaction {
 
   @@index([sellerOrgId])
   @@index([buyerOrgId])
+  @@index([status])
+}
+
+// ─── P3 conveyance — deed-transfer proof (per transfer, 1:1) ─────────────────
+// Highly sensitive: deed number + owner national-ID are AES-256-GCM encrypted at
+// rest (via the canonical encrypt() path); the deed file lives in object storage,
+// only its URL + SHA-256 hash are stored. A staff member attests VERIFIED, which
+// advances the transfer PENDING_SETTLEMENT → READY. Settlement (READY → COMPLETED)
+// requires deedProofStatus = VERIFIED + the conveyance flag ON.
+model MarketplaceDeedProof {
+  id                 String                  @id @default(cuid())
+  transferId         String                  @unique
+  transfer           UnitTransferTransaction @relation(fields: [transferId], references: [id], onDelete: Cascade)
+  deedNumberEnc      String? // AES-256-GCM ciphertext — never plaintext
+  ownerNationalIdEnc String? // AES-256-GCM ciphertext
+  deedDocUrl         String? // object-storage URL of the uploaded deed (not the bytes)
+  deedDocHash        String? // SHA-256 of the uploaded file (tamper detection)
+  rettCertRef        String? // ZATCA RETT certificate reference (record-only)
+  status             DeedProofStatus         @default(PENDING)
+  method             VerificationMethod      @default(MANUAL_ATTESTATION)
+  verifiedByUserId   String?
+  verifiedAt         DateTime?
+  rejectedReason     String?
+  submittedAt        DateTime                @default(now())
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+
+  @@index([status])
+}
+
+// ─── P3 conveyance — org REGA/FAL authorization (per org, 1:1) ───────────────
+// An org self-asserts its REGA ad-license / FAL number; a staff member flips it to
+// VERIFIED. Settlement requires BOTH the seller and buyer org to be VERIFIED (when
+// the conveyance flag is ON). MANUAL_ATTESTATION now; API_VERIFIED later, no migration.
+model OrgRegaAuthorization {
+  id                String             @id @default(cuid())
+  organizationId    String             @unique
+  organization      Organization       @relation("OrgRegaAuthorization", fields: [organizationId], references: [id], onDelete: Cascade)
+  regaLicenseNumber String?
+  status            VerificationStatus @default(SELF_ASSERTED)
+  method            VerificationMethod @default(MANUAL_ATTESTATION)
+  isSeller          Boolean            @default(false)
+  isBuyer           Boolean            @default(false)
+  verifiedByUserId  String?
+  verifiedAt        DateTime?
+  expiresAt         DateTime?
+  rejectedReason    String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
   @@index([status])
 }
 

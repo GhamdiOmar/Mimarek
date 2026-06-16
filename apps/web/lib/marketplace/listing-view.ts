@@ -115,10 +115,16 @@ const CARD_SELECT = {
   viewCount: true,
 } as const;
 
-/** A listing is buyer-visible only if PUBLISHED, not expired, not suspended. */
+/**
+ * A listing is buyer-visible only if PUBLISHED, compliance-APPROVED (a seller can
+ * never self-publish — platform moderation sets complianceStatus="APPROVED"),
+ * not expired, not suspended, and not the viewer's own. This is the single
+ * visibility chokepoint for the cross-org marketplace.
+ */
 function buyerVisibleWhere(viewerOrgId: string) {
   return {
     status: "PUBLISHED" as const,
+    complianceStatus: "APPROVED" as const,
     sellerOrgId: { not: viewerOrgId },
     OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
   };
