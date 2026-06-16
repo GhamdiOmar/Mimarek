@@ -124,8 +124,8 @@ function getPaymentTone(entry: {
   if (isPastDue) {
     return {
       rowClass: "bg-destructive/5",
-      amountClass: "text-destructive font-semibold",
-      dueDateClass: "text-destructive",
+      amountClass: "text-destructive-strong font-semibold",
+      dueDateClass: "text-destructive-strong",
     };
   }
 
@@ -763,7 +763,7 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
             {loading ? (
               <Loader2 className="w-4 h-4 animate-spin mt-1 text-muted-foreground" />
             ) : (
-              <p className="text-xl font-bold text-destructive mt-0.5">{SAR(totalOverdue)}</p>
+              <p className="text-xl font-bold text-destructive-strong mt-0.5">{SAR(totalOverdue)}</p>
             )}
           </div>
         </Card>

@@ -9,18 +9,18 @@ const badgeVariants = cva(
       variant: {
         /* Domain-specific */
         available: "bg-secondary/10 text-secondary border-transparent",
-        reserved: "bg-accent/10 text-accent border-transparent",
+        reserved: "bg-accent/10 text-accent-strong border-transparent",
         sold: "bg-primary/10 text-primary border-transparent",
         rented: "bg-secondary/10 text-secondary border-transparent",
-        maintenance: "bg-warning/10 text-warning border-transparent",
-        overdue: "bg-destructive/10 text-destructive border-transparent",
+        maintenance: "bg-warning/10 text-warning-strong border-transparent",
+        overdue: "bg-destructive/10 text-destructive-strong border-transparent",
         draft: "bg-muted text-muted-foreground border-transparent",
         /* Generic semantic */
         success: "bg-success/10 text-success-strong border-transparent",
-        info: "bg-info/10 text-info border-transparent",
-        warning: "bg-warning/10 text-warning border-transparent",
-        pending: "bg-accent/10 text-accent border-transparent",
-        error: "bg-destructive/10 text-destructive border-transparent",
+        info: "bg-info/10 text-info-strong border-transparent",
+        warning: "bg-warning/10 text-warning-strong border-transparent",
+        pending: "bg-accent/10 text-accent-strong border-transparent",
+        error: "bg-destructive/10 text-destructive-strong border-transparent",
         /* Neutral */
         default: "bg-muted text-muted-foreground border-transparent",
         outline: "border border-border text-muted-foreground bg-transparent",
