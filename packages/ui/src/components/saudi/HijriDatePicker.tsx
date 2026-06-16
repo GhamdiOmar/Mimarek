@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { CalendarDays } from "lucide-react";
-import { Calendar } from "../../primitives/calendar";
+import { AriaCalendar } from "../../primitives/aria-calendar";
 import {
   Popover,
   PopoverContent,
@@ -10,6 +10,10 @@ import {
 } from "../../primitives/popover";
 import { Button } from "../../primitives/button";
 import { cn } from "../../lib/utils";
+import {
+  calendarDateToDate,
+  dateToCalendarDate,
+} from "../../lib/aria-date";
 
 export interface HijriDatePickerProps {
   value?: Date | null;
@@ -22,7 +26,7 @@ export interface HijriDatePickerProps {
   id?: string;
 }
 
-type Calendar = "greg" | "hijri";
+type CalendarSystem = "greg" | "hijri";
 
 function formatGreg(d: Date, locale: "ar" | "en"): string {
   return new Intl.DateTimeFormat(locale === "ar" ? "ar-SA-u-nu-latn" : "en-GB", {
@@ -51,7 +55,7 @@ export function HijriDatePicker({
   id,
 }: HijriDatePickerProps) {
   const [open, setOpen] = React.useState(false);
-  const [cal, setCal] = React.useState<Calendar>("greg");
+  const [cal, setCal] = React.useState<CalendarSystem>("greg");
 
   const effectiveLocale: "ar" | "en" =
     locale ??
@@ -133,12 +137,14 @@ export function HijriDatePicker({
             </button>
           )}
         </div>
-        <Calendar
-          mode="single"
-          selected={value ?? undefined}
-          onSelect={(d) => {
-            onChange?.(d ?? null);
-            if (d) setOpen(false);
+        <AriaCalendar
+          locale={effectiveLocale}
+          hijri={cal === "hijri"}
+          value={dateToCalendarDate(value)}
+          onChange={(d) => {
+            const next = calendarDateToDate(d);
+            onChange?.(next);
+            if (next) setOpen(false);
           }}
         />
         {value && (

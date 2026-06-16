@@ -11,7 +11,7 @@ import {
   endOfDay,
   subMonths,
 } from "date-fns";
-import { Calendar } from "../primitives/calendar";
+import { AriaRangeCalendar } from "../primitives/aria-calendar";
 import {
   Popover,
   PopoverContent,
@@ -19,6 +19,10 @@ import {
 } from "../primitives/popover";
 import { Button } from "../primitives/button";
 import { cn } from "../lib/utils";
+import {
+  calendarDateToDate,
+  dateToCalendarDate,
+} from "../lib/aria-date";
 
 export interface DateRange {
   from: Date | undefined;
@@ -139,14 +143,21 @@ export function DateRangePicker({
             </Button>
           ))}
         </div>
-        <Calendar
-          mode="range"
+        <AriaRangeCalendar
+          locale={effLocale}
           numberOfMonths={2}
-          selected={value as { from: Date | undefined; to?: Date | undefined }}
-          onSelect={(range) => {
+          value={
+            value?.from
+              ? {
+                  start: dateToCalendarDate(value.from)!,
+                  end: dateToCalendarDate(value.to ?? value.from)!,
+                }
+              : null
+          }
+          onChange={(range) => {
             const r: DateRange = {
-              from: range?.from,
-              to: range?.to,
+              from: calendarDateToDate(range?.start) ?? undefined,
+              to: calendarDateToDate(range?.end) ?? undefined,
             };
             onChange?.(r, "custom");
           }}
