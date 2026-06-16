@@ -1,183 +1,223 @@
-# Mimaric — Consolidated Remaining Work
+# Mimaric — Outstanding Work Report
 
-**Created:** 2026-06-13 (post-v4.18.0) · **Owner:** Omar Alghamdi
-**Last revised against `main`:** 2026-06-16 · `main` = **v4.26.0** (`100547e`, tag `v4.26.0`).
-**Status of baseline:** the **entire CX-audit remediation (CX-001…CX-022) is shipped** across v4.19.1 → v4.26.0 (22/22 findings addressed). What's left is a small polish tail + the separate QA-audit / governance programs — all gathered in the **Master Status** section immediately below.
-
-This is the **single backlog** — it folds in everything from the former `v4.18.0-plan`, `v4.18.0-followups`, `architecture-required-fixes`, `performance-and-load`, `v4.11-followups`, `v4.16-handover`, and the five `UI/*.txt` change-request specs (all now deleted). It is self-contained; no external doc references remain.
-
-Order: **(0)** must-do prod ops → **(1)** v4.18.0 follow-ups that still apply → **(2)** housekeeping → **(3)** near-term backlog → **(4) LATER IMPLEMENTATION** → **(5)** open product question → **(6)** UI backlog / already-shipped plan cleanup → **(7)** load-bearing patterns (reference).
-
----
-
-## ★ MASTER STATUS — all remaining work (as of v4.26.0 · 2026-06-16)
-
-This is the single, current top-of-funnel. The dated sections below (§0–§7) are the historical detail; where they conflict with this block, **this block wins**.
-
-**Shipped since this file's old v4.23.0 baseline:**
-- **v4.24.0** — CX-010 bulk ops (Payments/Reservations/Contracts) + CSV/Excel import wizard (customers+units) + CX-011 DRAFT contract edit.
-- **v4.25.0** — CX-003 **pt1**: RSC conversion of 5 list pages (contracts, reservations, payments, marketplace, documents) → no first-paint waterfall; + CX-018 USER→`/portal` lockout (closed a real `dashboard:read` leak).
-- **v4.26.0** — CX-017 axe gate expanded 5 routes → **all 16 tenant + 8 platform routes** (new system-role spec). CX-003 **pt2** (RSC CrmView) was found **already done** (CrmView already RSC-seeded) → no code needed.
-- ⇒ **§3.4 (F8 RSC) and §3.7 (axe closeout) below are now largely DONE** — see the inline ✅ marks.
-
-**ALL REMAINING WORK, by cluster** (each names the doc that owns the detail):
-
-**A · CX-audit polish tail → v4.27 (small; the last of the CX program).**
-- **CX-006** — CRM add-customer form → RHF + zod (the one form still on `useState`; ~300-line / 13-field + property-linking form in `CrmView`). Owns detail: `CX-REMEDIATION-HANDOVER.md` §4/§12.
-- **CX-017 Lighthouse CI** (≥95) — new `@lhci/cli` dep + a CI job; verify CI carefully.
-- **a11y debt the expanded axe gate baselined** (un-baseline each as it's fixed, in `e2e/accessibility.{admin,system}.spec.ts`): `color-contrast` (~5 non-success-badge instances), `select-name` (~63 native `<select>` → a governed `<Select>` primitive), `label` (inputs missing `htmlFor` → a governed `<Field>` primitive). Owns detail: `QA-AUDIT-REMEDIATION.md` QA-FE-01 / QA-FE-03.
-
-**B · QA-audit remediation (security · DB · architecture · marketplace) — NOT started; its own program.** Owns detail: **`QA-AUDIT-REMEDIATION.md`** (P0 security hotfixes · P1 DB governance + schema correctness · P2 a11y + architecture · P3 marketplace lawful redesign). Still-open highlights: unguarded `"use server"` exports (QA-SEC-01), coupon authz + redemption race (QA-SEC-02), security headers / JWT idle-timeout (QA-SEC-03/04), money precision `Decimal(65,30)` → `Decimal(14,2)` (QA-DB-02), cascade-delete of financial/audit rows → Restrict (QA-DB-03), tenant tables lacking a direct `organizationId` (QA-DB-04), client god-objects / abandoned seams (QA-ARCH-01/02), marketplace proof-gated facilitation + REGA license gating (QA-MKT — gated on the §5 product question + licensing).
-
-**C · Standing engineering backlog (still valid — detail in §1–§3 + §6 below):** marketplace cross-org E2E un-`fixme` (§1.1) · native review of 5 Arabic marketplace-status strings (§1.2) · true HTTP-403 edge middleware (§3.1) · registration email-verification layer (§3.2) · `/dashboard/more` decommission, 4 wire points (§3.6) · full `t()` migration, touched-file only (§3.8) · F9 verification-tooling + `@repo/ui` hygiene (§3.5) · load-test baseline / k6 (§3.9) · `@repo/ui` specs: **system-wide date-picker replacement** (§6.2) + **Alert compound API** (§6.4). (Theme-toggle, notification-center, CircleMenu radial nav = already shipped.)
-
-**D · Parked by Omar (do not schedule):** DB region move **Sydney → Bahrain `me-south-1`** (§4.1 — ops; the raw-latency lever for CX-003, ~10–15×) · **ZATCA e-invoicing** module (§4.2 — blocked on the external clearance pipeline).
-
-**Open product question (gates marketplace compliance scope):** marketplace **inquiry-only vs reserve-and-buy** (§5) — Omar's call; prerequisite for scoping the QA-MKT legal/compliance work.
+> **Generated 2026-06-16, post-v4.30.1** from an exhaustive multi-agent re-verification of all four
+> audit/backlog sources (`QA-AUDIT-REMEDIATION.md`, `REMAINING-WORK.md`, `CX-REMEDIATION-HANDOVER.md`,
+> `verification/Mimaric-CX-Audit*.html`) against the **actual code + git history** at `main`, with an
+> adversarial completeness critic. Every item below was confirmed by direct Read/Grep — not the docs' prose.
+>
+> **Framing (per Omar):** only **two** items are true deferrals — **DB region migration** and **ZATCA**.
+> *Everything else in this report is in-place to be done.* Items are grouped by area, each with
+> **Gap · Reason · Location · What to do · Effort/Priority**.
+>
+> **Effort:** S = <½ day · M = 1–3 days · L = >3 days / multi-PR. **Priority:** P1 (do next) · P2 · P3.
 
 ---
 
-## Current-main audit summary (2026-06-15)
+## ✅ Already closed in v4.30.1 (for reference — not outstanding)
+- **PasswordResetToken hashed-at-rest** + atomic single-use (was plaintext + double-spend race).
+- **Units bulk-status `<select>` aria-label** (the one unguarded a11y violation axe couldn't see).
+- **QA-TEST-01 runtime locks** — tenant org-isolation (8 actions) + coupon atomic-redemption race; vitest 149/149.
 
-**Correct and confirmed against `main`:**
-- Current DB governance is still `prisma db push` + generated/manual RLS SQL, not Prisma Migrate. Proof: `.github/workflows/ci.yml` runs `cd packages/db && npx prisma db push --accept-data-loss`; `packages/db/prisma/migrations/` is absent on `main`; `AGENTS.md` §4 explicitly says schema changes use `db push`.
-- `SavedTableView` and DataTable saved views/reorder/export are no longer future work. Proof: `packages/db/prisma/schema.prisma` has `model SavedTableView`; `apps/web/app/actions/saved-views.ts` exists; Payments, Reservations, and Contracts pass `enableColumnReorder`, `exportable`, and `savedViews` into `DataTable`.
-- Marketplace cross-org E2E is still a real follow-up. Proof: `apps/web/e2e/marketplace.cross-org.spec.ts` still has `test.fixme(...)` on the publish → browse → inquire → convert → settlement flow.
-- The true HTTP-403 contract is still deferred. Proof: `apps/web/lib/auth-helpers.ts` documents inline `<AccessDenied>` and rejects the experimental `forbidden()` path.
-
-**Partially correct:**
-- The axe baseline section was stale. `color-contrast` still appears in `KNOWN_BASELINE_RULES`, but v4.20.0 added `--success-strong`; current work should first remove/confirm that exclusion, not blindly retune success colors again. `aria-allowed-attr` remains a live baseline item.
-- USER portal work is smaller than originally scoped. `/portal` exists, `app/portal/layout.tsx` gates `role === "USER"`, and `loginAction` routes tenant-mode logins to `/portal`; the remaining question is explicit direct `/dashboard` landing/redirect behavior for USER.
-- Notification center and ThemeToggle are implemented in `apps/web`, not `@repo/ui`; future work is extraction/polish only.
-
-**Incorrect or stale:**
-- Any plan that treats `FUTURE_PLANS.md` as a `main` file is branch-local/stale; it is not tracked on `main` at v4.23.0.
-- The deleted main-only `future-plans/crm-kanban-card-enrichment.md` should not be resurrected as written: `Customer.stageEnteredAt DateTime? @default(now())` already exists on `main`, so the old "schema gap" premise is outdated. If the item returns, scope it as UI rendering + write-path verification.
-- The old "build CircleMenu" plan is stale. `apps/web/components/shell/CircleMenu.tsx`, `CircleMenuOverlay.tsx`, and `radial-groups.ts` already ship the radial menu.
+The audit found **no falsely-marked-done defects**: marketplace P3's 5-gate settlement, both auth-token flows, and the Postgres rate limiter are genuinely robust.
 
 ---
 
-## 0. v4.18.0 DB ops — ✅ DONE (2026-06-13, local DB)
+## A. Security & data integrity — **P1**
 
-**Resolved.** Mimaric is not deployed; the only environment is the local checkout against the Supabase DB in `.env.local`. What was done:
-- **Schema indexes applied** — `prisma db push` synced the v4.18.0 Customer composite `[organizationId, *Hash]` indexes (dropped the dead `nationalId` index). No RLS SQL needed (no new tables).
-- **Encryption key re-established** — the original `PII_ENCRYPTION_KEY` was **lost** (absent from both `.env.local` files; the `.env.example` value is an all-zeros placeholder that decrypts nothing), so the encryption layer was non-functional and the data had drifted (11 plaintext seed phones + 9 ciphertext rows encrypted under the lost key). A fresh 32-byte key was generated and set in `.env.local` + `apps/web/.env.local` (gitignored).
-- **Data normalized** — all 20 (fabricated) customers re-encrypted under the new key with correct HMAC blind-index hashes; the 9 unrecoverable lost-key rows were given fresh fake Saudi mobiles. Verified: 20/20 decrypt, 20/20 hashes consistent, cross-format phone search works (`05…` and `+9665…` both match). The marketplace repair script was a no-op (0 marketplace-source customers).
+### A1. Ciphertext envelope (versioned prefix) + DB CHECK constraint — `§3.3`
+- **Gap:** Encrypted PII is stored as a bare `iv:authTag:ciphertext` string with **no version byte** and **no DB-level CHECK**. There is no write-time guard that a column that should be encrypted actually *is*.
+- **Reason:** Deferred in the doc to "the next PII schema work"; v4.27 (security) and v4.28 (schema) both shipped without it. It is the layer that would have caught the historical P1-1 plaintext-customer leak at write time.
+- **Location:** `apps/web/lib/encryption.ts` (`encrypt()` ~line 28 emits the bare triple; `decrypt()` ~line 44-52 branches only on colon-count). No `CHECK` in `packages/db/sql/`.
+- **What to do:** Add a `v1:` magic prefix in `encrypt()`; teach `decrypt()`/`safeDecryptField` to branch on it; **backfill** existing ciphertext with the prefix; then add a Postgres `CHECK (col LIKE 'v1:%')` on the encrypted columns (manual SQL in `packages/db/sql/`, applied to the live DB after the backfill). Stage it like the v4.28 money recast.
+- **Effort:** M · **Priority:** P1 (it's the write-time integrity guard for all PII).
 
-**Standing note for a future real deployment:** any new environment must set its **own** `PII_ENCRYPTION_KEY` + `PII_HASH_PEPPER` (see `.env.example`), run `prisma db push`, then `packages/db/scripts/repair-marketplace-customer-pii.ts` + `rehash-customer-phones.ts` against that env's data with the env's key. Never rotate `PII_ENCRYPTION_KEY` on an env with live data — existing ciphertext becomes unrecoverable (exactly what happened here).
+### A2. `decrypt()` plaintext-passthrough has no telemetry
+- **Gap:** `decrypt()` returns *any* value that isn't the `iv:tag:ct` shape **as-is** (legacy-plaintext passthrough), silently. A bug that wrote plaintext PII (the P1-1 class) is therefore invisible at **read** time — no signal anything is wrong.
+- **Reason:** Intentional for the pre-encryption migration, but it became a permanent silent path with no monitoring.
+- **Location:** `apps/web/lib/encryption.ts:45-52`; `apps/web/lib/pii-crypto.ts` (`safeDecryptField`).
+- **What to do:** Emit a security-event log when the legacy-plaintext branch fires on a column that should be encrypted (until A1's CHECK constraint makes plaintext impossible). Pairs with A1.
+- **Effort:** S · **Priority:** P1.
 
----
+### A3. Rate limiter **fails open** on a DB error
+- **Gap:** The Postgres-backed rate limiter is durable/multi-instance, but on **any DB error it allows the request** (fail-open). A Postgres blip silently disables *all* throttling — login, password-reset, marketplace inquiry — at exactly the moment an attacker might exploit it.
+- **Reason:** A deliberate availability-over-security trade-off (not a bug). No doc captured the trade-off explicitly.
+- **Location:** `apps/web/lib/rate-limit.ts` (`checkRateLimit` catch path).
+- **What to do:** Either (a) document an explicit risk-acceptance, or (b) add a **fail-CLOSED** mode for the most sensitive keys (`login:*`, `password-reset:*`, `resend-verification:*`) while the rest stay fail-open. Your call — it's your deliberate design.
+- **Effort:** S · **Priority:** P2 (needs your decision).
 
-## 1. v4.18.0 follow-ups
-
-- **1.1 Stabilize the marketplace cross-org E2E (`test.fixme`).** `apps/web/e2e/marketplace.cross-org.spec.ts` was silently skipped until P4-1 surfaced it. It **passes the P1-1 inquiry step** (PII encryption works) but **hangs in the seller's convert→settlement flow**: `clickVisible(/تحويل لصفقة|Convert to Deal/)` never resolves though the label matches the real button exactly (`my-listings/page.tsx:483`) — a loading/timing issue in the incoming-inquiry `DataTable`. Fix: run the two-org flow interactively, replace the fixed `waitForTimeout` with `await expect(seller.getByText(/Convert to Deal/)).toBeVisible()` (or scroll the inquiries section in), then remove `test.fixme`. Project already has a 180s budget; `marketplace.mylistings-link.spec.ts` passes.
-- **1.2 Native review of 5 inferred Arabic marketplace-status strings** (`apps/web/lib/domain-labels.ts`): `UNDER_CONTRACT → تحت العقد` · `SOLD_TRANSFERRED → مُنقَّل` · `UNPUBLISHED → غير منشور` · `REJECTED → مرفوض` · `SUSPENDED → موقوف`.
-- **1.3 Two pre-existing server logs** seen during the marketplace CI run (not v4.18.0 regressions): `[WebServer] unexpected export *` (no literal `export *` in `apps/web/app|lib` — likely a barrel/dep; confirm not a malformed server-action surface); `Error: Your organization already has an active subscription` (incidental — the marketplace test only creates a unit fixture; billing seed / another spec emits it).
-
----
-
-## 2. Repo housekeeping (status)
-
-- **Done in this cleanup:** removed audit artifacts (screenshots, QA HTML reports, slop study, UI/UX PDFs, v4.11 status/verified-audit), old `verification-v4.15.1/`, Zone.Identifier junk + stray `git`/`gitignore`, the shipped `v4.18.0-plan.md` + `v4.18.0-followups.md` + the 4 future-plans detail docs + the 5 `UI/*.txt` specs (folded here), and the `Individual data Absher.json` PII file.
-- **Current `main` reality:** `future-plans/REMAINING-WORK.md` is tracked; `future-plans/crm-kanban-card-enrichment.md` exists on `main` but is deleted in this working branch; `future-plans/QA-AUDIT-REMEDIATION.md` and `future-plans/CX-REMEDIATION-HANDOVER.md` are branch-local additions. `FUTURE_PLANS.md` is also branch-local, not a `main` source.
-- **Decide deliberately:** `packages/db/prisma/migrations/` is not tracked on `main` and **contradicts AGENTS.md §4** if introduced accidentally. Delete any untracked migrations directory, or run a separately approved, atomic CI+AGENTS conversion to Prisma Migrate. `CI-CD-Pipeline-Proposal/` is a study — keep ignored or commit as a clearly labeled study. `scripts/capture-v4151.mjs` is an old one-off capture script — delete or fold into the F9 capture library (§3).
-- **Trivial:** delete stale remote branch `v4.16.1-permission-forbidden` (`git push origin --delete v4.16.1-permission-forbidden`).
-
----
-
-## 3. Near-term backlog (opportunistic)
-
-### 3.1 True HTTP-403 contract (blocked on nothing now — F4 seam shipped)
-`getTenantPageAccess()` returns HTTP **200** even on denial (streaming SSR commits status before the denial renders). Next's `forbidden()`/`authInterrupts` was **tried and rejected** — crashes on client hydration inside the LanguageProvider/ConsentProvider stack; do NOT re-attempt without a hydration fix. Build an **edge-runtime 403 middleware** off the now-shipped `lib/route-guards.ts` (`ROUTE_GUARDS`) + the `ActionResult<T>` / `ok`/`fail` helpers (`lib/action-result.ts`, shipped v4.17.0). Resolve the pre-existing `"User has no organization"` throw in `lib/auth-helpers.ts` (fires when a system user transiently touches a shared dashboard surface) in the same change.
-
-### 3.2 Registration verification layer (A5 remainder — rate-limiting shipped, verification didn't)
-Email verification before activation + `PENDING_VERIFICATION` org quarantine + auto-expiry of unverified orgs (7–14d cron) + optional Cloudflare Turnstile (PDPL-friendlier than reCAPTCHA — no tracking cookies). Refs: OWASP Authentication + Email-Verification cheat sheets; Auth0 `email_verified` gating. Schema change → §4 RLS contract applies.
-
-### 3.3 Ciphertext envelope + DB CHECK constraint
-Versioned prefix on encrypted values + a `CHECK` validating it (the only layer that would have caught the P1-1 plaintext leak at write time). Requires a format migration of all encrypted columns; revisit with the next PII schema work.
-
-### 3.4 F8 — RSC page+View migration — ✅ mostly DONE (v4.25.0 / v4.26.0)
-**Shipped:** contracts, reservations, payments, **marketplace, documents** all converted to the `finance/` RSC pattern (server `page.tsx` shell → props-driven client `*View.tsx`; mount-fetch waterfall removed) in **v4.25.0**; **`crm/CrmView.tsx` was found already RSC-seeded** (verified v4.26.0 — no waterfall). **Remaining (opportunistic):** `settings/page.tsx` (~1,372 lines), help, billing, admin sub-routes — convert when touched. Original guidance below.
-
-Convert client pages to the `finance/` RSC pattern (server `page.tsx` = guard + `parseRangeParams` + `Promise.all` + render; props-driven client `XView.tsx`). **Order:** contracts (`page.tsx` ~1,421 lines) → reservations → payments; then opportunistically `crm/CrmView.tsx` (3,481 lines), `settings/page.tsx` (~1,372), help, billing, admin sub-routes. Per conversion: bank the F5 label registry + F6 seams (`serialize`/`ActionResult`), migrate `lang==="ar"` ternaries to `t()` (touched-file rule), full §3.9 gate.
-
-### 3.5 F9 — verification tooling + @repo/ui hygiene (opportunistic)
-1. Capture library `scripts/lib/capture.mjs` exporting `{ login, shot, waitForServer, PRESETS }` — the ~7 `capture-*.mjs`/`verify-ui.mjs` scripts (~1,050 lines) each re-implement `login()`/`shot()`. New scripts become declarative shot-lists; do NOT retrofit the historical ones.
-2. Sparkline dedup → `packages/ui/src/lib/sparkline.ts`, import in `KPICard.tsx:131` + `mobile/MobileKPICard.tsx:90`.
-3. `LocalizedText` — export from a ui-local types module (re-declared in ~15 components, originally `LifecycleRail.tsx:15`).
-4. Deprecate the legacy `MobileKPIDelta` shape needing a runtime guard at `MobileKPICard.tsx:105`.
-5. Move `apps/web/lib/hijri.ts` → `packages/ui/src/lib/` (Saudi-generic), re-export.
-6. E2E page objects — add only when writing new specs (opportunistic).
-
-### 3.6 `/dashboard/more` decommission (4 wire points — don't delete the route without all four)
-1. `auth.config.ts` — system-user allowlist includes `/dashboard/more`; remove. 2. `components/shell/MobileUserMenuSheet.tsx` — links to it; update/remove. 3. `app/dashboard/DashboardClientLayout.tsx` — references it; audit/remove. 4. `app/dashboard/more/profile/` child route — delete after confirming nothing links to it. Then `grep -r "/dashboard/more" apps/web` must be empty before tagging.
-
-### 3.7 axe baseline closeout — ✅ scan EXPANDED (v4.26.0); debt fixes remain (→ v4.27, cluster A)
-**Shipped (v4.26.0):** the scan was expanded from 5 tenant-admin routes → **all 16 tenant + 8 platform routes × both audiences** (new `accessibility.system.spec.ts` + system auth-setup). **Finding:** removing the `color-contrast` exclusion was tried and **reverted** — v4.20's `--success-strong` fixed only the *success badge*; the expansion surfaced ~5 OTHER `color-contrast` + 2 `label` + widespread `select-name` violations. Current `KNOWN_BASELINE_RULES = [aria-allowed-attr, color-contrast, select-name, label]`, each documented. **Remaining:** fix that debt + un-baseline each rule (Master Status cluster A) and `aria-allowed-attr` (make the Radix trigger a real `<button>`). Original notes below.
-
-1. **`color-contrast` exclusion is likely stale.** v4.20.0 introduced `--success-strong`, but `apps/web/e2e/accessibility.admin.spec.ts` still disables `color-contrast`. First remove only that exclusion and run the current axe suite; if it passes, keep the token as-is and delete the stale comment. If it fails on a new selector, fix that specific surface.
-2. **`aria-allowed-attr` remains live.** A Radix/asChild path still needs direct verification; make the trigger target a real `<button>` or otherwise remove the invalid `aria-expanded` target. Then expand the scan from 5 tenant-admin routes to all dashboard routes by audience.
-
-### 3.8 Other standing items
-- **Full `t()` migration** of remaining ~2,000 inline `lang==="ar"` ternaries — touched-file only, never big-bang (F5 already centralized the densest cluster).
-- **Arabic domain-term pass for reservations + contracts** headings + empty-state copy (CRM done in v4.15.0). **Do this on the `lib/domain-labels.ts` registry after F5**, with native review (AGENTS.md §6.11.4).
-- **`"use cache"` / `cacheComponents` migration** — keep `unstable_cache` for now (`getPublicPlans` key/tag are stable for the switch).
-- **Policy-based RLS** — incompatible with the owner-role Prisma connection; not a patch. Current RLS-on-no-policy firewall stays.
-- **Lint-warning burn-down** — ~484 warnings (only-warn keeps CI at 0 errors); ratchet specific rules to error as files are cleaned.
-- **Marketplace cursor pagination + counts**, **document lifecycle** (remote deletion + audit), **per-tenant blind-index keys** (current per-app pepper acceptable at this scale).
-- **Dashboard greeting hydration** (`DashboardView` uses `new Date().getHours()` at render → hour-boundary server/client mismatch). Fix only if it surfaces: gate behind `useMounted()` (like `LastUpdatedAgo`).
-- **Asset 404** — `verification-v4.11.0` logged 2× "Failed to load resource: 404" (likely a favicon/image on a dashboard route); re-confirm it still exists post-v4.16 RSC before chasing.
-
-### 3.9 Load-test baseline (unmeasured — new item)
-Add a committed **k6** (or autocannon) script under `apps/web/loadtest/` — login + 3-dashboard flow, ramp 20→200 VUs, run against a deployed/staging HTTP/2 instance (browser load caps at 6 concurrent HTTP/1.1 conns, so single-tab tests only drove ~6-way concurrency). Measure pool-exhaustion threshold, timeout threshold, p50/p95/p99 TTFB. Gotchas: concurrent logins rotating users overwrite the shared session cookie (re-establish one known session before authed measurement); prefetch `_rsc` GETs showing `net::ERR_ABORTED` are Next cancelling prefetch, not failures.
+### A4. `organizationId` / `*Hash` NOT-NULL + FK tightening — `QA-DB-04/05`
+- **Gap:** The denormalized `organizationId` on `Lease`/`Reservation`/`PaymentPlanInstallment` and the `phoneHash`/`emailHash`/`nationalIdHash` columns are **nullable** — the NOT-NULL + FK tightening is the second half of QA-DB-04/05.
+- **Reason:** Deliberate staged rollout — a NOT-NULL column with no default aborts `db push` on a populated table (AGENTS.md §4), so the column shipped nullable and the tightening is gated on a verified backfill.
+- **Location:** `packages/db/prisma/schema.prisma` (Lease ~575, Reservation ~345, PaymentPlanInstallment ~503); backfill `packages/db/sql/2026-06-orgid-backfill.sql`; runbook `packages/db/sql/2026-06-v4.28-manual-steps.md` Step 5.
+- **What to do:** Run the backfill SQL against the live DB → verify 0 NULLs → set the columns NOT-NULL + add the cross-org FK/indexes → `db push`. (This is the "owed by Omar" live-DB step from v4.28 — I can run it.)
+- **Effort:** M · **Priority:** P1 (it's an already-started item one step from done).
 
 ---
 
-## 4. LATER IMPLEMENTATION (explicitly parked — do not schedule yet)
+## B. Accessibility & UX — **P2**
 
-### 4.1 DB region migration: Sydney → Bahrain (`me-south-1`)
-The dominant felt-latency lever. **Measured baseline:** TCP RTT app→Supabase = **223ms avg** (region `aws-1-ap-southeast-2` = AWS Sydney; users in Riyadh ~12,000 km). Warm static page (no DB) = 9–26ms. Expected post-migration ~15ms/round-trip (~10–15× better). Ops/runbook task (data move + downtime window), not code. Notes: `DATABASE_URL` uses port **5432 session mode** (not the 6543 transaction pooler) — fine for the `pg.Pool` singleton; revisit for serverless/edge. Prod `pool_size: 15` → `db push` + a running preview can throw `EMAXCONNSESSION` (stop preview before prod builds). Bahrain region is also the **NDMO/SDAIA data-residency** argument. **Parked by Omar.**
+### B1. Raw `<select>` → governed `SelectField` sweep — `QA-FE-03` tail
+- **Gap:** The governed `SelectField` primitive exists and the axe gate is green, but **~55 raw native `<select>`** remain across the app (they're labelled, so not an axe failure, but they keep the dark-mode/RTL styling inconsistency the finding called out, and interaction-revealed ones can regress unseen).
+- **Reason:** Built the primitive + greened the gate (the deliverable); the wholesale mechanical swap was never the gate requirement and is opportunistic.
+- **Location:** ~20 pages — `admin/coupons`, `admin/email`, `admin/tickets`, `contracts`, `settings` (×8), `onboarding` (×8), `payments`, `help` (×5), `crm/CustomerDrawer` (×3), `marketplace` (×2), `portal` (×2). (The one *unlabelled* one, UnitsView:1139, is already fixed.)
+- **What to do:** Touched-files-only swap to `<SelectField>` (highest-traffic first: contracts, payments, settings, crm/CustomerDrawer). Add a `no-restricted-syntax` lint ban on raw `<select>` in `app/**` to stop regressions. Do **not** big-bang all 55.
+- **Effort:** M (incremental) · **Priority:** P2.
 
-### 4.2 ZATCA e-invoicing module
-**Root gap:** `actions/billing.ts` `generateSubscriptionInvoice` (~L315–345) creates invoices but never sets ZATCA fields → every `Invoice.zatcaStatus` defaults `NOT_APPLICABLE`; QR/xml/submittedAt/clearedAt stay null. **Schema ready:** `enum ZatcaStatus { NOT_APPLICABLE, PENDING, CLEARED, REPORTED, REJECTED }` (schema.prisma ~L997) + Invoice ZATCA block (~L1182–1188). **Build order:** (1) clearance/reporting service populating ZATCA fields on issue — *the external dependency / blocker*; (2) tenant invoices page (`billing/invoices/page.tsx`) per-invoice clearance badge + QR + retry (data already returned, unrendered); (3) Finance dashboard compliance widget (reuse `admin-analytics/getZatcaClearanceRate.ts` → `{rate,cleared,rejected,pending,last7Rejections,alertSpike}`); (4) keep the platform-admin ZATCA KPI; (5) update `lib/help-content.ts:~106` FAQ. **Parked by Omar — blocked on the ZATCA clearance pipeline.**
-
----
-
-## 5. Open product question (gates marketplace compliance scope)
-
-**Marketplace positioning: inquiry-only vs reserve-and-buy.** Decides whether the audit's marketplace compliance / license-verification items are P0 or P2. Product call for Omar; prerequisite for scoping marketplace legal/compliance work.
-
----
-
-## 6. Pending UI features (component specs — folded from the deleted UI/*.txt)
-
-> All five are new `@repo/ui` component work, untouched by v4.18.0. Each must follow AGENTS.md §6 (RTL-first, 4-theme verification, 44px targets, governed primitives). Replace any prototype `useState`/raw-button stubs in the source specs with the real wiring noted below.
-
-### 6.1 Theme toggle button — ✅ shipped in `apps/web`
-Already implemented as `apps/web/components/ThemeToggle.tsx`, wired to `next-themes`, Radix Switch, bilingual `aria-label`, RTL-safe logical thumb positioning, and used in auth, portal, and topbar surfaces. Future work only if we deliberately extract it to `@repo/ui`; do not rebuild it from this old spec.
-
-### 6.2 Date picker — system-wide replacement
-Replace EVERY date / date-range picker with a stack on `react-aria-components` + `@internationalized/date`, all in `packages/ui/src/components/`: `date-range-picker.tsx` (`DatePicker`/`DateRangePicker`/`JollyDatePicker`/`JollyDateRangePicker`), `calendar.tsx` (`Calendar`/`RangeCalendar`/`CalendarHeading`… — `CalendarHeading` already flips chevrons via `useLocale()`, **preserve**), `datefield.tsx`, `field.tsx`, and a `react-aria`-based `popover.tsx` that must **coexist** with the existing Radix `Popover` (do not shadow/rename it). Deps: `react-aria-components`, `@internationalized/date`. **Mimaric musts:** RTL chevron flip; **Hijri toggle** (`calendar="islamic"` / `showHijriToggle`) wired to the per-user pref (AGENTS.md §6.15.3, `lib/hijri.ts`) — don't break the existing `saudi/HijriDatePicker`; migrate the dashboard range picker (`lib/use-date-range-query.ts` + `lib/dashboard-range.ts`) to `JollyDateRangePicker` without changing the query-string interface; tabular-nums on segments; 44px cells/nav; label-above + `--ring` focus to match Saudi input primitives. **Acceptance:** all date inputs migrated (none left on the old impl); RTL chevrons; Hijri toggle persists; 4-theme pass on a form date field + dashboard range header + contracts page.
-
-### 6.3 Notification center — ✅ shipped in app shell
-Already implemented in `components/shell/AppTopbar.tsx` and `MobileNotificationsSheet.tsx`, backed by `app/actions/notifications.ts` (`getMyNotifications`, `getUnreadCount`, `markAsRead`, `markAllAsRead`) and shared `notification-categories.ts`. Future work: extract to a reusable `@repo/ui` component only if another app needs it, and run 4-theme popover/sheet screenshots when touched.
-
-### 6.4 System alert banners (compound `Alert` redesign)
-Partially done: `packages/ui/src/primitives/alert.tsx` already has tokenized `variant × appearance` support for `default|primary|destructive|success|info|warning` and `solid|outline|light`. Remaining work is the compound API (`AlertContent`/`AlertIcon`/`AlertToolbar`), `mono`/`stroke`/size variants if still wanted, dismiss ownership via `IconButton`, usage migration, and a 4-theme variant-demo verification. Do not create a second `packages/ui/src/components/Alert.tsx` that conflicts with the existing primitive export; extend or wrap the existing primitive deliberately.
-
-### 6.5 Navigation — radial `CircleMenu` — ✅ shipped in `apps/web`
-The radial menu is already the live shell: `DashboardClientLayout.tsx` renders `components/shell/CircleMenu.tsx`, which lazy-loads `CircleMenuOverlay.tsx`; `radial-groups.ts` resolves the two-level groups from `navItems` with audience filtering. It uses a dialog/nav/link model rather than `role="menu"` (correct for site navigation), supports Escape/focus trap/arrow enhancement, reduced motion, RTL mirroring, and a mobile half-wheel. Future work: audit discoverability and keyboard coverage during any shell change, keep Cmd-K as the accessible twin, and do not rebuild this from the pre-implementation spec.
+### B2. CRM `CustomerDrawer` → `ResponsiveDialog` — `QA-FE-04`
+- **Gap:** The customer detail drawer is still a hand-rolled `fixed inset-0` overlay + `slide-in-from-right` panel — the slide direction **does not flip for Arabic RTL** and it gets **no mobile bottom-sheet** (re-implements by hand the exact hazards the finding flagged).
+- **Reason:** The v4.30 decompose extracted the drawer into its own file and migrated its inner *modal forms* to `ResponsiveDialog`, but not the drawer *shell* itself.
+- **Location:** `apps/web/app/dashboard/crm/CustomerDrawer.tsx:356-366` (hardcoded `slide-in-from-right`).
+- **What to do:** Re-platform the drawer onto `ResponsiveDialog` (or a shared `Drawer` primitive) so RTL slide-from-end + mobile bottom-sheet are inherited. Verify in AR-RTL + 375×812 per §3.9.
+- **Effort:** M · **Priority:** P2.
 
 ---
 
-## 7. Load-bearing engineering patterns (reference — do not unknowingly override)
+## C. Architecture / tech-debt — **P2/P3**
 
-- **`getTenantPageAccess()` + inline `<AccessDenied>` is the stable permission-denial pattern.** `forbidden()`/`authInterrupts` was tried and rejected (hydration crash in the provider-wrapped layout) — don't re-attempt without a hydration fix.
-- **Finance dashboard is the canonical RSC reference** (`finance/page.tsx` + `FinanceView.tsx` + `lib/dashboard-range.ts`) — copy it for F8 conversions.
-- **Consent = block-until-consent.** Do NOT switch to Consent Mode v2 (fires cookieless pings pre-consent); keep all `ad_*` denied.
-- **E2E overlays must be suppressed in storageState** — any new always-on overlay must be handled in `e2e/consent-helper.ts` or it breaks bottom-anchored interactions.
-- **CI badge ≠ CI pass.** `gh run watch --exit-status` returned 0 on a run with a failed step in this very project — always `gh run view --job <id>` (or `gh pr checks`) for per-step conclusions before merging/tagging.
+### C1. Adopt the abandoned shared seams + add lint-bans — `QA-ARCH-02`
+- **Gap:** The shared seams are mostly dead: `action-result.ts` (0 importers), `lib/routes.ts` `ROUTES` (2 importers vs **~23 raw `revalidatePath("/dashboard…")` strings**), `lib/serialize.ts` (2 vs ~24 inline `JSON.parse(JSON.stringify)`), the `t()` facade (0 vs ~87 inline). No lint-bans were added, so the inline alternatives keep accruing.
+- **Reason:** Adoption was framed as opportunistic; only `UNIT_STATUS` landed. **The raw `revalidatePath` strings are a live §8.5 stale-rename correctness hazard** (a renamed route leaves a stale revalidate string → confusing stale-data bug), not just churn.
+- **Location:** `app/actions/**` (the raw `revalidatePath` strings + inline serialize); seams in `apps/web/lib/{routes,serialize,action-result}.ts`.
+- **What to do:** Add the prescribed lint-bans (no inline `JSON.parse(JSON.stringify)` in `app/actions`; no raw `revalidatePath("/dashboard…")` → force `ROUTES`). Migrate the `revalidatePath` strings **first** (the actual hazard).
+- **Effort:** M · **Priority:** P2 (the revalidatePath part), P3 (the rest).
+
+### C2. Delete or document the dead `apps/portal` app — `QA-ARCH-03`
+- **Gap:** `apps/portal` ships 3 redirect-only routes that just redirect to `apps/web /auth/login` — build/maintenance overhead + a discoverability trap, with a stale "Create Next App" / "Generated by create next app" metadata title.
+- **Reason:** Never cleaned up; rated LOW.
+- **Location:** `apps/portal/app/{page,layout,dashboard/leases/page}.tsx`. (Confirmed redundant: the USER-role `/portal` redirect resolves to `apps/web/app/portal`, **not** `apps/portal`.)
+- **What to do:** Delete `apps/portal` and drop it from the build matrix, **or** add a top-of-file redirect-only comment + fix the stale metadata title. Verify no route depends on it first.
+- **Effort:** S · **Priority:** P3.
+
+### C3. `any`/exhaustive-deps budget reduction — `QA-ARCH-04`
+- **Gap:** Named `any`s persist (`massUpdateUnits` types `status?: any`) and 11 `eslint-disable react-hooks/exhaustive-deps` are un-audited (each a latent stale-closure bug).
+- **Reason:** Lowest-priority cleanup; no sprint targeted it.
+- **Location:** `apps/web/app/actions/units.ts:87` (+ `:347` `as any`); `CrmView`/`UnitsView`/`customers.ts` named `any`s; the 11 disables across hooks-heavy views.
+- **What to do:** Type `massUpdateUnits` status as the `UnitStatus` enum; focused pass on the named `any`s; fix or justify each exhaustive-deps disable. Fold into the next touch of each file.
+- **Effort:** M · **Priority:** P3.
+
+### C4. F9 code-hygiene tail — `§3.5`
+- **Gap:** (a) No shared capture lib (`scripts/lib/capture.mjs`) — the `capture-v42xx.mjs` scripts re-implement login/shot; (b) `apps/web/lib/hijri.ts` not relocated to `packages/ui/src/lib/` (Saudi-generic); (c) `LocalizedText` still re-declared in ~15 components; (d) legacy `MobileKPIDelta` runtime-guard shape not deprecated.
+- **Reason:** Sparkline dedup + UNIT_STATUS landed (d4c02d1); the rest of F9 is opportunistic and untouched.
+- **Location:** `scripts/`, `apps/web/lib/hijri.ts`, the ~15 components.
+- **What to do:** Move `hijri.ts` to `@repo/ui` + re-export; centralize `LocalizedText`; build the capture lib; deprecate `MobileKPIDelta`. Each is independent + small.
+- **Effort:** S each · **Priority:** P3.
 
 ---
 
-*When an item ships, strike it here and note the version. This file is the only surviving record of the deleted planning + UI-spec docs.*
+## D. Data lifecycle / compliance — **P2**
+
+### D1. Retention/partition for audit & notification tables — `QA-DB-07`
+- **Gap:** No retention or partition strategy for `AuditLog` / `ConsentLog` / `Notification` / `WebhookEvent`. Unbounded growth **and** a **PDPL data-minimization** concern (indefinite ConsentLog/AuditLog PII retention).
+- **Reason:** Out-of-`db-push` scheduled-job; rated LOW; silently dropped (no tracked deferral).
+- **Location:** The only purge cron is `apps/web/app/api/cron/clean-expired-email-tokens` (unrelated). No retention anywhere else.
+- **What to do:** Add a scheduled purge — a cron route under `app/api/cron/` (guarded by `isAuthorizedCronRequest`) or a Supabase `pg_cron` job — that retains AuditLog/ConsentLog per a **documented PDPL window** and prunes delivered Notification/WebhookEvent older than N days. For very large tables, range-partition by month + drop old partitions (manual SQL).
+- **Effort:** M · **Priority:** P2 (PDPL angle).
+
+---
+
+## E. Features partially shipped — **P2**
+
+### E1. Registration verification — full layer — `§3.2`
+- **Gap:** The core email-verify shipped (user-level `emailVerified`, deny-login-until-verified, verify pages, daily token-purge cron). Missing: **(a) org-level `PENDING_VERIFICATION` quarantine** (only user-level today), **(b) a 7–14-day unverified-org auto-expiry cron**, **(c) anti-bot (Cloudflare Turnstile)** on signup.
+- **Reason:** Scoped to the user-level gate for v4.30; the org-quarantine + auto-expiry + Turnstile were the stretch.
+- **Location:** `apps/web/lib/email-verification.ts`, `app/api/cron/clean-expired-email-tokens` (token-only). No `expire-unverified-orgs` cron; no Turnstile.
+- **What to do:** Add `Organization.status PENDING_VERIFICATION` + gate; an `expire-unverified-orgs` cron (PDPL-friendly minimization of abandoned signups); Turnstile on the register form (PDPL-friendlier than reCAPTCHA).
+- **Effort:** M · **Priority:** P2.
+
+### E2. `/dashboard/more` decommission — finish — `§3.6`
+- **Gap:** The `more` hub was deleted but `more/profile` was intentionally kept; the §3.6 acceptance ("`grep -r /dashboard/more` empty") is not met.
+- **Reason:** Deliberate partial — `more/profile` is still linked (UI-First).
+- **Location:** `DashboardClientLayout.tsx:33`, `MobileUserMenuSheet.tsx:81`, `app/dashboard/more/profile/`.
+- **What to do:** Either fully retire `more/profile` (move the profile surface to `settings`) or formally close §3.6 as "profile kept by design." Mostly a decision + small wiring.
+- **Effort:** S · **Priority:** P3.
+
+### E3. Date-picker spec-completeness — `§6.2`
+- **Gap:** The react-aria migration shipped (`aria-calendar.tsx`, Hijri toggle, no `react-day-picker` left), but it's a custom react-aria-hooks calendar, not the full Jolly\* `react-aria-components` stack (`datefield.tsx`/`date-range-picker.tsx` named in the spec); "all date inputs migrated" isn't fully proven (the ~14 native `<input type="date">` remain native).
+- **Reason:** Core migration was the goal; the native date-inputs + full component stack are the tail.
+- **Location:** `packages/ui/src/primitives/aria-calendar.tsx`; the ~14 `<input type="date">` across settings/maintenance/reservations/payments/crm/reports/coupons.
+- **What to do:** Decide whether the native `<input type="date">` need the custom picker (they're accessible as-is). If yes, migrate on touch. Otherwise close §6.2 as done.
+- **Effort:** M (if migrating the inputs) · **Priority:** P3.
+
+### E4. Marketplace `viewCount` dedup + pagination — `QA-MKT-06`
+- **Gap:** `viewCount` increments on **every** buyer detail-view with no per-viewer/session dedup (inflates on refresh/bots; unreliable for any future ranking/seller analytics). Cursor pagination + counts also not added (search half is covered by CX-002).
+- **Reason:** Listed P3-local; only the search/federated half shipped.
+- **Location:** `apps/web/lib/marketplace/listing-view.ts:201` (`viewCount: { increment: 1 }`).
+- **What to do:** Gate the increment on a `(listingId, viewerKey, date-bucket)` row or a short-TTL rate-limit key; keep best-effort/non-blocking. Add cursor pagination when listing volume warrants.
+- **Effort:** S (dedup) / M (pagination) · **Priority:** P3.
+
+---
+
+## F. Large refactors (you want these done — NOT deferred) — **P2/P3**
+
+### F1. Full `t()` migration tail — `§3.8`
+- **Gap:** Only `DashboardView` was migrated (26 ternaries). **~2,200–2,585 inline `lang === "ar" ? …` ternaries** remain across ~80 files.
+- **Reason:** Bounded best-effort for v4.30 (it's zero-user-value churn with real per-string copy-regression risk; AGENTS.md §3.8 forbids a big-bang).
+- **Location:** repo-wide. Highest-traffic per-route counts: `contracts/ContractsView` ~157 · `units/UnitsView` ~116 · `reservations/ReservationsView` ~98 · `crm/CrmView` (+`AddCustomerModal`/`CustomerDrawer`) ~65 · `payments/PaymentsView` ~65 · `DashboardView` **done (26 of 36)** · ~70 other files for the balance of ~2,230.
+- **Conversion rule (for whoever resumes):** `const { lang, t } = useLanguage()`; convert ONLY `lang === "ar" ? "<ar>" : "<en>"` where **both branches are user-facing string/template literals** → `t("<ar>", "<en>")` (Arabic first). NEVER convert a branch that is JSX / a variable / number / null, or that feeds `dir`/`locale`/`calendar`/`className`/`Intl`/CSS, or a bare `lang === "ar"` boolean. Under-converting is correct; a wrong conversion is a rendered-copy bug.
+- **What to do:** Per-route batched commits (never big-bang), `check-types` + a 4-theme render per batch, convert **only** string-literal text pairs (not `dir`/`locale`/JSX ternaries). Add a lint-ban on new inline ternaries once a route is migrated.
+- **Effort:** L (multi-PR program) · **Priority:** P3 (maintainability, not user-facing).
+
+### F2. True HTTP-403 edge middleware — `§3.1`
+- **Gap:** Authorization denials redirect / render an in-shell AccessDenied at **HTTP 200**, not a true 403. No `apps/web/middleware.ts`.
+- **Reason:** Deferred — Next's `forbidden()` caused a hydration crash (rejected), and a new edge middleware carries CVE-2025-29927 risk for marginal 403-vs-200 value (server-side guards already enforce).
+- **Location:** `apps/web/auth.config.ts` (the `authorized` redirect); `app/dashboard/_components/AccessDenied.tsx` (returns 200).
+- **What to do:** If you want a real 403: add an edge `middleware.ts` keyed off `lib/route-guards.ts` (`ROUTE_GUARDS`) as **defense-in-depth only** (keep the server-side guards), patched against CVE-2025-29927. Otherwise document the 200-on-denial as accepted.
+- **Effort:** M · **Priority:** P3 (server-side guards already secure; this is HTTP-semantics polish).
+
+---
+
+## G. Regulatory roadmap (excluding ZATCA) — **P3 / product-gated**
+
+### G1. Ejar auto-registration + national e-sign SSO
+- **Gap:** Saudi-integration roadmap items — Ejar electronic-lease auto-registration and national e-signature (Nafath/IAM) SSO — are unbuilt.
+- **Reason:** External-integration roadmap, separate from the core product; not regressions.
+- **Location:** n/a (greenfield).
+- **What to do:** Scope as their own features when the integrations are prioritized (each needs the external API + credentials). *(Off-plan/projects scope was explicitly removed in v4.2.5 — that one is obsolete, not outstanding.)*
+- **Effort:** L each · **Priority:** P3.
+
+---
+
+## H. Housekeeping & loose ends — **P3**
+
+| ID | Gap | Location | What to do | Effort |
+|---|---|---|---|---|
+| H1 | Untracked `packages/db/prisma/migrations/` dir contradicts the `db push` model (AGENTS.md §4) | working tree `?? packages/db/prisma/migrations/` | **Delete it** (stay on `db push`); confirm not referenced | S |
+| H2 | `CI-CD-Pipeline-Proposal/` untracked, undecided | working tree `?? CI-CD-Pipeline-Proposal/` | Commit as a labeled study or delete | S |
+| H3 | 2 pre-existing server logs never closed (`unexpected export *`, active-subscription error) | from the v4.18 marketplace CI run | Reproduce → fix or close-out as test-seed noise | S |
+| H4 | Arabic domain-term pass for **reservations/contracts** headings + empty-states not done (marketplace strings done in §1.2) | `apps/web/lib/domain-labels.ts` + those views | Native-speaker review of the AR copy | S |
+| H5 | Dashboard greeting hydration (`getHours()` server/client mismatch) — latent | `DashboardView.tsx:193` | `useMounted()` guard if the warning surfaces | S |
+| H6 | Asset 404 (the v4.11 dashboard 404) never re-confirmed post-RSC | dashboard route | Re-confirm in network tab; resolve if it persists | S |
+| H7 | Lint-warning burn-down (~480 warnings) | repo-wide | Ratchet rule-classes to `error` incrementally | M |
+| H8 | Per-tenant blind-index keys + document remote-deletion+audit | `lib/pii-crypto.ts`, `app/actions/documents.ts` | Per-tenant pepper (noted "acceptable at this scale"); document lifecycle | M |
+| H9 | Marketplace cross-org E2E: one narrow `test.fixme` remains (seller convert→settle UI walk — pre-existing DataTable convert-button hang) | `apps/web/e2e/marketplace.cross-org.spec.ts:599` | Debug the DataTable convert-button hang, then un-fixme | M |
+
+---
+
+## I. Engineering backlog — legacy v4.7-era roadmap (re-verify before doing) — **P3**
+> Folded in from the former root `FUTURE_PLANS.md §2`. These predate the v4.27–v4.30 work — **re-verify each against current code before acting** (some may already be resolved).
+
+| ID | Gap | Location | What to do | Effort |
+|---|---|---|---|---|
+| I1 | The partial-payment CI test **re-implements** the money algorithm instead of exercising real code | `apps/web/e2e/seed/payment-correctness-test.ts` | Extract the pure money logic into a shared non-`"use server"` module the test imports (T3 — money). | M |
+| I2 | No append-only `RentPayment` ledger — the `effectivePaid`/`coalesce` legacy rule blocks per-payment reversals/refunds | rent-payment write paths | Introduce an append-only RentPayment ledger (T3 — money; long-term-correct payment model). | L |
+| I3 | Reports-page group headers render English in the Arabic view | `ReportsView.tsx` `REPORT_GROUPS` (page-level `lang`-source quirk; config is already bilingual) | Fix the header `lang` source. Cosmetic; Arabic-first product. | S |
+| I4 | `marketplace.ts` writes `Customer.status` directly inside the cross-org transfer txn, bypassing Deal-sync | `app/actions/marketplace.ts` (v4.5 follow-up) | Route the status change through the Deal-sync path inside the atomic transfer. | S |
+| I5 | confirm-after-convert can create a 2nd `WON` deal row | the convert→confirm path (v4.5 follow-up) | Make convert idempotent (status still resolves via deterministic sync — low impact). | S |
+| I6 | Dev `@axe-core/react` "2 issues" overlay (a v4.7 observation) | dev-mode only | **Likely already resolved** by the v4.29/v4.30 axe-26/26 work — re-confirm in dev, close if clean. | S |
+
+---
+
+## Deferred — your two only (DB migration + ZATCA)
+| Item | Why / scope | Detail |
+|---|---|---|
+| **DB migration & release / DB-evolution governance** | The deferred "going-public" infra program (you're aware). Encompasses: **adopt Prisma Migrate of-record** (retire prod `db push`) via a one-time PII-sanitized-clone-rehearsed prod baseline (`migrate diff` must be zero-drift; prod gets metadata-only `migrate resolve --applied`, **no DDL**) + an atomic CI cutover (`db push --accept-data-loss` → `migrate deploy`); **Vercel + Supabase deploy pipeline** with instant atomic rollback + PR previews; **observability** (Sentry + `/api/health` + uptime/alerting + structured no-PII logging); **PDPL/NDMO release gates** (`npm audit` / gitleaks / SBOM + non-prod de-identification + a T3 PDPL checklist); a **per-change risk-tiered (T0–T3) developer playbook**; and the **DB region move** Sydney → Bahrain `me-south-1` (the ~223ms-RTT latency lever; RSC work shipped as the interim perceived-latency win). Prereqs you configure first: Vercel project, disposable Supabase clone, PITR/backup access, Sentry DSN, sole `DIRECT_URL` ownership. | The full step-by-step baseline runbook + pipeline + tier-gates is preserved in git history (`FUTURE_PLANS.md`, removed in this handover commit — `git show` to retrieve). |
+| **ZATCA Phase-2 e-invoicing** | Large compliance integration blocked on the external clearance pipeline. Schema is ready (`ZatcaStatus` enum + Invoice fields, default `NOT_APPLICABLE`). | `billing.ts:282` |
+
+---
+
+## Suggested sequencing if you want me to proceed
+1. **P1 security/data:** A1 ciphertext envelope + A2 decrypt telemetry (one change), A4 the org-id backfill + NOT-NULL (live-DB, I run it).
+2. **P2:** D1 retention/PDPL, E1 registration-verification layer, B2 CustomerDrawer, A3 rate-limiter decision, C1 revalidatePath lint-ban.
+3. **P3:** the select-sweep, the F9 hygiene, apps/portal, any-budget, the housekeeping table, then the `t()` program + HTTP-403 as standalone efforts.
+
+Tell me which tier (or specific IDs) to take, and I'll run them through the same delegate → QA-gate → §3.9 → release cycle.
