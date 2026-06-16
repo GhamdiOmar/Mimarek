@@ -1,8 +1,9 @@
 import "server-only";
 
 import { db } from "@repo/db";
-import { randomBytes, createHash } from "crypto";
+import { randomBytes } from "crypto";
 import { getAppUrl } from "./app-url";
+import { sha256Hex } from "./token-hash";
 
 /**
  * Email verification token helpers (OWASP: hash-at-rest, single-use, 24h expiry).
@@ -21,11 +22,6 @@ import { getAppUrl } from "./app-url";
  */
 
 const TOKEN_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
-
-/** SHA-256 hex digest of the raw token — what we persist + look up by. */
-export function sha256Hex(raw: string): string {
-  return createHash("sha256").update(raw).digest("hex");
-}
 
 /** Build the absolute verify link, using the same base-URL source as the reset flow. */
 export function verifyEmailUrl(rawToken: string): string {

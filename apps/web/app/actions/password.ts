@@ -10,6 +10,7 @@ import { getAppUrl } from "../../lib/app-url";
 import { sendTransactionalEmail } from "../../lib/email";
 import { passwordResetEmail } from "../../lib/email-templates";
 import { checkRateLimit } from "../../lib/rate-limit";
+import { sha256Hex } from "../../lib/token-hash";
 
 export async function changePassword(data: {
   currentPassword: string;
@@ -72,19 +73,21 @@ export async function requestPasswordReset(email: string) {
     return { success: true };
   }
 
-  // Generate token
-  const token = randomBytes(32).toString("hex");
+  // Generate token. The RAW token (URL-safe) is emailed ONLY in the link; we
+  // persist ONLY its SHA-256 hash (OWASP: hash-at-rest), so a DB read cannot
+  // forge a valid reset link.
+  const rawToken = randomBytes(32).toString("base64url");
   const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
   await db.passwordResetToken.create({
     data: {
-      token,
+      tokenHash: sha256Hex(rawToken),
       userId: user.id,
       expiresAt,
     },
   });
 
-  const resetUrl = `${getAppUrl()}/auth/reset-password?token=${token}`;
+  const resetUrl = `${getAppUrl()}/auth/reset-password?token=${encodeURIComponent(rawToken)}`;
   const template = passwordResetEmail({ name: user.name, resetUrl });
   const emailResult = await sendTransactionalEmail({
     to: user.email,
@@ -107,46 +110,67 @@ export async function requestPasswordReset(email: string) {
 }
 
 export async function resetPassword(token: string, newPassword: string) {
-  const resetToken = await db.passwordResetToken.findUnique({
-    where: { token },
+  // Look up by HASH of the incoming token — only the hash is stored at rest.
+  const tokenHash = sha256Hex(token);
+  const now = new Date();
+
+  // (a) Pre-check lookup (also gives us the user for password validation).
+  const row = await db.passwordResetToken.findUnique({
+    where: { tokenHash },
     include: { user: true },
   });
 
-  if (!resetToken) {
+  // (b) Cheap rejections before any write.
+  if (!row) {
     return { error: "INVALID_TOKEN" };
   }
-
-  if (resetToken.usedAt) {
+  if (row.usedAt) {
     return { error: "TOKEN_USED" };
   }
-
-  if (new Date() > resetToken.expiresAt) {
+  if (row.expiresAt <= now) {
     return { error: "TOKEN_EXPIRED" };
   }
 
-  // Validate new password
+  // (c) Validate the new password BEFORE consuming the token — a weak password
+  // must NOT burn the token (the link stays usable for a retry).
   const validation = validatePassword(newPassword, {
-    name: resetToken.user.name ?? undefined,
-    email: resetToken.user.email,
+    name: row.user.name ?? undefined,
+    email: row.user.email,
   });
   if (!validation.valid) {
     return { error: "WEAK_PASSWORD", details: validation.errors };
   }
 
-  // Hash and save
-  const hashed = await bcryptHash(newPassword, 12);
-  await db.user.update({ where: { id: resetToken.userId }, data: { password: hashed } });
+  // (d) Atomic single-use claim + password update in ONE transaction. The
+  // updateMany(usedAt: null, expiresAt > now) lets exactly one caller win the
+  // race; count !== 1 means it was already consumed (double-spend closed).
+  const result = await db.$transaction(async (tx: any) => {
+    const claimed = await tx.passwordResetToken.updateMany({
+      where: { tokenHash, usedAt: null, expiresAt: { gt: now } },
+      data: { usedAt: now },
+    });
+    if (claimed.count !== 1) {
+      return { error: "TOKEN_USED" as const };
+    }
+    await tx.user.update({
+      where: { id: row.userId },
+      data: { password: await bcryptHash(newPassword, 12) },
+    });
+    return { success: true as const };
+  });
 
-  // Mark token as used
-  await db.passwordResetToken.update({ where: { id: resetToken.id }, data: { usedAt: new Date() } });
+  if ("error" in result) {
+    return result;
+  }
 
+  // (e) Fire-and-forget audit (unchanged).
   logAuditEvent({
-    userId: resetToken.user.id,
-    userEmail: resetToken.user.email,
-    userRole: resetToken.user.role,
+    userId: row.user.id,
+    userEmail: row.user.email,
+    userRole: row.user.role,
     action: "PASSWORD_RESET",
     resource: "Auth",
-    organizationId: resetToken.user.organizationId,
+    organizationId: row.user.organizationId,
   });
 
   return { success: true };
