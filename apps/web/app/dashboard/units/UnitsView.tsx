@@ -1137,6 +1137,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
                 <div className="flex items-center gap-2">
                   {updating && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
                   <select
+                    aria-label={lang === "ar" ? "تحديث حالة الوحدات المحددة" : "Update status of selected units"}
                     onChange={(e) => {
                       const ids = selected.map((r: any) => r.id);
                       setSelectedUnits(ids);
