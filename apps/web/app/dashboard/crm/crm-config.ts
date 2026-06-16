@@ -126,21 +126,3 @@ export const SOURCE_LABELS: Record<string, { ar: string; en: string }> = {
   SOCIAL_MEDIA: { ar: "وسائل التواصل", en: "Social Media" },
   MARKETPLACE: { ar: "السوق", en: "Marketplace" },
 };
-
-export const EMPTY_NEW_CUSTOMER = {
-  name: "",
-  phone: "",
-  email: "",
-  nationalId: "",
-  nameArabic: "",
-  source: "",
-  status: "NEW",
-  personType: "",
-  gender: "",
-  dateOfBirth: "",
-  nationality: "",
-  maritalStatus: "",
-  budget: "",
-  propertyTypeInterest: "",
-  agentId: "",
-};
