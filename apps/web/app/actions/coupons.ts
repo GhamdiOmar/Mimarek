@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requirePermission, requireTenantPermission } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
 import { ROUTES } from "../../lib/routes";
+import { serialize } from "../../lib/serialize";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Coupon Validation (Customer-facing)
@@ -150,7 +151,7 @@ export async function applyCoupon(couponId: string, invoiceId: string) {
     });
   });
 
-  revalidatePath("/dashboard/billing");
+  revalidatePath(ROUTES.billing);
   return { discountAmount, newTotal: total };
 }
 
@@ -202,7 +203,7 @@ export async function adminCreateCoupon(data: {
   });
 
   revalidatePath(ROUTES.adminCoupons);
-  return JSON.parse(JSON.stringify(coupon));
+  return serialize(coupon);
 }
 
 /**
@@ -219,7 +220,7 @@ export async function adminGetCoupons() {
     orderBy: { createdAt: "desc" },
   });
 
-  return JSON.parse(JSON.stringify(coupons));
+  return serialize(coupons);
 }
 
 /**

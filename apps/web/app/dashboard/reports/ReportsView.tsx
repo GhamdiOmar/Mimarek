@@ -24,6 +24,7 @@ import {
   AppBar,
   Input,
   EmptyState,
+  HijriDatePicker,
   cn,
 } from "@repo/ui";
 import { useLanguage } from "../../../components/LanguageProvider";
@@ -149,7 +150,7 @@ const REPORT_GROUPS: ReportGroup[] = [
 ];
 
 export default function ReportsView({ loadedAt }: { loadedAt: string }) {
-  const { lang } = useLanguage();
+  const { t, lang } = useLanguage();
   const defaults = getDefaultDateRange();
   const [startDate, setStartDate] = React.useState(defaults.start);
   const [endDate, setEndDate] = React.useState(defaults.end);
@@ -433,25 +434,25 @@ export default function ReportsView({ loadedAt }: { loadedAt: string }) {
   const datePickerActions = (
     <div className="flex items-center gap-3">
       <label htmlFor="reports-start-date" className="sr-only">
-        {lang === "ar" ? "تاريخ البداية" : "Start date"}
+        {t("تاريخ البداية", "Start date")}
       </label>
-      <input
+      <HijriDatePicker
         id="reports-start-date"
-        type="date"
-        value={startDate}
-        onChange={(e) => setStartDate(e.target.value)}
-        className="border border-border rounded-md px-3 py-1.5 text-sm text-foreground bg-card"
+        locale={lang === "ar" ? "ar" : "en"}
+        value={startDate ? new Date(startDate) : null}
+        onChange={(d) => setStartDate(d ? d.toISOString().slice(0, 10) : "")}
+        className="w-auto bg-card"
       />
       <span className="text-muted-foreground text-sm" aria-hidden="true">إلى</span>
       <label htmlFor="reports-end-date" className="sr-only">
-        {lang === "ar" ? "تاريخ النهاية" : "End date"}
+        {t("تاريخ النهاية", "End date")}
       </label>
-      <input
+      <HijriDatePicker
         id="reports-end-date"
-        type="date"
-        value={endDate}
-        onChange={(e) => setEndDate(e.target.value)}
-        className="border border-border rounded-md px-3 py-1.5 text-sm text-foreground bg-card"
+        locale={lang === "ar" ? "ar" : "en"}
+        value={endDate ? new Date(endDate) : null}
+        onChange={(d) => setEndDate(d ? d.toISOString().slice(0, 10) : "")}
+        className="w-auto bg-card"
       />
     </div>
   );
@@ -463,7 +464,7 @@ export default function ReportsView({ loadedAt }: { loadedAt: string }) {
       className="md:hidden -m-4 sm:-m-6 min-h-dvh flex flex-col bg-background"
       dir={lang === "ar" ? "rtl" : "ltr"}
     >
-      <AppBar title={lang === "ar" ? "التقارير" : "Reports"} lang={lang} />
+      <AppBar title={t("التقارير", "Reports")} lang={lang} />
 
       <div className="px-4 pt-3">
         <div className="relative">
@@ -483,7 +484,7 @@ export default function ReportsView({ loadedAt }: { loadedAt: string }) {
           <Input
             value={mobileSearch}
             onChange={(e) => setMobileSearch(e.target.value)}
-            placeholder={lang === "ar" ? "ابحث في التقارير..." : "Search reports..."}
+            placeholder={t("ابحث في التقارير...", "Search reports...")}
             className="h-10 ps-9"
           />
         </div>
@@ -550,11 +551,9 @@ export default function ReportsView({ loadedAt }: { loadedAt: string }) {
         {mobileGroups.length === 0 && (
           <EmptyState
             icon={<Search className="h-12 w-12" />}
-            title={lang === "ar" ? "لا توجد نتائج" : "No results"}
+            title={t("لا توجد نتائج", "No results")}
             description={
-              lang === "ar"
-                ? `لا توجد تقارير تطابق "${mobileSearch}".`
-                : `No reports match "${mobileSearch}".`
+              t(`لا توجد تقارير تطابق "${mobileSearch}".`, `No reports match "${mobileSearch}".`)
             }
             action={
               <Button
@@ -562,7 +561,7 @@ export default function ReportsView({ loadedAt }: { loadedAt: string }) {
                 style={{ display: "inline-flex" }}
                 onClick={() => setMobileSearch("")}
               >
-                {lang === "ar" ? "مسح البحث" : "Clear search"}
+                {t("مسح البحث", "Clear search")}
               </Button>
             }
           />

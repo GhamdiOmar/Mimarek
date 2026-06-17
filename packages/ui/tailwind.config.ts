@@ -6,7 +6,6 @@ const config: Config = {
   content: [
     "./src/**/*.{ts,tsx}",
     "../../apps/web/app/**/*.{ts,tsx}",
-    "../../apps/portal/app/**/*.{ts,tsx}",
   ],
   theme: {
     screens: {

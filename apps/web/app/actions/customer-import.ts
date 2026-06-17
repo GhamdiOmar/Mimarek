@@ -4,6 +4,7 @@ import { randomUUID } from "crypto";
 import { db } from "@repo/db";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { ROUTES } from "../../lib/routes";
 import { requirePermission } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
 import { encryptCustomerData, phoneSearchHash } from "../../lib/pii-crypto";
@@ -253,7 +254,7 @@ export async function commitCustomerImport(
     organizationId: session.organizationId,
   });
 
-  revalidatePath("/dashboard/crm");
+  revalidatePath(ROUTES.crm);
 
   return { imported: result.count, skipped, importBatchId };
 }

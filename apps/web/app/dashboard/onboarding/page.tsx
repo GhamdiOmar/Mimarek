@@ -12,7 +12,7 @@ import {
   Mail,
   X,
 } from "lucide-react";
-import { Button, Input, AppBar, DirectionalIcon, PageIntro, CRInput, SaudiPhoneInput } from "@repo/ui";
+import { Button, Input, AppBar, DirectionalIcon, PageIntro, CRInput, SaudiPhoneInput, SelectField } from "@repo/ui";
 import { cn } from "@repo/ui/lib/utils";
 import { useRouter } from "next/navigation";
 import {
@@ -83,7 +83,7 @@ const EMPTY_INVITE: InviteRow = { email: "", role: "AGENT" };
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function OnboardingPage() {
-  const { lang } = useLanguage();
+  const { t, lang } = useLanguage();
   const router = useRouter();
   const [currentStep, setCurrentStep] = React.useState(0);
   const [loading, setLoading] = React.useState(false);
@@ -173,7 +173,7 @@ export default function OnboardingPage() {
         setCrSearchResult({ found: false, error: result.error });
       }
     } catch {
-      setError(lang === "ar" ? "فشل في البحث. يرجى المحاولة مجدداً." : "Search failed. Please try again.");
+      setError(t("فشل في البحث. يرجى المحاولة مجدداً.", "Search failed. Please try again."));
     } finally {
       setJoinLoading(false);
     }
@@ -196,12 +196,12 @@ export default function OnboardingPage() {
           CREATE_FAILED:          { ar: "فشل إرسال الطلب. يرجى المحاولة مجدداً.", en: "Failed to send request. Please try again." },
         };
         const msg = result.error ? msgMap[result.error] : undefined;
-        setError(msg ? msg[lang] : (lang === "ar" ? "فشل إرسال الطلب." : "Failed to send request."));
+        setError(msg ? msg[lang] : (t("فشل إرسال الطلب.", "Failed to send request.")));
         return;
       }
       goToDone("join_requested");
     } catch {
-      setError(lang === "ar" ? "فشل إرسال الطلب. يرجى المحاولة مجدداً." : "Failed to send request. Please try again.");
+      setError(t("فشل إرسال الطلب. يرجى المحاولة مجدداً.", "Failed to send request. Please try again."));
     } finally {
       setLoading(false);
     }
@@ -230,12 +230,12 @@ export default function OnboardingPage() {
           UPDATE_FAILED:      { ar: "فشل في حفظ البيانات. يرجى المحاولة مجدداً.",     en: "Failed to save. Please try again." },
         };
         const msg = result.error ? msgMap[result.error] : undefined;
-        setError(msg ? msg[lang] : (lang === "ar" ? "فشل في حفظ البيانات." : "Failed to save."));
+        setError(msg ? msg[lang] : (t("فشل في حفظ البيانات.", "Failed to save.")));
         return;
       }
       goNext();
     } catch {
-      setError(lang === "ar" ? "فشل في حفظ البيانات. يرجى المحاولة مجدداً." : "Failed to save. Please try again.");
+      setError(t("فشل في حفظ البيانات. يرجى المحاولة مجدداً.", "Failed to save. Please try again."));
     } finally {
       setLoading(false);
     }
@@ -253,12 +253,12 @@ export default function OnboardingPage() {
       };
       const result = await updateOnboardingContact(payload);
       if (!result.success) {
-        setError(lang === "ar" ? "فشل في حفظ بيانات التواصل. يرجى المحاولة مجدداً." : "Failed to save contact info. Please try again.");
+        setError(t("فشل في حفظ بيانات التواصل. يرجى المحاولة مجدداً.", "Failed to save contact info. Please try again."));
         return;
       }
       goNext();
     } catch {
-      setError(lang === "ar" ? "فشل في حفظ بيانات التواصل. يرجى المحاولة مجدداً." : "Failed to save contact info. Please try again.");
+      setError(t("فشل في حفظ بيانات التواصل. يرجى المحاولة مجدداً.", "Failed to save contact info. Please try again."));
     } finally {
       setLoading(false);
     }
@@ -278,7 +278,7 @@ export default function OnboardingPage() {
       await completeOnboarding();
       goToDone("normal");
     } catch {
-      setError(lang === "ar" ? "حدث خطأ. يرجى المحاولة مجدداً." : "Something went wrong. Please try again.");
+      setError(t("حدث خطأ. يرجى المحاولة مجدداً.", "Something went wrong. Please try again."));
     } finally {
       setLoading(false);
     }
@@ -298,14 +298,14 @@ export default function OnboardingPage() {
   // Mobile primary CTA label + handler
   const mobilePrimaryLabel = React.useMemo(() => {
     if (currentStepId === "join") {
-      if (joinChoice === "join" && crSearchResult?.found) return lang === "ar" ? "إرسال طلب الانضمام" : "Send Join Request";
-      if (joinChoice === "independent")                   return lang === "ar" ? "المتابعة" : "Continue";
-      return lang === "ar" ? "اختيار" : "Select";
+      if (joinChoice === "join" && crSearchResult?.found) return t("إرسال طلب الانضمام", "Send Join Request");
+      if (joinChoice === "independent")                   return t("المتابعة", "Continue");
+      return t("اختيار", "Select");
     }
-    if (currentStepId === "org")     return lang === "ar" ? "حفظ ومتابعة" : "Save & Continue";
-    if (currentStepId === "contact") return lang === "ar" ? "حفظ ومتابعة" : "Save & Continue";
-    if (currentStepId === "team")    return lang === "ar" ? "إنهاء الإعداد" : "Finish Setup";
-    return lang === "ar" ? "الذهاب إلى لوحة التحكم" : "Go to Dashboard";
+    if (currentStepId === "org")     return t("حفظ ومتابعة", "Save & Continue");
+    if (currentStepId === "contact") return t("حفظ ومتابعة", "Save & Continue");
+    if (currentStepId === "team")    return t("إنهاء الإعداد", "Finish Setup");
+    return t("الذهاب إلى لوحة التحكم", "Go to Dashboard");
   }, [currentStepId, joinChoice, crSearchResult, lang]);
 
   const handleMobilePrimary = () => {
@@ -332,7 +332,7 @@ export default function OnboardingPage() {
       TOO_MANY_LOOKUPS:  { ar: "تجاوزت الحد المسموح. يرجى الانتظار قليلاً.", en: "Too many searches. Please wait." },
       LOOKUP_FAILED:     { ar: "فشل في البحث. يرجى المحاولة مجدداً.", en: "Search failed. Please try again." },
     };
-    if (!code) return lang === "ar" ? "المنشأة غير موجودة في النظام." : "Organization not found in the system.";
+    if (!code) return t("المنشأة غير موجودة في النظام.", "Organization not found in the system.");
     return (msgMap[code] ?? { ar: "خطأ غير متوقع.", en: "Unexpected error." })[lang];
   }
 
@@ -346,7 +346,7 @@ export default function OnboardingPage() {
       className="md:hidden -m-4 sm:-m-6 min-h-dvh flex flex-col bg-background"
     >
       <AppBar
-        title={currentStepObj ? currentStepObj.label[lang] : (lang === "ar" ? "إعداد الحساب" : "Setup")}
+        title={currentStepObj ? currentStepObj.label[lang] : (t("إعداد الحساب", "Setup"))}
         subtitle={
           isDoneStep
             ? undefined
@@ -380,12 +380,10 @@ export default function OnboardingPage() {
           <div className="space-y-5 animate-in fade-in duration-300">
             <div>
               <h2 className="text-lg font-bold text-foreground">
-                {lang === "ar" ? "كيف تريد البدء؟" : "How would you like to start?"}
+                {t("كيف تريد البدء؟", "How would you like to start?")}
               </h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                {lang === "ar"
-                  ? "انضم إلى منشأة قائمة أو أنشئ مساحة عملك الخاصة."
-                  : "Join an existing organization or set up your own workspace."}
+                {t("انضم إلى منشأة قائمة أو أنشئ مساحة عملك الخاصة.", "Join an existing organization or set up your own workspace.")}
               </p>
             </div>
 
@@ -407,10 +405,10 @@ export default function OnboardingPage() {
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-foreground">
-                      {lang === "ar" ? "الانضمام إلى منشأة قائمة" : "Join an existing company"}
+                      {t("الانضمام إلى منشأة قائمة", "Join an existing company")}
                     </p>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      {lang === "ar" ? "ابحث عن المنشأة عبر رقم السجل التجاري." : "Search by commercial registration number."}
+                      {t("ابحث عن المنشأة عبر رقم السجل التجاري.", "Search by commercial registration number.")}
                     </p>
                   </div>
                 </div>
@@ -432,10 +430,10 @@ export default function OnboardingPage() {
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-foreground">
-                      {lang === "ar" ? "المتابعة بشكل مستقل" : "Continue independently"}
+                      {t("المتابعة بشكل مستقل", "Continue independently")}
                     </p>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      {lang === "ar" ? "أنشئ مساحة عمل خاصة بمنشأتك." : "Create your own workspace."}
+                      {t("أنشئ مساحة عمل خاصة بمنشأتك.", "Create your own workspace.")}
                     </p>
                   </div>
                 </div>
@@ -447,7 +445,7 @@ export default function OnboardingPage() {
               <div className="space-y-4 animate-in fade-in duration-200">
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                    {lang === "ar" ? "رقم السجل التجاري" : "Commercial Registration No."}
+                    {t("رقم السجل التجاري", "Commercial Registration No.")}
                   </label>
                   <div className="flex gap-2">
                     <CRInput
@@ -465,7 +463,7 @@ export default function OnboardingPage() {
                       disabled={joinLoading || crSearch.length !== 10}
                     >
                       {joinLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-                      {lang === "ar" ? "بحث" : "Search"}
+                      {t("بحث", "Search")}
                     </Button>
                   </div>
                 </div>
@@ -480,22 +478,20 @@ export default function OnboardingPage() {
                   <div className="space-y-3 animate-in fade-in duration-200">
                     <div className="rounded-lg border border-border bg-muted/30 p-3">
                       <p className="text-xs text-muted-foreground mb-1">
-                        {lang === "ar" ? "المنشأة:" : "Organization:"}
+                        {t("المنشأة:", "Organization:")}
                       </p>
                       <p className="text-sm font-semibold text-foreground font-mono">{crSearchResult.maskedName}</p>
                     </div>
                     <div className="space-y-2">
                       <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                        {lang === "ar" ? "سبب الطلب (اختياري)" : "Reason for joining (optional)"}
+                        {t("سبب الطلب (اختياري)", "Reason for joining (optional)")}
                       </label>
                       <textarea
                         value={joinReason}
                         onChange={(e) => setJoinReason(e.target.value)}
                         rows={3}
                         placeholder={
-                          lang === "ar"
-                            ? "اذكر سبب رغبتك في الانضمام إلى هذه المنشأة..."
-                            : "Describe why you want to join this organization..."
+                          t("اذكر سبب رغبتك في الانضمام إلى هذه المنشأة...", "Describe why you want to join this organization...")
                         }
                         className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none"
                       />
@@ -512,64 +508,62 @@ export default function OnboardingPage() {
           <div className="space-y-5 animate-in fade-in duration-300">
             <div>
               <h2 className="text-lg font-bold text-foreground">
-                {lang === "ar" ? "بيانات المنشأة" : "Organization Info"}
+                {t("بيانات المنشأة", "Organization Info")}
               </h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                {lang === "ar"
-                  ? "أضف بيانات منشأتك. يمكنك تخطي هذه الخطوة الآن وإكمالها لاحقاً."
-                  : "Add your organization details. You can skip this step and complete it later."}
+                {t("أضف بيانات منشأتك. يمكنك تخطي هذه الخطوة الآن وإكمالها لاحقاً.", "Add your organization details. You can skip this step and complete it later.")}
               </p>
             </div>
             <div className="space-y-4">
               <div className="space-y-2">
                 <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                  {lang === "ar" ? "الاسم بالعربي" : "Arabic Name"}
+                  {t("الاسم بالعربي", "Arabic Name")}
                 </label>
-                <Input value={orgForm.nameArabic} onChange={(e) => setOrg("nameArabic", e.target.value)} placeholder={lang === "ar" ? "مثال: شركة الأفق العقارية" : "e.g. شركة الأفق العقارية"} dir="rtl" className="h-11" />
+                <Input value={orgForm.nameArabic} onChange={(e) => setOrg("nameArabic", e.target.value)} placeholder={t("مثال: شركة الأفق العقارية", "e.g. شركة الأفق العقارية")} dir="rtl" className="h-11" />
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                  {lang === "ar" ? "الاسم بالإنجليزي" : "English Name"}
+                  {t("الاسم بالإنجليزي", "English Name")}
                 </label>
                 <Input value={orgForm.nameEnglish} onChange={(e) => setOrg("nameEnglish", e.target.value)} placeholder="e.g. Al Ufuq Real Estate" dir="ltr" className="h-11" />
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                  {lang === "ar" ? "رقم السجل التجاري" : "CR Number"}
+                  {t("رقم السجل التجاري", "CR Number")}
                 </label>
                 <CRInput value={orgForm.crNumber} onChange={(raw) => setOrg("crNumber", raw)} placeholder="1010XXXXXX" className="h-11" />
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                  {lang === "ar" ? "الرقم الضريبي" : "VAT Number"}
+                  {t("الرقم الضريبي", "VAT Number")}
                 </label>
                 <Input value={orgForm.vatNumber} onChange={(e) => setOrg("vatNumber", e.target.value)} placeholder="3000XXXXXX00003" dir="ltr" className="h-11 font-mono tabular-nums" />
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                  {lang === "ar" ? "نوع المنشأة" : "Entity Type"}
+                  {t("نوع المنشأة", "Entity Type")}
                 </label>
-                <select value={orgForm.entityType} onChange={(e) => setOrg("entityType", e.target.value)} className={cn(selectClass, "h-11")}>
-                  <option value="">{lang === "ar" ? "اختر..." : "Select..."}</option>
+                <SelectField aria-label={t("نوع المنشأة", "Entity Type")} value={orgForm.entityType} onChange={(e) => setOrg("entityType", e.target.value)} className={cn(selectClass, "h-11")}>
+                  <option value="">{t("اختر...", "Select...")}</option>
                   {entityTypeOptions.map((o) => (
                     <option key={o.value} value={o.value}>{lang === "ar" ? o.ar : o.en}</option>
                   ))}
-                </select>
+                </SelectField>
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                  {lang === "ar" ? "الشكل القانوني" : "Legal Form"}
+                  {t("الشكل القانوني", "Legal Form")}
                 </label>
-                <select value={orgForm.legalForm} onChange={(e) => setOrg("legalForm", e.target.value)} className={cn(selectClass, "h-11")}>
-                  <option value="">{lang === "ar" ? "اختر..." : "Select..."}</option>
+                <SelectField aria-label={t("الشكل القانوني", "Legal Form")} value={orgForm.legalForm} onChange={(e) => setOrg("legalForm", e.target.value)} className={cn(selectClass, "h-11")}>
+                  <option value="">{t("اختر...", "Select...")}</option>
                   {legalFormOptions.map((o) => (
                     <option key={o.value} value={o.value}>{lang === "ar" ? o.ar : o.en}</option>
                   ))}
-                </select>
+                </SelectField>
               </div>
             </div>
             <Button type="button" variant="link" onClick={() => handleSaveOrg(true)} disabled={loading} className="w-full min-h-11 text-sm text-muted-foreground hover:text-foreground">
-              {lang === "ar" ? "تخطي هذه الخطوة" : "Skip this step"}
+              {t("تخطي هذه الخطوة", "Skip this step")}
             </Button>
           </div>
         )}
@@ -579,43 +573,41 @@ export default function OnboardingPage() {
           <div className="space-y-5 animate-in fade-in duration-300">
             <div>
               <h2 className="text-lg font-bold text-foreground">
-                {lang === "ar" ? "بيانات التواصل" : "Contact Info"}
+                {t("بيانات التواصل", "Contact Info")}
               </h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                {lang === "ar"
-                  ? "أضف رقم الجوال والمدينة. يمكنك تخطي هذه الخطوة."
-                  : "Add your mobile and city. You can skip this step."}
+                {t("أضف رقم الجوال والمدينة. يمكنك تخطي هذه الخطوة.", "Add your mobile and city. You can skip this step.")}
               </p>
             </div>
             <div className="space-y-4">
               <div className="space-y-2">
                 <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                  {lang === "ar" ? "رقم الجوال" : "Mobile Number"}
+                  {t("رقم الجوال", "Mobile Number")}
                 </label>
                 <SaudiPhoneInput value={contactForm.mobileNumber} onChange={(e164) => setContact("mobileNumber", e164)} placeholder="05XXXXXXXX" className="h-11" />
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                  {lang === "ar" ? "المدينة" : "City"}
+                  {t("المدينة", "City")}
                 </label>
-                <select value={contactForm.city} onChange={(e) => setContact("city", e.target.value)} className={cn(selectClass, "h-11")}>
-                  <option value="">{lang === "ar" ? "اختر المدينة..." : "Select city..."}</option>
+                <SelectField aria-label={t("المدينة", "City")} value={contactForm.city} onChange={(e) => setContact("city", e.target.value)} className={cn(selectClass, "h-11")}>
+                  <option value="">{t("اختر المدينة...", "Select city...")}</option>
                   {KSA_CITIES.map((city) => (
                     <option key={city.value} value={city.value}>
                       {lang === "ar" ? city.labelAr : city.labelEn}
                     </option>
                   ))}
-                </select>
+                </SelectField>
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                  {lang === "ar" ? "المنطقة" : "Region"}
+                  {t("المنطقة", "Region")}
                 </label>
-                <Input value={contactForm.region} onChange={(e) => setContact("region", e.target.value)} placeholder={lang === "ar" ? "مثال: منطقة الرياض" : "e.g. Riyadh Region"} className="h-11" />
+                <Input value={contactForm.region} onChange={(e) => setContact("region", e.target.value)} placeholder={t("مثال: منطقة الرياض", "e.g. Riyadh Region")} className="h-11" />
               </div>
             </div>
             <Button type="button" variant="link" onClick={() => handleSaveContact(true)} disabled={loading} className="w-full min-h-11 text-sm text-muted-foreground hover:text-foreground">
-              {lang === "ar" ? "تخطي هذه الخطوة" : "Skip this step"}
+              {t("تخطي هذه الخطوة", "Skip this step")}
             </Button>
           </div>
         )}
@@ -625,12 +617,10 @@ export default function OnboardingPage() {
           <div className="space-y-5 animate-in fade-in duration-300">
             <div>
               <h2 className="text-lg font-bold text-foreground">
-                {lang === "ar" ? "دعوة أعضاء الفريق" : "Invite Team Members"}
+                {t("دعوة أعضاء الفريق", "Invite Team Members")}
               </h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                {lang === "ar"
-                  ? "أرسل دعوات لزملائك. يمكنك تخطي هذه الخطوة."
-                  : "Send invitations to your colleagues. You can skip this step."}
+                {t("أرسل دعوات لزملائك. يمكنك تخطي هذه الخطوة.", "Send invitations to your colleagues. You can skip this step.")}
               </p>
             </div>
             <div className="space-y-3">
@@ -641,7 +631,7 @@ export default function OnboardingPage() {
                       {lang === "ar" ? `دعوة ${i + 1}` : `Invite ${i + 1}`}
                     </span>
                     {inviteRows.length > 1 && (
-                      <button type="button" onClick={() => removeInviteRow(i)} className="text-muted-foreground hover:text-destructive transition-colors" aria-label={lang === "ar" ? "إزالة" : "Remove"}>
+                      <button type="button" onClick={() => removeInviteRow(i)} className="text-muted-foreground hover:text-destructive transition-colors" aria-label={t("إزالة", "Remove")}>
                         <X className="h-4 w-4" />
                       </button>
                     )}
@@ -654,20 +644,20 @@ export default function OnboardingPage() {
                     dir="ltr"
                     className="h-11"
                   />
-                  <select value={row.role} onChange={(e) => setInviteRow(i, "role", e.target.value)} className={cn(selectClass, "h-11")}>
+                  <SelectField aria-label={t("الدور", "Role")} value={row.role} onChange={(e) => setInviteRow(i, "role", e.target.value)} className={cn(selectClass, "h-11")}>
                     {inviteRoleOptions.map((opt) => (
                       <option key={opt.value} value={opt.value}>{opt.label[lang]}</option>
                     ))}
-                  </select>
+                  </SelectField>
                 </div>
               ))}
               <Button type="button" variant="outline" onClick={addInviteRow} className="w-full min-h-11 gap-2" style={{ display: "inline-flex" }}>
                 <Mail className="h-4 w-4" />
-                {lang === "ar" ? "إضافة دعوة أخرى" : "Add another invite"}
+                {t("إضافة دعوة أخرى", "Add another invite")}
               </Button>
             </div>
             <Button type="button" variant="link" onClick={() => handleFinishTeam(true)} disabled={loading} className="w-full min-h-11 text-sm text-muted-foreground hover:text-foreground">
-              {lang === "ar" ? "تخطي هذه الخطوة" : "Skip this step"}
+              {t("تخطي هذه الخطوة", "Skip this step")}
             </Button>
           </div>
         )}
@@ -682,12 +672,10 @@ export default function OnboardingPage() {
               {doneVariant === "join_requested" ? (
                 <>
                   <h2 className="text-xl font-bold text-foreground">
-                    {lang === "ar" ? "تم إرسال طلب الانضمام!" : "Join request submitted!"}
+                    {t("تم إرسال طلب الانضمام!", "Join request submitted!")}
                   </h2>
                   <p className="text-sm text-muted-foreground">
-                    {lang === "ar"
-                      ? "سيقوم مدير المنشأة بمراجعة طلبك والرد عليه خلال فترة قصيرة."
-                      : "The organization admin will review your request and respond shortly."}
+                    {t("سيقوم مدير المنشأة بمراجعة طلبك والرد عليه خلال فترة قصيرة.", "The organization admin will review your request and respond shortly.")}
                   </p>
                   <Button
                     variant="outline"
@@ -696,18 +684,16 @@ export default function OnboardingPage() {
                     style={{ display: "inline-flex" }}
                     onClick={() => router.push("/dashboard/help#join-requests")}
                   >
-                    {lang === "ar" ? "متابعة حالة الطلب" : "Check request status"}
+                    {t("متابعة حالة الطلب", "Check request status")}
                   </Button>
                 </>
               ) : (
                 <>
                   <h2 className="text-xl font-bold text-foreground">
-                    {lang === "ar" ? "تم إعداد حسابك بنجاح!" : "Your account is ready!"}
+                    {t("تم إعداد حسابك بنجاح!", "Your account is ready!")}
                   </h2>
                   <p className="text-sm text-muted-foreground">
-                    {lang === "ar"
-                      ? "يمكنك الآن الانتقال إلى لوحة التحكم وإدارة منشأتك."
-                      : "You can now go to the dashboard and manage your organization."}
+                    {t("يمكنك الآن الانتقال إلى لوحة التحكم وإدارة منشأتك.", "You can now go to the dashboard and manage your organization.")}
                   </p>
                 </>
               )}
@@ -734,7 +720,7 @@ export default function OnboardingPage() {
               disabled={loading}
             >
               <DirectionalIcon icon={ArrowLeft} className="h-4 w-4" aria-hidden="true" />
-              {lang === "ar" ? "السابق" : "Back"}
+              {t("السابق", "Back")}
             </Button>
           )}
           <Button
@@ -759,11 +745,9 @@ export default function OnboardingPage() {
     >
       <div className="max-w-3xl mx-auto px-4 py-10 space-y-8 animate-in fade-in duration-500">
         <PageIntro
-          title={lang === "ar" ? "إعداد حسابك" : "Set Up Your Account"}
+          title={t("إعداد حسابك", "Set Up Your Account")}
           description={
-            lang === "ar"
-              ? "أكمل الخطوات التالية لتفعيل حسابك على ميماريك."
-              : "Complete the following steps to activate your Mimaric account."
+            t("أكمل الخطوات التالية لتفعيل حسابك على ميماريك.", "Complete the following steps to activate your Mimaric account.")
           }
         />
 
@@ -774,7 +758,7 @@ export default function OnboardingPage() {
               className="absolute h-full bg-secondary rounded-full transition-all duration-500"
               style={{
                 width: `${(currentStep / (steps.length - 1)) * 100}%`,
-                [lang === "ar" ? "right" : "left"]: 0,
+                [t("right", "left")]: 0,
               }}
             />
             <div className="absolute top-1/2 -translate-y-1/2 w-full flex justify-between">
@@ -829,12 +813,10 @@ export default function OnboardingPage() {
               <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
                 <div className="mb-6">
                   <h2 className="text-lg font-bold text-primary">
-                    {lang === "ar" ? "كيف تريد البدء؟" : "How would you like to start?"}
+                    {t("كيف تريد البدء؟", "How would you like to start?")}
                   </h2>
                   <p className="text-sm text-muted-foreground mt-1">
-                    {lang === "ar"
-                      ? "انضم إلى منشأة قائمة أو أنشئ مساحة عملك الخاصة."
-                      : "Join an existing organization or set up your own workspace."}
+                    {t("انضم إلى منشأة قائمة أو أنشئ مساحة عملك الخاصة.", "Join an existing organization or set up your own workspace.")}
                   </p>
                 </div>
 
@@ -853,10 +835,10 @@ export default function OnboardingPage() {
                       <UserPlus className="h-6 w-6" />
                     </div>
                     <p className="text-sm font-semibold text-foreground">
-                      {lang === "ar" ? "الانضمام إلى منشأة قائمة" : "Join an existing company"}
+                      {t("الانضمام إلى منشأة قائمة", "Join an existing company")}
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {lang === "ar" ? "ابحث عبر رقم السجل التجاري." : "Search by commercial registration number."}
+                      {t("ابحث عبر رقم السجل التجاري.", "Search by commercial registration number.")}
                     </p>
                   </button>
 
@@ -874,10 +856,10 @@ export default function OnboardingPage() {
                       <Check className="h-6 w-6" />
                     </div>
                     <p className="text-sm font-semibold text-foreground">
-                      {lang === "ar" ? "المتابعة بشكل مستقل" : "Continue independently"}
+                      {t("المتابعة بشكل مستقل", "Continue independently")}
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {lang === "ar" ? "أنشئ مساحة عمل خاصة بمنشأتك." : "Create your own workspace."}
+                      {t("أنشئ مساحة عمل خاصة بمنشأتك.", "Create your own workspace.")}
                     </p>
                   </button>
                 </div>
@@ -887,7 +869,7 @@ export default function OnboardingPage() {
                   <div className="space-y-4 animate-in fade-in duration-200 pt-2">
                     <div className="space-y-2">
                       <label className="text-xs font-medium text-muted-foreground">
-                        {lang === "ar" ? "رقم السجل التجاري" : "Commercial Registration No."}
+                        {t("رقم السجل التجاري", "Commercial Registration No.")}
                       </label>
                       <div className="flex gap-2">
                         <CRInput
@@ -905,7 +887,7 @@ export default function OnboardingPage() {
                           disabled={joinLoading || crSearch.length !== 10}
                         >
                           {joinLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-                          {lang === "ar" ? "بحث" : "Search"}
+                          {t("بحث", "Search")}
                         </Button>
                       </div>
                     </div>
@@ -920,22 +902,20 @@ export default function OnboardingPage() {
                       <div className="space-y-4 animate-in fade-in duration-200">
                         <div className="rounded-lg border border-border bg-muted/30 p-4">
                           <p className="text-xs text-muted-foreground mb-1">
-                            {lang === "ar" ? "المنشأة:" : "Organization:"}
+                            {t("المنشأة:", "Organization:")}
                           </p>
                           <p className="text-sm font-semibold text-foreground font-mono">{crSearchResult.maskedName}</p>
                         </div>
                         <div className="space-y-2">
                           <label className="text-xs font-medium text-muted-foreground">
-                            {lang === "ar" ? "سبب الطلب (اختياري)" : "Reason for joining (optional)"}
+                            {t("سبب الطلب (اختياري)", "Reason for joining (optional)")}
                           </label>
                           <textarea
                             value={joinReason}
                             onChange={(e) => setJoinReason(e.target.value)}
                             rows={3}
                             placeholder={
-                              lang === "ar"
-                                ? "اذكر سبب رغبتك في الانضمام إلى هذه المنشأة..."
-                                : "Describe why you want to join this organization..."
+                              t("اذكر سبب رغبتك في الانضمام إلى هذه المنشأة...", "Describe why you want to join this organization...")
                             }
                             className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none"
                           />
@@ -954,7 +934,7 @@ export default function OnboardingPage() {
                       style={{ display: "inline-flex" }}
                     >
                       {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-                      {lang === "ar" ? "إرسال طلب الانضمام" : "Send Join Request"}
+                      {t("إرسال طلب الانضمام", "Send Join Request")}
                       <DirectionalIcon icon={ArrowRight} className="h-4 w-4" />
                     </Button>
                   ) : (
@@ -964,7 +944,7 @@ export default function OnboardingPage() {
                       className="gap-2 px-8"
                       style={{ display: "inline-flex" }}
                     >
-                      {lang === "ar" ? "المتابعة" : "Continue"}
+                      {t("المتابعة", "Continue")}
                       <DirectionalIcon icon={ArrowRight} className="h-4 w-4" />
                     </Button>
                   )}
@@ -977,61 +957,59 @@ export default function OnboardingPage() {
               <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
                 <div className="mb-6">
                   <h2 className="text-lg font-bold text-primary">
-                    {lang === "ar" ? "بيانات المنشأة" : "Organization Info"}
+                    {t("بيانات المنشأة", "Organization Info")}
                   </h2>
                   <p className="text-sm text-muted-foreground mt-1">
-                    {lang === "ar"
-                      ? "أضف بيانات منشأتك. جميع الحقول اختيارية."
-                      : "Add your organization details. All fields are optional."}
+                    {t("أضف بيانات منشأتك. جميع الحقول اختيارية.", "Add your organization details. All fields are optional.")}
                   </p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground">
-                      {lang === "ar" ? "الاسم بالعربي" : "Arabic Name"}
+                      {t("الاسم بالعربي", "Arabic Name")}
                     </label>
-                    <Input value={orgForm.nameArabic} onChange={(e) => setOrg("nameArabic", e.target.value)} placeholder={lang === "ar" ? "شركة الأفق العقارية" : "شركة الأفق العقارية"} dir="rtl" />
+                    <Input value={orgForm.nameArabic} onChange={(e) => setOrg("nameArabic", e.target.value)} placeholder={t("شركة الأفق العقارية", "شركة الأفق العقارية")} dir="rtl" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground">
-                      {lang === "ar" ? "الاسم بالإنجليزي" : "English Name"}
+                      {t("الاسم بالإنجليزي", "English Name")}
                     </label>
                     <Input value={orgForm.nameEnglish} onChange={(e) => setOrg("nameEnglish", e.target.value)} placeholder="Al Ufuq Real Estate" dir="ltr" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground">
-                      {lang === "ar" ? "رقم السجل التجاري" : "CR Number"}
+                      {t("رقم السجل التجاري", "CR Number")}
                     </label>
                     <CRInput value={orgForm.crNumber} onChange={(raw) => setOrg("crNumber", raw)} placeholder="1010XXXXXX" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground">
-                      {lang === "ar" ? "الرقم الضريبي" : "VAT Number"}
+                      {t("الرقم الضريبي", "VAT Number")}
                     </label>
                     <Input value={orgForm.vatNumber} onChange={(e) => setOrg("vatNumber", e.target.value)} placeholder="3000XXXXXX00003" dir="ltr" className="font-mono tabular-nums" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground">
-                      {lang === "ar" ? "نوع المنشأة" : "Entity Type"}
+                      {t("نوع المنشأة", "Entity Type")}
                     </label>
-                    <select value={orgForm.entityType} onChange={(e) => setOrg("entityType", e.target.value)} className={selectClass}>
-                      <option value="">{lang === "ar" ? "اختر..." : "Select..."}</option>
+                    <SelectField aria-label={t("نوع المنشأة", "Entity Type")} value={orgForm.entityType} onChange={(e) => setOrg("entityType", e.target.value)} className={selectClass}>
+                      <option value="">{t("اختر...", "Select...")}</option>
                       {entityTypeOptions.map((o) => (
                         <option key={o.value} value={o.value}>{lang === "ar" ? o.ar : o.en}</option>
                       ))}
-                    </select>
+                    </SelectField>
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground">
-                      {lang === "ar" ? "الشكل القانوني" : "Legal Form"}
+                      {t("الشكل القانوني", "Legal Form")}
                     </label>
-                    <select value={orgForm.legalForm} onChange={(e) => setOrg("legalForm", e.target.value)} className={selectClass}>
-                      <option value="">{lang === "ar" ? "اختر..." : "Select..."}</option>
+                    <SelectField aria-label={t("الشكل القانوني", "Legal Form")} value={orgForm.legalForm} onChange={(e) => setOrg("legalForm", e.target.value)} className={selectClass}>
+                      <option value="">{t("اختر...", "Select...")}</option>
                       {legalFormOptions.map((o) => (
                         <option key={o.value} value={o.value}>{lang === "ar" ? o.ar : o.en}</option>
                       ))}
-                    </select>
+                    </SelectField>
                   </div>
                 </div>
 
@@ -1044,7 +1022,7 @@ export default function OnboardingPage() {
                     style={{ display: "inline-flex" }}
                   >
                     <DirectionalIcon icon={ArrowLeft} className="h-4 w-4" />
-                    {lang === "ar" ? "السابق" : "Back"}
+                    {t("السابق", "Back")}
                   </Button>
                   <div className="flex items-center gap-3">
                     <Button
@@ -1053,7 +1031,7 @@ export default function OnboardingPage() {
                       disabled={loading}
                       style={{ display: "inline-flex" }}
                     >
-                      {lang === "ar" ? "تخطي" : "Skip"}
+                      {t("تخطي", "Skip")}
                     </Button>
                     <Button
                       onClick={() => handleSaveOrg(false)}
@@ -1062,7 +1040,7 @@ export default function OnboardingPage() {
                       style={{ display: "inline-flex" }}
                     >
                       {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-                      {lang === "ar" ? "حفظ ومتابعة" : "Save & Continue"}
+                      {t("حفظ ومتابعة", "Save & Continue")}
                       <DirectionalIcon icon={ArrowRight} className="h-4 w-4" />
                     </Button>
                   </div>
@@ -1075,40 +1053,38 @@ export default function OnboardingPage() {
               <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
                 <div className="mb-6">
                   <h2 className="text-lg font-bold text-primary">
-                    {lang === "ar" ? "بيانات التواصل" : "Contact Info"}
+                    {t("بيانات التواصل", "Contact Info")}
                   </h2>
                   <p className="text-sm text-muted-foreground mt-1">
-                    {lang === "ar"
-                      ? "أضف رقم الجوال والمدينة. جميع الحقول اختيارية."
-                      : "Add your mobile and city. All fields are optional."}
+                    {t("أضف رقم الجوال والمدينة. جميع الحقول اختيارية.", "Add your mobile and city. All fields are optional.")}
                   </p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground">
-                      {lang === "ar" ? "رقم الجوال" : "Mobile Number"}
+                      {t("رقم الجوال", "Mobile Number")}
                     </label>
                     <SaudiPhoneInput value={contactForm.mobileNumber} onChange={(e164) => setContact("mobileNumber", e164)} placeholder="05XXXXXXXX" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground">
-                      {lang === "ar" ? "المنطقة" : "Region"}
+                      {t("المنطقة", "Region")}
                     </label>
-                    <Input value={contactForm.region} onChange={(e) => setContact("region", e.target.value)} placeholder={lang === "ar" ? "منطقة الرياض" : "Riyadh Region"} />
+                    <Input value={contactForm.region} onChange={(e) => setContact("region", e.target.value)} placeholder={t("منطقة الرياض", "Riyadh Region")} />
                   </div>
                   <div className="space-y-2 md:col-span-2">
                     <label className="text-xs font-medium text-muted-foreground">
-                      {lang === "ar" ? "المدينة" : "City"}
+                      {t("المدينة", "City")}
                     </label>
-                    <select value={contactForm.city} onChange={(e) => setContact("city", e.target.value)} className={selectClass}>
-                      <option value="">{lang === "ar" ? "اختر المدينة..." : "Select city..."}</option>
+                    <SelectField aria-label={t("المدينة", "City")} value={contactForm.city} onChange={(e) => setContact("city", e.target.value)} className={selectClass}>
+                      <option value="">{t("اختر المدينة...", "Select city...")}</option>
                       {KSA_CITIES.map((city) => (
                         <option key={city.value} value={city.value}>
                           {lang === "ar" ? city.labelAr : city.labelEn}
                         </option>
                       ))}
-                    </select>
+                    </SelectField>
                   </div>
                 </div>
 
@@ -1121,7 +1097,7 @@ export default function OnboardingPage() {
                     style={{ display: "inline-flex" }}
                   >
                     <DirectionalIcon icon={ArrowLeft} className="h-4 w-4" />
-                    {lang === "ar" ? "السابق" : "Back"}
+                    {t("السابق", "Back")}
                   </Button>
                   <div className="flex items-center gap-3">
                     <Button
@@ -1130,7 +1106,7 @@ export default function OnboardingPage() {
                       disabled={loading}
                       style={{ display: "inline-flex" }}
                     >
-                      {lang === "ar" ? "تخطي" : "Skip"}
+                      {t("تخطي", "Skip")}
                     </Button>
                     <Button
                       onClick={() => handleSaveContact(false)}
@@ -1139,7 +1115,7 @@ export default function OnboardingPage() {
                       style={{ display: "inline-flex" }}
                     >
                       {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-                      {lang === "ar" ? "حفظ ومتابعة" : "Save & Continue"}
+                      {t("حفظ ومتابعة", "Save & Continue")}
                       <DirectionalIcon icon={ArrowRight} className="h-4 w-4" />
                     </Button>
                   </div>
@@ -1152,12 +1128,10 @@ export default function OnboardingPage() {
               <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
                 <div className="mb-6">
                   <h2 className="text-lg font-bold text-primary">
-                    {lang === "ar" ? "دعوة أعضاء الفريق" : "Invite Team Members"}
+                    {t("دعوة أعضاء الفريق", "Invite Team Members")}
                   </h2>
                   <p className="text-sm text-muted-foreground mt-1">
-                    {lang === "ar"
-                      ? "أرسل دعوات لزملائك لبدء العمل معاً."
-                      : "Send invitations to your colleagues to get started together."}
+                    {t("أرسل دعوات لزملائك لبدء العمل معاً.", "Send invitations to your colleagues to get started together.")}
                   </p>
                 </div>
 
@@ -1171,17 +1145,17 @@ export default function OnboardingPage() {
                         placeholder="name@example.com"
                         dir="ltr"
                       />
-                      <select value={row.role} onChange={(e) => setInviteRow(i, "role", e.target.value)} className={selectClass}>
+                      <SelectField aria-label={t("الدور", "Role")} value={row.role} onChange={(e) => setInviteRow(i, "role", e.target.value)} className={selectClass}>
                         {inviteRoleOptions.map((opt) => (
                           <option key={opt.value} value={opt.value}>{opt.label[lang]}</option>
                         ))}
-                      </select>
+                      </SelectField>
                       <button
                         type="button"
                         onClick={() => removeInviteRow(i)}
                         disabled={inviteRows.length === 1}
                         className="h-10 w-10 rounded-md flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors disabled:opacity-30"
-                        aria-label={lang === "ar" ? "إزالة" : "Remove"}
+                        aria-label={t("إزالة", "Remove")}
                       >
                         <X className="h-4 w-4" />
                       </button>
@@ -1195,7 +1169,7 @@ export default function OnboardingPage() {
                     style={{ display: "inline-flex" }}
                   >
                     <Mail className="h-4 w-4" />
-                    {lang === "ar" ? "إضافة دعوة" : "Add invite"}
+                    {t("إضافة دعوة", "Add invite")}
                   </Button>
                 </div>
 
@@ -1208,7 +1182,7 @@ export default function OnboardingPage() {
                     style={{ display: "inline-flex" }}
                   >
                     <DirectionalIcon icon={ArrowLeft} className="h-4 w-4" />
-                    {lang === "ar" ? "السابق" : "Back"}
+                    {t("السابق", "Back")}
                   </Button>
                   <div className="flex items-center gap-3">
                     <Button
@@ -1217,7 +1191,7 @@ export default function OnboardingPage() {
                       disabled={loading}
                       style={{ display: "inline-flex" }}
                     >
-                      {lang === "ar" ? "تخطي" : "Skip"}
+                      {t("تخطي", "Skip")}
                     </Button>
                     <Button
                       onClick={() => handleFinishTeam(false)}
@@ -1226,7 +1200,7 @@ export default function OnboardingPage() {
                       style={{ display: "inline-flex" }}
                     >
                       {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-                      {lang === "ar" ? "إنهاء الإعداد" : "Finish Setup"}
+                      {t("إنهاء الإعداد", "Finish Setup")}
                       <DirectionalIcon icon={ArrowRight} className="h-4 w-4" />
                     </Button>
                   </div>
@@ -1244,23 +1218,19 @@ export default function OnboardingPage() {
                   {doneVariant === "join_requested" ? (
                     <>
                       <h2 className="text-2xl font-bold text-primary">
-                        {lang === "ar" ? "تم إرسال طلب الانضمام!" : "Join request submitted!"}
+                        {t("تم إرسال طلب الانضمام!", "Join request submitted!")}
                       </h2>
                       <p className="text-sm text-muted-foreground max-w-sm">
-                        {lang === "ar"
-                          ? "سيقوم مدير المنشأة بمراجعة طلبك والرد عليه خلال فترة قصيرة. ستصلك إشعار بالقرار."
-                          : "The organization admin will review your request and respond shortly. You will receive a notification with their decision."}
+                        {t("سيقوم مدير المنشأة بمراجعة طلبك والرد عليه خلال فترة قصيرة. ستصلك إشعار بالقرار.", "The organization admin will review your request and respond shortly. You will receive a notification with their decision.")}
                       </p>
                     </>
                   ) : (
                     <>
                       <h2 className="text-2xl font-bold text-primary">
-                        {lang === "ar" ? "تم إعداد حسابك بنجاح!" : "Your account is ready!"}
+                        {t("تم إعداد حسابك بنجاح!", "Your account is ready!")}
                       </h2>
                       <p className="text-sm text-muted-foreground max-w-sm">
-                        {lang === "ar"
-                          ? "يمكنك الآن الانتقال إلى لوحة التحكم وإدارة منشأتك وعقاراتك."
-                          : "You can now go to the dashboard and manage your organization and properties."}
+                        {t("يمكنك الآن الانتقال إلى لوحة التحكم وإدارة منشأتك وعقاراتك.", "You can now go to the dashboard and manage your organization and properties.")}
                       </p>
                     </>
                   )}
@@ -1271,7 +1241,7 @@ export default function OnboardingPage() {
                     className="gap-2 px-8"
                     style={{ display: "inline-flex" }}
                   >
-                    {lang === "ar" ? "الذهاب إلى لوحة التحكم" : "Go to Dashboard"}
+                    {t("الذهاب إلى لوحة التحكم", "Go to Dashboard")}
                     <DirectionalIcon icon={ArrowRight} className="h-4 w-4" />
                   </Button>
                   {doneVariant === "join_requested" && (
@@ -1281,7 +1251,7 @@ export default function OnboardingPage() {
                       className="gap-2"
                       style={{ display: "inline-flex" }}
                     >
-                      {lang === "ar" ? "متابعة حالة الطلب" : "Check request status"}
+                      {t("متابعة حالة الطلب", "Check request status")}
                     </Button>
                   )}
                 </div>

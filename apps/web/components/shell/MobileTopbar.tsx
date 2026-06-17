@@ -20,7 +20,7 @@ interface MobileTopbarProps {
 
 export function MobileTopbar({ onMenuClick }: MobileTopbarProps) {
   const { data: session } = useSession();
-  const { lang } = useLanguage();
+  const { t, lang } = useLanguage();
 
   const [unreadCount, setUnreadCount] = React.useState(0);
   const [orgName, setOrgName] = React.useState<string | undefined>(undefined);
@@ -55,7 +55,7 @@ export function MobileTopbar({ onMenuClick }: MobileTopbarProps) {
         {/* Leading: hamburger */}
         <IconButton
           icon={Menu}
-          aria-label={lang === "ar" ? "فتح القائمة" : "Open menu"}
+          aria-label={t("فتح القائمة", "Open menu")}
           onClick={onMenuClick}
           variant="ghost"
         />
@@ -69,7 +69,7 @@ export function MobileTopbar({ onMenuClick }: MobileTopbarProps) {
         <div className="flex items-center gap-0.5">
           <IconButton
             icon={Search}
-            aria-label={lang === "ar" ? "بحث" : "Search"}
+            aria-label={t("بحث", "Search")}
             onClick={() => setShowSearch(true)}
             variant="ghost"
           />
@@ -77,7 +77,7 @@ export function MobileTopbar({ onMenuClick }: MobileTopbarProps) {
           <span className="relative inline-flex">
             <IconButton
               icon={Bell}
-              aria-label={lang === "ar" ? "الإشعارات" : "Notifications"}
+              aria-label={t("الإشعارات", "Notifications")}
               onClick={() => setShowNotifs(true)}
               variant="ghost"
             />
@@ -97,7 +97,7 @@ export function MobileTopbar({ onMenuClick }: MobileTopbarProps) {
             onClick={() => setShowMenu(true)}
             variant="ghost"
             size="icon"
-            aria-label={lang === "ar" ? "الملف الشخصي" : "Profile"}
+            aria-label={t("الملف الشخصي", "Profile")}
             className="p-0"
           >
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 ring-1 ring-primary/20">

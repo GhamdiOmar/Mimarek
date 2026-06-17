@@ -16,6 +16,14 @@
     {
       "path": "/api/cron/clean-expired-email-tokens",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/run-data-retention",
+      "schedule": "30 3 * * *"
+    },
+    {
+      "path": "/api/cron/expire-unverified-orgs",
+      "schedule": "0 4 * * *"
     }
   ]
 }

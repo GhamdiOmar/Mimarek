@@ -133,7 +133,7 @@ export function CommandPalette() {
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState("");
   const router = useRouter();
-  const { lang } = useLanguage();
+  const { t, lang } = useLanguage();
   const { data: session } = useSession();
   const { can } = usePermissions();
 
@@ -215,7 +215,7 @@ export function CommandPalette() {
 
   // "Help" entry — Cmd-K residue (CX-015). Tenant-only; matches the query like nav.
   const showHelp =
-    !isPlatform && matches(lang === "ar" ? "المساعدة" : "Help", query);
+    !isPlatform && matches(t("المساعدة", "Help"), query);
 
   const hasRecordGroups = !isPlatform && groups.length > 0;
   const hasStaticItems =
@@ -225,7 +225,7 @@ export function CommandPalette() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="overflow-hidden p-0">
         <DialogTitle className="sr-only">
-          {lang === "ar" ? "البحث في الأوامر والسجلات" : "Command and record search"}
+          {t("البحث في الأوامر والسجلات", "Command and record search")}
         </DialogTitle>
         <Command
           shouldFilter={false}
@@ -236,18 +236,14 @@ export function CommandPalette() {
             value={query}
             onValueChange={setQuery}
             placeholder={
-              lang === "ar"
-                ? "ابحث عن سجل أو صفحة أو إجراء…"
-                : "Search records, pages or actions…"
+              t("ابحث عن سجل أو صفحة أو إجراء…", "Search records, pages or actions…")
             }
           />
 
           {/* Result-count announcement for assistive tech. */}
           <span className="sr-only" role="status" aria-live="polite">
             {isSearching
-              ? lang === "ar"
-                ? `${resultCount} نتيجة`
-                : `${resultCount} results`
+              ? t(`${resultCount} نتيجة`, `${resultCount} results`)
               : ""}
           </span>
 
@@ -256,7 +252,7 @@ export function CommandPalette() {
             {isSearching && showSpinner && (
               <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                <span>{lang === "ar" ? "جارٍ البحث…" : "Searching…"}</span>
+                <span>{t("جارٍ البحث…", "Searching…")}</span>
               </div>
             )}
 
@@ -266,9 +262,7 @@ export function CommandPalette() {
                 role="alert"
                 className="px-3 py-4 text-sm text-destructive text-center"
               >
-                {lang === "ar"
-                  ? "تعذّر إجراء البحث. حاول مرة أخرى."
-                  : "We couldn't run the search. Please try again."}
+                {t("تعذّر إجراء البحث. حاول مرة أخرى.", "We couldn't run the search. Please try again.")}
               </div>
             )}
 
@@ -277,9 +271,7 @@ export function CommandPalette() {
                 ? lang === "ar"
                   ? `لا توجد نتائج لـ "${query.trim()}".`
                   : `No results for "${query.trim()}".`
-                : lang === "ar"
-                  ? "لا توجد نتائج."
-                  : "No results found."}
+                : t("لا توجد نتائج.", "No results found.")}
             </CommandEmpty>
 
             {/* Record groups first, fixed order (tenant only). */}
@@ -322,7 +314,7 @@ export function CommandPalette() {
                       >
                         <ArrowRight className="h-4 w-4 text-primary icon-directional" />
                         <span className="text-primary">
-                          {lang === "ar" ? "عرض الكل" : "See all"}
+                          {t("عرض الكل", "See all")}
                         </span>
                       </CommandItem>
                     )}
@@ -335,7 +327,7 @@ export function CommandPalette() {
             {/* Quick actions. */}
             {visibleQuickActions.length > 0 && (
               <CommandGroup
-                heading={lang === "ar" ? "إجراءات سريعة" : "Quick actions"}
+                heading={t("إجراءات سريعة", "Quick actions")}
               >
                 {visibleQuickActions.map((a) => {
                   const Icon = a.icon;
@@ -374,13 +366,13 @@ export function CommandPalette() {
 
             {/* Help (CX-015) — tenant only. */}
             {showHelp && (
-              <CommandGroup heading={lang === "ar" ? "الدعم" : "Support"}>
+              <CommandGroup heading={t("الدعم", "Support")}>
                 <CommandItem
                   value="help"
                   onSelect={() => go("/dashboard/help")}
                 >
                   <HelpCircle className="h-4 w-4" />
-                  <span>{lang === "ar" ? "المساعدة" : "Help"}</span>
+                  <span>{t("المساعدة", "Help")}</span>
                 </CommandItem>
               </CommandGroup>
             )}

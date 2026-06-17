@@ -10,17 +10,28 @@ export interface RateLimitResult {
  * Postgres-backed fixed-window rate limiter.
  *
  * Uses a single atomic UPSERT so concurrent callers across multiple instances
- * all share the same counter.  On any DB error the function **fails open**
- * (returns allowed=true) so a transient Postgres hiccup never locks users out.
+ * all share the same counter.
+ *
+ * **Hybrid failure mode (OWASP-aligned).** On a DB error the behavior depends
+ * on `opts.failClosed`:
+ *   • Auth-sensitive keys (login / password-reset / resend-verification) pass
+ *     `{ failClosed: true }` → on DB error the function **fails CLOSED**
+ *     (returns allowed=false) so a Postgres hiccup cannot become a window for
+ *     unthrottled credential-stuffing / brute-force / abuse.
+ *   • All other keys (marketplace, invite, register, cr-lookup, …) omit the
+ *     option and **fail OPEN** (returns allowed=true) so a transient DB blip
+ *     never locks legitimate users out of non-security-critical flows.
  *
  * @param key       Unique limiter key, e.g. "login:user@example.com" or "invite:<orgId>"
  * @param limit     Max requests allowed inside the window
  * @param windowMs  Window size in milliseconds
+ * @param opts      Optional behavior flags. `failClosed: true` → deny on DB error.
  */
 export async function checkRateLimit(
   key: string,
   limit: number,
   windowMs: number,
+  opts?: { failClosed?: boolean },
 ): Promise<RateLimitResult> {
   try {
     const expiresAt = new Date(Date.now() + windowMs);
@@ -68,6 +79,12 @@ export async function checkRateLimit(
 
     return { allowed: true, remaining };
   } catch (err) {
+    if (opts?.failClosed) {
+      // Fail CLOSED — for auth-sensitive keys, a DB hiccup must NOT open an
+      // unthrottled brute-force window.
+      console.warn("[rate-limit] DB error (failing CLOSED) for key:", key);
+      return { allowed: false, remaining: 0, retryAfterMs: windowMs };
+    }
     // Fail open — a DB hiccup must never lock users out
     console.warn("[rate-limit] DB error (failing open) for key:", key, err);
     return { allowed: true, remaining: limit };
@@ -79,11 +96,23 @@ export async function checkRateLimit(
  * Use this as a pre-flight gate when you want to increment separately (e.g.
  * only on credential failure, not on successful auth).
  *
- * Fails open on DB error.
+ * **Hybrid failure mode (OWASP-aligned).** On a DB error the behavior depends
+ * on `opts.failClosed`:
+ *   • Auth-sensitive keys (login / password-reset / resend-verification) pass
+ *     `{ failClosed: true }` → fail CLOSED (returns allowed=false) so a DB blip
+ *     cannot become an unthrottled brute-force window.
+ *   • All other keys omit the option and **fail OPEN** (returns allowed=true).
+ * There is no `windowMs` here, so the failed-closed `retryAfterMs` defaults to
+ * 60000ms.
+ *
+ * @param key    Unique limiter key, e.g. "login:user@example.com"
+ * @param limit  Max requests allowed inside the window
+ * @param opts   Optional behavior flags. `failClosed: true` → deny on DB error.
  */
 export async function peekRateLimit(
   key: string,
   limit: number,
+  opts?: { failClosed?: boolean },
 ): Promise<RateLimitResult> {
   try {
     const rows = await db.$queryRaw<{ count: number; expiresAt: Date }[]>`
@@ -109,6 +138,12 @@ export async function peekRateLimit(
 
     return { allowed: true, remaining };
   } catch (err) {
+    if (opts?.failClosed) {
+      // Fail CLOSED — for auth-sensitive keys, a DB hiccup must NOT open an
+      // unthrottled brute-force window. No windowMs here → default retry 60s.
+      console.warn("[rate-limit] DB error (failing CLOSED) for key:", key);
+      return { allowed: false, remaining: 0, retryAfterMs: 60000 };
+    }
     console.warn("[rate-limit] DB error in peek (failing open) for key:", key, err);
     return { allowed: true, remaining: limit };
   }

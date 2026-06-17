@@ -3,19 +3,16 @@
 import * as React from "react";
 import { ChevronRight, Check, AlertTriangle } from "lucide-react";
 import { cn } from "../lib/utils";
+import type { LocalizedText } from "../lib/localized-text";
 import { StatusBadge } from "./StatusBadge";
 import { DirectionalIcon } from "./DirectionalIcon";
 
 /**
- * Structurally identical to `@repo/types` `LocalizedText` / `ProcessStage`.
- * Re-declared locally so `@repo/ui` stays decoupled from `@repo/types` (no
- * workspace-dependency or build-config change needed). Producers type their
- * data with `@repo/types`; the shapes are assignable.
+ * `ProcessStage` is structurally identical to `@repo/types` `ProcessStage`;
+ * `LocalizedText` is `@repo/ui`'s own copy (see `../lib/localized-text`) so the
+ * package stays decoupled from `@repo/types`. Producers type their data with
+ * `@repo/types`; the shapes are assignable.
  */
-interface LocalizedText {
-  ar: string;
-  en: string;
-}
 type StageStatus = "done" | "current" | "upcoming" | "blocked";
 export interface LifecycleStage {
   id: string;

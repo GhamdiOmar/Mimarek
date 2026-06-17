@@ -16,7 +16,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { data: session } = useSession();
-  const { lang } = useLanguage();
+  const { t, lang } = useLanguage();
   const [navOpen, setNavOpen] = React.useState(false);
 
   const userRole = (session?.user as any)?.role ?? "USER";
@@ -28,9 +28,8 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     if (!isSystemRole(userRole)) return;
     // /dashboard/admin/** is platform-scoped — allowed.
     if (pathname.startsWith("/dashboard/admin")) return;
-    // Shared surfaces (profile page, signout callback) — allowed.
+    // Shared surfaces (settings + profile section, signout callback) — allowed.
     if (
-      pathname.startsWith("/dashboard/more/") ||
       pathname.startsWith("/dashboard/settings") ||
       pathname.startsWith("/dashboard/billing")
     ) {
@@ -64,7 +63,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         href="#main-content"
         className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:start-4 focus:z-[2000] focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground focus:shadow-lg"
       >
-        {lang === "ar" ? "تخطّي إلى المحتوى" : "Skip to content"}
+        {t("تخطّي إلى المحتوى", "Skip to content")}
       </a>
       <CommandPalette />
       <CircleMenu open={navOpen} onOpenChange={setNavOpen} userRole={userRole} />

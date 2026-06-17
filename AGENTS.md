@@ -11,7 +11,7 @@
 ---
 
 ## 2. Project Architecture
-- Turborepo monorepo: `apps/web` (Next.js 16), `apps/portal`, packages (`@repo/db`, `@repo/ui`, `@repo/types`)
+- Turborepo monorepo: `apps/web` (Next.js 16), packages (`@repo/db`, `@repo/ui`, `@repo/types`)
 - NextAuth v5 with Credentials provider, JWT strategy, edge-safe split (`auth.config.ts` / `auth.ts`)
 - Prisma 7.4.2 with `@prisma/adapter-pg` connecting to Supabase PostgreSQL
 - Server Actions pattern for all data operations (NOT REST)

@@ -34,6 +34,8 @@ import {
   IconButton,
   DataTable,
   ConfirmDialog,
+  SelectField,
+  HijriDatePicker,
   type ColumnDef,
 } from "@repo/ui";
 import { useLanguage } from "../../../components/LanguageProvider";
@@ -165,7 +167,7 @@ const PAYMENT_METHODS = [
 type PaymentsViewProps = { initialInstallments: RentInstallment[] };
 
 export default function PaymentsView({ initialInstallments }: PaymentsViewProps) {
-  const { lang, dir } = useLanguage();
+  const { t, lang, dir } = useLanguage();
   const { can } = usePermissions();
 
   const [rentInstallments, setRentInstallments] = React.useState<RentInstallment[]>(initialInstallments);
@@ -212,9 +214,7 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
     try {
       const result = await bulkMarkInstallmentsPaid(bulkSelected.map((e) => e.id));
       toast.success(
-        lang === "ar"
-          ? `تم تسجيل ${result.updated} دفعة`
-          : `${result.updated} payment(s) marked as paid`
+        t(`تم تسجيل ${result.updated} دفعة`, `${result.updated} payment(s) marked as paid`)
       );
       setBulkMarkPaidOpen(false);
       setBulkSelected([]);
@@ -232,7 +232,7 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
     getInstallments()
       .then((data) => setRentInstallments(data as RentInstallment[]))
       .catch(() => {
-        const msg = lang === "ar" ? "تعذّر تحميل المدفوعات" : "Failed to load payments";
+        const msg = t("تعذّر تحميل المدفوعات", "Failed to load payments");
         setLoadError(msg);
         toast.error(msg);
       })
@@ -249,7 +249,7 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
       id: inst.id,
       type: "rent" as const,
       clientName: inst.lease.customer.name,
-      propertyLabel: `${lang === "ar" ? "وحدة" : "Unit"} ${inst.lease.unit.number}${inst.lease.unit.buildingName ? ` — ${inst.lease.unit.buildingName}` : ""}`,
+      propertyLabel: `${t("وحدة", "Unit")} ${inst.lease.unit.number}${inst.lease.unit.buildingName ? ` — ${inst.lease.unit.buildingName}` : ""}`,
       amount: Number(inst.amount),
       dueDate: inst.dueDate,
       status: inst.status,
@@ -304,7 +304,7 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
   async function handleRecordPayment() {
     if (!paymentTarget) return;
     if (!payForm.amount || !payForm.paymentDate || !payForm.paymentMethod) {
-      toast.error(lang === "ar" ? "يرجى تعبئة جميع الحقول المطلوبة" : "Please fill all required fields");
+      toast.error(t("يرجى تعبئة جميع الحقول المطلوبة", "Please fill all required fields"));
       return;
     }
     setSubmitting(true);
@@ -323,7 +323,7 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
         method: payForm.paymentMethod,
         amount: Number(parseFloat(payForm.amount)),
       });
-      toast.success(lang === "ar" ? "تم تسجيل الدفعة بنجاح" : "Payment recorded successfully");
+      toast.success(t("تم تسجيل الدفعة بنجاح", "Payment recorded successfully"));
       setPaymentTarget(null);
       loadData();
     } catch (err: unknown) {
@@ -365,9 +365,7 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
       openPayModal(actionable);
     } else {
       toast.info(
-        lang === "ar"
-          ? "لا توجد دفعات مستحقة حالياً."
-          : "No payments are due right now.",
+        t("لا توجد دفعات مستحقة حالياً.", "No payments are due right now."),
       );
     }
   }
@@ -403,7 +401,7 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
     () => [
       {
         accessorKey: "clientName",
-        header: lang === "ar" ? "العميل" : "Client",
+        header: t("العميل", "Client"),
         cell: ({ row }) => (
           <span className="font-medium">{row.original.clientName}</span>
         ),
@@ -412,7 +410,7 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
       },
       {
         accessorKey: "propertyLabel",
-        header: lang === "ar" ? "العقار" : "Property",
+        header: t("العقار", "Property"),
         cell: ({ row }) => (
           <span className="text-sm text-muted-foreground">{row.original.propertyLabel}</span>
         ),
@@ -421,28 +419,24 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
       },
       {
         accessorKey: "type",
-        header: lang === "ar" ? "النوع" : "Type",
+        header: t("النوع", "Type"),
         cell: ({ row }) => (
           <Badge variant="info" size="sm">
             {row.original.type === "rent"
-              ? lang === "ar" ? "إيجار" : "Rent"
-              : lang === "ar" ? "بيع" : "Sale"}
+              ? t("إيجار", "Rent")
+              : t("بيع", "Sale")}
           </Badge>
         ),
         enableSorting: false,
         enableHiding: true,
         getGroupingValue: (row: PaymentEntry) =>
           row.type === "rent"
-            ? lang === "ar"
-              ? "إيجار"
-              : "Rent"
-            : lang === "ar"
-              ? "بيع"
-              : "Sale",
+            ? t("إيجار", "Rent")
+            : t("بيع", "Sale"),
       },
       {
         accessorKey: "amount",
-        header: lang === "ar" ? "المبلغ" : "Amount (SAR)",
+        header: t("المبلغ", "Amount (SAR)"),
         cell: ({ row }) => {
           const tone = getPaymentTone(row.original);
           return (
@@ -457,7 +451,7 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
       },
       {
         accessorKey: "dueDate",
-        header: lang === "ar" ? "تاريخ الاستحقاق" : "Due Date",
+        header: t("تاريخ الاستحقاق", "Due Date"),
         cell: ({ row }) => {
           const tone = getPaymentTone(row.original);
           return (
@@ -473,7 +467,7 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
       },
       {
         accessorKey: "status",
-        header: lang === "ar" ? "الحالة" : "Status",
+        header: t("الحالة", "Status"),
         cell: ({ row }) => (
           <Badge variant={STATUS_VARIANT[row.original.status] ?? "default"} size="sm">
             {lang === "ar"
@@ -500,7 +494,7 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
               <div className="flex items-center justify-end gap-1">
                 <IconButton
                   icon={CreditCard}
-                  aria-label={lang === "ar" ? "تسجيل دفعة" : "Record payment"}
+                  aria-label={t("تسجيل دفعة", "Record payment")}
                   variant="ghost"
                   onClick={() => openPayModal(entry)}
                   className="text-primary"
@@ -511,7 +505,7 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
           if (entry.status === "PAID") {
             return (
               <span className="text-xs text-muted-foreground">
-                {lang === "ar" ? "مُسدَّد" : "Settled"}
+                {t("مُسدَّد", "Settled")}
               </span>
             );
           }
@@ -544,7 +538,7 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
 
     const subtitleParts: React.ReactNode[] = [
       entry.clientName,
-      `${lang === "ar" ? "استحقاق" : "Due"}: ${dueLabel}`,
+      `${t("استحقاق", "Due")}: ${dueLabel}`,
     ];
     if (method) {
       subtitleParts.push(
@@ -589,7 +583,7 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
       dir={lang === "ar" ? "rtl" : "ltr"}
     >
       <AppBar
-        title={lang === "ar" ? "المدفوعات" : "Payments"}
+        title={t("المدفوعات", "Payments")}
         lang={lang}
       />
 
@@ -603,9 +597,7 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={
-              lang === "ar"
-                ? "بحث بالاسم أو العقار..."
-                : "Search by client or property..."
+              t("بحث بالاسم أو العقار...", "Search by client or property...")
             }
             className="h-10 ps-9"
           />
@@ -614,26 +606,26 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
 
       <div className="grid grid-cols-2 gap-3 px-4 pt-3">
         <MobileKPICard
-          label={lang === "ar" ? "المُحصَّل هذا الشهر" : "Collected this month"}
+          label={t("المُحصَّل هذا الشهر", "Collected this month")}
           value={
             <SARAmount value={collectedThisMonth} size={18} compact className="tabular-nums" />
           }
           tone="green"
         />
         <MobileKPICard
-          label={lang === "ar" ? "متأخرات" : "Outstanding"}
+          label={t("متأخرات", "Outstanding")}
           value={
             <SARAmount value={totalOverdue} size={18} compact className="tabular-nums" />
           }
           tone="red"
         />
         <MobileKPICard
-          label={lang === "ar" ? "عدد المتأخرات" : "Overdue count"}
+          label={t("عدد المتأخرات", "Overdue count")}
           value={<span className="tabular-nums">{overdueCount}</span>}
           tone="amber"
         />
         <MobileKPICard
-          label={lang === "ar" ? "المستلمة هذا الشهر" : "Received"}
+          label={t("المستلمة هذا الشهر", "Received")}
           value={<span className="tabular-nums">{receivedCount}</span>}
           tone="primary"
         />
@@ -641,7 +633,7 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
 
       <div className="px-4 pt-3">
         <MobileTabs
-          ariaLabel={lang === "ar" ? "تبويبات المدفوعات" : "Payments tabs"}
+          ariaLabel={t("تبويبات المدفوعات", "Payments tabs")}
           active={statusFilter}
           onChange={setStatusFilter}
           items={mobileTabItems}
@@ -669,24 +661,20 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
             <EmptyState
               variant="first-time"
               icon={<CreditCard className="h-12 w-12" aria-hidden="true" />}
-              title={lang === "ar" ? "لا توجد مدفوعات بعد" : "No payments yet"}
+              title={t("لا توجد مدفوعات بعد", "No payments yet")}
               description={
-                lang === "ar"
-                  ? "ستظهر أقساط الإيجار والبيع هنا بمجرد تفعيل أول عقد."
-                  : "Rent and sale installments show up here once contracts are active."
+                t("ستظهر أقساط الإيجار والبيع هنا بمجرد تفعيل أول عقد.", "Rent and sale installments show up here once contracts are active.")
               }
               helpHref="/dashboard/help#payments"
-              helpLabel={lang === "ar" ? "تعرّف على المدفوعات" : "Learn about payments"}
+              helpLabel={t("تعرّف على المدفوعات", "Learn about payments")}
             />
           ) : (
             <EmptyState
               variant="filtered"
               icon={<Search className="h-12 w-12" aria-hidden="true" />}
-              title={lang === "ar" ? "لا توجد نتائج مطابقة" : "No matching payments"}
+              title={t("لا توجد نتائج مطابقة", "No matching payments")}
               description={
-                lang === "ar"
-                  ? "جرّب تعديل البحث أو التبويب."
-                  : "Try adjusting your search or tab."
+                t("جرّب تعديل البحث أو التبويب.", "Try adjusting your search or tab.")
               }
               action={
                 <Button
@@ -699,7 +687,7 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
                   }}
                   style={{ display: "inline-flex" }}
                 >
-                  {lang === "ar" ? "مسح الفلاتر" : "Clear filters"}
+                  {t("مسح الفلاتر", "Clear filters")}
                 </Button>
               }
             />
@@ -720,7 +708,7 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
       {canWritePayments && (
         <FAB
           icon={Plus}
-          label={lang === "ar" ? "تسجيل دفعة" : "Record payment"}
+          label={t("تسجيل دفعة", "Record payment")}
           onClick={handleMobileFab}
         />
       )}
@@ -730,11 +718,9 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
     <div className="hidden md:block">
     <div dir={dir} className="p-6 space-y-6">
       <PageIntro
-        title={lang === "ar" ? "المدفوعات" : "Payments"}
+        title={t("المدفوعات", "Payments")}
         description={
-          lang === "ar"
-            ? "تتبع مدفوعات الأقساط والإيجارات في مكان واحد"
-            : "Track sale installments and rent payments in one place"
+          t("تتبع مدفوعات الأقساط والإيجارات في مكان واحد", "Track sale installments and rent payments in one place")
         }
       />
 
@@ -745,7 +731,7 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
             <TrendingUp className="w-5 h-5 text-success" />
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">{lang === "ar" ? "المُحصَّل هذا الشهر" : "Collected This Month"}</p>
+            <p className="text-xs text-muted-foreground">{t("المُحصَّل هذا الشهر", "Collected This Month")}</p>
             {loading ? (
               <Loader2 className="w-4 h-4 animate-spin mt-1 text-muted-foreground" />
             ) : (
@@ -759,7 +745,7 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
             <AlertCircle className="w-5 h-5 text-destructive" />
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">{lang === "ar" ? "إجمالي المتأخرات" : "Total Overdue"}</p>
+            <p className="text-xs text-muted-foreground">{t("إجمالي المتأخرات", "Total Overdue")}</p>
             {loading ? (
               <Loader2 className="w-4 h-4 animate-spin mt-1 text-muted-foreground" />
             ) : (
@@ -773,7 +759,7 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
             <CreditCard className="w-5 h-5 text-warning" />
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">{lang === "ar" ? "المتوقع خلال 30 يوماً" : "Expected Next 30 Days"}</p>
+            <p className="text-xs text-muted-foreground">{t("المتوقع خلال 30 يوماً", "Expected Next 30 Days")}</p>
             {loading ? (
               <Loader2 className="w-4 h-4 animate-spin mt-1 text-muted-foreground" />
             ) : (
@@ -825,13 +811,13 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder={lang === "ar" ? "بحث بالاسم أو العقار..." : "Search by client or property..."}
+              placeholder={t("بحث بالاسم أو العقار...", "Search by client or property...")}
               className="ps-9 w-56"
             />
             {search && (
               <IconButton
                 icon={X}
-                aria-label={lang === "ar" ? "مسح البحث" : "Clear search"}
+                aria-label={t("مسح البحث", "Clear search")}
                 variant="ghost"
                 onClick={() => setSearch("")}
                 className="absolute top-1/2 -translate-y-1/2 end-3 text-muted-foreground hover:text-foreground h-6 w-6"
@@ -852,14 +838,12 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
         <Card>
           <EmptyState
             icon={<CreditCard className="h-12 w-12" aria-hidden="true" />}
-            title={lang === "ar" ? "لا توجد مدفوعات بعد" : "No payments yet"}
+            title={t("لا توجد مدفوعات بعد", "No payments yet")}
             description={
-              lang === "ar"
-                ? "ستظهر أقساط الإيجار والبيع هنا بمجرد تفعيل أول عقد."
-                : "Rent and sale installments show up here once contracts are active."
+              t("ستظهر أقساط الإيجار والبيع هنا بمجرد تفعيل أول عقد.", "Rent and sale installments show up here once contracts are active.")
             }
             helpHref="/dashboard/help#payments"
-            helpLabel={lang === "ar" ? "تعرّف على المدفوعات" : "Learn about payments"}
+            helpLabel={t("تعرّف على المدفوعات", "Learn about payments")}
           />
         </Card>
       ) : (
@@ -870,8 +854,8 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
           rowClassName={(r) => getPaymentTone(r).rowClass}
           locale={lang === "ar" ? "ar" : "en"}
           groupableColumns={[
-            { id: "status", label: lang === "ar" ? "الحالة" : "Status" },
-            { id: "type", label: lang === "ar" ? "النوع" : "Type" },
+            { id: "status", label: t("الحالة", "Status") },
+            { id: "type", label: t("النوع", "Type") },
           ]}
           pagination
           pageSize={10}
@@ -894,9 +878,7 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
                   {bulkWorking
                     ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     : <CheckCircle className="h-3.5 w-3.5" />}
-                  {lang === "ar"
-                    ? `تسجيل كمدفوع (${selected.length})`
-                    : `Mark as paid (${selected.length})`}
+                  {t(`تسجيل كمدفوع (${selected.length})`, `Mark as paid (${selected.length})`)}
                 </Button>
               )}
             </div>
@@ -906,7 +888,7 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
           onExport={({ rows, columns: exportColumns }) =>
             exportToExcel({
               filename: `payments-${new Date().toISOString().slice(0, 10)}`,
-              title: lang === "ar" ? "المدفوعات" : "Payments",
+              title: t("المدفوعات", "Payments"),
               lang,
               columns: exportColumns.map((c) => ({ header: c.header, key: c.id })),
               data: rows.map((r) => ({
@@ -914,8 +896,8 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
                 propertyLabel: r.propertyLabel,
                 type:
                   r.type === "rent"
-                    ? lang === "ar" ? "إيجار" : "Rent"
-                    : lang === "ar" ? "بيع" : "Sale",
+                    ? t("إيجار", "Rent")
+                    : t("بيع", "Sale"),
                 amount: SAR(r.amount),
                 dueDate: new Date(r.dueDate).toLocaleDateString(
                   lang === "ar" ? "ar-SA-u-nu-latn" : "en-SA",
@@ -939,11 +921,9 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
               refreshSavedViews();
             },
           }}
-          emptyTitle={lang === "ar" ? "لا توجد نتائج مطابقة" : "No matching payments"}
+          emptyTitle={t("لا توجد نتائج مطابقة", "No matching payments")}
           emptyDescription={
-            lang === "ar"
-              ? "جرّب تعديل البحث أو التبويب."
-              : "Try adjusting your search or tab."
+            t("جرّب تعديل البحث أو التبويب.", "Try adjusting your search or tab.")
           }
         />
       )}
@@ -952,7 +932,7 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
       <ResponsiveDialog
         open={!!paymentTarget}
         onOpenChange={(open) => !open && setPaymentTarget(null)}
-        title={lang === "ar" ? "تسجيل دفعة" : "Record Payment"}
+        title={t("تسجيل دفعة", "Record Payment")}
         contentClassName="sm:max-w-[640px]"
         footer={
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
@@ -961,7 +941,7 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
               onClick={() => setPaymentTarget(null)}
               style={{ display: "inline-flex" }}
             >
-              {lang === "ar" ? "إلغاء" : "Cancel"}
+              {t("إلغاء", "Cancel")}
             </Button>
             <Button
               type="submit"
@@ -971,7 +951,7 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
               className="gap-2"
             >
               {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
-              {lang === "ar" ? "تسجيل الدفعة" : "Record Payment"}
+              {t("تسجيل الدفعة", "Record Payment")}
             </Button>
           </div>
         }
@@ -987,15 +967,15 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
           >
             {/* Summary */}
             <div className="bg-muted rounded-lg px-4 py-3 text-sm space-y-1">
-              <p className="text-muted-foreground">{lang === "ar" ? "العميل" : "Client"}: <span className="text-foreground font-medium">{paymentTarget.clientName}</span></p>
-              <p className="text-muted-foreground">{lang === "ar" ? "العقار" : "Property"}: <span className="text-foreground font-medium">{paymentTarget.propertyLabel}</span></p>
-              <p className="text-muted-foreground">{lang === "ar" ? "المبلغ المستحق" : "Due Amount"}: <span className="text-foreground font-medium">{SAR(paymentTarget.amount)}</span></p>
+              <p className="text-muted-foreground">{t("العميل", "Client")}: <span className="text-foreground font-medium">{paymentTarget.clientName}</span></p>
+              <p className="text-muted-foreground">{t("العقار", "Property")}: <span className="text-foreground font-medium">{paymentTarget.propertyLabel}</span></p>
+              <p className="text-muted-foreground">{t("المبلغ المستحق", "Due Amount")}: <span className="text-foreground font-medium">{SAR(paymentTarget.amount)}</span></p>
             </div>
 
             {/* Amount */}
             <div className="space-y-1">
               <label className="text-sm font-medium text-foreground">
-                {lang === "ar" ? "المبلغ المدفوع (ريال)" : "Payment Amount (SAR)"} *
+                {t("المبلغ المدفوع (ريال)", "Payment Amount (SAR)")} *
               </label>
               <SARAmountInput
                 value={payForm.amount === "" ? null : Number(payForm.amount)}
@@ -1007,21 +987,27 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
             {/* Payment Date */}
             <div className="space-y-1">
               <label className="text-sm font-medium text-foreground">
-                {lang === "ar" ? "تاريخ الدفع" : "Payment Date"} *
+                {t("تاريخ الدفع", "Payment Date")} *
               </label>
-              <Input
-                type="date"
-                value={payForm.paymentDate}
-                onChange={(e) => setPayForm((f) => ({ ...f, paymentDate: e.target.value }))}
+              <HijriDatePicker
+                locale={lang === "ar" ? "ar" : "en"}
+                value={payForm.paymentDate ? new Date(payForm.paymentDate) : null}
+                onChange={(d) =>
+                  setPayForm((f) => ({
+                    ...f,
+                    paymentDate: d ? d.toISOString().slice(0, 10) : "",
+                  }))
+                }
               />
             </div>
 
             {/* Payment Method */}
             <div className="space-y-1">
               <label className="text-sm font-medium text-foreground">
-                {lang === "ar" ? "طريقة الدفع" : "Payment Method"} *
+                {t("طريقة الدفع", "Payment Method")} *
               </label>
-              <select
+              <SelectField
+                aria-label={t("طريقة الدفع", "Payment Method")}
                 value={payForm.paymentMethod}
                 onChange={(e) => setPayForm((f) => ({ ...f, paymentMethod: e.target.value }))}
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]"
@@ -1031,31 +1017,31 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
                     {lang === "ar" ? m.ar : m.en}
                   </option>
                 ))}
-              </select>
+              </SelectField>
             </div>
 
             {/* Reference Number */}
             <div className="space-y-1">
               <label className="text-sm font-medium text-foreground">
-                {lang === "ar" ? "رقم المرجع" : "Reference Number"}
+                {t("رقم المرجع", "Reference Number")}
               </label>
               <Input
                 value={payForm.referenceNumber}
                 onChange={(e) => setPayForm((f) => ({ ...f, referenceNumber: e.target.value }))}
-                placeholder={lang === "ar" ? "رقم التحويل أو الشيك..." : "Transfer or check number..."}
+                placeholder={t("رقم التحويل أو الشيك...", "Transfer or check number...")}
               />
             </div>
 
             {/* Notes */}
             <div className="space-y-1">
               <label className="text-sm font-medium text-foreground">
-                {lang === "ar" ? "ملاحظات" : "Notes"}
+                {t("ملاحظات", "Notes")}
               </label>
               <textarea
                 value={payForm.notes}
                 onChange={(e) => setPayForm((f) => ({ ...f, notes: e.target.value }))}
                 rows={2}
-                placeholder={lang === "ar" ? "ملاحظات اختيارية..." : "Optional notes..."}
+                placeholder={t("ملاحظات اختيارية...", "Optional notes...")}
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]"
               />
             </div>
@@ -1070,17 +1056,13 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
       open={bulkMarkPaidOpen}
       onOpenChange={setBulkMarkPaidOpen}
       title={
-        lang === "ar"
-          ? `تسجيل ${bulkSelected.length} دفعة كمدفوعة`
-          : `Mark ${bulkSelected.length} payment(s) as paid`
+        t(`تسجيل ${bulkSelected.length} دفعة كمدفوعة`, `Mark ${bulkSelected.length} payment(s) as paid`)
       }
       description={
-        lang === "ar"
-          ? `سيتم تسجيل ${bulkSelected.length} قسط كمدفوع بالمبلغ الكامل. الأقساط المسدّدة بالفعل لن تتأثر.`
-          : `${bulkSelected.length} installment(s) will be marked as fully paid. Already-paid installments will be skipped.`
+        t(`سيتم تسجيل ${bulkSelected.length} قسط كمدفوع بالمبلغ الكامل. الأقساط المسدّدة بالفعل لن تتأثر.`, `${bulkSelected.length} installment(s) will be marked as fully paid. Already-paid installments will be skipped.`)
       }
-      confirmLabel={lang === "ar" ? "تسجيل كمدفوع" : "Mark as paid"}
-      cancelLabel={lang === "ar" ? "تراجع" : "Go back"}
+      confirmLabel={t("تسجيل كمدفوع", "Mark as paid")}
+      cancelLabel={t("تراجع", "Go back")}
       onConfirm={handleBulkMarkPaid}
     />
     </>

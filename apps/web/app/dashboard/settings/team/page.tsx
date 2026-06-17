@@ -17,6 +17,7 @@ import {
   Input,
   PageHeader,
   ResponsiveDialog,
+  SelectField,
   type ColumnDef,
 } from "@repo/ui";
 import { useLanguage } from "../../../../components/LanguageProvider";
@@ -58,7 +59,7 @@ const inviteRoleOptions = CUSTOMER_ASSIGNABLE_ROLES.map((role) => ({
 }));
 
 export default function TeamManagementPage() {
-  const { lang } = useLanguage();
+  const { t, lang } = useLanguage();
   const dir = lang === "ar" ? "rtl" : "ltr";
   const [members, setMembers] = React.useState<TeamMember[]>([]);
   const [invitations, setInvitations] = React.useState<Invitation[]>([]);
@@ -80,7 +81,7 @@ export default function TeamManagementPage() {
       setInvitations(inviteData as Invitation[]);
     } catch (error) {
       console.error(error);
-      toast.error(lang === "ar" ? "تعذر تحميل الفريق" : "Could not load team");
+      toast.error(t("تعذر تحميل الفريق", "Could not load team"));
     } finally {
       setLoading(false);
     }
@@ -98,11 +99,11 @@ export default function TeamManagementPage() {
     try {
       const result = await createInvitation({ email: inviteEmail, role: inviteRole });
       if (!result.success) {
-        setInviteError(result.error ?? (lang === "ar" ? "تعذر إرسال الدعوة" : "Could not send invitation"));
+        setInviteError(result.error ?? (t("تعذر إرسال الدعوة", "Could not send invitation")));
         return;
       }
       setInviteFallbackUrl(result.emailSent ? null : result.inviteUrl ?? null);
-      toast.success(result.emailSent ? (lang === "ar" ? "تم إرسال الدعوة" : "Invitation sent") : result.emailMessage);
+      toast.success(result.emailSent ? (t("تم إرسال الدعوة", "Invitation sent")) : result.emailMessage);
       setInviteEmail("");
       setInviteRole("AGENT");
       await fetchTeam();
@@ -115,10 +116,10 @@ export default function TeamManagementPage() {
     setBusyId(userId);
     try {
       await removeTeamMember(userId);
-      toast.success(lang === "ar" ? "تمت إزالة العضو" : "Team member removed");
+      toast.success(t("تمت إزالة العضو", "Team member removed"));
       await fetchTeam();
     } catch {
-      toast.error(lang === "ar" ? "تعذر إزالة العضو" : "Could not remove team member");
+      toast.error(t("تعذر إزالة العضو", "Could not remove team member"));
     } finally {
       setBusyId(null);
     }
@@ -129,11 +130,11 @@ export default function TeamManagementPage() {
     try {
       const result = await resendInvitation(invitationId);
       if (!result.success) {
-        toast.error(result.error ?? (lang === "ar" ? "تعذر إعادة الإرسال" : "Could not resend invitation"));
+        toast.error(result.error ?? (t("تعذر إعادة الإرسال", "Could not resend invitation")));
         return;
       }
       setInviteFallbackUrl(result.emailSent ? null : result.inviteUrl ?? null);
-      toast.success(result.emailSent ? (lang === "ar" ? "تم إرسال الدعوة مرة أخرى" : "Invitation resent") : result.emailMessage);
+      toast.success(result.emailSent ? (t("تم إرسال الدعوة مرة أخرى", "Invitation resent")) : result.emailMessage);
       await fetchTeam();
     } finally {
       setBusyId(null);
@@ -145,10 +146,10 @@ export default function TeamManagementPage() {
     try {
       const result = await revokeInvitation(invitationId);
       if (!result.success) {
-        toast.error(result.error ?? (lang === "ar" ? "تعذر إلغاء الدعوة" : "Could not revoke invitation"));
+        toast.error(result.error ?? (t("تعذر إلغاء الدعوة", "Could not revoke invitation")));
         return;
       }
-      toast.success(lang === "ar" ? "تم إلغاء الدعوة" : "Invitation revoked");
+      toast.success(t("تم إلغاء الدعوة", "Invitation revoked"));
       await fetchTeam();
     } finally {
       setBusyId(null);
@@ -159,9 +160,9 @@ export default function TeamManagementPage() {
     if (!inviteFallbackUrl) return;
     try {
       await navigator.clipboard.writeText(inviteFallbackUrl);
-      toast.success(lang === "ar" ? "تم نسخ رابط الدعوة" : "Invitation link copied");
+      toast.success(t("تم نسخ رابط الدعوة", "Invitation link copied"));
     } catch {
-      toast.error(lang === "ar" ? "تعذر نسخ رابط الدعوة" : "Could not copy the invitation link");
+      toast.error(t("تعذر نسخ رابط الدعوة", "Could not copy the invitation link"));
     }
   }
 
@@ -170,30 +171,30 @@ export default function TeamManagementPage() {
       {inviteError && <div className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">{inviteError}</div>}
       {inviteFallbackUrl && (
         <div className="rounded-md border border-warning/30 bg-warning/10 p-3 text-sm text-foreground">
-          <p className="font-medium">{lang === "ar" ? "البريد غير مكتمل. استخدم الرابط مؤقتاً." : "Email is not configured. Use this fallback link for now."}</p>
+          <p className="font-medium">{t("البريد غير مكتمل. استخدم الرابط مؤقتاً.", "Email is not configured. Use this fallback link for now.")}</p>
           <Button type="button" variant="secondary" size="sm" className="mt-3" onClick={copyFallbackUrl} style={{ display: "inline-flex" }}>
             <ClipboardCopy className="h-4 w-4" />
-            {lang === "ar" ? "نسخ رابط الدعوة" : "Copy invite link"}
+            {t("نسخ رابط الدعوة", "Copy invite link")}
           </Button>
         </div>
       )}
       <label className="space-y-2 text-sm font-medium">
-        {lang === "ar" ? "البريد الإلكتروني" : "Email"}
+        {t("البريد الإلكتروني", "Email")}
         <Input type="email" value={inviteEmail} onChange={(event) => setInviteEmail(event.target.value)} dir="ltr" placeholder="name@example.com" />
       </label>
       <label className="space-y-2 text-sm font-medium">
-        {lang === "ar" ? "الدور" : "Role"}
-        <select value={inviteRole} onChange={(event) => setInviteRole(event.target.value)} className="h-11 w-full rounded-md border border-border bg-background px-3 text-sm">
+        {t("الدور", "Role")}
+        <SelectField aria-label={t("الدور", "Role")} value={inviteRole} onChange={(event) => setInviteRole(event.target.value)} className="h-11">
           {inviteRoleOptions.map((option) => (
             <option key={option.value} value={option.value}>
               {option.label[lang]}
             </option>
           ))}
-        </select>
+        </SelectField>
       </label>
       <Button className="min-h-[44px] w-full" onClick={handleInvite} disabled={inviting || !inviteEmail} loading={inviting} style={{ display: "inline-flex" }}>
         <Mail className="h-4 w-4" />
-        {lang === "ar" ? "إرسال الدعوة" : "Send invitation"}
+        {t("إرسال الدعوة", "Send invitation")}
       </Button>
     </div>
   );
@@ -203,10 +204,10 @@ export default function TeamManagementPage() {
   return (
     <>
       <div className="md:hidden -m-4 flex min-h-dvh flex-col bg-background sm:-m-6" dir={dir}>
-        <AppBar title={lang === "ar" ? "الفريق" : "Team"} subtitle={lang === "ar" ? "الأعضاء والدعوات" : "Members and invitations"} lang={lang} />
+        <AppBar title={t("الفريق", "Team")} subtitle={t("الأعضاء والدعوات", "Members and invitations")} lang={lang} />
         <div className="flex-1 space-y-5 px-4 py-4 pb-28">
           {loading ? (
-            <div className="py-12 text-center text-sm text-foreground animate-pulse">{lang === "ar" ? "جاري التحميل..." : "Loading..."}</div>
+            <div className="py-12 text-center text-sm text-foreground animate-pulse">{t("جاري التحميل...", "Loading...")}</div>
           ) : (
             <>
               <TeamList members={members} lang={lang} onRemove={(member) => setRemoveCandidate(member)} busyId={busyId} compact />
@@ -214,20 +215,20 @@ export default function TeamManagementPage() {
             </>
           )}
         </div>
-        <FAB icon={UserPlus} label={lang === "ar" ? "دعوة عضو" : "Invite member"} onClick={() => setShowInvite(true)} />
-        <ResponsiveDialog open={showInvite} onOpenChange={setShowInvite} title={lang === "ar" ? "دعوة عضو جديد" : "Invite team member"} description={lang === "ar" ? "الدعوة ترسل عبر البريد ويقوم العضو بإنشاء كلمة المرور." : "The invite is sent by email and the member creates their own password."}>
+        <FAB icon={UserPlus} label={t("دعوة عضو", "Invite member")} onClick={() => setShowInvite(true)} />
+        <ResponsiveDialog open={showInvite} onOpenChange={setShowInvite} title={t("دعوة عضو جديد", "Invite team member")} description={t("الدعوة ترسل عبر البريد ويقوم العضو بإنشاء كلمة المرور.", "The invite is sent by email and the member creates their own password.")}>
           {inviteForm}
         </ResponsiveDialog>
       </div>
 
       <div className="hidden space-y-6 md:block" dir={dir}>
         <PageHeader
-          title={lang === "ar" ? "إدارة فريق العمل" : "Team Management"}
-          description={lang === "ar" ? "دعوات آمنة عبر البريد مع روابط قبول منتهية الصلاحية." : "Secure email invitations with expiring acceptance links."}
+          title={t("إدارة فريق العمل", "Team Management")}
+          description={t("دعوات آمنة عبر البريد مع روابط قبول منتهية الصلاحية.", "Secure email invitations with expiring acceptance links.")}
           actions={
             <Button size="sm" onClick={() => setShowInvite(true)} style={{ display: "inline-flex" }}>
               <UserPlus className="h-4 w-4" />
-              {lang === "ar" ? "دعوة عضو جديد" : "Invite member"}
+              {t("دعوة عضو جديد", "Invite member")}
             </Button>
           }
         />
@@ -236,35 +237,35 @@ export default function TeamManagementPage() {
           <Card>
             <CardContent className="space-y-4 p-5">
               <div className="flex items-center justify-between">
-                <h2 className="text-base font-semibold">{lang === "ar" ? "دعوة عضو جديد" : "Invite team member"}</h2>
+                <h2 className="text-base font-semibold">{t("دعوة عضو جديد", "Invite team member")}</h2>
                 <IconButton
                   icon={X}
-                  aria-label={lang === "ar" ? "إغلاق" : "Close"}
+                  aria-label={t("إغلاق", "Close")}
                   variant="ghost"
                   onClick={() => setShowInvite(false)}
                 />
               </div>
               <div className="grid gap-4 md:grid-cols-[1fr_220px_auto]">
                 <Input type="email" value={inviteEmail} onChange={(event) => setInviteEmail(event.target.value)} placeholder="name@example.com" dir="ltr" />
-                <select value={inviteRole} onChange={(event) => setInviteRole(event.target.value)} className="h-10 rounded-md border border-border bg-background px-3 text-sm">
+                <SelectField aria-label={t("الدور", "Role")} value={inviteRole} onChange={(event) => setInviteRole(event.target.value)}>
                   {inviteRoleOptions.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label[lang]}
                     </option>
                   ))}
-                </select>
+                </SelectField>
                 <Button onClick={handleInvite} loading={inviting} disabled={!inviteEmail} style={{ display: "inline-flex" }}>
                   <Mail className="h-4 w-4" />
-                  {lang === "ar" ? "إرسال الدعوة" : "Send invitation"}
+                  {t("إرسال الدعوة", "Send invitation")}
                 </Button>
               </div>
               {inviteError && <div className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">{inviteError}</div>}
               {inviteFallbackUrl && (
                 <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-warning/30 bg-warning/10 p-3 text-sm">
-                  <span>{lang === "ar" ? "البريد غير مكتمل. استخدم الرابط مؤقتاً." : "Email is not configured. Use this fallback link for now."}</span>
+                  <span>{t("البريد غير مكتمل. استخدم الرابط مؤقتاً.", "Email is not configured. Use this fallback link for now.")}</span>
                   <Button type="button" variant="secondary" size="sm" onClick={copyFallbackUrl} style={{ display: "inline-flex" }}>
                     <ClipboardCopy className="h-4 w-4" />
-                    {lang === "ar" ? "نسخ الرابط" : "Copy link"}
+                    {t("نسخ الرابط", "Copy link")}
                   </Button>
                 </div>
               )}
@@ -281,11 +282,9 @@ export default function TeamManagementPage() {
         onOpenChange={(open) => {
           if (!open) setRemoveCandidate(null);
         }}
-        title={lang === "ar" ? "إزالة عضو الفريق" : "Remove team member"}
+        title={t("إزالة عضو الفريق", "Remove team member")}
         description={
-          lang === "ar"
-            ? "سيتم إلغاء وصول هذا العضو إلى مساحة العمل. يمكن دعوته مرة أخرى لاحقاً."
-            : "This removes the member's access to this workspace. You can invite them again later."
+          t("سيتم إلغاء وصول هذا العضو إلى مساحة العمل. يمكن دعوته مرة أخرى لاحقاً.", "This removes the member's access to this workspace. You can invite them again later.")
         }
       >
         <div className="space-y-4">
@@ -295,7 +294,7 @@ export default function TeamManagementPage() {
           </div>
           <div className="flex flex-wrap justify-end gap-2">
             <Button type="button" variant="secondary" onClick={() => setRemoveCandidate(null)} style={{ display: "inline-flex" }}>
-              {lang === "ar" ? "إلغاء" : "Cancel"}
+              {t("إلغاء", "Cancel")}
             </Button>
             <Button
               type="button"
@@ -309,7 +308,7 @@ export default function TeamManagementPage() {
               style={{ display: "inline-flex" }}
             >
               <Trash2 className="h-4 w-4" />
-              {lang === "ar" ? "إزالة العضو" : "Remove member"}
+              {t("إزالة العضو", "Remove member")}
             </Button>
           </div>
         </div>

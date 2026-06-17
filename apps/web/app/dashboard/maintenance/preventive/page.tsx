@@ -30,6 +30,8 @@ import {
   Skeleton,
   Input,
   Switch,
+  SelectField,
+  HijriDatePicker,
   Alert,
   AlertDescription,
   AlertDialog,
@@ -71,7 +73,7 @@ const recurrenceLabels: Record<string, { ar: string; en: string }> = {
 
 export default function PreventiveMaintenancePage() {
   const router = useRouter();
-  const { lang } = useLanguage();
+  const { t, lang } = useLanguage();
   const [plans, setPlans] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [generating, setGenerating] = React.useState(false);
@@ -217,13 +219,11 @@ export default function PreventiveMaintenancePage() {
     try {
       await deletePreventivePlan(deleteTargetId);
       await load();
-      toast.success(lang === "ar" ? "تم حذف الخطة" : "Plan deleted");
+      toast.success(t("تم حذف الخطة", "Plan deleted"));
       setDeleteTargetId(null);
     } catch (e) {
       toast.error(
-        lang === "ar"
-          ? "تعذّر حذف الخطة. يرجى المحاولة مجدداً."
-          : "Could not delete plan. Please try again."
+        t("تعذّر حذف الخطة. يرجى المحاولة مجدداً.", "Could not delete plan. Please try again.")
       );
     } finally {
       setDeleting(false);
@@ -236,16 +236,12 @@ export default function PreventiveMaintenancePage() {
     try {
       const result = await generateWorkOrdersFromPlans();
       toast.success(
-        lang === "ar"
-          ? `تم إنشاء ${result.created} طلب صيانة من ${result.total} خطة مستحقة.`
-          : `Created ${result.created} work orders from ${result.total} due plans.`
+        t(`تم إنشاء ${result.created} طلب صيانة من ${result.total} خطة مستحقة.`, `Created ${result.created} work orders from ${result.total} due plans.`)
       );
       await load();
     } catch (e) {
       toast.error(
-        lang === "ar"
-          ? "تعذّر إنشاء طلبات الصيانة. يرجى المحاولة مجدداً."
-          : "Could not generate work orders. Please try again."
+        t("تعذّر إنشاء طلبات الصيانة. يرجى المحاولة مجدداً.", "Could not generate work orders. Please try again.")
       );
     } finally {
       setGenerating(false);
@@ -286,13 +282,13 @@ export default function PreventiveMaintenancePage() {
       dir={lang === "ar" ? "rtl" : "ltr"}
     >
       <AppBar
-        title={lang === "ar" ? "الخطط الوقائية" : "Preventive plans"}
+        title={t("الخطط الوقائية", "Preventive plans")}
         lang={lang}
         onBack={() => router.push("/dashboard/maintenance/tickets")}
         trailing={
           <IconButton
             icon={generating ? Loader2 : Zap}
-            aria-label={lang === "ar" ? "تشغيل الآن" : "Run now"}
+            aria-label={t("تشغيل الآن", "Run now")}
             onClick={() => setRunConfirmOpen(true)}
             disabled={generating}
             variant="ghost"
@@ -310,7 +306,7 @@ export default function PreventiveMaintenancePage() {
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder={lang === "ar" ? "بحث باسم الخطة..." : "Search by plan name..."}
+            placeholder={t("بحث باسم الخطة...", "Search by plan name...")}
             className="h-10 ps-9"
           />
         </div>
@@ -318,25 +314,25 @@ export default function PreventiveMaintenancePage() {
 
       <div className="grid grid-cols-2 gap-3 px-4 pt-3">
         <MobileKPICard
-          label={lang === "ar" ? "الخطط النشطة" : "Active plans"}
+          label={t("الخطط النشطة", "Active plans")}
           value={mobileKpis.active}
           tone="green"
           icon={Play}
         />
         <MobileKPICard
-          label={lang === "ar" ? "المستحقة هذا الأسبوع" : "Due this week"}
+          label={t("المستحقة هذا الأسبوع", "Due this week")}
           value={mobileKpis.dueWeek}
           tone="amber"
           icon={CalendarCheck}
         />
         <MobileKPICard
-          label={lang === "ar" ? "الإجمالي" : "Total"}
+          label={t("الإجمالي", "Total")}
           value={mobileKpis.total}
           tone="primary"
           icon={Zap}
         />
         <MobileKPICard
-          label={lang === "ar" ? "متوقفة" : "Disabled"}
+          label={t("متوقفة", "Disabled")}
           value={mobileKpis.disabled}
           tone="default"
           icon={Pause}
@@ -359,9 +355,9 @@ export default function PreventiveMaintenancePage() {
             <EmptyState
               variant="filtered"
               icon={<Search className="h-12 w-12" />}
-              title={lang === "ar" ? "لا توجد نتائج مطابقة" : "No matching plans"}
+              title={t("لا توجد نتائج مطابقة", "No matching plans")}
               description={
-                lang === "ar" ? "جرّب تعديل البحث." : "Try adjusting your search."
+                t("جرّب تعديل البحث.", "Try adjusting your search.")
               }
               action={
                 <Button
@@ -370,7 +366,7 @@ export default function PreventiveMaintenancePage() {
                   onClick={() => setSearch("")}
                   style={{ display: "inline-flex" }}
                 >
-                  {lang === "ar" ? "مسح الفلاتر" : "Clear filters"}
+                  {t("مسح الفلاتر", "Clear filters")}
                 </Button>
               }
             />
@@ -378,23 +374,19 @@ export default function PreventiveMaintenancePage() {
             <EmptyState
               variant="first-time"
               icon={<CalendarCheck className="h-12 w-12" />}
-              title={lang === "ar" ? "لا توجد خطط وقائية بعد" : "No preventive plans yet"}
+              title={t("لا توجد خطط وقائية بعد", "No preventive plans yet")}
               description={
-                lang === "ar"
-                  ? "جدولة الصيانة الدورية تمنع الأعطال وتطيل عمر الأصول."
-                  : "Scheduled upkeep prevents breakdowns and extends asset life."
+                t("جدولة الصيانة الدورية تمنع الأعطال وتطيل عمر الأصول.", "Scheduled upkeep prevents breakdowns and extends asset life.")
               }
               action={
                 <Button size="sm" onClick={openCreate} style={{ display: "inline-flex" }}>
                   <Plus className="h-4 w-4 me-1.5" />
-                  {lang === "ar" ? "إنشاء خطة" : "Create plan"}
+                  {t("إنشاء خطة", "Create plan")}
                 </Button>
               }
               helpHref="/dashboard/help#preventive-maintenance"
               helpLabel={
-                lang === "ar"
-                  ? "تعرّف على الصيانة الوقائية"
-                  : "Learn about preventive maintenance"
+                t("تعرّف على الصيانة الوقائية", "Learn about preventive maintenance")
               }
             />
           )
@@ -431,7 +423,7 @@ export default function PreventiveMaintenancePage() {
                   }
                   subtitle={[
                     cat[lang],
-                    `${plan.recurrenceInterval > 1 ? `${lang === "ar" ? "كل" : "Every"} ${plan.recurrenceInterval} ` : ""}${rec[lang]}`,
+                    `${plan.recurrenceInterval > 1 ? `${t("كل", "Every")} ${plan.recurrenceInterval} ` : ""}${rec[lang]}`,
                     <span
                       key="next"
                       className={
@@ -440,7 +432,7 @@ export default function PreventiveMaintenancePage() {
                           : undefined
                       }
                     >
-                      {lang === "ar" ? "التالي: " : "Next: "}
+                      {t("التالي: ", "Next: ")}
                       <span className="tabular-nums">{nextDateLabel}</span>
                     </span>,
                   ]}
@@ -453,9 +445,7 @@ export default function PreventiveMaintenancePage() {
                         checked={plan.isActive}
                         onCheckedChange={() => handleToggle(plan.id)}
                         aria-label={
-                          lang === "ar"
-                            ? "تفعيل أو إيقاف الخطة"
-                            : "Toggle plan active"
+                          t("تفعيل أو إيقاف الخطة", "Toggle plan active")
                         }
                       />
                     </div>
@@ -469,7 +459,7 @@ export default function PreventiveMaintenancePage() {
 
       <FAB
         icon={Plus}
-        label={lang === "ar" ? "خطة جديدة" : "New plan"}
+        label={t("خطة جديدة", "New plan")}
         onClick={openCreate}
       />
     </div>
@@ -483,24 +473,24 @@ export default function PreventiveMaintenancePage() {
           variant="ghost"
           size="sm"
           onClick={() => router.push("/dashboard/maintenance/tickets")}
-          aria-label={lang === "ar" ? "رجوع" : "Back"}
+          aria-label={t("رجوع", "Back")}
           className="shrink-0"
         >
           <DirectionalIcon icon={ArrowLeft} className="h-[18px] w-[18px]" />
         </Button>
         <PageHeader
           className="flex-1"
-          title={lang === "ar" ? "خطط الصيانة الوقائية" : "Preventive Maintenance Plans"}
-          description={lang === "ar" ? "جدولة الصيانة الدورية للمباني والوحدات" : "Schedule recurring maintenance for buildings and units"}
+          title={t("خطط الصيانة الوقائية", "Preventive Maintenance Plans")}
+          description={t("جدولة الصيانة الدورية للمباني والوحدات", "Schedule recurring maintenance for buildings and units")}
           actions={
             <>
               <Button variant="secondary" size="sm" className="gap-2" onClick={() => setRunConfirmOpen(true)} disabled={generating}>
                 {generating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-4 w-4" />}
-                {lang === "ar" ? "تشغيل الآن" : "Run Now"}
+                {t("تشغيل الآن", "Run Now")}
               </Button>
               <Button size="sm" className="gap-2" onClick={openCreate}>
                 <Plus className="h-4 w-4" />
-                {lang === "ar" ? "خطة جديدة" : "New Plan"}
+                {t("خطة جديدة", "New Plan")}
               </Button>
             </>
           }
@@ -515,11 +505,9 @@ export default function PreventiveMaintenancePage() {
       ) : plans.length === 0 ? (
         <EmptyState
           icon={<CalendarCheck className="h-12 w-12" aria-hidden="true" />}
-          title={lang === "ar" ? "لا توجد خطط وقائية بعد" : "No preventive plans yet"}
+          title={t("لا توجد خطط وقائية بعد", "No preventive plans yet")}
           description={
-            lang === "ar"
-              ? "جدولة الصيانة الدورية تمنع الأعطال وتطيل عمر الأصول."
-              : "Scheduled upkeep prevents breakdowns and extends asset life."
+            t("جدولة الصيانة الدورية تمنع الأعطال وتطيل عمر الأصول.", "Scheduled upkeep prevents breakdowns and extends asset life.")
           }
           action={
             <Button
@@ -528,11 +516,11 @@ export default function PreventiveMaintenancePage() {
               className="gap-2"
             >
               <Plus className="h-[18px] w-[18px]" />
-              {lang === "ar" ? "إنشاء خطة" : "Create plan"}
+              {t("إنشاء خطة", "Create plan")}
             </Button>
           }
           helpHref="/dashboard/help#preventive-maintenance"
-          helpLabel={lang === "ar" ? "تعرّف على الصيانة الوقائية" : "Learn about preventive maintenance"}
+          helpLabel={t("تعرّف على الصيانة الوقائية", "Learn about preventive maintenance")}
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -555,13 +543,13 @@ export default function PreventiveMaintenancePage() {
                     <p className="text-[10px] text-muted-foreground mt-0.5">{plan.description || "—"}</p>
                   </div>
                   <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="sm" onClick={() => handleToggle(plan.id)} aria-label={plan.isActive ? (lang === "ar" ? "إيقاف مؤقت" : "Pause") : (lang === "ar" ? "تشغيل" : "Resume")}>
+                    <Button variant="ghost" size="sm" onClick={() => handleToggle(plan.id)} aria-label={plan.isActive ? (t("إيقاف مؤقت", "Pause")) : (t("تشغيل", "Resume"))}>
                       {plan.isActive ? <Pause className="h-3.5 w-3.5 text-warning" /> : <Play className="h-3.5 w-3.5 text-secondary" />}
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={() => openEdit(plan)} aria-label={lang === "ar" ? "تعديل" : "Edit"}>
+                    <Button variant="ghost" size="sm" onClick={() => openEdit(plan)} aria-label={t("تعديل", "Edit")}>
                       <Pencil className="h-3.5 w-3.5" />
                     </Button>
-                    <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => setDeleteTargetId(plan.id)} aria-label={lang === "ar" ? "حذف" : "Delete"}>
+                    <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => setDeleteTargetId(plan.id)} aria-label={t("حذف", "Delete")}>
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>
@@ -570,38 +558,38 @@ export default function PreventiveMaintenancePage() {
                 <div className="flex items-center gap-2 mb-3 flex-wrap">
                   <Badge variant="draft" className="text-[9px]">{cat[lang]}</Badge>
                   <Badge variant={plan.isActive ? "available" : "maintenance"} className="text-[9px]">
-                    {plan.isActive ? (lang === "ar" ? "نشط" : "Active") : (lang === "ar" ? "متوقف" : "Paused")}
+                    {plan.isActive ? (t("نشط", "Active")) : (t("متوقف", "Paused"))}
                   </Badge>
                   {isDue && plan.isActive && (
-                    <Badge variant="overdue" className="text-[9px]">{lang === "ar" ? "مستحق" : "Due"}</Badge>
+                    <Badge variant="overdue" className="text-[9px]">{t("مستحق", "Due")}</Badge>
                   )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div>
-                    <span className="text-[10px] text-muted-foreground uppercase font-bold">{lang === "ar" ? "التكرار" : "Frequency"}</span>
+                    <span className="text-[10px] text-muted-foreground uppercase font-bold">{t("التكرار", "Frequency")}</span>
                     <p className="font-medium text-primary">
-                      {plan.recurrenceInterval > 1 ? `${lang === "ar" ? "كل" : "Every"} ${plan.recurrenceInterval} ` : ""}
+                      {plan.recurrenceInterval > 1 ? `${t("كل", "Every")} ${plan.recurrenceInterval} ` : ""}
                       {rec[lang]}
                     </p>
                   </div>
                   <div>
-                    <span className="text-[10px] text-muted-foreground uppercase font-bold">{lang === "ar" ? "الأولوية" : "Priority"}</span>
+                    <span className="text-[10px] text-muted-foreground uppercase font-bold">{t("الأولوية", "Priority")}</span>
                     <p className="font-medium text-primary">{pri[lang]}</p>
                   </div>
                   <div>
-                    <span className="text-[10px] text-muted-foreground uppercase font-bold">{lang === "ar" ? "التشغيل التالي" : "Next Run"}</span>
+                    <span className="text-[10px] text-muted-foreground uppercase font-bold">{t("التشغيل التالي", "Next Run")}</span>
                     <p className={`font-medium ${isDue && plan.isActive ? "text-destructive" : "text-primary"}`}>
                       {plan.nextRunDate ? new Date(plan.nextRunDate).toLocaleDateString("en-SA") : "—"}
                     </p>
                   </div>
                   <div>
-                    <span className="text-[10px] text-muted-foreground uppercase font-bold">{lang === "ar" ? "أوامر عمل" : "Work Orders"}</span>
+                    <span className="text-[10px] text-muted-foreground uppercase font-bold">{t("أوامر عمل", "Work Orders")}</span>
                     <p className="font-medium text-primary">{plan._count?.workOrders ?? 0}</p>
                   </div>
                   {plan.estimatedCost != null && (
                     <div>
-                      <span className="text-[10px] text-muted-foreground uppercase font-bold">{lang === "ar" ? "التكلفة" : "Est. Cost"}</span>
+                      <span className="text-[10px] text-muted-foreground uppercase font-bold">{t("التكلفة", "Est. Cost")}</span>
                       <p className="font-medium text-primary"><SARAmount value={plan.estimatedCost} size={10} /></p>
                     </div>
                   )}
@@ -625,17 +613,17 @@ export default function PreventiveMaintenancePage() {
         onOpenChange={setShowModal}
         title={
           editingId
-            ? (lang === "ar" ? "تعديل خطة وقائية" : "Edit Plan")
-            : (lang === "ar" ? "خطة وقائية جديدة" : "New Preventive Plan")
+            ? (t("تعديل خطة وقائية", "Edit Plan"))
+            : (t("خطة وقائية جديدة", "New Preventive Plan"))
         }
         contentClassName="sm:max-w-[640px]"
         footer={
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <Button variant="secondary" size="sm" onClick={() => setShowModal(false)} disabled={saving}>
-              {lang === "ar" ? "إلغاء" : "Cancel"}
+              {t("إلغاء", "Cancel")}
             </Button>
             <Button type="submit" form="preventive-plan-form" size="sm" disabled={saving || !form.title || !form.startDate} loading={saving}>
-              {editingId ? (lang === "ar" ? "تحديث" : "Update") : (lang === "ar" ? "إنشاء" : "Create")}
+              {editingId ? (t("تحديث", "Update")) : (t("إنشاء", "Create"))}
             </Button>
           </div>
         }
@@ -649,87 +637,99 @@ export default function PreventiveMaintenancePage() {
           className="space-y-4 py-4"
         >
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-muted-foreground">{lang === "ar" ? "العنوان *" : "Title *"}</label>
-            <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className={inputClass} placeholder={lang === "ar" ? "مثال: فحص التكييف الشهري" : "e.g. Monthly HVAC Inspection"} />
+            <label className="text-xs font-bold text-muted-foreground">{t("العنوان *", "Title *")}</label>
+            <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className={inputClass} placeholder={t("مثال: فحص التكييف الشهري", "e.g. Monthly HVAC Inspection")} />
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-muted-foreground">{lang === "ar" ? "الوصف" : "Description"}</label>
+            <label className="text-xs font-bold text-muted-foreground">{t("الوصف", "Description")}</label>
             <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className={`${inputClass} h-16 py-2`} />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-muted-foreground">{lang === "ar" ? "التصنيف" : "Category"}</label>
-              <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className={inputClass}>
+              <label className="text-xs font-bold text-muted-foreground">{t("التصنيف", "Category")}</label>
+              <SelectField aria-label={t("التصنيف", "Category")} value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className={inputClass}>
                 {Object.entries(categoryLabels).map(([k, v]) => (
                   <option key={k} value={k}>{v[lang]}</option>
                 ))}
-              </select>
+              </SelectField>
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-muted-foreground">{lang === "ar" ? "الأولوية" : "Priority"}</label>
-              <select value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })} className={inputClass}>
+              <label className="text-xs font-bold text-muted-foreground">{t("الأولوية", "Priority")}</label>
+              <SelectField aria-label={t("الأولوية", "Priority")} value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })} className={inputClass}>
                 {Object.entries(priorityLabels).map(([k, v]) => (
                   <option key={k} value={k}>{v[lang]}</option>
                 ))}
-              </select>
+              </SelectField>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-muted-foreground">{lang === "ar" ? "التكرار" : "Recurrence"}</label>
-              <select value={form.recurrenceType} onChange={(e) => setForm({ ...form, recurrenceType: e.target.value })} className={inputClass}>
+              <label className="text-xs font-bold text-muted-foreground">{t("التكرار", "Recurrence")}</label>
+              <SelectField aria-label={t("التكرار", "Recurrence")} value={form.recurrenceType} onChange={(e) => setForm({ ...form, recurrenceType: e.target.value })} className={inputClass}>
                 {Object.entries(recurrenceLabels).map(([k, v]) => (
                   <option key={k} value={k}>{v[lang]}</option>
                 ))}
-              </select>
+              </SelectField>
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-muted-foreground">{lang === "ar" ? "فترة التكرار" : "Interval"}</label>
+              <label className="text-xs font-bold text-muted-foreground">{t("فترة التكرار", "Interval")}</label>
               <input type="number" min="1" value={form.recurrenceInterval} onChange={(e) => setForm({ ...form, recurrenceInterval: e.target.value })} className={inputClass} />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-muted-foreground">{lang === "ar" ? "تاريخ البدء *" : "Start Date *"}</label>
-              <input type="date" value={form.startDate} onChange={(e) => setForm({ ...form, startDate: e.target.value })} className={inputClass} />
+              <label className="text-xs font-bold text-muted-foreground">{t("تاريخ البدء *", "Start Date *")}</label>
+              <HijriDatePicker
+                locale={lang === "ar" ? "ar" : "en"}
+                value={form.startDate ? new Date(form.startDate) : null}
+                onChange={(d) =>
+                  setForm({ ...form, startDate: d ? d.toISOString().slice(0, 10) : "" })
+                }
+              />
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-muted-foreground">{lang === "ar" ? "تاريخ الانتهاء" : "End Date"}</label>
-              <input type="date" value={form.endDate} onChange={(e) => setForm({ ...form, endDate: e.target.value })} className={inputClass} />
+              <label className="text-xs font-bold text-muted-foreground">{t("تاريخ الانتهاء", "End Date")}</label>
+              <HijriDatePicker
+                locale={lang === "ar" ? "ar" : "en"}
+                value={form.endDate ? new Date(form.endDate) : null}
+                onChange={(d) =>
+                  setForm({ ...form, endDate: d ? d.toISOString().slice(0, 10) : "" })
+                }
+              />
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-muted-foreground">{lang === "ar" ? "الوحدة" : "Unit"}</label>
-            <select value={form.unitId} onChange={(e) => setForm({ ...form, unitId: e.target.value })} className={inputClass}>
-              <option value="">{lang === "ar" ? "— الكل —" : "— All —"}</option>
+            <label className="text-xs font-bold text-muted-foreground">{t("الوحدة", "Unit")}</label>
+            <SelectField aria-label={t("الوحدة", "Unit")} value={form.unitId} onChange={(e) => setForm({ ...form, unitId: e.target.value })} className={inputClass}>
+              <option value="">{t("— الكل —", "— All —")}</option>
               {units.map((u: any) => (
                 <option key={u.id} value={u.id}>{u.number}{u.buildingName ? ` — ${u.buildingName}` : ""}</option>
               ))}
-            </select>
+            </SelectField>
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-muted-foreground">{lang === "ar" ? "تعيين إلى" : "Default Assignee"}</label>
-            <select value={form.assignToId} onChange={(e) => setForm({ ...form, assignToId: e.target.value })} className={inputClass}>
-              <option value="">{lang === "ar" ? "— بدون —" : "— None —"}</option>
+            <label className="text-xs font-bold text-muted-foreground">{t("تعيين إلى", "Default Assignee")}</label>
+            <SelectField aria-label={t("تعيين إلى", "Default Assignee")} value={form.assignToId} onChange={(e) => setForm({ ...form, assignToId: e.target.value })} className={inputClass}>
+              <option value="">{t("— بدون —", "— None —")}</option>
               {users.map((u: any) => (
                 <option key={u.id} value={u.id}>{u.name} ({u.role})</option>
               ))}
-            </select>
+            </SelectField>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-muted-foreground">{lang === "ar" ? "التكلفة التقديرية" : "Est. Cost"}</label>
+              <label className="text-xs font-bold text-muted-foreground">{t("التكلفة التقديرية", "Est. Cost")}</label>
               <input type="number" value={form.estimatedCost} onChange={(e) => setForm({ ...form, estimatedCost: e.target.value })} className={inputClass} placeholder="0.00" />
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-muted-foreground">{lang === "ar" ? "الساعات التقديرية" : "Est. Hours"}</label>
+              <label className="text-xs font-bold text-muted-foreground">{t("الساعات التقديرية", "Est. Hours")}</label>
               <input type="number" value={form.estimatedHours} onChange={(e) => setForm({ ...form, estimatedHours: e.target.value })} className={inputClass} placeholder="0" />
             </div>
           </div>
@@ -748,17 +748,15 @@ export default function PreventiveMaintenancePage() {
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>
-            {lang === "ar" ? "تأكيد حذف الخطة" : "Delete this plan?"}
+            {t("تأكيد حذف الخطة", "Delete this plan?")}
           </AlertDialogTitle>
           <AlertDialogDescription>
-            {lang === "ar"
-              ? "سيتم حذف هذه الخطة الوقائية نهائياً. لا يمكن التراجع عن هذا الإجراء."
-              : "This preventive plan will be permanently deleted. This action cannot be undone."}
+            {t("سيتم حذف هذه الخطة الوقائية نهائياً. لا يمكن التراجع عن هذا الإجراء.", "This preventive plan will be permanently deleted. This action cannot be undone.")}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={deleting}>
-            {lang === "ar" ? "إلغاء" : "Cancel"}
+            {t("إلغاء", "Cancel")}
           </AlertDialogCancel>
           <AlertDialogAction
             onClick={(e) => {
@@ -770,7 +768,7 @@ export default function PreventiveMaintenancePage() {
           >
             {deleting ? (
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-            ) : lang === "ar" ? "حذف" : "Delete"}
+            ) : t("حذف", "Delete")}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -786,19 +784,15 @@ export default function PreventiveMaintenancePage() {
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>
-            {lang === "ar"
-              ? "توليد طلبات الصيانة الآن؟"
-              : "Generate work orders now?"}
+            {t("توليد طلبات الصيانة الآن؟", "Generate work orders now?")}
           </AlertDialogTitle>
           <AlertDialogDescription>
-            {lang === "ar"
-              ? "سيتم إنشاء طلبات صيانة لجميع الخطط المستحقة."
-              : "Maintenance requests will be created for every plan that is currently due."}
+            {t("سيتم إنشاء طلبات صيانة لجميع الخطط المستحقة.", "Maintenance requests will be created for every plan that is currently due.")}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={generating}>
-            {lang === "ar" ? "إلغاء" : "Cancel"}
+            {t("إلغاء", "Cancel")}
           </AlertDialogCancel>
           <AlertDialogAction
             onClick={(e) => {
@@ -809,7 +803,7 @@ export default function PreventiveMaintenancePage() {
           >
             {generating ? (
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-            ) : lang === "ar" ? "تشغيل" : "Run now"}
+            ) : t("تشغيل", "Run now")}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

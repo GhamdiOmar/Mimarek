@@ -90,7 +90,7 @@ const unitTypeLabels: Record<string, { ar: string; en: string }> = {
 
 
 export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
-  const { lang } = useLanguage();
+  const { t, lang } = useLanguage();
   const [selectedUnits, setSelectedUnits] = React.useState<string[]>([]);
   const [units, setUnits] = React.useState<any[]>(initialUnits);
   const [updating, setUpdating] = React.useState(false);
@@ -118,25 +118,25 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
       z.object({
         number: z
           .string()
-          .min(1, lang === "ar" ? "رقم الوحدة مطلوب" : "Unit number is required"),
+          .min(1, t("رقم الوحدة مطلوب", "Unit number is required")),
         type: z
           .string()
-          .min(1, lang === "ar" ? "نوع الوحدة مطلوب" : "Unit type is required"),
+          .min(1, t("نوع الوحدة مطلوب", "Unit type is required")),
         area: z
-          .number({ invalid_type_error: lang === "ar" ? "أدخل قيمة صحيحة" : "Enter a valid number" })
-          .positive(lang === "ar" ? "يجب أن تكون المساحة أكبر من صفر" : "Area must be greater than zero")
+          .number({ invalid_type_error: t("أدخل قيمة صحيحة", "Enter a valid number") })
+          .positive(t("يجب أن تكون المساحة أكبر من صفر", "Area must be greater than zero"))
           .optional(),
         price: z
-          .number({ invalid_type_error: lang === "ar" ? "أدخل قيمة صحيحة" : "Enter a valid amount" })
-          .positive(lang === "ar" ? "يجب أن تكون القيمة أكبر من صفر" : "Amount must be greater than zero")
+          .number({ invalid_type_error: t("أدخل قيمة صحيحة", "Enter a valid amount") })
+          .positive(t("يجب أن تكون القيمة أكبر من صفر", "Amount must be greater than zero"))
           .optional(),
         markupPrice: z
-          .number({ invalid_type_error: lang === "ar" ? "أدخل قيمة صحيحة" : "Enter a valid amount" })
-          .positive(lang === "ar" ? "يجب أن تكون القيمة أكبر من صفر" : "Amount must be greater than zero")
+          .number({ invalid_type_error: t("أدخل قيمة صحيحة", "Enter a valid amount") })
+          .positive(t("يجب أن تكون القيمة أكبر من صفر", "Amount must be greater than zero"))
           .optional(),
         rentalPrice: z
-          .number({ invalid_type_error: lang === "ar" ? "أدخل قيمة صحيحة" : "Enter a valid amount" })
-          .positive(lang === "ar" ? "يجب أن تكون القيمة أكبر من صفر" : "Amount must be greater than zero")
+          .number({ invalid_type_error: t("أدخل قيمة صحيحة", "Enter a valid amount") })
+          .positive(t("يجب أن تكون القيمة أكبر من صفر", "Amount must be greater than zero"))
           .optional(),
       }),
     [lang],
@@ -242,7 +242,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
       );
       setSelectedUnits([]);
     } catch (err) {
-      setError(lang === "ar" ? "فشل تحديث حالة الوحدات" : "Failed to update units");
+      setError(t("فشل تحديث حالة الوحدات", "Failed to update units"));
     } finally {
       setUpdating(false);
     }
@@ -267,7 +267,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
       setShowAddModal(false);
       reset();
     } catch (err) {
-      setError(lang === "ar" ? "فشل إنشاء الوحدة" : "Failed to create unit");
+      setError(t("فشل إنشاء الوحدة", "Failed to create unit"));
     } finally {
       setUpdating(false);
     }
@@ -295,7 +295,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
       setShowPriceModal(false);
       setBulkPrice("");
     } catch (err) {
-      setError(lang === "ar" ? "فشل تحديث السعر" : "Failed to update price");
+      setError(t("فشل تحديث السعر", "Failed to update price"));
     } finally {
       setUpdating(false);
     }
@@ -313,7 +313,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
       setSelectedUnits([]);
       setShowDeleteConfirm(false);
     } catch (err) {
-      setError(lang === "ar" ? "فشل حذف بعض الوحدات" : "Failed to delete some units");
+      setError(t("فشل حذف بعض الوحدات", "Failed to delete some units"));
     } finally {
       setDeleting(false);
     }
@@ -356,7 +356,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
   const unitColumns = React.useMemo<ColumnDef<any, any>[]>(() => [
     {
       accessorKey: "number",
-      header: lang === "ar" ? "رقم الوحدة" : "Unit #",
+      header: t("رقم الوحدة", "Unit #"),
       enableSorting: true,
       cell: ({ row }) => (
         <code className="font-mono text-sm font-semibold text-primary/80 tabular-nums">
@@ -366,7 +366,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
     },
     {
       accessorKey: "buildingName",
-      header: lang === "ar" ? "المبنى / المدينة" : "Building / City",
+      header: t("المبنى / المدينة", "Building / City"),
       enableSorting: true,
       cell: ({ row }) => (
         <span>{row.original.buildingName || row.original.city || "—"}</span>
@@ -374,7 +374,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
     },
     {
       accessorKey: "type",
-      header: lang === "ar" ? "النوع" : "Type",
+      header: t("النوع", "Type"),
       enableSorting: true,
       cell: ({ row }) => (
         <span>{unitTypeLabels[row.original.type]?.[lang] ?? row.original.type}</span>
@@ -382,7 +382,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
     },
     {
       accessorKey: "area",
-      header: lang === "ar" ? "المساحة" : "Area",
+      header: t("المساحة", "Area"),
       enableSorting: true,
       meta: { numeric: true },
       cell: ({ row }) => (
@@ -393,7 +393,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
     },
     {
       accessorKey: "status",
-      header: lang === "ar" ? "الحالة" : "Status",
+      header: t("الحالة", "Status"),
       enableSorting: true,
       cell: ({ row }) => (
         <StatusBadge
@@ -405,7 +405,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
     },
     {
       accessorKey: "price",
-      header: lang === "ar" ? "السعر" : "Price",
+      header: t("السعر", "Price"),
       enableSorting: true,
       meta: { numeric: true },
       cell: ({ row }) =>
@@ -424,7 +424,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
         <div className="flex items-center justify-end gap-1">
           <IconButton
             icon={Trash2}
-            aria-label={lang === "ar" ? "حذف" : "Delete"}
+            aria-label={t("حذف", "Delete")}
             variant="ghost"
             size="icon"
             className="text-destructive hover:text-destructive"
@@ -442,7 +442,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
 
   // ─── Mobile view derived state ─────────────────────────────────────────
   const mobileStatusTabs: Array<{ key: string; label: string }> = [
-    { key: "", label: lang === "ar" ? "الكل" : "All" },
+    { key: "", label: t("الكل", "All") },
     { key: "AVAILABLE", label: unitStatusLabels.AVAILABLE?.[lang] ?? "Available" },
     { key: "RESERVED", label: unitStatusLabels.RESERVED?.[lang] ?? "Reserved" },
     { key: "SOLD", label: unitStatusLabels.SOLD?.[lang] ?? "Sold" },
@@ -472,18 +472,16 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
         dir={lang === "ar" ? "rtl" : "ltr"}
       >
         <AppBar
-          title={lang === "ar" ? "الوحدات" : "Units"}
+          title={t("الوحدات", "Units")}
           subtitle={
-            lang === "ar"
-              ? `${filteredUnits.length} وحدة`
-              : `${filteredUnits.length} units`
+            t(`${filteredUnits.length} وحدة`, `${filteredUnits.length} units`)
           }
           lang={lang}
           trailing={
             <span className="relative inline-flex">
               <IconButton
                 icon={Filter}
-                aria-label={lang === "ar" ? "تصفية" : "Filter"}
+                aria-label={t("تصفية", "Filter")}
                 variant="ghost"
                 onClick={() => setMobileFilterOpen(true)}
                 className="h-11 w-11 rounded-full"
@@ -504,9 +502,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
               value={unitSearch}
               onChange={(e) => setUnitSearch(e.target.value)}
               placeholder={
-                lang === "ar"
-                  ? "ابحث برقم الوحدة أو المبنى..."
-                  : "Search unit #, building, or city..."
+                t("ابحث برقم الوحدة أو المبنى...", "Search unit #, building, or city...")
               }
               className="w-full h-11 bg-card border border-border rounded-xl ps-10 pe-4 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring/30"
             />
@@ -516,7 +512,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
         {/* Status tabs */}
         <div className="px-4 pt-3">
           <MobileTabs
-            ariaLabel={lang === "ar" ? "تصفية الحالة" : "Status filter"}
+            ariaLabel={t("تصفية الحالة", "Status filter")}
             items={mobileStatusTabs}
             active={statusFilter}
             onChange={setStatusFilter}
@@ -529,11 +525,9 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
             units.length === 0 ? (
               <EmptyState
                 icon={<Building2 className="h-12 w-12" />}
-                title={lang === "ar" ? "لا توجد وحدات بعد" : "No units yet"}
+                title={t("لا توجد وحدات بعد", "No units yet")}
                 description={
-                  lang === "ar"
-                    ? "أضف أول وحدة لتبدأ إدارة محفظتك العقارية."
-                    : "Add your first unit to start managing your real-estate portfolio."
+                  t("أضف أول وحدة لتبدأ إدارة محفظتك العقارية.", "Add your first unit to start managing your real-estate portfolio.")
                 }
                 action={
                   <Button
@@ -542,20 +536,18 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
                     onClick={() => setShowAddModal(true)}
                   >
                     <Plus className="h-4 w-4" />
-                    {lang === "ar" ? "إضافة وحدة" : "Add unit"}
+                    {t("إضافة وحدة", "Add unit")}
                   </Button>
                 }
                 helpHref="/dashboard/help#units"
-                helpLabel={lang === "ar" ? "تعرّف على الوحدات" : "Learn about units"}
+                helpLabel={t("تعرّف على الوحدات", "Learn about units")}
               />
             ) : (
               <EmptyState
                 icon={<Search className="h-12 w-12" />}
-                title={lang === "ar" ? "لا توجد نتائج" : "No results"}
+                title={t("لا توجد نتائج", "No results")}
                 description={
-                  lang === "ar"
-                    ? "جرّب تعديل البحث أو الفلاتر."
-                    : "Try adjusting your search or filters."
+                  t("جرّب تعديل البحث أو الفلاتر.", "Try adjusting your search or filters.")
                 }
                 action={
                   <Button
@@ -569,7 +561,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
                       setMobileMaxPrice("");
                     }}
                   >
-                    {lang === "ar" ? "مسح الفلاتر" : "Clear filters"}
+                    {t("مسح الفلاتر", "Clear filters")}
                   </Button>
                 }
               />
@@ -616,7 +608,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
                     areaSqm={u.area ?? null}
                     price={
                       u.price != null
-                        ? `${formatSAR(Number(u.price))} ${lang === "ar" ? "ر.س" : "SAR"}`
+                        ? `${formatSAR(Number(u.price))} ${t("ر.س", "SAR")}`
                         : undefined
                     }
                     lang={lang}
@@ -631,7 +623,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
         {/* FAB */}
         <FAB
           icon={Plus}
-          label={lang === "ar" ? "وحدة جديدة" : "New unit"}
+          label={t("وحدة جديدة", "New unit")}
           onClick={() => setShowAddModal(true)}
         />
 
@@ -639,11 +631,9 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
         <BottomSheet
           open={mobileFilterOpen}
           onOpenChange={setMobileFilterOpen}
-          title={lang === "ar" ? "تصفية الوحدات" : "Filter units"}
+          title={t("تصفية الوحدات", "Filter units")}
           description={
-            lang === "ar"
-              ? "حدد معايير لتضييق قائمة الوحدات"
-              : "Narrow the unit list by type, status, or price"
+            t("حدد معايير لتضييق قائمة الوحدات", "Narrow the unit list by type, status, or price")
           }
           footer={
             <div className="flex items-center gap-3">
@@ -658,14 +648,14 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
                   setStatusFilter("");
                 }}
               >
-                {lang === "ar" ? "مسح الكل" : "Clear all"}
+                {t("مسح الكل", "Clear all")}
               </Button>
               <Button
                 style={{ display: "inline-flex" }}
                 className="flex-1"
                 onClick={() => setMobileFilterOpen(false)}
               >
-                {lang === "ar" ? "تطبيق" : "Apply"}
+                {t("تطبيق", "Apply")}
               </Button>
             </div>
           }
@@ -674,7 +664,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
             {/* Status */}
             <div>
               <div className="mb-2 text-xs font-semibold text-muted-foreground">
-                {lang === "ar" ? "الحالة" : "Status"}
+                {t("الحالة", "Status")}
               </div>
               <div className="flex flex-wrap gap-2">
                 <Button
@@ -686,7 +676,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
                   className="rounded-full"
                   style={{ display: "inline-flex" }}
                 >
-                  {lang === "ar" ? "الكل" : "All"}
+                  {t("الكل", "All")}
                 </Button>
                 {Object.entries(unitStatusLabels).map(([key, label]) => {
                   const active = statusFilter === key;
@@ -711,7 +701,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
             {/* Unit type */}
             <div>
               <div className="mb-2 text-xs font-semibold text-muted-foreground">
-                {lang === "ar" ? "نوع الوحدة" : "Unit type"}
+                {t("نوع الوحدة", "Unit type")}
               </div>
               <div className="flex flex-wrap gap-2">
                 <Button
@@ -723,7 +713,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
                   className="rounded-full"
                   style={{ display: "inline-flex" }}
                 >
-                  {lang === "ar" ? "الكل" : "All"}
+                  {t("الكل", "All")}
                 </Button>
                 {Object.entries(unitTypeLabels).map(([key, label]) => {
                   const active = mobileTypeFilter === key;
@@ -748,7 +738,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
             {/* Price range */}
             <div>
               <div className="mb-2 text-xs font-semibold text-muted-foreground">
-                {lang === "ar" ? "نطاق السعر (ر.س)" : "Price range (SAR)"}
+                {t("نطاق السعر (ر.س)", "Price range (SAR)")}
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <Input
@@ -756,14 +746,14 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
                   inputMode="numeric"
                   value={mobileMinPrice}
                   onChange={(e) => setMobileMinPrice(e.target.value)}
-                  placeholder={lang === "ar" ? "الحد الأدنى" : "Min"}
+                  placeholder={t("الحد الأدنى", "Min")}
                 />
                 <Input
                   type="number"
                   inputMode="numeric"
                   value={mobileMaxPrice}
                   onChange={(e) => setMobileMaxPrice(e.target.value)}
-                  placeholder={lang === "ar" ? "الحد الأعلى" : "Max"}
+                  placeholder={t("الحد الأعلى", "Max")}
                 />
               </div>
             </div>
@@ -778,25 +768,23 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
       >
       {/* Header */}
       <PageIntro
-        title={lang === "ar" ? "الوحدات" : "Units"}
+        title={t("الوحدات", "Units")}
         description={
-          lang === "ar"
-            ? "إدارة وتتبع جميع الوحدات العقارية عبر المشاريع والمباني"
-            : "Manage and track all property units across projects and buildings"
+          t("إدارة وتتبع جميع الوحدات العقارية عبر المشاريع والمباني", "Manage and track all property units across projects and buildings")
         }
         actions={
           <>
             <Button variant="primary" size="sm" style={{ display: "inline-flex" }} className="gap-2" onClick={() => setShowAddModal(true)}>
               <Plus className="h-3.5 w-3.5" />
-              {lang === "ar" ? "إضافة وحدة" : "Add Unit"}
+              {t("إضافة وحدة", "Add Unit")}
             </Button>
             <Button variant="outline" size="sm" style={{ display: "inline-flex" }} className="gap-2" onClick={() => setShowImport(true)}>
               <Upload className="h-3.5 w-3.5" />
-              {lang === "ar" ? "استيراد" : "Import"}
+              {t("استيراد", "Import")}
             </Button>
             <Button variant="outline" size="sm" style={{ display: "inline-flex" }} className="gap-2">
               <FileDown className="h-3.5 w-3.5" />
-              {lang === "ar" ? "تصدير" : "Export"}
+              {t("تصدير", "Export")}
             </Button>
           </>
         }
@@ -826,7 +814,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
           <p className="text-sm text-destructive">{error}</p>
           <IconButton
             icon={X}
-            aria-label={lang === "ar" ? "إغلاق" : "Close"}
+            aria-label={t("إغلاق", "Close")}
             variant="ghost"
             onClick={() => setError(null)}
             className="text-destructive/70 hover:text-destructive"
@@ -837,30 +825,30 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
       {/* KPI Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard
-          label={lang === "ar" ? "إجمالي الوحدات" : "Total Units"}
+          label={t("إجمالي الوحدات", "Total Units")}
           value={units.length}
-          subtitle={lang === "ar" ? "جميع الوحدات المسجلة عبر المشاريع والمباني" : "All registered units across projects and buildings"}
+          subtitle={t("جميع الوحدات المسجلة عبر المشاريع والمباني", "All registered units across projects and buildings")}
           icon={<Building2 className="h-[18px] w-[18px]" />}
           accentColor="primary"
         />
         <KPICard
-          label={lang === "ar" ? "متاح" : "Available"}
+          label={t("متاح", "Available")}
           value={units.filter((u: any) => u.status === "AVAILABLE").length}
-          subtitle={lang === "ar" ? "وحدات جاهزة للبيع أو التأجير فوراً" : "Units ready for immediate sale or lease"}
+          subtitle={t("وحدات جاهزة للبيع أو التأجير فوراً", "Units ready for immediate sale or lease")}
           icon={<CheckCircle2 className="h-[18px] w-[18px]" />}
           accentColor="secondary"
         />
         <KPICard
-          label={lang === "ar" ? "مؤجرة / مباعة" : "Occupied / Leased"}
+          label={t("مؤجرة / مباعة", "Occupied / Leased")}
           value={units.filter((u: any) => u.status === "RENTED" || u.status === "SOLD").length}
-          subtitle={lang === "ar" ? "وحدات مشغولة بعقود بيع أو إيجار نشطة" : "Units with active sale or rental contracts"}
+          subtitle={t("وحدات مشغولة بعقود بيع أو إيجار نشطة", "Units with active sale or rental contracts")}
           icon={<KeyRound className="h-[18px] w-[18px]" />}
           accentColor="info"
         />
         <KPICard
-          label={lang === "ar" ? "تحت الصيانة" : "Under Maintenance"}
+          label={t("تحت الصيانة", "Under Maintenance")}
           value={units.filter((u: any) => u.status === "MAINTENANCE").length}
-          subtitle={lang === "ar" ? "وحدات قيد الإصلاح أو التجديد حالياً" : "Units currently under repair or renovation"}
+          subtitle={t("وحدات قيد الإصلاح أو التجديد حالياً", "Units currently under repair or renovation")}
           icon={<Wrench className="h-[18px] w-[18px]" />}
           accentColor="warning"
         />
@@ -884,7 +872,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
                   className="rounded-full"
                   style={{ display: "inline-flex" }}
                 >
-                  {lang === "ar" ? "الكل" : "All"} {statusCounts.total}
+                  {t("الكل", "All")} {statusCounts.total}
                 </Button>
                 {Object.entries(unitStatusLabels).map(([key, label]) => {
                   const count = units.filter((u: any) => u.status === key).length;
@@ -942,7 +930,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
                   className="rounded-full"
                   style={{ display: "inline-flex" }}
                 >
-                  {lang === "ar" ? "بطاقات" : "Cards"}
+                  {t("بطاقات", "Cards")}
                 </Button>
                 <Button
                   variant={viewMode === "table" ? "primary" : "subtle"}
@@ -952,7 +940,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
                   className="rounded-full"
                   style={{ display: "inline-flex" }}
                 >
-                  {lang === "ar" ? "جدول" : "Table"}
+                  {t("جدول", "Table")}
                 </Button>
               </div>
             </div>
@@ -964,7 +952,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
                   type="text"
                   value={unitSearch}
                   onChange={(e) => setUnitSearch(e.target.value)}
-                  placeholder={lang === "ar" ? "ابحث برقم الوحدة أو المشروع أو المبنى..." : "Search by unit #, project, or building..."}
+                  placeholder={t("ابحث برقم الوحدة أو المشروع أو المبنى...", "Search by unit #, project, or building...")}
                   className="w-full h-10 bg-background border border-input rounded-xl ps-10 pe-4 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring/30"
                 />
               </div>
@@ -974,7 +962,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
           {/* Meta row: count + status pills */}
           <div className="flex flex-wrap items-center justify-between gap-3 px-1">
             <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-              <span>{lang === "ar" ? "عرض" : "Showing"} <strong className="text-foreground">{filteredUnits.length}</strong> {lang === "ar" ? "وحدة" : "units"}</span>
+              <span>{t("عرض", "Showing")} <strong className="text-foreground">{filteredUnits.length}</strong> {t("وحدة", "units")}</span>
               <Badge variant="available" className="bg-success/10 text-success-strong border-success/20">{unitStatusLabels.AVAILABLE?.[lang]} {statusCounts.available}</Badge>
               <Badge variant="reserved" className="bg-primary/10 text-primary border-primary/20">{unitStatusLabels.RESERVED?.[lang]} {statusCounts.reserved}</Badge>
               <Badge variant="sold" className="bg-muted text-muted-foreground border-muted">{unitStatusLabels.SOLD?.[lang]}/{unitStatusLabels.RENTED?.[lang]} {statusCounts.sold + statusCounts.rented}</Badge>
@@ -1003,8 +991,8 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
                   : (unit.markupPrice ?? unit.price);
                 const heroPriceNum =
                   heroPriceRaw != null ? Number(heroPriceRaw) : null;
-                const areaLabel = lang === "ar" ? "م²" : "m²";
-                const floorLabel = lang === "ar" ? "الطابق" : "Floor";
+                const areaLabel = t("م²", "m²");
+                const floorLabel = t("الطابق", "Floor");
                 const padding =
                   density === "compact"
                     ? "p-3"
@@ -1116,11 +1104,11 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
                 tabIndex={0}
                 onClick={() => setShowAddModal(true)}
                 onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowAddModal(true); } }}
-                aria-label={lang === "ar" ? "إضافة وحدة جديدة" : "Add new unit"}
+                aria-label={t("إضافة وحدة جديدة", "Add new unit")}
                 className="rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center min-h-[240px] text-muted-foreground hover:border-primary hover:text-primary transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
                 <Plus className="h-8 w-8" aria-hidden="true" />
-                <span className="text-xs font-bold mt-2">{lang === "ar" ? "إضافة وحدة" : "Add Unit"}</span>
+                <span className="text-xs font-bold mt-2">{t("إضافة وحدة", "Add Unit")}</span>
               </div>
             </div>
           ) : (
@@ -1136,8 +1124,8 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
               bulkActions={(selected) => (
                 <div className="flex items-center gap-2">
                   {updating && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
-                  <select
-                    aria-label={lang === "ar" ? "تحديث حالة الوحدات المحددة" : "Update status of selected units"}
+                  <SelectField
+                    aria-label={t("تحديث حالة الوحدات المحددة", "Update status of selected units")}
                     onChange={(e) => {
                       const ids = selected.map((r: any) => r.id);
                       setSelectedUnits(ids);
@@ -1147,14 +1135,14 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
                     className="text-xs rounded-md border border-border bg-background px-2 py-1 outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
                   >
                     <option value="">
-                      {lang === "ar" ? "تحديث الحالة" : "Update Status"}
+                      {t("تحديث الحالة", "Update Status")}
                     </option>
                     {Object.entries(unitStatusLabels).map(([value, label]) => (
                       <option key={value} value={value}>
                         {label[lang]}
                       </option>
                     ))}
-                  </select>
+                  </SelectField>
                   <Button
                     size="sm"
                     variant="outline"
@@ -1167,7 +1155,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
                     disabled={updating}
                   >
                     <DollarSign className="h-3.5 w-3.5" />
-                    {lang === "ar" ? "تغيير السعر" : "Change Price"}
+                    {t("تغيير السعر", "Change Price")}
                   </Button>
                   <Button
                     size="sm"
@@ -1181,7 +1169,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
                     disabled={updating || deleting}
                   >
                     {deleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
-                    {lang === "ar" ? "حذف" : "Delete"}
+                    {t("حذف", "Delete")}
                   </Button>
                 </div>
               )}
@@ -1217,11 +1205,9 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
                 );
               }}
               emptyIcon={<Building2 className="h-12 w-12" aria-hidden="true" />}
-              emptyTitle={lang === "ar" ? "لا توجد وحدات" : "No units"}
+              emptyTitle={t("لا توجد وحدات", "No units")}
               emptyDescription={
-                lang === "ar"
-                  ? "جرّب تعديل البحث أو الفلاتر."
-                  : "Try adjusting your search or filters."
+                t("جرّب تعديل البحث أو الفلاتر.", "Try adjusting your search or filters.")
               }
               emptyAction={
                 !unitSearch && !statusFilter ? (
@@ -1231,7 +1217,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
                     className="gap-2"
                   >
                     <Plus className="h-4 w-4" />
-                    {lang === "ar" ? "إضافة وحدة" : "Add unit"}
+                    {t("إضافة وحدة", "Add unit")}
                   </Button>
                 ) : undefined
               }
@@ -1249,11 +1235,9 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
           setShowPriceModal(open);
           if (!open) setBulkPrice("");
         }}
-        title={lang === "ar" ? "تغيير السعر" : "Change Price"}
+        title={t("تغيير السعر", "Change Price")}
         description={
-          lang === "ar"
-            ? `تحديث سعر ${selectedUnits.length} وحدة مختارة`
-            : `Update price for ${selectedUnits.length} selected unit(s)`
+          t(`تحديث سعر ${selectedUnits.length} وحدة مختارة`, `Update price for ${selectedUnits.length} selected unit(s)`)
         }
         contentClassName="sm:max-w-sm"
         footer={
@@ -1267,7 +1251,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
               }}
               disabled={updating}
             >
-              {lang === "ar" ? "إلغاء" : "Cancel"}
+              {t("إلغاء", "Cancel")}
             </Button>
             <Button
               onClick={() => handleBulkPriceUpdate()}
@@ -1276,14 +1260,14 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
               className="gap-2"
             >
               {updating && <Loader2 className="h-4 w-4 animate-spin" />}
-              {lang === "ar" ? "تحديث السعر" : "Update Price"}
+              {t("تحديث السعر", "Update Price")}
             </Button>
           </div>
         }
       >
         <div className="space-y-1">
           <label className="text-xs font-bold text-muted-foreground flex items-center gap-1">
-            {lang === "ar" ? "السعر الجديد" : "New Price"}
+            {t("السعر الجديد", "New Price")}
           </label>
           <Input
             type="number"
@@ -1303,7 +1287,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
         }}
         title={
           detailUnit
-            ? `${lang === "ar" ? "تفاصيل الوحدة" : "Unit Details"} — ${detailUnit.number}`
+            ? `${t("تفاصيل الوحدة", "Unit Details")} — ${detailUnit.number}`
             : undefined
         }
         description={
@@ -1319,14 +1303,14 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
             {loadingDetail && !unitJourney && (
               <div className="flex items-center gap-2 py-2 text-xs text-muted-foreground">
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                {lang === "ar" ? "جارٍ تحميل حالة الوحدة…" : "Loading unit status…"}
+                {t("جارٍ تحميل حالة الوحدة…", "Loading unit status…")}
               </div>
             )}
             {unitJourney && (
               <div className="space-y-3 border-b border-border pb-4">
                 {/* Section heading */}
                 <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                  {lang === "ar" ? "مسار الوحدة" : "Unit Journey"}
+                  {t("مسار الوحدة", "Unit Journey")}
                 </p>
 
                 {/* Blockers */}
@@ -1342,7 +1326,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
                   stages={unitJourney.stages}
                   lang={lang}
                   ariaLabel={
-                    lang === "ar" ? "مراحل دورة حياة الوحدة" : "Unit lifecycle stages"
+                    t("مراحل دورة حياة الوحدة", "Unit lifecycle stages")
                   }
                 />
 
@@ -1363,9 +1347,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
                     className="gap-2 w-full text-xs"
                     onClick={() => setRelatedOpen(true)}
                   >
-                    {lang === "ar"
-                      ? `السجلات المرتبطة (${unitJourney.related.length})`
-                      : `Related records (${unitJourney.related.length})`}
+                    {t(`السجلات المرتبطة (${unitJourney.related.length})`, `Related records (${unitJourney.related.length})`)}
                   </Button>
                 )}
 
@@ -1387,7 +1369,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <span className="text-[10px] font-bold uppercase text-muted-foreground">
-                    {lang === "ar" ? "النوع" : "Type"}
+                    {t("النوع", "Type")}
                   </span>
                   <p className="text-sm font-bold text-primary">
                     {unitTypeLabels[detailUnit.type]?.[lang] ??
@@ -1396,7 +1378,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
                 </div>
                 <div>
                   <span className="text-[10px] font-bold uppercase text-muted-foreground">
-                    {lang === "ar" ? "الحالة" : "Status"}
+                    {t("الحالة", "Status")}
                   </span>
                   <div className="text-sm mt-0.5">
                     <StatusBadge
@@ -1412,7 +1394,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
                 </div>
                 <div>
                   <span className="text-[10px] font-bold uppercase text-muted-foreground">
-                    {lang === "ar" ? "المساحة" : "Area"}
+                    {t("المساحة", "Area")}
                   </span>
                   <p className="text-sm font-bold text-primary">
                     {detailUnit.area
@@ -1422,7 +1404,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
                 </div>
                 <div>
                   <span className="text-[10px] font-bold uppercase text-muted-foreground">
-                    {lang === "ar" ? "سعر التكلفة" : "Cost Price"}
+                    {t("سعر التكلفة", "Cost Price")}
                   </span>
                   <p className="text-sm font-bold text-primary">
                     <SARAmount value={detailUnit.price} size={12} />
@@ -1430,7 +1412,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
                 </div>
                 <div>
                   <span className="text-[10px] font-bold uppercase text-muted-foreground">
-                    {lang === "ar" ? "سعر البيع" : "Selling Price"}
+                    {t("سعر البيع", "Selling Price")}
                   </span>
                   <p className="text-sm font-bold text-secondary">
                     {detailUnit.markupPrice ? (
@@ -1442,7 +1424,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
                 </div>
                 <div>
                   <span className="text-[10px] font-bold uppercase text-muted-foreground">
-                    {lang === "ar" ? "سعر الإيجار" : "Rental Price"}
+                    {t("سعر الإيجار", "Rental Price")}
                   </span>
                   <p className="text-sm font-bold text-primary">
                     {detailUnit.rentalPrice ? (
@@ -1458,12 +1440,12 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
               {detailFinancials && (
                 <div className="border-t border-border pt-4">
                   <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">
-                    {lang === "ar" ? "الملخص المالي" : "Financial Summary"}
+                    {t("الملخص المالي", "Financial Summary")}
                   </h3>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="bg-muted/20 rounded-md p-3">
                       <span className="text-[9px] font-bold text-muted-foreground uppercase">
-                        {lang === "ar" ? "إيجار محصّل" : "Rent Collected"}
+                        {t("إيجار محصّل", "Rent Collected")}
                       </span>
                       <p className="text-sm font-bold text-secondary mt-0.5">
                         <SARAmount
@@ -1475,7 +1457,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
                     </div>
                     <div className="bg-muted/20 rounded-md p-3">
                       <span className="text-[9px] font-bold text-muted-foreground uppercase">
-                        {lang === "ar" ? "إيراد البيع" : "Sale Revenue"}
+                        {t("إيراد البيع", "Sale Revenue")}
                       </span>
                       <p className="text-sm font-bold text-primary mt-0.5">
                         <SARAmount
@@ -1487,7 +1469,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
                     </div>
                     <div className="bg-muted/20 rounded-md p-3">
                       <span className="text-[9px] font-bold text-muted-foreground uppercase">
-                        {lang === "ar" ? "تكاليف صيانة" : "Maintenance"}
+                        {t("تكاليف صيانة", "Maintenance")}
                       </span>
                       <p className="text-sm font-bold text-destructive mt-0.5">
                         <SARAmount
@@ -1499,7 +1481,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
                     </div>
                     <div className="bg-muted/20 rounded-md p-3">
                       <span className="text-[9px] font-bold text-muted-foreground uppercase">
-                        {lang === "ar" ? "صافي الدخل" : "Net Income"}
+                        {t("صافي الدخل", "Net Income")}
                       </span>
                       <p
                         className={`text-sm font-bold mt-0.5 ${detailFinancials.netIncome >= 0 ? "text-secondary" : "text-destructive"}`}
@@ -1520,42 +1502,32 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
                 <div className="border-t border-border pt-4">
                   <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2 mb-3">
                     <Receipt className="h-3.5 w-3.5" />
-                    {lang === "ar" ? "العقد المرتبط" : "Linked Contract"}
+                    {t("العقد المرتبط", "Linked Contract")}
                   </h3>
                   <div className="p-3 rounded-md bg-muted/30 border border-border space-y-2 text-xs">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">
-                        {lang === "ar" ? "النوع" : "Type"}
+                        {t("النوع", "Type")}
                       </span>
                       <Badge variant="draft" className="text-[10px]">
                         {detailContract.type === "SALE"
-                          ? lang === "ar"
-                            ? "بيع"
-                            : "Sale"
-                          : lang === "ar"
-                            ? "إيجار"
-                            : "Lease"}
+                          ? t("بيع", "Sale")
+                          : t("إيجار", "Lease")}
                       </Badge>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">
-                        {lang === "ar" ? "الحالة" : "Status"}
+                        {t("الحالة", "Status")}
                       </span>
                       <StatusBadge
                         entityType="contract"
                         status={detailContract.status}
                         label={
                           detailContract.status === "DRAFT"
-                            ? lang === "ar"
-                              ? "مسودة"
-                              : "Draft"
+                            ? t("مسودة", "Draft")
                             : detailContract.status === "SENT"
-                              ? lang === "ar"
-                                ? "مُرسل"
-                                : "Sent"
-                              : lang === "ar"
-                                ? "موقّع"
-                                : "Signed"
+                              ? t("مُرسل", "Sent")
+                              : t("موقّع", "Signed")
                         }
                         size="sm"
                       />
@@ -1563,7 +1535,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
                     {detailContract.customer?.name && (
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">
-                          {lang === "ar" ? "العميل" : "Customer"}
+                          {t("العميل", "Customer")}
                         </span>
                         <span className="font-bold text-primary">
                           {detailContract.customer.name}
@@ -1573,7 +1545,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
                     {detailContract.contractNumber && (
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">
-                          {lang === "ar" ? "رقم العقد" : "Contract No."}
+                          {t("رقم العقد", "Contract No.")}
                         </span>
                         <span className="font-bold text-primary font-dm-sans">
                           {detailContract.contractNumber}
@@ -1590,7 +1562,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
                         className="gap-1 text-[10px] w-full mt-1"
                       >
                         <Eye className="h-3 w-3" />
-                        {lang === "ar" ? "عرض العقد" : "View Contract"}
+                        {t("عرض العقد", "View Contract")}
                       </Button>
                     </Link>
                   </div>
@@ -1611,7 +1583,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
                       className="gap-2 w-full"
                     >
                       <ShoppingCart className="h-3.5 w-3.5" />
-                      {lang === "ar" ? "بيع" : "Sell"}
+                      {t("بيع", "Sell")}
                     </Button>
                   </Link>
                   <Link
@@ -1624,7 +1596,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
                       className="gap-2 w-full"
                     >
                       <Home className="h-3.5 w-3.5" />
-                      {lang === "ar" ? "تأجير" : "Rent"}
+                      {t("تأجير", "Rent")}
                     </Button>
                   </Link>
                 </div>
@@ -1640,7 +1612,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
                     onClick={() => setPublishUnit(detailUnit)}
                   >
                     <Store className="h-3.5 w-3.5" />
-                    {lang === "ar" ? "نشر في السوق" : "Publish in Marketplace"}
+                    {t("نشر في السوق", "Publish in Marketplace")}
                   </Button>
                 </div>
               )}
@@ -1650,9 +1622,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
                     <Wrench className="h-3.5 w-3.5" />
-                    {lang === "ar"
-                      ? "طلبات الصيانة"
-                      : "Maintenance Requests"}
+                    {t("طلبات الصيانة", "Maintenance Requests")}
                     {detailMaintenance.filter(
                       (m: any) =>
                         !["RESOLVED", "CLOSED"].includes(m.status)
@@ -1675,7 +1645,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
                       className="gap-1 text-[10px]"
                     >
                       <Plus className="h-3 w-3" />
-                      {lang === "ar" ? "طلب جديد" : "New Request"}
+                      {t("طلب جديد", "New Request")}
                     </Button>
                   </Link>
                 </div>
@@ -1686,9 +1656,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
                   </div>
                 ) : detailMaintenance.length === 0 ? (
                   <p className="text-xs text-muted-foreground text-center py-4">
-                    {lang === "ar"
-                      ? "لا توجد طلبات صيانة لهذه الوحدة"
-                      : "No maintenance requests for this unit"}
+                    {t("لا توجد طلبات صيانة لهذه الوحدة", "No maintenance requests for this unit")}
                   </p>
                 ) : (
                   <div className="space-y-2 max-h-[250px] overflow-y-auto">
@@ -1727,7 +1695,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
                                 variant="ghost"
                                 size="sm"
                                 style={{ display: "inline-flex" }}
-                                aria-label={lang === "ar" ? "عرض" : "View"}
+                                aria-label={t("عرض", "View")}
                               >
                                 <Eye className="h-3 w-3" />
                               </Button>
@@ -1747,7 +1715,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
       <ResponsiveDialog
         open={showAddModal}
         onOpenChange={setShowAddModal}
-        title={lang === "ar" ? "إضافة وحدة جديدة" : "Add New Unit"}
+        title={t("إضافة وحدة جديدة", "Add New Unit")}
         contentClassName="sm:max-w-md"
         footer={
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
@@ -1757,7 +1725,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
               onClick={() => setShowAddModal(false)}
               disabled={updating}
             >
-              {lang === "ar" ? "إلغاء" : "Cancel"}
+              {t("إلغاء", "Cancel")}
             </Button>
             <Button
               type="submit"
@@ -1767,7 +1735,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
               className="gap-2"
             >
               {updating && <Loader2 className="h-4 w-4 animate-spin" />}
-              {lang === "ar" ? "حفظ الوحدة" : "Save Unit"}
+              {t("حفظ الوحدة", "Save Unit")}
             </Button>
           </div>
         }
@@ -1775,9 +1743,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
         <form id="add-unit-form" onSubmit={onCreateSubmit} className="space-y-4">
           {/* Required-fields legend */}
           <p className="text-xs text-muted-foreground">
-            {lang === "ar"
-              ? "الحقول المطلوبة معلّمة بـ *"
-              : "Required fields marked with *"}
+            {t("الحقول المطلوبة معلّمة بـ *", "Required fields marked with *")}
           </p>
 
           {/* Unit number — required */}
@@ -1786,7 +1752,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
             control={control}
             render={({ field, fieldState }) => (
               <Field
-                label={lang === "ar" ? "رقم الوحدة" : "Unit Number"}
+                label={t("رقم الوحدة", "Unit Number")}
                 required
                 error={fieldState.error?.message}
               >
@@ -1809,7 +1775,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
             control={control}
             render={({ field, fieldState }) => (
               <SelectField
-                label={lang === "ar" ? "نوع الوحدة" : "Unit Type"}
+                label={t("نوع الوحدة", "Unit Type")}
                 requiredMark
                 error={fieldState.error?.message}
                 value={field.value ?? ""}
@@ -1832,7 +1798,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
               control={control}
               render={({ field, fieldState }) => (
                 <Field
-                  label={lang === "ar" ? "المساحة (م²)" : "Area (sqm)"}
+                  label={t("المساحة (م²)", "Area (sqm)")}
                   error={fieldState.error?.message}
                 >
                   {(f) => (
@@ -1860,7 +1826,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
               control={control}
               render={({ field, fieldState }) => (
                 <Field
-                  label={lang === "ar" ? "سعر التكلفة" : "Cost Price"}
+                  label={t("سعر التكلفة", "Cost Price")}
                   error={fieldState.error?.message}
                 >
                   {(f) => (
@@ -1886,7 +1852,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
               control={control}
               render={({ field, fieldState }) => (
                 <Field
-                  label={lang === "ar" ? "سعر البيع" : "Selling Price"}
+                  label={t("سعر البيع", "Selling Price")}
                   error={fieldState.error?.message}
                 >
                   {(f) => (
@@ -1910,7 +1876,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
               control={control}
               render={({ field, fieldState }) => (
                 <Field
-                  label={lang === "ar" ? "سعر الإيجار" : "Rental Price"}
+                  label={t("سعر الإيجار", "Rental Price")}
                   error={fieldState.error?.message}
                 >
                   {(f) => (
@@ -1935,11 +1901,9 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
       <ResponsiveDialog
         open={showDeleteConfirm}
         onOpenChange={setShowDeleteConfirm}
-        title={lang === "ar" ? "تأكيد الحذف" : "Confirm Deletion"}
+        title={t("تأكيد الحذف", "Confirm Deletion")}
         description={
-          lang === "ar"
-            ? `هل أنت متأكد من حذف ${selectedUnits.length} وحدة؟ لا يمكن التراجع عن هذا الإجراء.`
-            : `Are you sure you want to delete ${selectedUnits.length} unit(s)? This action cannot be undone.`
+          t(`هل أنت متأكد من حذف ${selectedUnits.length} وحدة؟ لا يمكن التراجع عن هذا الإجراء.`, `Are you sure you want to delete ${selectedUnits.length} unit(s)? This action cannot be undone.`)
         }
         footer={
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
@@ -1949,7 +1913,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
               onClick={() => setShowDeleteConfirm(false)}
               disabled={deleting}
             >
-              {lang === "ar" ? "إلغاء" : "Cancel"}
+              {t("إلغاء", "Cancel")}
             </Button>
             <Button
               variant="destructive"
@@ -1959,7 +1923,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
               disabled={deleting}
             >
               {deleting && <Loader2 className="h-4 w-4 animate-spin" />}
-              {lang === "ar" ? "حذف" : "Delete"}
+              {t("حذف", "Delete")}
             </Button>
           </div>
         }

@@ -30,13 +30,13 @@ interface MobileUserMenuSheetProps {
 
 export function MobileUserMenuSheet({ open, onOpenChange, orgName }: MobileUserMenuSheetProps) {
   const { data: session } = useSession();
-  const { lang, setLang } = useLanguage();
+  const { t, lang, setLang } = useLanguage();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = React.useState(false);
 
   React.useEffect(() => setMounted(true), []);
 
-  const userName = session?.user?.name ?? (lang === "ar" ? "مستخدم" : "User");
+  const userName = session?.user?.name ?? (t("مستخدم", "User"));
   const userRole = (session?.user as any)?.role ?? "USER";
   const roleLabel = roleLabels[userRole] ?? { ar: "مستخدم", en: "User" };
   const userEmail = session?.user?.email;
@@ -76,11 +76,11 @@ export function MobileUserMenuSheet({ open, onOpenChange, orgName }: MobileUserM
   return (
     <BottomSheet open={open} onOpenChange={onOpenChange}>
       <div className="space-y-4">
-        {/* Profile header → profile page */}
+        {/* Profile header → settings profile section */}
         <Link
-          href="/dashboard/more/profile"
+          href="/dashboard/settings#profile"
           onClick={() => onOpenChange(false)}
-          aria-label={lang === "ar" ? "الملف الشخصي" : "Profile"}
+          aria-label={t("الملف الشخصي", "Profile")}
           className="-mx-1 flex items-center gap-3 rounded-xl border-b border-border px-1 pb-3 transition-colors hover:bg-muted/30 active:bg-muted/50"
         >
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 ring-2 ring-primary/20">
@@ -130,16 +130,16 @@ export function MobileUserMenuSheet({ open, onOpenChange, orgName }: MobileUserM
             onClick={() => setLang(lang === "ar" ? "en" : "ar")}
             variant="ghost"
             className="w-full justify-start gap-3 rounded-xl px-3 py-3 h-auto hover:bg-muted/40 active:bg-muted/60"
-            aria-label={lang === "ar" ? "تغيير اللغة" : "Change language"}
+            aria-label={t("تغيير اللغة", "Change language")}
           >
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
               <Globe className="h-4 w-4 text-primary" />
             </div>
             <span className="flex-1 text-start text-sm font-medium text-foreground">
-              {lang === "ar" ? "اللغة" : "Language"}
+              {t("اللغة", "Language")}
             </span>
             <span className="inline-flex items-center rounded-md bg-muted px-2 py-1 text-xs font-semibold text-foreground">
-              {lang === "ar" ? "العربية" : "English"}
+              {t("العربية", "English")}
             </span>
           </Button>
 
@@ -147,13 +147,13 @@ export function MobileUserMenuSheet({ open, onOpenChange, orgName }: MobileUserM
             onClick={themeCycle}
             variant="ghost"
             className="w-full justify-start gap-3 rounded-xl px-3 py-3 h-auto hover:bg-muted/40 active:bg-muted/60"
-            aria-label={lang === "ar" ? "تغيير السمة" : "Change theme"}
+            aria-label={t("تغيير السمة", "Change theme")}
           >
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
               <ThemeIcon className="h-4 w-4 text-primary" />
             </div>
             <span className="flex-1 text-start text-sm font-medium text-foreground">
-              {lang === "ar" ? "السمة" : "Theme"}
+              {t("السمة", "Theme")}
             </span>
             <span className="inline-flex items-center rounded-md bg-muted px-2 py-1 text-xs font-semibold text-foreground">
               {themeLabel[lang]}
@@ -175,7 +175,7 @@ export function MobileUserMenuSheet({ open, onOpenChange, orgName }: MobileUserM
               <DirectionalIcon icon={LogOut} className="h-4 w-4 text-destructive" />
             </div>
             <span className="flex-1 text-start text-sm font-semibold">
-              {lang === "ar" ? "تسجيل الخروج" : "Sign out"}
+              {t("تسجيل الخروج", "Sign out")}
             </span>
           </Button>
         </div>

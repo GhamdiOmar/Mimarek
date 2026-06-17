@@ -1,5 +1,43 @@
 # Changelog — Mimaric PropTech
 
+## [4.32.0] — 2026-06-17 — Close the non-deferred backlog: security, PDPL compliance, UX, payment ledger, i18n
+
+The backlog-closure release. Delivers every remaining non-deferred item from `future-plans/REMAINING-WORK.md` in one branch / one push — security & data-integrity, a PDPL data-retention console, registration hardening, the UX re-platform, architecture seams, an append-only payment ledger, and the full `t()` i18n migration. The only items intentionally left are the two indefinitely-deferred ones (DB region migration, ZATCA) and Ejar/Nafath SSO. All work delivered under manager-mode delegation with a consolidated `/mimaric-qa` gate (157/157 unit tests, the gate caught + we fixed a Critical unguarded-destructive-action leak) and the §3.9 4-theme preview walk.
+
+### Security & data integrity
+- **A3 — hybrid fail-CLOSED rate limiter.** `checkRateLimit`/`peekRateLimit` gain a `failClosed` option; the auth-sensitive keys (`login:*`, `password-reset:*`, `resend-verification:*`) now DENY on a DB error instead of failing open (OWASP-aligned). All other keys stay fail-open (availability).
+- **A4 — denormalized `organizationId` NOT-NULL + cross-org FK.** `Lease`/`Reservation`/`PaymentPlan`/`PaymentPlanInstallment` flipped from nullable to `String` NOT-NULL with a real `Organization` FK + index (second half of QA-DB-04/05). **Every `.create()` of these models now sets `organizationId`** — the contracts/reservations actions use `session.organizationId`, the marketplace cross-org reservation uses the **seller** org (`inquiry.sellerOrgId`, which owns the unit), payment-plan installments inherit the plan's org, and the seeds/E2E fixtures set it too. Live DB: org-id backfilled via the transitive owners (incl. the `PaymentPlan ← Contract ← Unit` chain), verified 0 NULLs, then `db push` (plain — non-destructive). Hash columns (`emailHash`/`nationalIdHash`) correctly stay nullable (optional sources).
+- **F2 — hardened edge `proxy.ts` (true HTTP 403).** Next 16 uses `proxy.ts` (not `middleware.ts`); the existing proxy now adds a true `403` for non-navigation permission denials (API/fetch/direct) while HTML navigations still render the friendly in-shell 200 AccessDenied — plus an unconditional `x-middleware-subrequest` reject (CVE-2025-29927 defense-in-depth; 16.1.5 already postdates the patched range, so no risky bump). Server-side guards remain authoritative.
+
+### Data lifecycle / PDPL compliance
+- **D1 — Data-Retention & Destruction console.** New platform-admin surface `/dashboard/admin/data-retention` (§8 `requireSystem`, `ROUTE_GUARDS` + nav). Per-table (AuditLog/ConsentLog/Notification/WebhookEvent) row-count / oldest-age / window / next-run; a dry-run preview → `ConfirmDialog` → batched/chunked destruction; an unattended cron sharing the same core. PDPL-documented default windows: AuditLog & ConsentLog **730d** (NDMO 2-year audit floor, clamped server-side), Notification 180d, WebhookEvent 90d. The destruction core uses a Postgres **advisory lock** (no concurrent runs), a **self-purge guard** (never deletes its own run's audit rows), and every run is logged to the new `DataRetentionRun` table + `AuditLog`. **The destructive core lives in `lib/server/data-retention-core.ts` (`server-only`)** — only the `requirePermission("billing:admin")` wrappers are `"use server"` (closes the QA-gate-caught unguarded-RPC leak). Scheduler ships **dark** (`retentionSchedulerEnabled=false`).
+
+### Features
+- **E1 — registration hardening.** New `Organization.appStatus` enum (`ACTIVE`/`PENDING_VERIFICATION`/`EXPIRED`, `@default(ACTIVE)`); signup quarantines the org as `PENDING_VERIFICATION`, email-confirm flips it `ACTIVE` (same tx as user-verify), an `expire-unverified-orgs` cron quarantines abandoned signups after 14d (PDPL minimization), and a dependency-free **Cloudflare Turnstile** widget + server `siteverify` gate the register form (gracefully disabled when keys are unset, so local/undeployed registration still works).
+- **E2 — `/dashboard/more` fully retired** into `/dashboard/settings#profile`; the hub directory is deleted (§3.6 closed).
+- **E4 — marketplace `viewCount` dedup** (per `(listing, viewer-org, day)` via the rate-limit lib, fire-and-forget).
+
+### UX re-platform
+- **B1 — ~40 raw `<select>` → governed `<SelectField>`** across settings/admin/crm/maintenance/onboarding/help/marketplace/etc. (label/id wiring, RTL, validation state). 0 raw `<select>` remain in `app/**`.
+- **B2 — CRM `CustomerDrawer`** re-platformed to a logical-property responsive shell: slides from the inline-END in RTL + becomes a mobile bottom-sheet (the old hardcoded `slide-in-from-right` is gone).
+- **E3 — ~13 native `<input type="date">` → the Saudi `HijriDatePicker`** (consistent Hijri toggle); 0 native date inputs remain in `app/**`.
+
+### Architecture / tech-debt
+- **C1 — shared seams adopted + lint-bans.** **126** raw `revalidatePath("/…")` strings → `ROUTES.*` (the §8.5 stale-rename hazard) and **~93** inline `JSON.parse(JSON.stringify)` → `serialize()`, plus ESLint bans (`mimaric/no-raw-revalidate-path`, `mimaric/no-inline-json-serialize`, raw-`<select>` via `react/forbid-elements`) to stop regressions.
+- **C2** — deleted the dead `apps/portal` app. **C3** — typed `massUpdateUnits` status as `UnitStatus`. **C4** — moved `hijri.ts` to `@repo/ui`, deduped `LocalizedText`, added a shared capture lib, deprecated `MobileKPIDelta`. **H5** — `DashboardView` greeting `useMounted` hydration guard.
+
+### Money / correctness
+- **I2/I1 — append-only `RentPayment` ledger.** Rent payments now append immutable signed ledger rows (`PAYMENT`/`REVERSAL`/`REFUND`/`ADJUSTMENT`, `@@unique([installmentId, idempotencyKey])`) and recompute `RentInstallment.paidAmount` as the `SUM` cache inside the transaction — enabling reversals/refunds. `recordPayment`, `bulkMarkInstallmentsPaid` (now `FOR UPDATE`-locked + deterministic idempotency), and a new `reverseRentPayment` all route through one `appendRentPayment` primitive; the pure `effectivePaid` rule extracted to `lib/money.ts`. Live backfill: one synthetic `PAYMENT` per paid installment, reconciled (cache == ledger SUM, 0 divergent rows).
+- **I3** — ReportsView AR headers verified correct. **I4** — marketplace `Customer.status` now routes through the Deal-sync state machine. **I5** — convert-after-inquiry made idempotent. **H8** — document delete now removes the remote UploadThing object + audit-logs. **H9** — un-`fixme` of the cross-org convert UI walk was attempted, but CI re-confirmed the "Convert to Deal" button doesn't render on the my-listings grid (a real pre-existing issue, not the flakiness first assumed); kept `test.fixme`, tracked for a focused grid debug. **H4** — reservations/contracts AR copy reviewed.
+
+### Internationalization
+- **F1 — full `t()` migration.** A deterministic, shadow-guarded ts-morph codemod converted **1,834** inline `lang === "ar" ? "<ar>" : "<en>"` string-literal ternaries → `t("<ar>", "<en>")` across 40 files (Arabic-first preserved, **zero swap bugs**). It correctly skipped control-value ternaries (`dir`/`locale`/`className`), non-literal branches, and files with no facade `t` (incl. a file with a *reversed* local `t(en, ar)` facade that a blind convert would have language-swapped). ~656 ternaries remain by design (plumbing + the documented tail).
+
+### Deferred (unchanged)
+- DB region migration / Prisma-Migrate-of-record governance, ZATCA Phase-2, and Ejar/Nafath SSO remain indefinitely deferred. Opportunistic tails left tracked: the lint-warning ratchet (H7), the 14 `exhaustive-deps` disables (C3 tail), the ~656-ternary i18n tail, and the H9 cross-org convert UI-walk E2E (`test.fixme` — my-listings grid render debug).
+
+**Full diff:** https://github.com/GhamdiOmar/Mimaric/compare/v4.31.0...v4.32.0
+
 ## [4.31.0] — 2026-06-17 — PII ciphertext envelope (`v1:`) + write-time DB CHECK + plaintext read-path telemetry
 
 Sprint 1 of the backlog-closure program (one branch, one push). Closes **A1** (ciphertext envelope + DB CHECK — the §3.3 write-time PII integrity guard) and **A2** (plaintext-passthrough read-path telemetry).

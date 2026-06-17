@@ -32,6 +32,8 @@ import {
   Badge,
   Switch,
   DataTable,
+  SelectField,
+  HijriDatePicker,
   type ColumnDef,
 } from "@repo/ui";
 import { PageHeader } from "@repo/ui/components/PageHeader";
@@ -881,18 +883,18 @@ export default function CouponManagementPage() {
                   <label className="block text-sm font-medium text-foreground mb-1.5">
                     {labels.discountType}
                   </label>
-                  <select
+                  <SelectField
+                    aria-label={labels.discountType}
                     value={formType}
                     onChange={(e) =>
                       setFormType(
                         e.target.value as "PERCENTAGE" | "FIXED_AMOUNT"
                       )
                     }
-                    className="w-full h-10 px-3 rounded-md border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
                   >
                     <option value="PERCENTAGE">{labels.percentage}</option>
                     <option value="FIXED_AMOUNT">{labels.fixedAmount}</option>
-                  </select>
+                  </SelectField>
                 </div>
               </div>
 
@@ -949,23 +951,23 @@ export default function CouponManagementPage() {
                   <label className="block text-sm font-medium text-foreground mb-1.5">
                     {labels.validFrom}
                   </label>
-                  <input
-                    type="date"
-                    value={formValidFrom}
-                    onChange={(e) => setFormValidFrom(e.target.value)}
-                    className="w-full h-10 px-3 rounded-md border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  <HijriDatePicker
+                    value={formValidFrom ? new Date(formValidFrom) : null}
+                    onChange={(d) =>
+                      setFormValidFrom(d ? d.toISOString().slice(0, 10) : "")
+                    }
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-1.5">
                     {labels.validUntilLabel}
                   </label>
-                  <input
-                    type="date"
-                    value={formValidUntil}
-                    onChange={(e) => setFormValidUntil(e.target.value)}
+                  <HijriDatePicker
                     placeholder={labels.validUntilPlaceholder}
-                    className="w-full h-10 px-3 rounded-md border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    value={formValidUntil ? new Date(formValidUntil) : null}
+                    onChange={(d) =>
+                      setFormValidUntil(d ? d.toISOString().slice(0, 10) : "")
+                    }
                   />
                 </div>
               </div>

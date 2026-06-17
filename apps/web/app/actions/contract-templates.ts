@@ -3,6 +3,7 @@
 import { db } from "@repo/db";
 import { requirePermission } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
+import { serialize } from "../../lib/serialize";
 import { revalidatePath } from "next/cache";
 
 // ─── RED: Contract Templates ────────────────────────────────────────────────
@@ -35,7 +36,7 @@ export async function createContractTemplate(data: {
     organizationId: session.organizationId,
   });
 
-  return JSON.parse(JSON.stringify(template));
+  return serialize(template);
 }
 
 export async function updateContractTemplate(
@@ -60,7 +61,7 @@ export async function updateContractTemplate(
     },
   });
 
-  return JSON.parse(JSON.stringify(updated));
+  return serialize(updated);
 }
 
 export async function getContractTemplates(type?: string) {
@@ -74,7 +75,7 @@ export async function getContractTemplates(type?: string) {
     orderBy: { updatedAt: "desc" },
   });
 
-  return JSON.parse(JSON.stringify(templates));
+  return serialize(templates);
 }
 
 export async function getContractTemplate(templateId: string) {
@@ -85,7 +86,7 @@ export async function getContractTemplate(templateId: string) {
   });
   if (!template) throw new Error("Contract template not found. Please refresh and try again.");
 
-  return JSON.parse(JSON.stringify(template));
+  return serialize(template);
 }
 
 export async function deleteContractTemplate(templateId: string) {

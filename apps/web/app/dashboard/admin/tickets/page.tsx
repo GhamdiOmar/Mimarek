@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import {
   AppBar, Button, DataCard, DataTable, EmptyState, MobileKPICard, MobileTabs, Skeleton, Badge,
+  SelectField,
   type ColumnDef,
 } from "@repo/ui";
 import { PageHeader } from "@repo/ui/components/PageHeader";
@@ -87,7 +88,7 @@ function categoryLabel(category: string, lang: "ar" | "en") {
 }
 
 export default function AdminTicketsPage() {
-  const { lang } = useLanguage();
+  const { t, lang } = useLanguage();
   const router = useRouter();
   const { data: session } = useSession();
   const userRole = session?.user?.role ?? "";
@@ -142,11 +143,11 @@ export default function AdminTicketsPage() {
 
   // ── Mobile helpers ────────────────────────────────────────────────────
   const mobileStatusTabs = [
-    { key: "", label: lang === "ar" ? "الكل" : "All" },
-    { key: "OPEN", label: lang === "ar" ? "مفتوح" : "Open" },
-    { key: "IN_PROGRESS", label: lang === "ar" ? "قيد المعالجة" : "In Progress" },
-    { key: "RESOLVED", label: lang === "ar" ? "محلول" : "Resolved" },
-    { key: "CLOSED", label: lang === "ar" ? "مغلق" : "Closed" },
+    { key: "", label: t("الكل", "All") },
+    { key: "OPEN", label: t("مفتوح", "Open") },
+    { key: "IN_PROGRESS", label: t("قيد المعالجة", "In Progress") },
+    { key: "RESOLVED", label: t("محلول", "Resolved") },
+    { key: "CLOSED", label: t("مغلق", "Closed") },
   ];
 
   const priorityTone = (p: string): "red" | "amber" | "blue" | "default" => {
@@ -184,7 +185,7 @@ export default function AdminTicketsPage() {
       {
         id: "ticketNumber",
         accessorKey: "ticketNumber",
-        header: lang === "ar" ? "رقم التذكرة" : "Ticket #",
+        header: t("رقم التذكرة", "Ticket #"),
         cell: ({ row }) => (
           <span className="font-mono text-xs font-semibold text-primary whitespace-nowrap">
             {row.original.ticketNumber}
@@ -193,7 +194,7 @@ export default function AdminTicketsPage() {
       },
       {
         id: "organization",
-        header: lang === "ar" ? "المنظمة" : "Organization",
+        header: t("المنظمة", "Organization"),
         accessorFn: (row) =>
           lang === "ar" && row.organization.nameArabic
             ? row.organization.nameArabic
@@ -208,7 +209,7 @@ export default function AdminTicketsPage() {
       },
       {
         id: "user",
-        header: lang === "ar" ? "مقدم الطلب" : "Submitter",
+        header: t("مقدم الطلب", "Submitter"),
         accessorFn: (row) => row.user.name ?? row.user.email,
         cell: ({ row }) => (
           <div className="flex flex-col gap-0.5">
@@ -224,7 +225,7 @@ export default function AdminTicketsPage() {
       {
         id: "subject",
         accessorKey: "subject",
-        header: lang === "ar" ? "الموضوع" : "Subject",
+        header: t("الموضوع", "Subject"),
         cell: ({ row }) => (
           <span
             className="block max-w-[220px] truncate text-foreground"
@@ -237,7 +238,7 @@ export default function AdminTicketsPage() {
       {
         id: "category",
         accessorKey: "category",
-        header: lang === "ar" ? "الفئة" : "Category",
+        header: t("الفئة", "Category"),
         cell: ({ row }) => (
           <span className="text-xs text-muted-foreground whitespace-nowrap">
             {categoryLabel(row.original.category, lang)}
@@ -247,18 +248,18 @@ export default function AdminTicketsPage() {
       {
         id: "priority",
         accessorKey: "priority",
-        header: lang === "ar" ? "الأولوية" : "Priority",
+        header: t("الأولوية", "Priority"),
         cell: ({ row }) => priorityBadge(row.original.priority, lang),
       },
       {
         id: "status",
         accessorKey: "status",
-        header: lang === "ar" ? "الحالة" : "Status",
+        header: t("الحالة", "Status"),
         cell: ({ row }) => statusBadge(row.original.status, lang),
       },
       {
         id: "messages",
-        header: lang === "ar" ? "الرسائل" : "Messages",
+        header: t("الرسائل", "Messages"),
         accessorFn: (row) => row._count.messages,
         cell: ({ row }) => (
           <span className="inline-flex items-center gap-1 text-xs text-muted-foreground tabular-nums">
@@ -270,7 +271,7 @@ export default function AdminTicketsPage() {
       {
         id: "createdAt",
         accessorKey: "createdAt",
-        header: lang === "ar" ? "التاريخ" : "Date",
+        header: t("التاريخ", "Date"),
         cell: ({ row }) => (
           <span className="whitespace-nowrap text-xs text-muted-foreground tabular-nums">
             {new Date(row.original.createdAt).toLocaleDateString(
@@ -291,17 +292,15 @@ export default function AdminTicketsPage() {
       className="md:hidden -m-4 sm:-m-6 min-h-dvh flex flex-col bg-background"
       dir={lang === "ar" ? "rtl" : "ltr"}
     >
-      <AppBar title={lang === "ar" ? "التذاكر" : "Tickets"} lang={lang} />
+      <AppBar title={t("التذاكر", "Tickets")} lang={lang} />
 
       {!authorized ? (
         <div className="flex-1 px-4 pt-10">
           <EmptyState
             icon={<ShieldAlert className="h-10 w-10" aria-hidden="true" />}
-            title={lang === "ar" ? "غير مصرح" : "Unauthorized"}
+            title={t("غير مصرح", "Unauthorized")}
             description={
-              lang === "ar"
-                ? "هذه الصفحة متاحة لفريق الدعم فقط."
-                : "This page is available to support staff only."
+              t("هذه الصفحة متاحة لفريق الدعم فقط.", "This page is available to support staff only.")
             }
           />
         </div>
@@ -309,22 +308,22 @@ export default function AdminTicketsPage() {
         <>
           <div className="grid grid-cols-2 gap-3 px-4 pt-3">
             <MobileKPICard
-              label={lang === "ar" ? "مفتوحة" : "Open"}
+              label={t("مفتوحة", "Open")}
               value={<span className="tabular-nums">{openCount}</span>}
               tone="blue"
             />
             <MobileKPICard
-              label={lang === "ar" ? "قيد المعالجة" : "In Progress"}
+              label={t("قيد المعالجة", "In Progress")}
               value={<span className="tabular-nums">{inProgressCount}</span>}
               tone="amber"
             />
             <MobileKPICard
-              label={lang === "ar" ? "محلولة" : "Resolved"}
+              label={t("محلولة", "Resolved")}
               value={<span className="tabular-nums">{resolvedCount}</span>}
               tone="green"
             />
             <MobileKPICard
-              label={lang === "ar" ? "الإجمالي" : "Total"}
+              label={t("الإجمالي", "Total")}
               value={<span className="tabular-nums">{total}</span>}
               tone="primary"
             />
@@ -337,7 +336,7 @@ export default function AdminTicketsPage() {
                 type="text"
                 value={search}
                 onChange={(e) => handleSearchChange(e.target.value)}
-                placeholder={lang === "ar" ? "بحث..." : "Search..."}
+                placeholder={t("بحث...", "Search...")}
                 className="h-11 w-full rounded-md border border-input bg-background ps-9 pe-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
             </div>
@@ -345,7 +344,7 @@ export default function AdminTicketsPage() {
 
           <div className="px-4 pt-3">
             <MobileTabs
-              ariaLabel={lang === "ar" ? "تصفية حسب الحالة" : "Filter by status"}
+              ariaLabel={t("تصفية حسب الحالة", "Filter by status")}
               active={status}
               onChange={(v) => { setStatus(v); setPage(1); }}
               items={mobileStatusTabs}
@@ -364,11 +363,9 @@ export default function AdminTicketsPage() {
                 <EmptyState
                   variant="filtered"
                   icon={<Search className="h-10 w-10" aria-hidden="true" />}
-                  title={lang === "ar" ? "لا توجد نتائج مطابقة" : "No matching tickets"}
+                  title={t("لا توجد نتائج مطابقة", "No matching tickets")}
                   description={
-                    lang === "ar"
-                      ? "جرّب تعديل البحث أو الحالة."
-                      : "Try adjusting your search or status filter."
+                    t("جرّب تعديل البحث أو الحالة.", "Try adjusting your search or status filter.")
                   }
                   action={
                     <Button
@@ -383,7 +380,7 @@ export default function AdminTicketsPage() {
                       }}
                       style={{ display: "inline-flex" }}
                     >
-                      {lang === "ar" ? "مسح الفلاتر" : "Clear filters"}
+                      {t("مسح الفلاتر", "Clear filters")}
                     </Button>
                   }
                 />
@@ -391,11 +388,9 @@ export default function AdminTicketsPage() {
                 <EmptyState
                   variant="first-time"
                   icon={<Ticket className="h-12 w-12" aria-hidden="true" />}
-                  title={lang === "ar" ? "لا توجد تذاكر دعم" : "No support tickets"}
+                  title={t("لا توجد تذاكر دعم", "No support tickets")}
                   description={
-                    lang === "ar"
-                      ? "تظهر هنا تذاكر العملاء التي يحتاجون فيها إلى المساعدة."
-                      : "Customer help requests from across the platform show up here."
+                    t("تظهر هنا تذاكر العملاء التي يحتاجون فيها إلى المساعدة.", "Customer help requests from across the platform show up here.")
                   }
                 />
               )
@@ -445,7 +440,7 @@ export default function AdminTicketsPage() {
                   onClick={() => setPage((p) => p - 1)}
                   style={{ display: "inline-flex", minHeight: "44px" }}
                 >
-                  {lang === "ar" ? "السابق" : "Previous"}
+                  {t("السابق", "Previous")}
                 </Button>
                 <span className="tabular-nums">{page} / {totalPages}</span>
                 <Button
@@ -455,7 +450,7 @@ export default function AdminTicketsPage() {
                   onClick={() => setPage((p) => p + 1)}
                   style={{ display: "inline-flex", minHeight: "44px" }}
                 >
-                  {lang === "ar" ? "التالي" : "Next"}
+                  {t("التالي", "Next")}
                 </Button>
               </div>
             )}
@@ -475,11 +470,9 @@ export default function AdminTicketsPage() {
         </div>
         <PageHeader
           className="flex-1"
-          title={lang === "ar" ? "تذاكر الدعم" : "Support Tickets"}
+          title={t("تذاكر الدعم", "Support Tickets")}
           description={
-            lang === "ar"
-              ? "إدارة طلبات دعم العملاء عبر جميع المنظمات"
-              : "Manage customer support requests across all organizations"
+            t("إدارة طلبات دعم العملاء عبر جميع المنظمات", "Manage customer support requests across all organizations")
           }
         />
       </div>
@@ -510,7 +503,7 @@ export default function AdminTicketsPage() {
           <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
           <input
             type="text"
-            placeholder={lang === "ar" ? "بحث بالموضوع أو الرقم أو البريد..." : "Search subject, number, or email…"}
+            placeholder={t("بحث بالموضوع أو الرقم أو البريد...", "Search subject, number, or email…")}
             value={search}
             onChange={(e) => handleSearchChange(e.target.value)}
             className="w-full rounded-md border border-input bg-background ps-9 pe-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
@@ -524,16 +517,16 @@ export default function AdminTicketsPage() {
         ].map((f, i) => (
           <div key={i} className="relative">
             <Filter className="absolute start-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" aria-hidden="true" />
-            <select
+            <SelectField
               aria-label={f.label[lang]}
               value={f.value}
               onChange={handleFilterChange(f.setter)}
-              className="appearance-none rounded-md border border-input bg-background ps-8 pe-8 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 cursor-pointer"
+              className="h-auto w-auto appearance-none ps-8 pe-8 py-2 cursor-pointer"
             >
               {f.options.map((opt) => (
                 <option key={opt.value} value={opt.value}>{opt.label[lang]}</option>
               ))}
-            </select>
+            </SelectField>
             <ChevronDown className="absolute end-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
           </div>
         ))}
@@ -548,12 +541,10 @@ export default function AdminTicketsPage() {
         pagination={false}
         getRowId={(row) => row.id}
         onRowClick={(row) => router.push(`/dashboard/help/tickets/${row.id}`)}
-        caption={lang === "ar" ? "جدول تذاكر الدعم" : "Support tickets table"}
-        emptyTitle={lang === "ar" ? "لا توجد تذاكر" : "No tickets found"}
+        caption={t("جدول تذاكر الدعم", "Support tickets table")}
+        emptyTitle={t("لا توجد تذاكر", "No tickets found")}
         emptyDescription={
-          lang === "ar"
-            ? "لا توجد تذاكر مطابقة للتصفية الحالية."
-            : "No tickets match the current filters."
+          t("لا توجد تذاكر مطابقة للتصفية الحالية.", "No tickets match the current filters.")
         }
       />
 
@@ -561,9 +552,7 @@ export default function AdminTicketsPage() {
       {totalPages > 1 && (
         <div className="flex items-center justify-between gap-4 text-sm text-muted-foreground">
           <span>
-            {lang === "ar"
-              ? `عرض ${tickets.length} من ${total} تذكرة`
-              : `Showing ${tickets.length} of ${total} tickets`}
+            {t(`عرض ${tickets.length} من ${total} تذكرة`, `Showing ${tickets.length} of ${total} tickets`)}
           </span>
           <div className="flex items-center gap-2">
             <Button
@@ -573,9 +562,9 @@ export default function AdminTicketsPage() {
               onClick={() => setPage((p) => p - 1)}
               style={{ display: "inline-flex" }}
             >
-              {lang === "ar" ? "السابق" : "Previous"}
+              {t("السابق", "Previous")}
             </Button>
-            <span className="text-xs">{lang === "ar" ? `صفحة ${page} من ${totalPages}` : `Page ${page} of ${totalPages}`}</span>
+            <span className="text-xs">{t(`صفحة ${page} من ${totalPages}`, `Page ${page} of ${totalPages}`)}</span>
             <Button
               variant="outline"
               size="sm"
@@ -583,7 +572,7 @@ export default function AdminTicketsPage() {
               onClick={() => setPage((p) => p + 1)}
               style={{ display: "inline-flex" }}
             >
-              {lang === "ar" ? "التالي" : "Next"}
+              {t("التالي", "Next")}
             </Button>
           </div>
         </div>

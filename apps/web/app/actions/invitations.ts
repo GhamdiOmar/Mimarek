@@ -4,6 +4,7 @@ import { db } from "@repo/db";
 import crypto from "crypto";
 import { hash as bcryptHash } from "@node-rs/bcrypt";
 import { revalidatePath } from "next/cache";
+import { ROUTES } from "../../lib/routes";
 import { requirePermission } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
 import { createNotification } from "../../lib/create-notification";
@@ -130,7 +131,7 @@ export async function createInvitation(data: { email: string; role?: string }) {
       organizationId: session.organizationId,
     });
 
-    revalidatePath("/dashboard/settings/team");
+    revalidatePath(ROUTES.settingsTeam);
 
     return {
       success: true,
@@ -368,7 +369,7 @@ export async function revokeInvitation(invitationId: string) {
       organizationId: session.organizationId,
     });
 
-    revalidatePath("/dashboard/settings/team");
+    revalidatePath(ROUTES.settingsTeam);
 
     return { success: true };
   } catch (error: any) {
@@ -442,7 +443,7 @@ export async function resendInvitation(invitationId: string) {
       organizationId: session.organizationId,
     });
 
-    revalidatePath("/dashboard/settings/team");
+    revalidatePath(ROUTES.settingsTeam);
 
     return {
       success: true,

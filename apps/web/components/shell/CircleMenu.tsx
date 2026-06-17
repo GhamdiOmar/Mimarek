@@ -31,7 +31,7 @@ interface CircleMenuProps {
 }
 
 export function CircleMenu({ open, onOpenChange, userRole }: CircleMenuProps) {
-  const { lang } = useLanguage();
+  const { t, lang } = useLanguage();
 
   return (
     <>
@@ -42,12 +42,12 @@ export function CircleMenu({ open, onOpenChange, userRole }: CircleMenuProps) {
           type="button"
           aria-haspopup="dialog"
           aria-expanded={open}
-          aria-label={lang === "ar" ? "فتح قائمة التنقل" : "Open navigation menu"}
+          aria-label={t("فتح قائمة التنقل", "Open navigation menu")}
           onClick={() => onOpenChange(true)}
           className="pointer-events-auto h-12 gap-2 rounded-full px-5 shadow-lg"
         >
           <LayoutGrid className="h-5 w-5" aria-hidden="true" />
-          <span className="text-sm font-semibold">{lang === "ar" ? "القائمة" : "Menu"}</span>
+          <span className="text-sm font-semibold">{t("القائمة", "Menu")}</span>
         </Button>
       </div>
 

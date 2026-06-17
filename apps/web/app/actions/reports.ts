@@ -2,6 +2,7 @@
 
 import { db } from "@repo/db";
 import { requirePermission } from "../../lib/auth-helpers";
+import { serialize } from "../../lib/serialize";
 
 export async function getRevenueReport(startDate: string, endDate: string) {
   const session = await requirePermission("reports:read");
@@ -379,7 +380,7 @@ export async function getMaintenanceCostReport(startDate: string, endDate: strin
     byBuilding[bName]!.count++;
   });
 
-  return JSON.parse(JSON.stringify({
+  return serialize({
     totalEstimated,
     totalActual,
     variance: totalActual - totalEstimated,
@@ -387,5 +388,5 @@ export async function getMaintenanceCostReport(startDate: string, endDate: strin
     totalRequests: requests.length,
     byCategory: Object.entries(byCategory).map(([cat, data]) => ({ category: cat, ...data })),
     byBuilding: Object.values(byBuilding),
-  }));
+  });
 }

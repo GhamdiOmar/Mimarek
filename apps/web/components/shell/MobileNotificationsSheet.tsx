@@ -39,7 +39,7 @@ export function MobileNotificationsSheet({
   onOpenChange,
   onUnreadChange,
 }: MobileNotificationsSheetProps) {
-  const { lang } = useLanguage();
+  const { t, lang } = useLanguage();
   const router = useRouter();
   const [notifs, setNotifs] = React.useState<Notif[]>([]);
   const [loading, setLoading] = React.useState(false);
@@ -86,7 +86,7 @@ export function MobileNotificationsSheet({
     <BottomSheet
       open={open}
       onOpenChange={onOpenChange}
-      title={lang === "ar" ? "الإشعارات" : "Notifications"}
+      title={t("الإشعارات", "Notifications")}
     >
       <div className="space-y-3">
         {/* Category filter pills — §6.6.6 pill standard (desktop/mobile parity §6.14.4) */}
@@ -111,7 +111,7 @@ export function MobileNotificationsSheet({
         {unread > 0 && (
           <div className="flex items-center justify-between rounded-lg bg-primary/5 px-3 py-2">
             <span className="text-xs font-medium text-foreground tabular-nums">
-              {lang === "ar" ? `${unread} غير مقروء` : `${unread} unread`}
+              {t(`${unread} غير مقروء`, `${unread} unread`)}
             </span>
             <Button
               onClick={handleMarkAll}
@@ -120,7 +120,7 @@ export function MobileNotificationsSheet({
               className="gap-1.5 text-primary"
             >
               <CheckCheck className="h-3.5 w-3.5" />
-              {lang === "ar" ? "تحديد الكل" : "Mark all read"}
+              {t("تحديد الكل", "Mark all read")}
             </Button>
           </div>
         )}
@@ -140,13 +140,13 @@ export function MobileNotificationsSheet({
             </div>
             <p className="mt-4 text-sm font-semibold text-foreground">
               {notifCategory === "all"
-                ? lang === "ar" ? "لا توجد إشعارات" : "No notifications"
-                : lang === "ar" ? "لا توجد إشعارات في هذه الفئة" : "No notifications in this category"}
+                ? t("لا توجد إشعارات", "No notifications")
+                : t("لا توجد إشعارات في هذه الفئة", "No notifications in this category")}
             </p>
             <p className="mt-1.5 text-xs text-muted-foreground">
               {notifCategory === "all"
-                ? lang === "ar" ? "ستظهر الإشعارات الجديدة هنا" : "New notifications will appear here"
-                : lang === "ar" ? "جرّب فئة أخرى" : "Try a different category"}
+                ? t("ستظهر الإشعارات الجديدة هنا", "New notifications will appear here")
+                : t("جرّب فئة أخرى", "Try a different category")}
             </p>
           </div>
         )}

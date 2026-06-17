@@ -2,6 +2,7 @@
 
 import { db } from "@repo/db";
 import { revalidatePath } from "next/cache";
+import { ROUTES } from "../../lib/routes";
 import { requirePermission, getSessionOrThrow } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
 import { createNotification, notifyAdmins } from "../../lib/create-notification";
@@ -104,7 +105,7 @@ export async function reviewJoinRequest(
     organizationId: session.organizationId,
   });
 
-  revalidatePath("/dashboard/help");
+  revalidatePath(ROUTES.help);
   return { success: true };
 }
 
@@ -128,7 +129,7 @@ export async function cancelJoinRequest(requestId: string) {
     data: { status: "CANCELLED_JOIN" },
   });
 
-  revalidatePath("/dashboard/help");
+  revalidatePath(ROUTES.help);
   return { success: true };
 }
 

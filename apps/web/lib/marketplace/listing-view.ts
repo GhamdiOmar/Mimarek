@@ -11,6 +11,7 @@
  * take an explicit viewerOrgId and enforce the buyer-visibility rules.
  */
 import { db } from "@repo/db";
+import { checkRateLimit } from "../rate-limit";
 
 export type MarketplaceListingCardVM = {
   id: string;
@@ -177,7 +178,9 @@ export async function listPublishedListingsForBuyer(
 
 /**
  * Single listing for a buyer. Returns null if not buyer-visible.
- * Increments viewCount as a side effect (best-effort).
+ * Increments viewCount as a best-effort, fire-and-forget side effect, deduped
+ * to once per (listingId, viewerOrgId, UTC day) so repeated views by the same
+ * org in a day count once (E4).
  */
 export async function getPublishedListingForBuyer(
   viewerOrgId: string,
@@ -197,9 +200,32 @@ export async function getPublishedListingForBuyer(
   });
   if (!listing) return null;
 
-  void db.marketplaceListing
-    .update({ where: { id: listingId }, data: { viewCount: { increment: 1 } } })
-    .catch(() => {});
+  // E4: dedup the viewCount increment to once per (listing, viewer, day).
+  // Without this, every buyer detail-view inflated viewCount, so a single org
+  // refreshing a page repeatedly skewed the metric. We reuse the Postgres
+  // rate-limiter (1 hit per ~24h window) as a day-bucketed dedup gate, keyed by
+  // viewerOrgId (the buyer org — the only viewer identity this read layer has).
+  // Entirely fire-and-forget: the gate check AND the increment run detached and
+  // swallow errors, so they can never fail or delay the page render.
+  void (async () => {
+    try {
+      const dayBucket = new Date().toISOString().slice(0, 10); // YYYY-MM-DD (UTC)
+      const dedup = await checkRateLimit(
+        `mkview:${listingId}:${viewerOrgId}:${dayBucket}`,
+        1,
+        86400000, // ~24h window
+      );
+      // allowed === true only on the first view in the bucket → count it once.
+      if (dedup.allowed) {
+        await db.marketplaceListing.update({
+          where: { id: listingId },
+          data: { viewCount: { increment: 1 } },
+        });
+      }
+    } catch {
+      // Best-effort metric — never surface to the caller.
+    }
+  })();
 
   return {
     ...toCardVM(listing),

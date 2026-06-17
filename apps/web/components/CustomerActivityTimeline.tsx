@@ -84,7 +84,7 @@ interface CustomerActivityTimelineProps {
 }
 
 export default function CustomerActivityTimeline({ customerId }: CustomerActivityTimelineProps) {
-  const { lang } = useLanguage();
+  const { t, lang } = useLanguage();
   const [activities, setActivities] = useState<Activity[]>([]);
   const [fetchLoading, setFetchLoading] = useState(true);
   const [fetchError, setFetchError] = useState("");
@@ -104,9 +104,7 @@ export default function CustomerActivityTimeline({ customerId }: CustomerActivit
       setActivities(data as Activity[]);
     } catch {
       setFetchError(
-        lang === "ar"
-          ? "تعذّر تحميل سجل النشاطات. يرجى إعادة تحميل الصفحة."
-          : "Failed to load activities. Please reload the page."
+        t("تعذّر تحميل سجل النشاطات. يرجى إعادة تحميل الصفحة.", "Failed to load activities. Please reload the page.")
       );
     } finally {
       setFetchLoading(false);
@@ -121,7 +119,7 @@ export default function CustomerActivityTimeline({ customerId }: CustomerActivit
   const handleSubmit = () => {
     if (!note.trim()) {
       setSubmitError(
-        lang === "ar" ? "يرجى كتابة ملاحظة قبل الحفظ." : "Please write a note before saving."
+        t("يرجى كتابة ملاحظة قبل الحفظ.", "Please write a note before saving.")
       );
       return;
     }
@@ -134,9 +132,7 @@ export default function CustomerActivityTimeline({ customerId }: CustomerActivit
         await loadActivities();
       } catch {
         setSubmitError(
-          lang === "ar"
-            ? "فشل في تسجيل النشاط. يرجى المحاولة مجدداً."
-            : "Failed to log activity. Please try again."
+          t("فشل في تسجيل النشاط. يرجى المحاولة مجدداً.", "Failed to log activity. Please try again.")
         );
       }
     });
@@ -165,7 +161,7 @@ export default function CustomerActivityTimeline({ customerId }: CustomerActivit
       {/* Header row */}
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-bold text-primary">
-          {lang === "ar" ? "سجل النشاطات" : "Activity Log"}
+          {t("سجل النشاطات", "Activity Log")}
         </h3>
         <Button
           variant="ghost"
@@ -178,7 +174,7 @@ export default function CustomerActivityTimeline({ customerId }: CustomerActivit
           style={{ display: "inline-flex" }}
         >
           <Plus className="h-4 w-4" />
-          {lang === "ar" ? "تسجيل نشاط" : "Log Activity"}
+          {t("تسجيل نشاط", "Log Activity")}
         </Button>
       </div>
 
@@ -218,9 +214,7 @@ export default function CustomerActivityTimeline({ customerId }: CustomerActivit
             onChange={(e) => setNote(e.target.value)}
             rows={3}
             placeholder={
-              lang === "ar"
-                ? "اكتب ملاحظاتك هنا..."
-                : "Write your notes here..."
+              t("اكتب ملاحظاتك هنا...", "Write your notes here...")
             }
             className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm resize-none outline-none focus:border-secondary transition-all"
           />
@@ -240,7 +234,7 @@ export default function CustomerActivityTimeline({ customerId }: CustomerActivit
               }}
               style={{ display: "inline-flex" }}
             >
-              {lang === "ar" ? "إلغاء" : "Cancel"}
+              {t("إلغاء", "Cancel")}
             </Button>
             <Button
               size="sm"
@@ -250,7 +244,7 @@ export default function CustomerActivityTimeline({ customerId }: CustomerActivit
               style={{ display: "inline-flex" }}
             >
               {isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-              {lang === "ar" ? "حفظ" : "Save"}
+              {t("حفظ", "Save")}
             </Button>
           </div>
         </div>
@@ -269,9 +263,7 @@ export default function CustomerActivityTimeline({ customerId }: CustomerActivit
         <div className="flex flex-col items-center justify-center py-10 text-center space-y-2">
           <FileText className="h-8 w-8 text-muted-foreground/40" />
           <p className="text-sm text-muted-foreground">
-            {lang === "ar"
-              ? "لا توجد نشاطات مسجّلة بعد."
-              : "No activities logged yet."}
+            {t("لا توجد نشاطات مسجّلة بعد.", "No activities logged yet.")}
           </p>
         </div>
       ) : (
@@ -312,8 +304,8 @@ export default function CustomerActivityTimeline({ customerId }: CustomerActivit
                 {/* Delete */}
                 <IconButton
                   icon={Trash2}
-                  aria-label={lang === "ar" ? "حذف النشاط" : "Delete activity"}
-                  tooltip={lang === "ar" ? "حذف النشاط" : "Delete activity"}
+                  aria-label={t("حذف النشاط", "Delete activity")}
+                  tooltip={t("حذف النشاط", "Delete activity")}
                   variant="ghost"
                   onClick={() => handleDelete(activity.id)}
                   className="opacity-0 group-hover:opacity-100 flex-shrink-0 hover:text-destructive"
@@ -328,9 +320,9 @@ export default function CustomerActivityTimeline({ customerId }: CustomerActivit
       <ConfirmDialog
         open={confirmOpen}
         onOpenChange={setConfirmOpen}
-        title={lang === "ar" ? "هل أنت متأكد من حذف هذا النشاط؟" : "Are you sure you want to delete this activity?"}
-        confirmLabel={lang === "ar" ? "حذف" : "Delete"}
-        cancelLabel={lang === "ar" ? "إلغاء" : "Cancel"}
+        title={t("هل أنت متأكد من حذف هذا النشاط؟", "Are you sure you want to delete this activity?")}
+        confirmLabel={t("حذف", "Delete")}
+        cancelLabel={t("إلغاء", "Cancel")}
         onConfirm={executeDelete}
         variant="destructive"
       />

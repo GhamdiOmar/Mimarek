@@ -266,7 +266,7 @@ export default function AdminView({
   mrrTrend,
   loadedAt,
 }: AdminViewProps) {
-  const { lang } = useLanguage();
+  const { t, lang } = useLanguage();
   const router = useRouter();
   const { range, setRange } = useDateRangeQuery();
   const [isPending, startTransition] = React.useTransition();
@@ -305,44 +305,44 @@ export default function AdminView({
     return [
       {
         key: "starting",
-        label: lang === "ar" ? "البداية" : "Starting",
+        label: t("البداية", "Starting"),
         value: w.startingArr,
         kind: "endpoint" as const,
       },
-      { key: "new", label: lang === "ar" ? "جديد" : "New", value: w.newArr, kind: "delta" as const },
+      { key: "new", label: t("جديد", "New"), value: w.newArr, kind: "delta" as const },
       {
         key: "expansion",
-        label: lang === "ar" ? "توسع" : "Expansion",
+        label: t("توسع", "Expansion"),
         value: w.expansionArr,
         kind: "delta" as const,
       },
       {
         key: "reactivation",
-        label: lang === "ar" ? "إعادة تفعيل" : "Reactivation",
+        label: t("إعادة تفعيل", "Reactivation"),
         value: w.reactivationArr,
         kind: "delta" as const,
       },
       {
         key: "contraction",
-        label: lang === "ar" ? "انكماش" : "Contraction",
+        label: t("انكماش", "Contraction"),
         value: w.contractionArr,
         kind: "delta" as const,
       },
       {
         key: "churn",
-        label: lang === "ar" ? "إلغاء" : "Churn",
+        label: t("إلغاء", "Churn"),
         value: w.churnArr,
         kind: "delta" as const,
       },
       {
         key: "refund",
-        label: lang === "ar" ? "استرداد" : "Refund/Adj",
+        label: t("استرداد", "Refund/Adj"),
         value: w.refundAdjArr,
         kind: "delta" as const,
       },
       {
         key: "ending",
-        label: lang === "ar" ? "النهاية" : "Ending",
+        label: t("النهاية", "Ending"),
         value: w.endingArr,
         kind: "endpoint" as const,
       },
@@ -373,13 +373,13 @@ export default function AdminView({
 
   const mrrChartConfig: ChartConfig = {
     total: {
-      label: lang === "ar" ? "الإيراد الشهري" : "Monthly revenue",
+      label: t("الإيراد الشهري", "Monthly revenue"),
     },
   };
 
   const waterfallChartConfig: ChartConfig = {
     value: {
-      label: lang === "ar" ? "الإيراد السنوي" : "ARR",
+      label: t("الإيراد السنوي", "ARR"),
     },
   };
 
@@ -390,7 +390,7 @@ export default function AdminView({
         className="md:hidden -m-4 sm:-m-6 min-h-dvh flex flex-col bg-background"
         dir={lang === "ar" ? "rtl" : "ltr"}
       >
-        <AppBar title={lang === "ar" ? "الإدارة" : "Admin"} lang={lang} />
+        <AppBar title={t("الإدارة", "Admin")} lang={lang} />
         <div className="flex-1 px-4 pt-4 pb-8">
           <div className="grid grid-cols-2 gap-3">
             {quickLinks.map((item) => (
@@ -424,11 +424,9 @@ export default function AdminView({
             </div>
             <PageHeader
               className="flex-1"
-              title={lang === "ar" ? "إدارة المنصة" : "Platform Administration"}
+              title={t("إدارة المنصة", "Platform Administration")}
               description={
-                lang === "ar"
-                  ? "مقاييس الإيراد والمخاطر — افتراضي: منذ بداية الشهر"
-                  : "Revenue & risk metrics — defaults to month-to-date"
+                t("مقاييس الإيراد والمخاطر — افتراضي: منذ بداية الشهر", "Revenue & risk metrics — defaults to month-to-date")
               }
               actions={
                 <div className="flex items-center gap-3">
@@ -452,13 +450,13 @@ export default function AdminView({
           {/* HERO — Net New ARR */}
           <KPICard
             tier="hero"
-            label={lang === "ar" ? "صافي الإيراد السنوي الجديد" : "Net New ARR"}
+            label={t("صافي الإيراد السنوي الجديد", "Net New ARR")}
             description={desc.netNewArr}
             value={fmtSarCompact(netNew.valueSar)}
-            unit={lang === "ar" ? "ر.س" : "SAR"}
+            unit={t("ر.س", "SAR")}
             icon={<TrendingUp className="h-[18px] w-[18px]" />}
             accent={arrSign >= 0 ? "secondary" : "destructive"}
-            comparisonPeriod={lang === "ar" ? "للفترة المحددة" : "selected period"}
+            comparisonPeriod={t("للفترة المحددة", "selected period")}
             secondaryInsight={heroBreakdown}
             trend={mrrTrend}
             href="/dashboard/admin/subscriptions"
@@ -469,80 +467,78 @@ export default function AdminView({
           {/* ARR Waterfall */}
           <section>
             <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">
-              {lang === "ar"
-                ? "شلال الإيراد السنوي — غير شامل الضريبة"
-                : "ARR Waterfall — ex-VAT"}
+              {t("شلال الإيراد السنوي — غير شامل الضريبة", "ARR Waterfall — ex-VAT")}
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <KPICard
                 tier="standard"
-                label={lang === "ar" ? "بداية الفترة" : "Starting ARR"}
+                label={t("بداية الفترة", "Starting ARR")}
                 description={desc.startingArr}
                 value={fmtSarCompact(waterfall.startingArr)}
-                unit={lang === "ar" ? "ر.س" : "SAR"}
+                unit={t("ر.س", "SAR")}
                 accent="info"
                 locale={lang}
               />
               <KPICard
                 tier="standard"
-                label={lang === "ar" ? "جديد" : "New"}
+                label={t("جديد", "New")}
                 description={desc.newArr}
                 value={fmtSarCompact(waterfall.newArr)}
-                unit={lang === "ar" ? "ر.س" : "SAR"}
+                unit={t("ر.س", "SAR")}
                 accent="success"
                 locale={lang}
               />
               <KPICard
                 tier="standard"
-                label={lang === "ar" ? "توسع" : "Expansion"}
+                label={t("توسع", "Expansion")}
                 description={desc.expansionArr}
                 value={fmtSarCompact(waterfall.expansionArr)}
-                unit={lang === "ar" ? "ر.س" : "SAR"}
+                unit={t("ر.س", "SAR")}
                 accent="secondary"
                 locale={lang}
               />
               <KPICard
                 tier="standard"
-                label={lang === "ar" ? "إعادة تفعيل" : "Reactivation"}
+                label={t("إعادة تفعيل", "Reactivation")}
                 description={desc.reactivationArr}
                 value={fmtSarCompact(waterfall.reactivationArr)}
-                unit={lang === "ar" ? "ر.س" : "SAR"}
+                unit={t("ر.س", "SAR")}
                 accent="primary"
                 locale={lang}
               />
               <KPICard
                 tier="standard"
-                label={lang === "ar" ? "انكماش" : "Contraction"}
+                label={t("انكماش", "Contraction")}
                 description={desc.contractionArr}
                 value={fmtSarCompact(waterfall.contractionArr)}
-                unit={lang === "ar" ? "ر.س" : "SAR"}
+                unit={t("ر.س", "SAR")}
                 accent="warning"
                 locale={lang}
               />
               <KPICard
                 tier="standard"
-                label={lang === "ar" ? "إلغاء" : "Churn"}
+                label={t("إلغاء", "Churn")}
                 description={desc.churnArr}
                 value={fmtSarCompact(waterfall.churnArr)}
-                unit={lang === "ar" ? "ر.س" : "SAR"}
+                unit={t("ر.س", "SAR")}
                 accent="destructive"
                 locale={lang}
               />
               <KPICard
                 tier="standard"
-                label={lang === "ar" ? "استرداد / تعديل" : "Refund / Adj"}
+                label={t("استرداد / تعديل", "Refund / Adj")}
                 description={desc.refundArr}
                 value={fmtSarCompact(waterfall.refundAdjArr)}
-                unit={lang === "ar" ? "ر.س" : "SAR"}
+                unit={t("ر.س", "SAR")}
                 accent="destructive"
                 locale={lang}
               />
               <KPICard
                 tier="standard"
-                label={lang === "ar" ? "نهاية الفترة" : "Ending ARR"}
+                label={t("نهاية الفترة", "Ending ARR")}
                 description={desc.endingArr}
                 value={fmtSarCompact(waterfall.endingArr)}
-                unit={lang === "ar" ? "ر.س" : "SAR"}
+                unit={t("ر.س", "SAR")}
                 accent="info"
                 locale={lang}
               />
@@ -562,7 +558,7 @@ export default function AdminView({
             <Card className="mt-4">
               <CardHeader>
                 <CardTitle className="text-sm font-semibold">
-                  {lang === "ar" ? "تصوّر الشلال" : "Waterfall view"}
+                  {t("تصوّر الشلال", "Waterfall view")}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -609,17 +605,15 @@ export default function AdminView({
           {/* Collections & AR Aging */}
           <section>
             <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">
-              {lang === "ar"
-                ? "التحصيل وتقادم الذمم — شامل الضريبة"
-                : "Collections & AR Aging — incl. VAT"}
+              {t("التحصيل وتقادم الذمم — شامل الضريبة", "Collections & AR Aging — incl. VAT")}
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <KPICard
                 tier="standard"
-                label={lang === "ar" ? "المحصّل" : "Collected"}
+                label={t("المحصّل", "Collected")}
                 description={desc.collected}
                 value={fmtSarCompact(collected.collectedSarGross)}
-                unit={lang === "ar" ? "ر.س" : "SAR"}
+                unit={t("ر.س", "SAR")}
                 accent="success"
                 comparisonPeriod={
                   lang === "ar"
@@ -630,50 +624,48 @@ export default function AdminView({
               />
               <KPICard
                 tier="standard"
-                label={lang === "ar" ? "متبقي (0-30)" : "AR 0-30"}
+                label={t("متبقي (0-30)", "AR 0-30")}
                 description={desc.arAging030}
                 value={fmtSarCompact(aging.buckets[0]?.sumSarGross ?? 0)}
-                unit={lang === "ar" ? "ر.س" : "SAR"}
+                unit={t("ر.س", "SAR")}
                 accent="info"
                 locale={lang}
               />
               <KPICard
                 tier="standard"
-                label={lang === "ar" ? "متبقي (31-60)" : "AR 31-60"}
+                label={t("متبقي (31-60)", "AR 31-60")}
                 description={desc.arAging3160}
                 value={fmtSarCompact(aging.buckets[1]?.sumSarGross ?? 0)}
-                unit={lang === "ar" ? "ر.س" : "SAR"}
+                unit={t("ر.س", "SAR")}
                 accent="warning"
                 locale={lang}
               />
               <KPICard
                 tier="standard"
-                label={lang === "ar" ? "متبقي (61-90)" : "AR 61-90"}
+                label={t("متبقي (61-90)", "AR 61-90")}
                 description={desc.arAging6190}
                 value={fmtSarCompact(aging.buckets[2]?.sumSarGross ?? 0)}
-                unit={lang === "ar" ? "ر.س" : "SAR"}
+                unit={t("ر.س", "SAR")}
                 accent="warning"
                 locale={lang}
               />
               <KPICard
                 tier="standard"
-                label={lang === "ar" ? "متبقي (+90)" : "AR 90+"}
+                label={t("متبقي (+90)", "AR 90+")}
                 description={desc.arAging90}
                 value={fmtSarCompact(aging.buckets[3]?.sumSarGross ?? 0)}
-                unit={lang === "ar" ? "ر.س" : "SAR"}
+                unit={t("ر.س", "SAR")}
                 accent="destructive"
                 locale={lang}
               />
               <KPICard
                 tier="standard"
                 label={
-                  lang === "ar"
-                    ? "إيراد سنوي معرّض للخطر"
-                    : "ARR at risk (failed payment)"
+                  t("إيراد سنوي معرّض للخطر", "ARR at risk (failed payment)")
                 }
                 description={desc.atRiskArr}
                 value={fmtSarCompact(atRisk.atRiskArrSar)}
-                unit={lang === "ar" ? "ر.س" : "SAR"}
+                unit={t("ر.س", "SAR")}
                 accent="destructive"
                 comparisonPeriod={
                   lang === "ar"
@@ -684,7 +676,7 @@ export default function AdminView({
               />
               <KPICard
                 tier="standard"
-                label={lang === "ar" ? "اعتماد زاتكا" : "ZATCA Clearance"}
+                label={t("اعتماد زاتكا", "ZATCA Clearance")}
                 description={desc.zatcaClearance}
                 value={fmtPct(zatca.rate)}
                 accent={
@@ -696,9 +688,7 @@ export default function AdminView({
                 }
                 comparisonPeriod={
                   zatca.alertSpike
-                    ? lang === "ar"
-                      ? "ارتفاع في الرفض — تحقق من التكامل"
-                      : "rejection spike — check integration"
+                    ? t("ارتفاع في الرفض — تحقق من التكامل", "rejection spike — check integration")
                     : undefined
                 }
                 locale={lang}
@@ -709,9 +699,7 @@ export default function AdminView({
             <Card className="mt-4">
               <CardHeader>
                 <CardTitle className="text-sm font-semibold">
-                  {lang === "ar"
-                    ? "توزيع تقادم الذمم"
-                    : "AR aging distribution"}
+                  {t("توزيع تقادم الذمم", "AR aging distribution")}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -758,14 +746,12 @@ export default function AdminView({
           {/* Tenant Risk Inputs */}
           <section>
             <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">
-              {lang === "ar"
-                ? "مؤشرات مخاطر المستأجرين"
-                : "Tenant Risk Inputs"}
+              {t("مؤشرات مخاطر المستأجرين", "Tenant Risk Inputs")}
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <KPICard
                 tier="standard"
-                label={lang === "ar" ? "متأخرات السداد" : "Past-due"}
+                label={t("متأخرات السداد", "Past-due")}
                 description={desc.pastDue}
                 value={fmtCount(risk.pastDueCount)}
                 accent="destructive"
@@ -774,7 +760,7 @@ export default function AdminView({
               />
               <KPICard
                 tier="standard"
-                label={lang === "ar" ? "بدون دخول مسؤول > 21 يوم" : "Admin no-login > 21d"}
+                label={t("بدون دخول مسؤول > 21 يوم", "Admin no-login > 21d")}
                 description={desc.noLoginAdmin}
                 value={fmtCount(risk.noLoginAdminCount)}
                 accent="warning"
@@ -783,7 +769,7 @@ export default function AdminView({
               />
               <KPICard
                 tier="standard"
-                label={lang === "ar" ? "تذاكر P1+ > 14 يوم" : "Open P1+ > 14d"}
+                label={t("تذاكر P1+ > 14 يوم", "Open P1+ > 14d")}
                 description={desc.openP1Old}
                 value={fmtCount(risk.openP1OldCount)}
                 accent="warning"
@@ -792,7 +778,7 @@ export default function AdminView({
               />
               <KPICard
                 tier="standard"
-                label={lang === "ar" ? "فشل دفع > 2 (30 يوم)" : "Failed pay > 2 in 30d"}
+                label={t("فشل دفع > 2 (30 يوم)", "Failed pay > 2 in 30d")}
                 description={desc.failedPayment}
                 value={fmtCount(risk.failedPaymentCount)}
                 accent="destructive"
@@ -805,14 +791,12 @@ export default function AdminView({
           {/* Concentration & Revenue Mix */}
           <section>
             <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">
-              {lang === "ar"
-                ? "التركيز ومزيج الإيراد"
-                : "Concentration & Revenue Mix"}
+              {t("التركيز ومزيج الإيراد", "Concentration & Revenue Mix")}
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <KPICard
                 tier="standard"
-                label={lang === "ar" ? "أكبر 5 من الإيراد السنوي" : "Top-5 % of ARR"}
+                label={t("أكبر 5 من الإيراد السنوي", "Top-5 % of ARR")}
                 description={desc.top5}
                 value={fmtPct(concentration.top5Pct)}
                 accent="warning"
@@ -821,7 +805,7 @@ export default function AdminView({
               />
               <KPICard
                 tier="standard"
-                label={lang === "ar" ? "أكبر 10 من الإيراد السنوي" : "Top-10 % of ARR"}
+                label={t("أكبر 10 من الإيراد السنوي", "Top-10 % of ARR")}
                 description={desc.top10}
                 value={fmtPct(concentration.top10Pct)}
                 accent="info"
@@ -830,7 +814,7 @@ export default function AdminView({
               />
               <KPICard
                 tier="standard"
-                label={lang === "ar" ? "تسرّب الخصومات" : "Discount Leakage"}
+                label={t("تسرّب الخصومات", "Discount Leakage")}
                 description={desc.discountLeakage}
                 value={fmtPct(leakage.leakagePct)}
                 accent="warning"
@@ -840,7 +824,7 @@ export default function AdminView({
               <KPICard
                 tier="standard"
                 label={
-                  lang === "ar" ? "تحويل التجربة إلى دفع" : "Trial → Paid"
+                  t("تحويل التجربة إلى دفع", "Trial → Paid")
                 }
                 description={desc.trialConversion}
                 value={fmtPct(trial.rate)}
@@ -859,12 +843,12 @@ export default function AdminView({
           {/* Platform Scale (utility tier — count metrics, not revenue) */}
           <section>
             <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">
-              {lang === "ar" ? "حجم المنصة" : "Platform Scale"}
+              {t("حجم المنصة", "Platform Scale")}
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <KPICard
                 tier="utility"
-                label={lang === "ar" ? "منظمات نشطة" : "Active Orgs"}
+                label={t("منظمات نشطة", "Active Orgs")}
                 description={desc.activeOrgs}
                 value={fmtCount(stats.orgCount)}
                 accent="primary"
@@ -872,7 +856,7 @@ export default function AdminView({
               />
               <KPICard
                 tier="utility"
-                label={lang === "ar" ? "المستخدمون" : "Total Users"}
+                label={t("المستخدمون", "Total Users")}
                 description={desc.totalUsers}
                 value={fmtCount(stats.userCount)}
                 accent="info"
@@ -880,7 +864,7 @@ export default function AdminView({
               />
               <KPICard
                 tier="utility"
-                label={lang === "ar" ? "الوحدات" : "Properties"}
+                label={t("الوحدات", "Properties")}
                 description={desc.totalProperties}
                 value={fmtCount(stats.propertyCount)}
                 accent="secondary"
@@ -888,7 +872,7 @@ export default function AdminView({
               />
               <KPICard
                 tier="utility"
-                label={lang === "ar" ? "العقود" : "Contracts"}
+                label={t("العقود", "Contracts")}
                 description={desc.totalContracts}
                 value={fmtCount(stats.contractCount)}
                 accent="primary"
@@ -896,7 +880,7 @@ export default function AdminView({
               />
               <KPICard
                 tier="utility"
-                label={lang === "ar" ? "تذاكر مفتوحة" : "Open Tickets"}
+                label={t("تذاكر مفتوحة", "Open Tickets")}
                 description={desc.openTickets}
                 value={fmtCount(stats.openTickets + stats.inProgressTickets)}
                 accent="warning"
@@ -909,9 +893,7 @@ export default function AdminView({
           <Card>
             <CardHeader>
               <CardTitle className="text-sm font-semibold">
-                {lang === "ar"
-                  ? "اتجاه الإيراد الشهري — آخر 12 شهراً"
-                  : "MRR Trend — last 12 months"}
+                {t("اتجاه الإيراد الشهري — آخر 12 شهراً", "MRR Trend — last 12 months")}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -954,7 +936,7 @@ export default function AdminView({
           {/* Quick Links */}
           <section>
             <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">
-              {lang === "ar" ? "أدوات الإدارة" : "Management Tools"}
+              {t("أدوات الإدارة", "Management Tools")}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {quickLinks.map((item) => (

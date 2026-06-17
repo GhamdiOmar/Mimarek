@@ -5,6 +5,8 @@ import { revalidatePath } from "next/cache";
 import { requirePermission } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
 import { syncDealStageForUnit } from "../../lib/server/pipeline-sync";
+import { ROUTES } from "../../lib/routes";
+import { serialize } from "../../lib/serialize";
 
 export async function createReservation(data: {
   customerId: string;
@@ -58,6 +60,7 @@ export async function createReservation(data: {
     // Create reservation
     const res = await tx.reservation.create({
       data: {
+        organizationId: session.organizationId,
         customerId: data.customerId,
         unitId: data.unitId,
         amount: data.amount,
@@ -88,8 +91,8 @@ export async function createReservation(data: {
     organizationId: session.organizationId,
   });
 
-  revalidatePath("/dashboard/reservations");
-  return JSON.parse(JSON.stringify(reservation));
+  revalidatePath(ROUTES.reservations);
+  return serialize(reservation);
 }
 
 export async function getReservations(filters?: { page?: number; pageSize?: number }) {
@@ -111,7 +114,7 @@ export async function getReservations(filters?: { page?: number; pageSize?: numb
     skip,
     take: pageSize,
   });
-  return JSON.parse(JSON.stringify(reservations));
+  return serialize(reservations);
 }
 
 export async function updateReservationStatus(
@@ -186,8 +189,8 @@ export async function updateReservationStatus(
     organizationId: session.organizationId,
   });
 
-  revalidatePath("/dashboard/reservations");
-  return JSON.parse(JSON.stringify(updated));
+  revalidatePath(ROUTES.reservations);
+  return serialize(updated);
 }
 
 // ─── RED: Reservation Extensions ────────────────────────────────────────────
@@ -216,7 +219,7 @@ export async function requestReservationExtension(
     },
   });
 
-  return JSON.parse(JSON.stringify(extension));
+  return serialize(extension);
 }
 
 export async function approveReservationExtension(extensionId: string) {
@@ -258,7 +261,7 @@ export async function approveReservationExtension(extensionId: string) {
     organizationId: session.organizationId,
   });
 
-  revalidatePath("/dashboard/reservations");
+  revalidatePath(ROUTES.reservations);
   return { success: true };
 }
 
@@ -272,7 +275,7 @@ export async function getReservationById(reservationId: string) {
     },
   });
   if (!reservation) return null;
-  return JSON.parse(JSON.stringify(reservation));
+  return serialize(reservation);
 }
 
 // ─── CX-010: Bulk Operations ────────────────────────────────────────────────
@@ -332,7 +335,7 @@ export async function bulkUpdateReservationStatus(
     organizationId: session.organizationId,
   });
 
-  revalidatePath("/dashboard/reservations");
+  revalidatePath(ROUTES.reservations);
   return { updated: updated.length };
 }
 
@@ -388,7 +391,7 @@ export async function bulkDeleteReservations(ids: string[]) {
     organizationId: session.organizationId,
   });
 
-  revalidatePath("/dashboard/reservations");
+  revalidatePath(ROUTES.reservations);
   return { deleted: reservations.length };
 }
 

@@ -17,6 +17,7 @@ import {
   Input,
   Field,
   SelectField,
+  HijriDatePicker,
   NationalIdInput,
   SaudiPhoneInput,
   SARAmountInput,
@@ -736,12 +737,11 @@ export function AddCustomerModal({
                       error={fieldState.error?.message}
                     >
                       {(f) => (
-                        <Input
-                          {...f}
-                          type="date"
-                          value={field.value ?? ""}
-                          onChange={field.onChange}
-                          onBlur={field.onBlur}
+                        <HijriDatePicker
+                          id={f.id}
+                          locale={lang}
+                          value={field.value ? new Date(field.value) : null}
+                          onChange={(d) => field.onChange(d ? d.toISOString().slice(0, 10) : "")}
                         />
                       )}
                     </Field>

@@ -25,6 +25,7 @@ const SURFACES_SYSTEM = [
   { name: "admin-coupons", url: "/dashboard/admin/coupons", waitFor: "main" },
   { name: "admin-subscriptions", url: "/dashboard/admin/subscriptions", waitFor: "main" },
   { name: "admin-seo", url: "/dashboard/admin/seo", waitFor: "main" },
+  { name: "admin-data-retention", url: "/dashboard/admin/data-retention", waitFor: "main" },
   { name: "billing", url: "/dashboard/billing", waitFor: "main" },
   { name: "settings", url: "/dashboard/settings", waitFor: "main" },
   // Cross-tier block: system user hitting tenant route must 403/redirect

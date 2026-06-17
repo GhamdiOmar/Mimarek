@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requirePermission, getSessionOrThrow } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
 import { ROUTES } from "../../lib/routes";
+import { serialize } from "../../lib/serialize";
 import { createSubscription, transitionSubscription } from "../../lib/payment/subscription-machine";
 import { invalidateEntitlements } from "../../lib/entitlements";
 import { getNextSequenceValue, GLOBAL_SEQUENCE_SCOPE } from "../../lib/sequence";
@@ -34,7 +35,7 @@ export async function getPlanBySlug(slug: string) {
     where: { slug },
     include: { entitlements: true },
   });
-  return plan ? JSON.parse(JSON.stringify(plan)) : null;
+  return plan ? serialize(plan) : null;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -58,7 +59,7 @@ export async function getCurrentSubscription() {
     orderBy: { createdAt: "desc" },
   });
 
-  return subscription ? JSON.parse(JSON.stringify(subscription)) : null;
+  return subscription ? serialize(subscription) : null;
 }
 
 /**
@@ -98,7 +99,7 @@ export async function subscribeToPlan(data: {
   });
 
   invalidateEntitlements(session.organizationId);
-  revalidatePath("/dashboard/billing");
+  revalidatePath(ROUTES.billing);
 
   return { subscriptionId };
 }
@@ -162,7 +163,7 @@ export async function changePlan(data: {
   });
 
   invalidateEntitlements(session.organizationId);
-  revalidatePath("/dashboard/billing");
+  revalidatePath(ROUTES.billing);
 
   return { success: true };
 }
@@ -198,7 +199,7 @@ export async function cancelSubscription(reason?: string) {
     organizationId: session.organizationId,
   });
 
-  revalidatePath("/dashboard/billing");
+  revalidatePath(ROUTES.billing);
 
   return { success: true };
 }
@@ -227,7 +228,7 @@ export async function getInvoices(page = 1, pageSize = 20) {
   ]);
 
   return {
-    invoices: JSON.parse(JSON.stringify(invoices)),
+    invoices: serialize(invoices),
     total,
     page,
     pageSize,
@@ -255,7 +256,7 @@ export async function getInvoiceById(invoiceId: string) {
 
   if (!invoice) throw new Error("Invoice not found or you don't have access. Please verify the invoice number.");
 
-  return JSON.parse(JSON.stringify(invoice));
+  return serialize(invoice);
 }
 
 /**
@@ -349,7 +350,7 @@ export async function generateSubscriptionInvoice(params: {
     organizationId: session.organizationId,
   });
 
-  return JSON.parse(JSON.stringify(invoice));
+  return serialize(invoice);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -367,7 +368,7 @@ export async function getPaymentMethods() {
     orderBy: [{ isDefault: "desc" }, { createdAt: "desc" }],
   });
 
-  return JSON.parse(JSON.stringify(methods));
+  return serialize(methods);
 }
 
 /**
@@ -394,7 +395,7 @@ export async function setDefaultPaymentMethod(paymentMethodId: string) {
     }),
   ]);
 
-  revalidatePath("/dashboard/billing");
+  revalidatePath(ROUTES.billing);
   return { success: true };
 }
 
@@ -411,7 +412,7 @@ export async function deletePaymentMethod(paymentMethodId: string) {
 
   await db.paymentMethod.delete({ where: { id: paymentMethodId } });
 
-  revalidatePath("/dashboard/billing");
+  revalidatePath(ROUTES.billing);
   return { success: true };
 }
 
@@ -429,7 +430,7 @@ export async function adminGetAllPlans() {
     include: { entitlements: true },
     orderBy: { sortOrder: "asc" },
   });
-  return JSON.parse(JSON.stringify(plans));
+  return serialize(plans);
 }
 
 /**
@@ -452,7 +453,7 @@ export async function adminGetAllSubscriptions(page = 1, pageSize = 50) {
   ]);
 
   return {
-    subscriptions: JSON.parse(JSON.stringify(subscriptions)),
+    subscriptions: serialize(subscriptions),
     total,
     page,
     pageSize,
@@ -525,7 +526,7 @@ export async function adminUpsertPlan(data: {
   });
 
   revalidatePath(ROUTES.adminPlans);
-  return JSON.parse(JSON.stringify(plan));
+  return serialize(plan);
 }
 
 /**
@@ -575,7 +576,7 @@ export async function adminCreateOverride(data: {
     organizationId: session.organizationId,
   });
 
-  return JSON.parse(JSON.stringify(override));
+  return serialize(override);
 }
 
 /**
@@ -599,7 +600,7 @@ export async function adminGetAllInvoices(page = 1, pageSize = 50) {
   ]);
 
   return {
-    invoices: JSON.parse(JSON.stringify(invoices)),
+    invoices: serialize(invoices),
     total,
     page,
     pageSize,

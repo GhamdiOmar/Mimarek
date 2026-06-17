@@ -3,9 +3,27 @@
 import { db, DocCategory } from "@repo/db";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { UTApi } from "uploadthing/server";
+import { ROUTES } from "../../lib/routes";
 import { requirePermission } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
 import { serialize } from "../../lib/serialize";
+
+// UploadThing serves every file at `<origin>/f/<fileKey>` (both the legacy
+// utfs.io CDN and the app-scoped *.ufs.sh CDN — see UPLOADTHING_ALLOWED_ORIGINS).
+// `UTApi.deleteFiles` in v7 takes the fileKey (NOT the URL — keyType only accepts
+// "fileKey" | "customId"), so we extract the last path segment of the stored URL.
+// Returns null for any non-UploadThing / malformed URL so the caller can skip the
+// remote delete without throwing.
+function uploadThingFileKeyFromUrl(raw: string): string | null {
+  try {
+    const segments = new URL(raw).pathname.split("/").filter(Boolean);
+    const key = segments[segments.length - 1];
+    return key && key.length > 0 ? decodeURIComponent(key) : null;
+  } catch {
+    return null;
+  }
+}
 
 // UploadThing CDN origins for this app (app ID: c5k2lwc5ws).
 // utfs.io  — legacy shared CDN (still serves files from v6 era and older uploads)
@@ -101,7 +119,7 @@ export async function registerFileInDb(data: {
     },
   });
 
-  revalidatePath("/dashboard/documents");
+  revalidatePath(ROUTES.documents);
   return document;
 }
 
@@ -141,9 +159,60 @@ export async function getDocuments(filters?: {
 export async function deleteDocument(documentId: string) {
   const session = await requirePermission("documents:delete");
 
+  // Fetch the org-scoped row first so we have (a) the stored URL to remove the
+  // remote object and (b) a before-snapshot for the audit log. The org filter is
+  // the access guard: a row from another org is simply not found.
+  const document = await db.document.findFirst({
+    where: { id: documentId, organizationId: session.organizationId },
+    select: { id: true, name: true, url: true, category: true, customerId: true, unitId: true },
+  });
+  if (!document) {
+    throw new Error(
+      "Document not found or you don't have access. Please verify it exists in your organization.",
+    );
+  }
+
+  // Delete the DB row (org-scoped — defense in depth alongside the find above).
   await db.document.delete({
     where: { id: documentId, organizationId: session.organizationId },
   });
 
-  revalidatePath("/dashboard/documents");
+  // Remove the remote stored object from UploadThing so a DB-row delete doesn't
+  // leak orphaned files in object storage. Best-effort: the row is already gone
+  // and the audit entry must still be written, so a remote-delete failure is
+  // logged but never thrown (e.g. transient UploadThing outage, already-deleted
+  // object). UTApi reads its credentials from the environment
+  // (UPLOADTHING_TOKEN; on this app the legacy UPLOADTHING_SECRET/APP_ID pair).
+  const fileKey = uploadThingFileKeyFromUrl(document.url);
+  if (fileKey) {
+    try {
+      await new UTApi().deleteFiles(fileKey);
+    } catch (error) {
+      console.error(
+        `[documents] Remote object delete failed for document ${document.id} (key ${fileKey}):`,
+        error,
+      );
+    }
+  }
+
+  // Audit the deletion (RED before-snapshot — id/name/category/links, never the
+  // raw URL beyond what's needed to trace the object).
+  logAuditEvent({
+    userId: session.userId,
+    userEmail: session.email,
+    userRole: session.role,
+    action: "DELETE",
+    resource: "Document",
+    resourceId: document.id,
+    organizationId: session.organizationId,
+    before: {
+      name: document.name,
+      category: document.category,
+      customerId: document.customerId,
+      unitId: document.unitId,
+      remoteFileKey: fileKey,
+    },
+  });
+
+  revalidatePath(ROUTES.documents);
 }

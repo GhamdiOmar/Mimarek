@@ -15,7 +15,7 @@ import {
   Loader2,
   MessageSquare,
 } from "lucide-react";
-import { Button, IconButton, AppBar, BottomSheet, Textarea, DirectionalIcon, EmptyState, Badge } from "@repo/ui";
+import { Button, IconButton, AppBar, BottomSheet, Textarea, SelectField, DirectionalIcon, EmptyState, Badge } from "@repo/ui";
 import { cn } from "@repo/ui/lib/utils";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -60,7 +60,7 @@ export default function TicketDetailPage() {
   const userRole = (session?.user as any)?.role ?? "USER";
   const userId = (session?.user as any)?.id;
   const isAdmin = hasPermission(userRole, "help:manage_tickets");
-  const { lang } = useLanguage();
+  const { t, lang } = useLanguage();
 
   const [ticket, setTicket] = React.useState<any>(null);
   const [loading, setLoading] = React.useState(true);
@@ -100,9 +100,7 @@ export default function TicketDetailPage() {
       await loadTicket();
     } catch (e: any) {
       toast.error(
-        lang === "ar"
-          ? "تعذّر إرسال الرد. يُرجى المحاولة مرة أخرى."
-          : "We couldn't send your reply. Please try again.",
+        t("تعذّر إرسال الرد. يُرجى المحاولة مرة أخرى.", "We couldn't send your reply. Please try again."),
       );
       console.error(e);
     }
@@ -116,9 +114,7 @@ export default function TicketDetailPage() {
       await loadTicket();
     } catch (e: any) {
       toast.error(
-        lang === "ar"
-          ? "تعذّر تحديث حالة التذكرة. يُرجى المحاولة مرة أخرى."
-          : "We couldn't update the ticket status. Please try again.",
+        t("تعذّر تحديث حالة التذكرة. يُرجى المحاولة مرة أخرى.", "We couldn't update the ticket status. Please try again."),
       );
       console.error(e);
     }
@@ -185,11 +181,11 @@ export default function TicketDetailPage() {
     return (
       <div className="p-6" dir={lang === "ar" ? "rtl" : "ltr"}>
         <div className="bg-destructive/10 border border-destructive/20 text-destructive p-4 rounded-xl text-center text-sm">
-          {error || (lang === "ar" ? "التذكرة غير موجودة" : "Ticket not found")}
+          {error || (t("التذكرة غير موجودة", "Ticket not found"))}
         </div>
         <div className="mt-4 text-center">
           <Link href="/dashboard/help" className="text-primary hover:underline text-sm">
-            {lang === "ar" ? "← العودة لمركز المساعدة" : "← Back to Help Center"}
+            {t("← العودة لمركز المساعدة", "← Back to Help Center")}
           </Link>
         </div>
       </div>
@@ -225,7 +221,7 @@ export default function TicketDetailPage() {
           isAdmin ? (
             <IconButton
               icon={MoreHorizontal}
-              aria-label={lang === "ar" ? "المزيد" : "More"}
+              aria-label={t("المزيد", "More")}
               onClick={() => setMobileActionsOpen(true)}
               variant="ghost"
               className="h-11 w-11 rounded-full"
@@ -273,7 +269,7 @@ export default function TicketDetailPage() {
         {/* Messages */}
         <div className="space-y-3">
           <h2 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-            {lang === "ar" ? "المحادثة" : "Conversation"}
+            {t("المحادثة", "Conversation")}
             {ticket.messages?.length > 0 && (
               <span className="ms-2 tabular-nums">({ticket.messages.length})</span>
             )}
@@ -283,11 +279,9 @@ export default function TicketDetailPage() {
             <EmptyState
               compact
               icon={<MessageSquare className="h-10 w-10" />}
-              title={lang === "ar" ? "لا توجد رسائل بعد" : "No messages yet"}
+              title={t("لا توجد رسائل بعد", "No messages yet")}
               description={
-                lang === "ar"
-                  ? "كن أول من يرد على هذه التذكرة."
-                  : "Be the first to reply to this ticket."
+                t("كن أول من يرد على هذه التذكرة.", "Be the first to reply to this ticket.")
               }
             />
           )}
@@ -319,7 +313,7 @@ export default function TicketDetailPage() {
                     </span>
                     {isStaff && (
                       <span className="inline-flex items-center rounded-full bg-info/15 text-info-strong px-1.5 py-0.5 text-[10px] font-semibold">
-                        {lang === "ar" ? "فريق الدعم" : "Staff"}
+                        {t("فريق الدعم", "Staff")}
                       </span>
                     )}
                   </div>
@@ -345,7 +339,7 @@ export default function TicketDetailPage() {
             <Textarea
               value={replyText}
               onChange={(e) => setReplyText(e.target.value)}
-              placeholder={lang === "ar" ? "اكتب ردك هنا..." : "Type your reply..."}
+              placeholder={t("اكتب ردك هنا...", "Type your reply...")}
               rows={1}
               className="flex-1 min-h-11 max-h-28 resize-none text-sm"
               onKeyDown={(e) => {
@@ -358,7 +352,7 @@ export default function TicketDetailPage() {
             />
             <Button
               type="submit"
-              aria-label={lang === "ar" ? "إرسال" : "Send"}
+              aria-label={t("إرسال", "Send")}
               disabled={!replyText.trim() || sending}
               className="h-11 w-11 p-0 shrink-0"
               style={{ display: "inline-flex" }}
@@ -373,9 +367,7 @@ export default function TicketDetailPage() {
         </form>
       ) : (
         <div className="fixed inset-x-0 bottom-[calc(theme(height.mobile-bottomnav)+env(safe-area-inset-bottom))] z-30 bg-card/95 backdrop-blur-md border-t border-border p-4 text-center text-sm text-muted-foreground">
-          {lang === "ar"
-            ? "هذه التذكرة مغلقة. لا يمكن إضافة ردود جديدة."
-            : "This ticket is closed. No new replies can be added."}
+          {t("هذه التذكرة مغلقة. لا يمكن إضافة ردود جديدة.", "This ticket is closed. No new replies can be added.")}
         </div>
       )}
 
@@ -384,7 +376,7 @@ export default function TicketDetailPage() {
         <BottomSheet
           open={mobileActionsOpen}
           onOpenChange={setMobileActionsOpen}
-          title={lang === "ar" ? "إجراءات التذكرة" : "Ticket Actions"}
+          title={t("إجراءات التذكرة", "Ticket Actions")}
         >
           <div className="space-y-2 pb-2">
             {STATUS_OPTIONS.map((opt) => {
@@ -416,7 +408,7 @@ export default function TicketDetailPage() {
             })}
             {updatingStatus && (
               <div className="text-center text-xs text-muted-foreground pt-2">
-                {lang === "ar" ? "جارٍ التحديث..." : "Updating..."}
+                {t("جارٍ التحديث...", "Updating...")}
               </div>
             )}
           </div>
@@ -434,7 +426,7 @@ export default function TicketDetailPage() {
           className="flex items-center gap-1 text-sm text-muted-foreground hover:text-primary transition-colors"
         >
           <DirectionalIcon icon={ChevronLeft} className="h-3.5 w-3.5" />
-          {lang === "ar" ? "مركز المساعدة" : "Help Center"}
+          {t("مركز المساعدة", "Help Center")}
         </Link>
       </div>
 
@@ -472,7 +464,7 @@ export default function TicketDetailPage() {
             {ticket.assignee && (
               <span className="flex items-center gap-1">
                 <ShieldCheck className="h-3 w-3" />
-                {lang === "ar" ? "المسؤول:" : "Assigned:"} {ticket.assignee.name ?? ticket.assignee.email}
+                {t("المسؤول:", "Assigned:")} {ticket.assignee.name ?? ticket.assignee.email}
               </span>
             )}
           </div>
@@ -489,9 +481,10 @@ export default function TicketDetailPage() {
         <div className="bg-card rounded-xl border border-border p-4">
           <div className="flex flex-wrap items-center gap-3">
             <span className="text-xs font-medium text-muted-foreground">
-              {lang === "ar" ? "إجراءات المسؤول:" : "Admin Actions:"}
+              {t("إجراءات المسؤول:", "Admin Actions:")}
             </span>
-            <select
+            <SelectField
+              aria-label={t("حالة التذكرة", "Ticket status")}
               className="text-xs border border-border rounded-lg px-3 py-1.5 bg-card focus:ring-1 focus:ring-primary/20 focus:border-primary"
               value={ticket.status}
               onChange={(e) => handleStatusChange(e.target.value)}
@@ -502,10 +495,10 @@ export default function TicketDetailPage() {
                   {lang === "ar" ? opt.label.ar : opt.label.en}
                 </option>
               ))}
-            </select>
+            </SelectField>
             {updatingStatus && (
               <span className="text-xs text-muted-foreground">
-                {lang === "ar" ? "جارٍ التحديث..." : "Updating..."}
+                {t("جارٍ التحديث...", "Updating...")}
               </span>
             )}
           </div>
@@ -516,7 +509,7 @@ export default function TicketDetailPage() {
       <div className="bg-card rounded-xl border border-border overflow-hidden">
         <div className="px-5 py-3 border-b border-border">
           <h2 className="text-sm font-semibold text-foreground">
-            {lang === "ar" ? "المحادثة" : "Conversation"}
+            {t("المحادثة", "Conversation")}
             {ticket.messages?.length > 0 && (
               <span className="text-xs font-normal text-muted-foreground ms-2">
                 ({ticket.messages.length})
@@ -530,11 +523,9 @@ export default function TicketDetailPage() {
             <EmptyState
               compact
               icon={<MessageSquare className="h-10 w-10" />}
-              title={lang === "ar" ? "لا توجد رسائل بعد" : "No messages yet"}
+              title={t("لا توجد رسائل بعد", "No messages yet")}
               description={
-                lang === "ar"
-                  ? "كن أول من يرد على هذه التذكرة."
-                  : "Be the first to reply to this ticket."
+                t("كن أول من يرد على هذه التذكرة.", "Be the first to reply to this ticket.")
               }
             />
           )}
@@ -548,7 +539,7 @@ export default function TicketDetailPage() {
                 key={msg.id}
                 className={cn(
                   "flex flex-col max-w-[85%]",
-                  isOwn ? (lang === "ar" ? "ms-auto" : "ms-auto") : ""
+                  isOwn ? (t("ms-auto", "ms-auto")) : ""
                 )}
               >
                 <div
@@ -567,7 +558,7 @@ export default function TicketDetailPage() {
                     </span>
                     {isStaff && (
                       <span className="text-[10px] bg-info/15 text-info-strong px-1.5 py-0.5 rounded-full font-medium">
-                        {lang === "ar" ? "فريق الدعم" : "Staff"}
+                        {t("فريق الدعم", "Staff")}
                       </span>
                     )}
                   </div>
@@ -589,7 +580,7 @@ export default function TicketDetailPage() {
               <textarea
                 className="flex-1 border border-border rounded-xl px-4 py-2.5 text-sm focus:ring-1 focus:ring-primary/20 focus:border-primary resize-none"
                 rows={2}
-                placeholder={lang === "ar" ? "اكتب ردك هنا..." : "Type your reply..."}
+                placeholder={t("اكتب ردك هنا...", "Type your reply...")}
                 value={replyText}
                 onChange={(e) => setReplyText(e.target.value)}
                 onKeyDown={(e) => {
@@ -604,24 +595,22 @@ export default function TicketDetailPage() {
                 className="self-end"
                
               >
-                <Send className={`h-4 w-4 ${lang === "ar" ? "rotate-180" : ""}`} />
+                <Send className={`h-4 w-4 ${t("rotate-180", "")}`} />
                 <span className="ms-1.5 text-sm">
                   {sending
-                    ? (lang === "ar" ? "إرسال..." : "Sending...")
-                    : (lang === "ar" ? "إرسال" : "Send")}
+                    ? (t("إرسال...", "Sending..."))
+                    : (t("إرسال", "Send"))}
                 </span>
               </Button>
             </div>
             <p className="text-[10px] text-muted-foreground mt-1.5">
-              {lang === "ar" ? "Ctrl+Enter للإرسال السريع" : "Ctrl+Enter to send"}
+              {t("Ctrl+Enter للإرسال السريع", "Ctrl+Enter to send")}
             </p>
           </div>
         ) : (
           <div className="p-4 border-t border-border text-center">
             <p className="text-sm text-muted-foreground">
-              {lang === "ar"
-                ? "هذه التذكرة مغلقة. لا يمكن إضافة ردود جديدة."
-                : "This ticket is closed. No new replies can be added."}
+              {t("هذه التذكرة مغلقة. لا يمكن إضافة ردود جديدة.", "This ticket is closed. No new replies can be added.")}
             </p>
           </div>
         )}

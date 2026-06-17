@@ -1,5 +1,6 @@
 import "server-only";
 import { db } from "@repo/db";
+import { serialize } from "../../../lib/serialize";
 
 /**
  * Date-range params shared by every admin-analytics server action.
@@ -10,9 +11,14 @@ export interface DateRangeParams {
   to: Date;
 }
 
-/** Render any structure (incl. Prisma Decimal) into a JSON-safe shape. */
+/**
+ * Render any structure (incl. Prisma Decimal) into a JSON-safe shape.
+ * Thin alias over the shared `serialize()` seam (lib/serialize.ts) — keep the
+ * `jsonSafe` name its admin-analytics callers already use, but route through
+ * the single seam rather than inlining JSON.parse(JSON.stringify(...)).
+ */
 export function jsonSafe<T>(value: T): T {
-  return JSON.parse(JSON.stringify(value)) as T;
+  return serialize(value);
 }
 
 /** Sum a Decimal-or-number array safely (Decimal serialises to string in JSON). */

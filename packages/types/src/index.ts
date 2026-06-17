@@ -3,7 +3,7 @@
  *
  * Consumed directly as source: `package.json` points `main`/`types` at
  * `./src/index.ts`, so no build step / tsconfig change is required for
- * `apps/web`, `apps/portal`, or `@repo/ui` to import these.
+ * `apps/web` or `@repo/ui` to import these.
  *
  * ─────────────────────────────────────────────────────────────────────────────
  * Journey Layer

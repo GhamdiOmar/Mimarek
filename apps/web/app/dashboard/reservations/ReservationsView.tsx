@@ -73,6 +73,7 @@ import {
   NextActionPanel,
   ProcessBlockerBanner,
   RelatedContextPanel,
+  HijriDatePicker,
 } from "@repo/ui";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -105,7 +106,7 @@ type Unit = { id: string; number: string; status: string; buildingId?: string };
 type ReservationsViewProps = { initialReservations: Reservation[] };
 
 export default function ReservationsView({ initialReservations }: ReservationsViewProps) {
-  const { lang, dir } = useLanguage();
+  const { t, lang, dir } = useLanguage();
   const { can } = usePermissions();
   const searchParams = useSearchParams();
   const prefillCustomerId = searchParams.get("customerId");
@@ -119,16 +120,16 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
       z.object({
         customerId: z
           .string()
-          .min(1, lang === "ar" ? "يرجى اختيار العميل" : "Customer is required"),
+          .min(1, t("يرجى اختيار العميل", "Customer is required")),
         unitId: z
           .string()
-          .min(1, lang === "ar" ? "يرجى اختيار الوحدة" : "Unit is required"),
+          .min(1, t("يرجى اختيار الوحدة", "Unit is required")),
         amount: z
-          .number({ invalid_type_error: lang === "ar" ? "أدخل قيمة صحيحة" : "Enter a valid amount" })
-          .positive(lang === "ar" ? "يجب أن تكون القيمة أكبر من صفر" : "Amount must be greater than zero"),
+          .number({ invalid_type_error: t("أدخل قيمة صحيحة", "Enter a valid amount") })
+          .positive(t("يجب أن تكون القيمة أكبر من صفر", "Amount must be greater than zero")),
         expiresAt: z
           .string()
-          .min(1, lang === "ar" ? "تاريخ الانتهاء مطلوب" : "Expiry date is required"),
+          .min(1, t("تاريخ الانتهاء مطلوب", "Expiry date is required")),
         notes: z.string().optional(),
       }),
     [lang],
@@ -212,9 +213,7 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
         "CANCELLED"
       );
       toast.success(
-        lang === "ar"
-          ? `تم إلغاء ${result.updated} حجز`
-          : `${result.updated} reservation(s) cancelled`
+        t(`تم إلغاء ${result.updated} حجز`, `${result.updated} reservation(s) cancelled`)
       );
       setBulkCancelOpen(false);
       setBulkSelected([]);
@@ -232,9 +231,7 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
     try {
       const result = await bulkDeleteReservations(bulkSelected.map((r) => r.id));
       toast.success(
-        lang === "ar"
-          ? `تم حذف ${result.deleted} حجز`
-          : `${result.deleted} reservation(s) deleted`
+        t(`تم حذف ${result.deleted} حجز`, `${result.deleted} reservation(s) deleted`)
       );
       setBulkDeleteOpen(false);
       setBulkSelected([]);
@@ -252,7 +249,7 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
     getReservations()
       .then((data) => setDeals(data as Reservation[]))
       .catch(() => {
-        const msg = lang === "ar" ? "تعذّر تحميل الحجوزات" : "Failed to load reservations";
+        const msg = t("تعذّر تحميل الحجوزات", "Failed to load reservations");
         setLoadError(msg);
         toast.error(msg);
       })
@@ -363,7 +360,7 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
         expiresAt: new Date(values.expiresAt),
       });
       trackEvent(AnalyticsEvent.ReservationCreated, { amount: values.amount });
-      toast.success(lang === "ar" ? "تم إنشاء الحجز بنجاح" : "Reservation created successfully");
+      toast.success(t("تم إنشاء الحجز بنجاح", "Reservation created successfully"));
       setCreateOpen(false);
       reset();
       setSelectedCustomerName("");
@@ -382,7 +379,7 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
     try {
       await updateReservationStatus(dealId, "CONFIRMED");
       trackEvent(AnalyticsEvent.ReservationConfirmed);
-      toast.success(lang === "ar" ? "تم تأكيد الحجز" : "Reservation confirmed");
+      toast.success(t("تم تأكيد الحجز", "Reservation confirmed"));
       loadDeals();
     } catch (err: unknown) {
       toast.error(sanitizeError(err, lang));
@@ -394,7 +391,7 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
     setCancelling(true);
     try {
       await updateReservationStatus(cancelDeal.id, "CANCELLED");
-      toast.success(lang === "ar" ? "تم إلغاء الحجز" : "Reservation cancelled");
+      toast.success(t("تم إلغاء الحجز", "Reservation cancelled"));
       setCancelDeal(null);
       loadDeals();
     } catch (err: unknown) {
@@ -435,18 +432,18 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
     }
     if (days === 0) {
       return {
-        label: lang === "ar" ? "ينتهي اليوم" : "Today",
+        label: t("ينتهي اليوم", "Today"),
         tone: "warning",
       };
     }
     if (days <= 3) {
       return {
-        label: lang === "ar" ? `${days} أيام` : `${days}d`,
+        label: t(`${days} أيام`, `${days}d`),
         tone: "warning",
       };
     }
     return {
-      label: lang === "ar" ? `${days} يوم` : `${days}d`,
+      label: t(`${days} يوم`, `${days}d`),
       tone: "success",
     };
   }
@@ -476,7 +473,7 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
       {
         accessorKey: "customer",
         id: "client",
-        header: lang === "ar" ? "العميل" : "Client",
+        header: t("العميل", "Client"),
         enableSorting: true,
         cell: ({ row }) => (
           <span className="font-medium">{row.original.customer.name}</span>
@@ -484,12 +481,12 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
       },
       {
         id: "property",
-        header: lang === "ar" ? "العقار" : "Property",
+        header: t("العقار", "Property"),
         enableSorting: false,
         cell: ({ row }) => (
           <div className="text-sm">
             <p className="font-medium">
-              {lang === "ar" ? "وحدة" : "Unit"} {row.original.unit.number}
+              {t("وحدة", "Unit")} {row.original.unit.number}
             </p>
             <p className="text-muted-foreground text-xs">
               {row.original.unit.buildingName ?? "—"}
@@ -499,7 +496,7 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
       },
       {
         accessorKey: "amount",
-        header: lang === "ar" ? "قيمة الحجز" : "Reservation Value",
+        header: t("قيمة الحجز", "Reservation Value"),
         enableSorting: true,
         meta: { numeric: true },
         cell: ({ row }) => (
@@ -508,7 +505,7 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
       },
       {
         accessorKey: "depositAmount",
-        header: lang === "ar" ? "العربون" : "Deposit",
+        header: t("العربون", "Deposit"),
         enableSorting: false,
         meta: { numeric: true },
         cell: ({ row }) =>
@@ -520,7 +517,7 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
       },
       {
         accessorKey: "status",
-        header: lang === "ar" ? "الحالة" : "Status",
+        header: t("الحالة", "Status"),
         enableSorting: true,
         cell: ({ row }) => (
           <Badge variant={STATUS_VARIANT[row.original.status] ?? "default"} size="sm">
@@ -532,7 +529,7 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
       },
       {
         accessorKey: "expiresAt",
-        header: lang === "ar" ? "تاريخ الانتهاء" : "Expiry Date",
+        header: t("تاريخ الانتهاء", "Expiry Date"),
         enableSorting: true,
         cell: ({ row }) => (
           <span className="text-sm text-muted-foreground tabular-nums">
@@ -554,7 +551,7 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
               {/* View */}
               <IconButton
                 icon={Eye}
-                aria-label={lang === "ar" ? "عرض التفاصيل" : "View Details"}
+                aria-label={t("عرض التفاصيل", "View Details")}
                 variant="ghost"
                 size="icon"
                 onClick={() => setDetailDeal(deal)}
@@ -564,7 +561,7 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
               {canWriteDeals && deal.status === "PENDING" && (
                 <IconButton
                   icon={CheckCircle}
-                  aria-label={lang === "ar" ? "تأكيد الحجز" : "Confirm Reservation"}
+                  aria-label={t("تأكيد الحجز", "Confirm Reservation")}
                   variant="ghost"
                   size="icon"
                   onClick={() => handleConfirmDeal(deal.id)}
@@ -576,7 +573,7 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
                 <Link href={`/dashboard/contracts?dealId=${deal.id}`} tabIndex={-1}>
                   <IconButton
                     icon={FileSignature}
-                    aria-label={lang === "ar" ? "تحويل لعقد" : "Convert to contract"}
+                    aria-label={t("تحويل لعقد", "Convert to contract")}
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8 text-primary"
@@ -588,7 +585,7 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
                 (deal.status === "PENDING" || deal.status === "CONFIRMED") && (
                   <IconButton
                     icon={Ban}
-                    aria-label={lang === "ar" ? "إلغاء الحجز" : "Cancel Reservation"}
+                    aria-label={t("إلغاء الحجز", "Cancel Reservation")}
                     variant="ghost"
                     size="icon"
                     onClick={() => setCancelDeal(deal)}
@@ -611,12 +608,12 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
       dir={lang === "ar" ? "rtl" : "ltr"}
     >
       <AppBar
-        title={lang === "ar" ? "الحجوزات" : "Reservations"}
+        title={t("الحجوزات", "Reservations")}
         lang={lang}
         trailing={
           <IconButton
             icon={Filter}
-            aria-label={lang === "ar" ? "تصفية" : "Filter"}
+            aria-label={t("تصفية", "Filter")}
             variant="ghost"
             onClick={() => setShowMobileFilters(true)}
             className="h-10 w-10 rounded-full"
@@ -634,9 +631,7 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={
-              lang === "ar"
-                ? "ابحث باسم العميل أو رقم الوحدة..."
-                : "Search by client or unit..."
+              t("ابحث باسم العميل أو رقم الوحدة...", "Search by client or unit...")
             }
             className="h-10 ps-9"
           />
@@ -645,24 +640,24 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
 
       <div className="grid grid-cols-2 gap-3 px-4 pt-3">
         <MobileKPICard
-          label={lang === "ar" ? "قيد الانتظار" : "Pending"}
+          label={t("قيد الانتظار", "Pending")}
           value={<span className="tabular-nums">{pendingCount}</span>}
           tone="amber"
         />
         <MobileKPICard
-          label={lang === "ar" ? "مؤكدة" : "Confirmed"}
+          label={t("مؤكدة", "Confirmed")}
           value={<span className="tabular-nums">{confirmedCount}</span>}
           tone="green"
         />
         <MobileKPICard
-          label={lang === "ar" ? "قيمة المنتهية" : "Expired Value"}
+          label={t("قيمة المنتهية", "Expired Value")}
           value={
             <SARAmount value={expiredValue} size={18} compact className="tabular-nums" />
           }
           tone="red"
         />
         <MobileKPICard
-          label={lang === "ar" ? "نسبة الفوز" : "Win Rate"}
+          label={t("نسبة الفوز", "Win Rate")}
           value={<span className="tabular-nums">{winRate}%</span>}
           tone="primary"
         />
@@ -689,32 +684,28 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
             <EmptyState
               variant="first-time"
               icon={<Handshake className="h-12 w-12" aria-hidden="true" />}
-              title={lang === "ar" ? "لا توجد حجوزات بعد" : "No reservations yet"}
+              title={t("لا توجد حجوزات بعد", "No reservations yet")}
               description={
-                lang === "ar"
-                  ? "أطلق عربون الحجز وتابع الحجز حتى التحويل إلى عقد."
-                  : "Reserve a unit and follow the reservation through to contract."
+                t("أطلق عربون الحجز وتابع الحجز حتى التحويل إلى عقد.", "Reserve a unit and follow the reservation through to contract.")
               }
               action={
                 canWriteDeals ? (
                   <Button size="sm" onClick={openCreate} style={{ display: "inline-flex" }}>
                     <Plus className="h-4 w-4 me-1.5" />
-                    {lang === "ar" ? "إنشاء حجز" : "Create reservation"}
+                    {t("إنشاء حجز", "Create reservation")}
                   </Button>
                 ) : undefined
               }
               helpHref="/dashboard/help#deals"
-              helpLabel={lang === "ar" ? "تعرّف على الحجوزات" : "Learn about reservations"}
+              helpLabel={t("تعرّف على الحجوزات", "Learn about reservations")}
             />
           ) : (
             <EmptyState
               variant="filtered"
               icon={<Search className="h-10 w-10" aria-hidden="true" />}
-              title={lang === "ar" ? "لا توجد نتائج مطابقة" : "No matching reservations"}
+              title={t("لا توجد نتائج مطابقة", "No matching reservations")}
               description={
-                lang === "ar"
-                  ? "جرّب تعديل الفلاتر أو البحث بكلمات أخرى."
-                  : "Try adjusting the filters or search terms."
+                t("جرّب تعديل الفلاتر أو البحث بكلمات أخرى.", "Try adjusting the filters or search terms.")
               }
               action={
                 <Button
@@ -726,7 +717,7 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
                   }}
                   style={{ display: "inline-flex" }}
                 >
-                  {lang === "ar" ? "مسح الفلاتر" : "Clear filters"}
+                  {t("مسح الفلاتر", "Clear filters")}
                 </Button>
               }
             />
@@ -759,7 +750,7 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
                   divider={idx !== filtered.length - 1}
                   title={deal.customer.name}
                   subtitle={[
-                    `${lang === "ar" ? "وحدة" : "Unit"} ${deal.unit.number}`,
+                    `${t("وحدة", "Unit")} ${deal.unit.number}`,
                     <SARAmount
                       key="amount"
                       value={Number(deal.amount)}
@@ -789,7 +780,7 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
       {canWriteDeals && (
         <FAB
           icon={Plus}
-          label={lang === "ar" ? "إنشاء حجز" : "Create reservation"}
+          label={t("إنشاء حجز", "Create reservation")}
           onClick={openCreate}
         />
       )}
@@ -797,7 +788,7 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
       <BottomSheet
         open={showMobileFilters}
         onOpenChange={setShowMobileFilters}
-        title={lang === "ar" ? "تصفية الحالة" : "Filter by status"}
+        title={t("تصفية الحالة", "Filter by status")}
         footer={
           <div className="flex items-center justify-between gap-2">
             <Button
@@ -805,13 +796,13 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
               style={{ display: "inline-flex" }}
               onClick={() => setStatusFilter("ALL")}
             >
-              {lang === "ar" ? "مسح" : "Reset"}
+              {t("مسح", "Reset")}
             </Button>
             <Button
               style={{ display: "inline-flex" }}
               onClick={() => setShowMobileFilters(false)}
             >
-              {lang === "ar" ? "تطبيق" : "Apply"}
+              {t("تطبيق", "Apply")}
             </Button>
           </div>
         }
@@ -839,11 +830,9 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
     <div className="hidden md:block">
     <div dir={dir} className="p-6 space-y-6">
       <PageIntro
-        title={lang === "ar" ? "الحجوزات" : "Reservations"}
+        title={t("الحجوزات", "Reservations")}
         description={
-          lang === "ar"
-            ? "إدارة الحجوزات النشطة وحجوزات العقارات"
-            : "Manage your active property reservations"
+          t("إدارة الحجوزات النشطة وحجوزات العقارات", "Manage your active property reservations")
         }
         actions={
           can("deals:write") ? (
@@ -853,7 +842,7 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
               className="gap-2"
             >
               <Plus className="w-4 h-4" />
-              {lang === "ar" ? "إنشاء حجز" : "Create Reservation"}
+              {t("إنشاء حجز", "Create Reservation")}
             </Button>
           ) : undefined
         }
@@ -862,22 +851,22 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard
-          label={lang === "ar" ? "إجمالي الحجوزات" : "Total Reservations"}
+          label={t("إجمالي الحجوزات", "Total Reservations")}
           value={String(total)}
           loading={loading}
         />
         <KPICard
-          label={lang === "ar" ? "نشطة" : "Active"}
+          label={t("نشطة", "Active")}
           value={String(active)}
           loading={loading}
         />
         <KPICard
-          label={lang === "ar" ? "مؤكدة" : "Confirmed"}
+          label={t("مؤكدة", "Confirmed")}
           value={String(confirmed)}
           loading={loading}
         />
         <KPICard
-          label={lang === "ar" ? "منتهية/ملغاة" : "Expired/Cancelled"}
+          label={t("منتهية/ملغاة", "Expired/Cancelled")}
           value={String(expired)}
           loading={loading}
         />
@@ -905,14 +894,14 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder={lang === "ar" ? "البحث باسم العميل أو رقم الوحدة" : "Search by client or unit number"}
+            placeholder={t("البحث باسم العميل أو رقم الوحدة", "Search by client or unit number")}
             className="ps-9"
           />
           {search && (
             <span className="absolute top-1/2 -translate-y-1/2 end-1">
               <IconButton
                 icon={X}
-                aria-label={lang === "ar" ? "مسح البحث" : "Clear search"}
+                aria-label={t("مسح البحث", "Clear search")}
                 variant="ghost"
                 size="icon"
                 onClick={() => setSearch("")}
@@ -930,11 +919,9 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
             <EmptyState
               variant="first-time"
               icon={<Handshake className="h-12 w-12" aria-hidden="true" />}
-              title={lang === "ar" ? "لا توجد حجوزات بعد" : "No reservations yet"}
+              title={t("لا توجد حجوزات بعد", "No reservations yet")}
               description={
-                lang === "ar"
-                  ? "أطلق عربون الحجز وتابع الحجز حتى التحويل إلى عقد."
-                  : "Reserve a unit and follow the reservation through to contract."
+                t("أطلق عربون الحجز وتابع الحجز حتى التحويل إلى عقد.", "Reserve a unit and follow the reservation through to contract.")
               }
               action={
                 canWriteDeals ? (
@@ -944,22 +931,20 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
                     className="gap-2"
                   >
                     <Plus className="h-[18px] w-[18px]" />
-                    {lang === "ar" ? "إنشاء حجز" : "Create reservation"}
+                    {t("إنشاء حجز", "Create reservation")}
                   </Button>
                 ) : undefined
               }
               helpHref="/dashboard/help#deals"
-              helpLabel={lang === "ar" ? "تعرّف على الحجوزات" : "Learn about reservations"}
+              helpLabel={t("تعرّف على الحجوزات", "Learn about reservations")}
             />
           ) : (
             <EmptyState
               variant="filtered"
               icon={<Search className="h-12 w-12" aria-hidden="true" />}
-              title={lang === "ar" ? "لا توجد نتائج مطابقة" : "No matching reservations"}
+              title={t("لا توجد نتائج مطابقة", "No matching reservations")}
               description={
-                lang === "ar"
-                  ? "جرّب تعديل الفلاتر أو البحث بكلمات أخرى."
-                  : "Try adjusting the filters or search terms."
+                t("جرّب تعديل الفلاتر أو البحث بكلمات أخرى.", "Try adjusting the filters or search terms.")
               }
               action={
                 <Button
@@ -971,7 +956,7 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
                   }}
                   style={{ display: "inline-flex" }}
                 >
-                  {lang === "ar" ? "مسح الفلاتر" : "Clear filters"}
+                  {t("مسح الفلاتر", "Clear filters")}
                 </Button>
               }
             />
@@ -1002,9 +987,7 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
                   }}
                 >
                   <Ban className="h-3.5 w-3.5" />
-                  {lang === "ar"
-                    ? `إلغاء (${selected.length})`
-                    : `Cancel selected (${selected.length})`}
+                  {t(`إلغاء (${selected.length})`, `Cancel selected (${selected.length})`)}
                 </Button>
               )}
               {can("deals:delete") && (
@@ -1022,9 +1005,7 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
                   {bulkWorking
                     ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     : <Trash2 className="h-3.5 w-3.5" />}
-                  {lang === "ar"
-                    ? `حذف (${selected.length})`
-                    : `Delete (${selected.length})`}
+                  {t(`حذف (${selected.length})`, `Delete (${selected.length})`)}
                 </Button>
               )}
             </div>
@@ -1034,12 +1015,12 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
           onExport={({ rows, columns: exportColumns }) =>
             exportToExcel({
               filename: `reservations-${new Date().toISOString().slice(0, 10)}`,
-              title: lang === "ar" ? "الحجوزات" : "Reservations",
+              title: t("الحجوزات", "Reservations"),
               lang,
               columns: exportColumns.map((c) => ({ header: c.header, key: c.id })),
               data: rows.map((d) => ({
                 client: d.customer.name,
-                property: `${lang === "ar" ? "وحدة" : "Unit"} ${d.unit.number}${d.unit.buildingName ? ` — ${d.unit.buildingName}` : ""}`,
+                property: `${t("وحدة", "Unit")} ${d.unit.number}${d.unit.buildingName ? ` — ${d.unit.buildingName}` : ""}`,
                 amount: SAR(d.amount),
                 depositAmount: d.depositAmount ? SAR(d.depositAmount) : "—",
                 status:
@@ -1086,7 +1067,7 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
                 divider={false}
                 title={deal.customer.name}
                 subtitle={[
-                  `${lang === "ar" ? "وحدة" : "Unit"} ${deal.unit.number}`,
+                  `${t("وحدة", "Unit")} ${deal.unit.number}`,
                   <SARAmount
                     key="amount"
                     value={Number(deal.amount)}
@@ -1109,11 +1090,9 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
               />
             );
           }}
-          emptyTitle={lang === "ar" ? "لا توجد نتائج مطابقة" : "No matching reservations"}
+          emptyTitle={t("لا توجد نتائج مطابقة", "No matching reservations")}
           emptyDescription={
-            lang === "ar"
-              ? "جرّب تعديل الفلاتر أو البحث بكلمات أخرى."
-              : "Try adjusting the filters or search terms."
+            t("جرّب تعديل الفلاتر أو البحث بكلمات أخرى.", "Try adjusting the filters or search terms.")
           }
         />
       )}
@@ -1122,7 +1101,7 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
       <ResponsiveDialog
         open={createOpen}
         onOpenChange={setCreateOpen}
-        title={lang === "ar" ? "إنشاء حجز جديد" : "Create New Reservation"}
+        title={t("إنشاء حجز جديد", "Create New Reservation")}
         contentClassName="sm:max-w-[640px]"
         footer={
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
@@ -1131,7 +1110,7 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
               onClick={() => setCreateOpen(false)}
               style={{ display: "inline-flex" }}
             >
-              {lang === "ar" ? "إلغاء" : "Cancel"}
+              {t("إلغاء", "Cancel")}
             </Button>
             <Button
               type="submit"
@@ -1141,7 +1120,7 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
               className="gap-2"
             >
               {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
-              {lang === "ar" ? "إنشاء الحجز" : "Create Reservation"}
+              {t("إنشاء الحجز", "Create Reservation")}
             </Button>
           </div>
         }
@@ -1153,9 +1132,7 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
         >
           {/* Required fields legend */}
           <p className="text-caption text-muted-foreground text-xs">
-            {lang === "ar"
-              ? "الحقول المطلوبة معلّمة بـ *"
-              : "Required fields marked with *"}
+            {t("الحقول المطلوبة معلّمة بـ *", "Required fields marked with *")}
           </p>
 
           {/* Customer search */}
@@ -1165,7 +1142,7 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
             render={({ field, fieldState }) => (
               <div className="space-y-1">
                 <label className="text-sm font-medium text-foreground">
-                  {lang === "ar" ? "العميل" : "Customer"} *
+                  {t("العميل", "Customer")} *
                 </label>
                 <div className="relative">
                   <Input
@@ -1177,7 +1154,7 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
                       field.onChange("");
                     }}
                     onBlur={field.onBlur}
-                    placeholder={lang === "ar" ? "ابحث عن العميل..." : "Search customer..."}
+                    placeholder={t("ابحث عن العميل...", "Search customer...")}
                   />
                   {customerSearch && !field.value && filteredCustomers.length > 0 && (
                     <div className="absolute z-10 top-full mt-1 w-full bg-popover border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
@@ -1217,7 +1194,7 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
             render={({ field, fieldState }) => (
               <div className="space-y-1">
                 <label className="text-sm font-medium text-foreground">
-                  {lang === "ar" ? "الوحدة" : "Unit"} *
+                  {t("الوحدة", "Unit")} *
                 </label>
                 <div className="relative">
                   <Input
@@ -1229,7 +1206,7 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
                       field.onChange("");
                     }}
                     onBlur={field.onBlur}
-                    placeholder={lang === "ar" ? "ابحث عن وحدة متاحة..." : "Search available unit..."}
+                    placeholder={t("ابحث عن وحدة متاحة...", "Search available unit...")}
                   />
                   {unitSearch && !field.value && filteredUnits.length > 0 && (
                     <div className="absolute z-10 top-full mt-1 w-full bg-popover border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
@@ -1247,7 +1224,7 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
                           className="w-full justify-start rounded-none px-3 py-2 text-sm font-normal"
                           style={{ display: "flex" }}
                         >
-                          {lang === "ar" ? "وحدة" : "Unit"} {u.number}
+                          {t("وحدة", "Unit")} {u.number}
                         </Button>
                       ))}
                     </div>
@@ -1269,7 +1246,7 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
             render={({ field, fieldState }) => (
               <div className="space-y-1">
                 <label className="text-sm font-medium text-foreground">
-                  {lang === "ar" ? "قيمة الحجز (ريال)" : "Reservation Amount (SAR)"} *
+                  {t("قيمة الحجز (ريال)", "Reservation Amount (SAR)")} *
                 </label>
                 <SARAmountInput
                   value={field.value ?? null}
@@ -1295,15 +1272,14 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
             render={({ field, fieldState }) => (
               <div className="space-y-1">
                 <label className="text-sm font-medium text-foreground">
-                  {lang === "ar" ? "تاريخ الانتهاء" : "Expiry Date"} *
+                  {t("تاريخ الانتهاء", "Expiry Date")} *
                 </label>
-                <Input
-                  type="date"
-                  value={field.value}
-                  onChange={field.onChange}
-                  onBlur={field.onBlur}
-                  aria-invalid={!!fieldState.error}
-                  min={new Date().toISOString().split("T")[0]}
+                <HijriDatePicker
+                  locale={lang === "ar" ? "ar" : "en"}
+                  value={field.value ? new Date(field.value) : null}
+                  onChange={(d) =>
+                    field.onChange(d ? d.toISOString().slice(0, 10) : "")
+                  }
                 />
                 {fieldState.error && (
                   <p className="text-caption text-destructive mt-1 text-xs">
@@ -1321,14 +1297,14 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
             render={({ field }) => (
               <div className="space-y-1">
                 <label className="text-sm font-medium text-foreground">
-                  {lang === "ar" ? "ملاحظات" : "Notes"}
+                  {t("ملاحظات", "Notes")}
                 </label>
                 <textarea
                   value={field.value ?? ""}
                   onChange={field.onChange}
                   onBlur={field.onBlur}
                   rows={3}
-                  placeholder={lang === "ar" ? "أي ملاحظات إضافية..." : "Any additional notes..."}
+                  placeholder={t("أي ملاحظات إضافية...", "Any additional notes...")}
                   className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]"
                 />
               </div>
@@ -1341,7 +1317,7 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
       <ResponsiveDialog
         open={!!detailDeal}
         onOpenChange={(open) => !open && setDetailDeal(null)}
-        title={lang === "ar" ? "تفاصيل الحجز" : "Reservation Details"}
+        title={t("تفاصيل الحجز", "Reservation Details")}
         footer={
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <Button
@@ -1349,7 +1325,7 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
               onClick={() => setDetailDeal(null)}
               style={{ display: "inline-flex" }}
             >
-              {lang === "ar" ? "إغلاق" : "Close"}
+              {t("إغلاق", "Close")}
             </Button>
           </div>
         }
@@ -1358,41 +1334,41 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
           <div className="space-y-3 py-2 text-sm">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <p className="text-muted-foreground text-xs">{lang === "ar" ? "العميل" : "Client"}</p>
+                  <p className="text-muted-foreground text-xs">{t("العميل", "Client")}</p>
                   <p className="font-medium">{detailDeal.customer.name}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground text-xs">{lang === "ar" ? "الوحدة" : "Unit"}</p>
+                  <p className="text-muted-foreground text-xs">{t("الوحدة", "Unit")}</p>
                   <p className="font-medium">{detailDeal.unit.number}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground text-xs">{lang === "ar" ? "قيمة الحجز" : "Reservation Value"}</p>
+                  <p className="text-muted-foreground text-xs">{t("قيمة الحجز", "Reservation Value")}</p>
                   <p className="font-medium">{SAR(detailDeal.amount)}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground text-xs">{lang === "ar" ? "العربون" : "Deposit"}</p>
+                  <p className="text-muted-foreground text-xs">{t("العربون", "Deposit")}</p>
                   <p className="font-medium">
                     {detailDeal.depositAmount ? SAR(detailDeal.depositAmount) : "—"}
                   </p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground text-xs">{lang === "ar" ? "الحالة" : "Status"}</p>
+                  <p className="text-muted-foreground text-xs">{t("الحالة", "Status")}</p>
                   <Badge variant={STATUS_VARIANT[detailDeal.status] ?? "default"} size="sm">
                     {lang === "ar" ? (STATUS_LABELS[detailDeal.status]?.ar ?? detailDeal.status) : (STATUS_LABELS[detailDeal.status]?.en ?? detailDeal.status)}
                   </Badge>
                 </div>
                 <div>
-                  <p className="text-muted-foreground text-xs">{lang === "ar" ? "تاريخ الانتهاء" : "Expiry Date"}</p>
+                  <p className="text-muted-foreground text-xs">{t("تاريخ الانتهاء", "Expiry Date")}</p>
                   <p className="font-medium">
                     {new Date(detailDeal.expiresAt).toLocaleDateString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-SA")}
                   </p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground text-xs">{lang === "ar" ? "المبنى" : "Building"}</p>
+                  <p className="text-muted-foreground text-xs">{t("المبنى", "Building")}</p>
                   <p className="font-medium">{detailDeal.unit.buildingName ?? "—"}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground text-xs">{lang === "ar" ? "تاريخ الإنشاء" : "Created"}</p>
+                  <p className="text-muted-foreground text-xs">{t("تاريخ الإنشاء", "Created")}</p>
                   <p className="font-medium">
                     {new Date(detailDeal.createdAt).toLocaleDateString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-SA")}
                   </p>
@@ -1403,13 +1379,13 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
               {journeyLoading && (
                 <div className="flex items-center gap-2 py-2 text-xs text-muted-foreground">
                   <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
-                  {lang === "ar" ? "جارٍ تحميل المسار..." : "Loading journey..."}
+                  {t("جارٍ تحميل المسار...", "Loading journey...")}
                 </div>
               )}
               {!journeyLoading && journey && (
                 <div className="space-y-3 border-t border-border pt-3">
                   <h4 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                    {lang === "ar" ? "المسار" : "Journey"}
+                    {t("المسار", "Journey")}
                   </h4>
                   {journey.blockers.length > 0 && (
                     <ProcessBlockerBanner blockers={journey.blockers} lang={lang} />
@@ -1417,7 +1393,7 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
                   <LifecycleRail
                     stages={journey.stages}
                     lang={lang}
-                    ariaLabel={lang === "ar" ? "مراحل الحجز" : "Reservation lifecycle"}
+                    ariaLabel={t("مراحل الحجز", "Reservation lifecycle")}
                   />
                   <NextActionPanel actions={journey.nextActions} lang={lang} />
                   {journey.related.length > 0 && (
@@ -1430,9 +1406,7 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
                         className="h-auto p-0 text-xs"
                         style={{ display: "inline-flex" }}
                       >
-                        {lang === "ar"
-                          ? `السجلات المرتبطة (${journey.related.length})`
-                          : `Related records (${journey.related.length})`}
+                        {t(`السجلات المرتبطة (${journey.related.length})`, `Related records (${journey.related.length})`)}
                       </Button>
                       <RelatedContextPanel
                         open={journeyRelatedOpen}
@@ -1452,7 +1426,7 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
       <ResponsiveDialog
         open={!!cancelDeal}
         onOpenChange={(open) => !open && setCancelDeal(null)}
-        title={lang === "ar" ? "تأكيد الإلغاء" : "Confirm Cancellation"}
+        title={t("تأكيد الإلغاء", "Confirm Cancellation")}
         footer={
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <Button
@@ -1460,7 +1434,7 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
               onClick={() => setCancelDeal(null)}
               style={{ display: "inline-flex" }}
             >
-              {lang === "ar" ? "تراجع" : "Go Back"}
+              {t("تراجع", "Go Back")}
             </Button>
             <Button
               variant="destructive"
@@ -1470,15 +1444,13 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
               className="gap-2"
             >
               {cancelling && <Loader2 className="w-4 h-4 animate-spin" />}
-              {lang === "ar" ? "إلغاء الحجز" : "Cancel Reservation"}
+              {t("إلغاء الحجز", "Cancel Reservation")}
             </Button>
           </div>
         }
       >
         <p className="text-sm text-muted-foreground py-2">
-          {lang === "ar"
-            ? `هل أنت متأكد من إلغاء الحجز الخاص بـ ${cancelDeal?.customer.name}؟ سيتم تحرير الوحدة وإتاحتها مجدداً.`
-            : `Are you sure you want to cancel the reservation for ${cancelDeal?.customer.name}? The unit will be released and made available again.`}
+          {t(`هل أنت متأكد من إلغاء الحجز الخاص بـ ${cancelDeal?.customer.name}؟ سيتم تحرير الوحدة وإتاحتها مجدداً.`, `Are you sure you want to cancel the reservation for ${cancelDeal?.customer.name}? The unit will be released and made available again.`)}
         </p>
       </ResponsiveDialog>
     </div>
@@ -1489,17 +1461,13 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
       open={bulkCancelOpen}
       onOpenChange={setBulkCancelOpen}
       title={
-        lang === "ar"
-          ? `إلغاء ${bulkSelected.length} حجز`
-          : `Cancel ${bulkSelected.length} reservation(s)`
+        t(`إلغاء ${bulkSelected.length} حجز`, `Cancel ${bulkSelected.length} reservation(s)`)
       }
       description={
-        lang === "ar"
-          ? `سيتم إلغاء ${bulkSelected.length} حجز وتحرير الوحدات المرتبطة بها. الحجوزات المنتهية أو الملغاة بالفعل لن تتأثر.`
-          : `${bulkSelected.length} reservation(s) will be cancelled and their units released. Already expired or cancelled reservations will be skipped.`
+        t(`سيتم إلغاء ${bulkSelected.length} حجز وتحرير الوحدات المرتبطة بها. الحجوزات المنتهية أو الملغاة بالفعل لن تتأثر.`, `${bulkSelected.length} reservation(s) will be cancelled and their units released. Already expired or cancelled reservations will be skipped.`)
       }
-      confirmLabel={lang === "ar" ? "إلغاء الحجوزات" : "Cancel reservations"}
-      cancelLabel={lang === "ar" ? "تراجع" : "Go back"}
+      confirmLabel={t("إلغاء الحجوزات", "Cancel reservations")}
+      cancelLabel={t("تراجع", "Go back")}
       onConfirm={handleBulkCancel}
     />
 
@@ -1508,17 +1476,13 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
       open={bulkDeleteOpen}
       onOpenChange={setBulkDeleteOpen}
       title={
-        lang === "ar"
-          ? `حذف ${bulkSelected.length} حجز`
-          : `Delete ${bulkSelected.length} reservation(s)`
+        t(`حذف ${bulkSelected.length} حجز`, `Delete ${bulkSelected.length} reservation(s)`)
       }
       description={
-        lang === "ar"
-          ? `سيتم حذف ${bulkSelected.length} حجز نهائياً. لا يمكن التراجع عن هذه العملية.`
-          : `${bulkSelected.length} reservation(s) will be permanently deleted. This action cannot be undone.`
+        t(`سيتم حذف ${bulkSelected.length} حجز نهائياً. لا يمكن التراجع عن هذه العملية.`, `${bulkSelected.length} reservation(s) will be permanently deleted. This action cannot be undone.`)
       }
-      confirmLabel={lang === "ar" ? "حذف" : "Delete"}
-      cancelLabel={lang === "ar" ? "تراجع" : "Go back"}
+      confirmLabel={t("حذف", "Delete")}
+      cancelLabel={t("تراجع", "Go back")}
       onConfirm={handleBulkDelete}
       variant="destructive"
     />

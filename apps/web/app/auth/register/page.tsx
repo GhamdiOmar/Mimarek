@@ -9,6 +9,7 @@ import { cn } from "@repo/ui/lib/utils";
 import { MimaricLogo } from "../../../components/brand/MimaricLogo";
 import { ThemeToggle } from "../../../components/ThemeToggle";
 import { PasswordStrengthHint } from "../../../components/PasswordStrengthHint";
+import { TurnstileWidget } from "../../../components/TurnstileWidget";
 import { registerUser } from "../../actions/auth";
 
 export default function RegisterPage() {
@@ -21,13 +22,19 @@ export default function RegisterPage() {
   const [error, setError] = React.useState<string | null>(null);
   const [agreed, setAgreed] = React.useState(false);
   const [showPassword, setShowPassword] = React.useState(false);
+  const [captchaToken, setCaptchaToken] = React.useState<string | null>(null);
   const router = useRouter();
+
+  // Turnstile is active only when a site key is configured. When unset (local /
+  // undeployed) the widget renders nothing and we must NOT gate submit on a token.
+  const captchaRequired = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
+  const captchaSatisfied = !captchaRequired || Boolean(captchaToken);
 
   const handleRegister = async () => {
     setLoading(true);
     setError(null);
     try {
-      const result = await registerUser({ name, email, password, accountType: userType });
+      const result = await registerUser({ name, email, password, accountType: userType, captchaToken: captchaToken ?? undefined });
       if (result.error) {
         if (result.error === "EMAIL_EXISTS") {
           setError(lang === "ar" ? "هذا البريد الإلكتروني مسجل بالفعل." : "This email is already registered.");
@@ -35,6 +42,9 @@ export default function RegisterPage() {
           setError(result.details.map((e: any) => e[lang]).join(" "));
         } else if (result.error === "RATE_LIMITED") {
           setError(lang === "ar" ? "محاولات تسجيل كثيرة. يرجى الانتظار بضع دقائق والمحاولة مجدداً." : "Too many sign-up attempts. Please wait a few minutes and try again.");
+        } else if (result.error === "CAPTCHA_FAILED") {
+          setCaptchaToken(null);
+          setError(lang === "ar" ? "فشل التحقق من أنك لست روبوتاً. يرجى إعادة المحاولة." : "We couldn't verify you're human. Please try again.");
         } else {
           setError(lang === "ar" ? "حدث خطأ." : "An error occurred.");
         }
@@ -211,10 +221,17 @@ export default function RegisterPage() {
                 </label>
               </div>
 
+              <TurnstileWidget
+                lang={lang}
+                onVerify={(token) => setCaptchaToken(token)}
+                onExpire={() => setCaptchaToken(null)}
+                onError={() => setCaptchaToken(null)}
+              />
+
               <Button
                 className="w-full"
                 onClick={handleRegister}
-                disabled={loading || !name || !email || !password || !agreed}
+                disabled={loading || !name || !email || !password || !agreed || !captchaSatisfied}
               >
                 {loading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />

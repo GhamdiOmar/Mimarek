@@ -40,6 +40,7 @@ import {
   SARAmount,
   SARAmountInput,
   HijriDatePicker,
+  SelectField,
   StatusBadge,
   Skeleton,
   BottomSheet,
@@ -112,7 +113,7 @@ type Unit = { id: string; number: string; status: string };
 type ContractsViewProps = { initialContracts: Contract[] };
 
 export default function ContractsView({ initialContracts }: ContractsViewProps) {
-  const { lang, dir } = useLanguage();
+  const { t, lang, dir } = useLanguage();
   const { can } = usePermissions();
   const searchParams = useSearchParams();
   const prefillDealId = searchParams.get("dealId");
@@ -159,11 +160,11 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
   const saleSchema = React.useMemo(
     () =>
       z.object({
-        customerId: z.string().min(1, lang === "ar" ? "العميل مطلوب" : "Customer is required"),
-        unitId: z.string().min(1, lang === "ar" ? "الوحدة مطلوبة" : "Unit is required"),
+        customerId: z.string().min(1, t("العميل مطلوب", "Customer is required")),
+        unitId: z.string().min(1, t("الوحدة مطلوبة", "Unit is required")),
         amount: z
-          .number({ invalid_type_error: lang === "ar" ? "المبلغ مطلوب" : "Amount is required" })
-          .positive(lang === "ar" ? "المبلغ يجب أن يكون أكبر من صفر" : "Amount must be greater than zero"),
+          .number({ invalid_type_error: t("المبلغ مطلوب", "Amount is required") })
+          .positive(t("المبلغ يجب أن يكون أكبر من صفر", "Amount must be greater than zero")),
         notes: z.string().optional(),
       }),
     [lang],
@@ -173,20 +174,20 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
     () =>
       z
         .object({
-          customerId: z.string().min(1, lang === "ar" ? "المستأجر مطلوب" : "Customer is required"),
-          unitId: z.string().min(1, lang === "ar" ? "الوحدة مطلوبة" : "Unit is required"),
-          startDate: z.string().min(1, lang === "ar" ? "تاريخ البداية مطلوب" : "Start date is required"),
-          endDate: z.string().min(1, lang === "ar" ? "تاريخ النهاية مطلوب" : "End date is required"),
+          customerId: z.string().min(1, t("المستأجر مطلوب", "Customer is required")),
+          unitId: z.string().min(1, t("الوحدة مطلوبة", "Unit is required")),
+          startDate: z.string().min(1, t("تاريخ البداية مطلوب", "Start date is required")),
+          endDate: z.string().min(1, t("تاريخ النهاية مطلوب", "End date is required")),
           amount: z
-            .number({ invalid_type_error: lang === "ar" ? "المبلغ مطلوب" : "Amount is required" })
-            .positive(lang === "ar" ? "المبلغ يجب أن يكون أكبر من صفر" : "Amount must be greater than zero"),
+            .number({ invalid_type_error: t("المبلغ مطلوب", "Amount is required") })
+            .positive(t("المبلغ يجب أن يكون أكبر من صفر", "Amount must be greater than zero")),
           paymentFrequency: z.string().min(1),
           notes: z.string().optional(),
         })
         .refine(
           (d) => !d.startDate || !d.endDate || d.endDate > d.startDate,
           {
-            message: lang === "ar" ? "تاريخ النهاية يجب أن يكون بعد تاريخ البداية" : "End date must be after start date",
+            message: t("تاريخ النهاية يجب أن يكون بعد تاريخ البداية", "End date must be after start date"),
             path: ["endDate"],
           },
         ),
@@ -272,7 +273,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
     getContracts()
       .then((data) => setAllContracts(data as Contract[]))
       .catch(() => {
-        const msg = lang === "ar" ? "تعذّر تحميل العقود" : "Failed to load contracts";
+        const msg = t("تعذّر تحميل العقود", "Failed to load contracts");
         setLoadError(msg);
         toast.error(msg);
       })
@@ -300,7 +301,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
     try {
       await updateContractStatus(contractId, "SIGNED");
       trackEvent(AnalyticsEvent.ContractSigned);
-      toast.success(lang === "ar" ? "تم توقيع العقد بنجاح" : "Contract signed successfully");
+      toast.success(t("تم توقيع العقد بنجاح", "Contract signed successfully"));
       loadContracts();
     } catch (err) {
       toast.error(sanitizeError(err, lang));
@@ -435,7 +436,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
           amount: values.amount,
           notes: values.notes || undefined,
         });
-        toast.success(lang === "ar" ? "تم تحديث عقد البيع بنجاح" : "Sale contract updated successfully");
+        toast.success(t("تم تحديث عقد البيع بنجاح", "Sale contract updated successfully"));
       } else {
         await createContract({
           customerId: values.customerId,
@@ -445,7 +446,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
           notes: values.notes || undefined,
         });
         trackEvent(AnalyticsEvent.ContractCreated, { contract_type: "SALE", amount: values.amount });
-        toast.success(lang === "ar" ? "تم إنشاء عقد البيع بنجاح" : "Sale contract created successfully");
+        toast.success(t("تم إنشاء عقد البيع بنجاح", "Sale contract created successfully"));
       }
       setSaleModalOpen(false);
       setEditingContractId(null);
@@ -476,7 +477,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
           paymentFrequency: values.paymentFrequency,
           notes: values.notes || undefined,
         });
-        toast.success(lang === "ar" ? "تم تحديث عقد الإيجار بنجاح" : "Lease contract updated successfully");
+        toast.success(t("تم تحديث عقد الإيجار بنجاح", "Lease contract updated successfully"));
       } else {
         await createContract({
           customerId: values.customerId,
@@ -489,7 +490,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
           notes: values.notes || undefined,
         });
         trackEvent(AnalyticsEvent.ContractCreated, { contract_type: "LEASE", amount: values.amount });
-        toast.success(lang === "ar" ? "تم إنشاء عقد الإيجار بنجاح" : "Lease contract created successfully");
+        toast.success(t("تم إنشاء عقد الإيجار بنجاح", "Lease contract created successfully"));
       }
       setLeaseModalOpen(false);
       setEditingContractId(null);
@@ -550,8 +551,8 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
       const res = await bulkUpdateContractStatus(ids, target);
       const verb =
         target === "SENT"
-          ? lang === "ar" ? "إرسال" : "sent"
-          : lang === "ar" ? "إلغاء" : "cancelled";
+          ? t("إرسال", "sent")
+          : t("إلغاء", "cancelled");
       if (lang === "ar") {
         toast.success(
           res.skippedCount > 0
@@ -581,9 +582,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
     try {
       const res = await bulkDeleteContracts(bulkDeleteIds);
       toast.success(
-        lang === "ar"
-          ? `تم حذف ${res.deletedCount} عقد`
-          : `${res.deletedCount} contract(s) deleted`,
+        t(`تم حذف ${res.deletedCount} عقد`, `${res.deletedCount} contract(s) deleted`),
       );
       loadContracts();
     } catch (err) {
@@ -607,7 +606,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
           className="gap-1.5"
         >
           <Send className="h-3.5 w-3.5" />
-          {lang === "ar" ? "إرسال المحدد" : "Send selected"}
+          {t("إرسال المحدد", "Send selected")}
         </Button>
         <Button
           variant="subtle"
@@ -617,7 +616,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
           className="gap-1.5"
         >
           <Ban className="h-3.5 w-3.5" />
-          {lang === "ar" ? "إلغاء المحدد" : "Cancel selected"}
+          {t("إلغاء المحدد", "Cancel selected")}
         </Button>
         {can("contracts:delete") && (
           <Button
@@ -627,16 +626,14 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
             disabled={!allDraft}
             title={
               !allDraft
-                ? lang === "ar"
-                  ? "يمكن حذف المسودات فقط"
-                  : "Only draft contracts can be deleted"
+                ? t("يمكن حذف المسودات فقط", "Only draft contracts can be deleted")
                 : undefined
             }
             style={{ display: "inline-flex" }}
             className="gap-1.5 text-destructive"
           >
             <Trash2 className="h-3.5 w-3.5" />
-            {lang === "ar" ? "حذف المحدد" : "Delete selected"}
+            {t("حذف المحدد", "Delete selected")}
           </Button>
         )}
       </div>
@@ -647,7 +644,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
   const saleColumns: ColumnDef<Contract>[] = [
     {
       accessorKey: "contractNumber",
-      header: lang === "ar" ? "رقم العقد" : "Contract #",
+      header: t("رقم العقد", "Contract #"),
       cell: ({ row }) => (
         <span className="font-mono text-xs text-muted-foreground">
           {row.original.contractNumber ?? "—"}
@@ -656,19 +653,19 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
     },
     {
       accessorKey: "customer.name",
-      header: lang === "ar" ? "العميل" : "Client",
+      header: t("العميل", "Client"),
       cell: ({ row }) => (
         <span className="font-medium">{row.original.customer.name}</span>
       ),
     },
     {
       id: "property",
-      header: lang === "ar" ? "العقار" : "Property",
+      header: t("العقار", "Property"),
       enableSorting: false,
       cell: ({ row }) => (
         <div className="text-sm">
           <p className="font-medium">
-            {lang === "ar" ? "وحدة" : "Unit"} {row.original.unit.number}
+            {t("وحدة", "Unit")} {row.original.unit.number}
           </p>
           <p className="text-muted-foreground text-xs">
             {(row.original.unit as any).buildingName ?? (row.original.unit as any).city ?? "—"}
@@ -678,13 +675,13 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
     },
     {
       accessorKey: "amount",
-      header: lang === "ar" ? "المبلغ" : "Amount (SAR)",
+      header: t("المبلغ", "Amount (SAR)"),
       meta: { numeric: true },
       cell: ({ row }) => SAR(Number(row.original.amount)),
     },
     {
       accessorKey: "status",
-      header: lang === "ar" ? "الحالة" : "Status",
+      header: t("الحالة", "Status"),
       cell: ({ row }) => (
         <Badge variant={CONTRACT_STATUS_VARIANT[row.original.status] ?? "default"} size="sm">
           {lang === "ar"
@@ -695,7 +692,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
     },
     {
       accessorKey: "signedAt",
-      header: lang === "ar" ? "تاريخ التوقيع" : "Signed Date",
+      header: t("تاريخ التوقيع", "Signed Date"),
       cell: ({ row }) =>
         row.original.signedAt ? (
           <span className="text-sm text-muted-foreground">
@@ -716,7 +713,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
           <div className="flex items-center justify-end gap-1">
             <IconButton
               icon={Eye}
-              aria-label={lang === "ar" ? "عرض التفاصيل" : "View details"}
+              aria-label={t("عرض التفاصيل", "View details")}
               variant="ghost"
               size="icon"
               onClick={() => setDetailContract(c)}
@@ -725,7 +722,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
             {(c.status === "DRAFT" || c.status === "SENT") && (
               <IconButton
                 icon={PenLine}
-                aria-label={lang === "ar" ? "توقيع" : "Sign"}
+                aria-label={t("توقيع", "Sign")}
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 text-primary"
@@ -742,7 +739,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
   const leaseColumns: ColumnDef<Contract>[] = [
     {
       accessorKey: "contractNumber",
-      header: lang === "ar" ? "رقم العقد" : "Contract #",
+      header: t("رقم العقد", "Contract #"),
       cell: ({ row }) => (
         <span className="font-mono text-xs text-muted-foreground">
           {row.original.contractNumber ?? "—"}
@@ -751,19 +748,19 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
     },
     {
       accessorKey: "customer.name",
-      header: lang === "ar" ? "المستأجر" : "Tenant",
+      header: t("المستأجر", "Tenant"),
       cell: ({ row }) => (
         <span className="font-medium">{row.original.customer.name}</span>
       ),
     },
     {
       id: "property",
-      header: lang === "ar" ? "العقار" : "Property",
+      header: t("العقار", "Property"),
       enableSorting: false,
       cell: ({ row }) => (
         <div className="text-sm">
           <p className="font-medium">
-            {lang === "ar" ? "وحدة" : "Unit"} {row.original.unit.number}
+            {t("وحدة", "Unit")} {row.original.unit.number}
           </p>
           <p className="text-muted-foreground text-xs">
             {(row.original.unit as any).buildingName ?? (row.original.unit as any).city ?? "—"}
@@ -773,13 +770,13 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
     },
     {
       accessorKey: "amount",
-      header: lang === "ar" ? "الإيجار السنوي" : "Annual Rent (SAR)",
+      header: t("الإيجار السنوي", "Annual Rent (SAR)"),
       meta: { numeric: true },
       cell: ({ row }) => SAR(Number(row.original.amount)),
     },
     {
       id: "startDate",
-      header: lang === "ar" ? "تاريخ البداية" : "Start Date",
+      header: t("تاريخ البداية", "Start Date"),
       cell: ({ row }) =>
         row.original.lease?.startDate ? (
           <span className="text-sm text-muted-foreground">
@@ -791,7 +788,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
     },
     {
       id: "endDate",
-      header: lang === "ar" ? "تاريخ النهاية" : "End Date",
+      header: t("تاريخ النهاية", "End Date"),
       cell: ({ row }) =>
         row.original.lease?.endDate ? (
           <span className="text-sm text-muted-foreground">
@@ -803,7 +800,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
     },
     {
       accessorKey: "status",
-      header: lang === "ar" ? "الحالة" : "Status",
+      header: t("الحالة", "Status"),
       cell: ({ row }) => (
         <Badge variant={CONTRACT_STATUS_VARIANT[row.original.status] ?? "default"} size="sm">
           {lang === "ar"
@@ -823,7 +820,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
           <div className="flex items-center justify-end gap-1">
             <IconButton
               icon={Eye}
-              aria-label={lang === "ar" ? "عرض التفاصيل" : "View details"}
+              aria-label={t("عرض التفاصيل", "View details")}
               variant="ghost"
               size="icon"
               onClick={() => setDetailContract(c)}
@@ -832,7 +829,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
             {(c.status === "DRAFT" || c.status === "SENT") && (
               <IconButton
                 icon={PenLine}
-                aria-label={lang === "ar" ? "توقيع" : "Sign"}
+                aria-label={t("توقيع", "Sign")}
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 text-primary"
@@ -852,7 +849,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
       className="md:hidden -m-4 sm:-m-6 min-h-dvh flex flex-col bg-background"
       dir={lang === "ar" ? "rtl" : "ltr"}
     >
-      <AppBar title={lang === "ar" ? "العقود" : "Contracts"} lang={lang} />
+      <AppBar title={t("العقود", "Contracts")} lang={lang} />
 
       <div className="px-4 pt-3">
         <div className="relative">
@@ -864,9 +861,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={
-              lang === "ar"
-                ? "ابحث برقم العقد أو العميل..."
-                : "Search by contract # or customer..."
+              t("ابحث برقم العقد أو العميل...", "Search by contract # or customer...")
             }
             className="h-10 ps-9"
           />
@@ -875,17 +870,17 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
 
       <div className="grid grid-cols-2 gap-3 px-4 pt-3">
         <MobileKPICard
-          label={lang === "ar" ? "عقود موقّعة" : "Active"}
+          label={t("عقود موقّعة", "Active")}
           value={<span className="tabular-nums">{activeCount}</span>}
           tone="green"
         />
         <MobileKPICard
-          label={lang === "ar" ? "تنتهي قريبًا" : "Expiring soon"}
+          label={t("تنتهي قريبًا", "Expiring soon")}
           value={<span className="tabular-nums">{expiringCount}</span>}
           tone="amber"
         />
         <MobileKPICard
-          label={lang === "ar" ? "إجمالي القيمة" : "Total value"}
+          label={t("إجمالي القيمة", "Total value")}
           value={
             <SARAmount
               value={totalValue}
@@ -897,7 +892,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
           tone="primary"
         />
         <MobileKPICard
-          label={lang === "ar" ? "إجمالي العقود" : "Total"}
+          label={t("إجمالي العقود", "Total")}
           value={<span className="tabular-nums">{totalCount}</span>}
           tone="default"
         />
@@ -905,13 +900,13 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
 
       <div className="px-4 pt-3">
         <MobileTabs
-          ariaLabel={lang === "ar" ? "تبويبات العقود" : "Contract tabs"}
+          ariaLabel={t("تبويبات العقود", "Contract tabs")}
           active={mobileTab}
           onChange={(k) => setMobileTab(k as "ALL" | "SALE" | "LEASE")}
           items={[
-            { key: "ALL", label: lang === "ar" ? "الكل" : "All" },
-            { key: "SALE", label: lang === "ar" ? "بيع" : "Sale" },
-            { key: "LEASE", label: lang === "ar" ? "إيجار" : "Lease" },
+            { key: "ALL", label: t("الكل", "All") },
+            { key: "SALE", label: t("بيع", "Sale") },
+            { key: "LEASE", label: t("إيجار", "Lease") },
           ]}
         />
       </div>
@@ -937,30 +932,26 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
             <EmptyState
               variant="first-time"
               icon={<FileText className="h-12 w-12" aria-hidden="true" />}
-              title={lang === "ar" ? "لا توجد عقود بعد" : "No contracts yet"}
+              title={t("لا توجد عقود بعد", "No contracts yet")}
               description={
-                lang === "ar"
-                  ? "تتبّع كل عقد إيجار أو بيع من المسودة حتى التوقيع."
-                  : "Track every lease and sale from draft to signed."
+                t("تتبّع كل عقد إيجار أو بيع من المسودة حتى التوقيع.", "Track every lease and sale from draft to signed.")
               }
               action={
                 <Button size="sm" onClick={openSaleModal} style={{ display: "inline-flex" }}>
                   <Plus className="h-4 w-4 me-1.5" />
-                  {lang === "ar" ? "إنشاء عقد" : "Create contract"}
+                  {t("إنشاء عقد", "Create contract")}
                 </Button>
               }
               helpHref="/dashboard/help#contracts"
-              helpLabel={lang === "ar" ? "تعرّف على العقود" : "Learn about contracts"}
+              helpLabel={t("تعرّف على العقود", "Learn about contracts")}
             />
           ) : (
             <EmptyState
               variant="filtered"
               icon={<Search className="h-10 w-10" aria-hidden="true" />}
-              title={lang === "ar" ? "لا توجد نتائج مطابقة" : "No matching contracts"}
+              title={t("لا توجد نتائج مطابقة", "No matching contracts")}
               description={
-                lang === "ar"
-                  ? "جرّب تعديل البحث أو التبويب."
-                  : "Try adjusting your search or tab."
+                t("جرّب تعديل البحث أو التبويب.", "Try adjusting your search or tab.")
               }
               action={
                 <Button
@@ -972,7 +963,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
                   }}
                   style={{ display: "inline-flex" }}
                 >
-                  {lang === "ar" ? "مسح الفلاتر" : "Clear filters"}
+                  {t("مسح الفلاتر", "Clear filters")}
                 </Button>
               }
             />
@@ -998,7 +989,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
                   </span>
                 }
                 subtitle={[
-                  `${lang === "ar" ? "وحدة" : "Unit"} ${c.unit.number}`,
+                  `${t("وحدة", "Unit")} ${c.unit.number}`,
                   <SARAmount
                     key="amount"
                     value={Number(c.amount)}
@@ -1028,7 +1019,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
       {canWrite && (
         <FAB
           icon={Plus}
-          label={lang === "ar" ? "عقد جديد" : "New contract"}
+          label={t("عقد جديد", "New contract")}
           onClick={() => setNewContractSheetOpen(true)}
         />
       )}
@@ -1037,7 +1028,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
       <BottomSheet
         open={newContractSheetOpen}
         onOpenChange={setNewContractSheetOpen}
-        title={lang === "ar" ? "نوع العقد الجديد" : "Pick contract type"}
+        title={t("نوع العقد الجديد", "Pick contract type")}
       >
         <div className="grid grid-cols-2 gap-3 p-1">
           <Button
@@ -1054,10 +1045,10 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
               <Home className="h-5 w-5" aria-hidden="true" />
             </span>
             <span className="text-sm font-semibold text-foreground">
-              {lang === "ar" ? "عقد بيع" : "Sale"}
+              {t("عقد بيع", "Sale")}
             </span>
             <span className="text-xs text-muted-foreground">
-              {lang === "ar" ? "نقل ملكية وحدة" : "Transfer unit ownership"}
+              {t("نقل ملكية وحدة", "Transfer unit ownership")}
             </span>
           </Button>
           <Button
@@ -1074,10 +1065,10 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
               <Key className="h-5 w-5" aria-hidden="true" />
             </span>
             <span className="text-sm font-semibold text-foreground">
-              {lang === "ar" ? "عقد إيجار" : "Lease"}
+              {t("عقد إيجار", "Lease")}
             </span>
             <span className="text-xs text-muted-foreground">
-              {lang === "ar" ? "تأجير وحدة لمستأجر" : "Rent unit to a tenant"}
+              {t("تأجير وحدة لمستأجر", "Rent unit to a tenant")}
             </span>
           </Button>
         </div>
@@ -1088,33 +1079,31 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
     <div className="hidden md:block">
     <div dir={dir} className="p-6 space-y-6">
       <PageIntro
-        title={lang === "ar" ? "العقود" : "Contracts"}
+        title={t("العقود", "Contracts")}
         description={
-          lang === "ar"
-            ? "إدارة عقود البيع وعقود الإيجار في مكان واحد"
-            : "Manage sale and lease contracts in one place"
+          t("إدارة عقود البيع وعقود الإيجار في مكان واحد", "Manage sale and lease contracts in one place")
         }
       />
 
       {/* KPI Banner */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard
-          label={lang === "ar" ? "إجمالي العقود" : "Total Contracts"}
+          label={t("إجمالي العقود", "Total Contracts")}
           value={String(totalCount)}
           loading={loading}
         />
         <KPICard
-          label={lang === "ar" ? "موقّعة" : "Active (Signed)"}
+          label={t("موقّعة", "Active (Signed)")}
           value={String(activeCount)}
           loading={loading}
         />
         <KPICard
-          label={lang === "ar" ? "مسودة" : "Draft"}
+          label={t("مسودة", "Draft")}
           value={String(draftCount)}
           loading={loading}
         />
         <KPICard
-          label={lang === "ar" ? "إجمالي القيمة" : "Total Value"}
+          label={t("إجمالي القيمة", "Total Value")}
           value={SAR(totalValue)}
           loading={loading}
         />
@@ -1130,7 +1119,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
             className="rounded-none rounded-s-lg border-0 px-4 py-2"
             style={{ display: "inline-flex" }}
           >
-            {lang === "ar" ? "عقود البيع" : "Sale Contracts"}
+            {t("عقود البيع", "Sale Contracts")}
             <span className="ms-2 text-xs opacity-70">({saleContracts.length})</span>
           </Button>
           <Button
@@ -1140,7 +1129,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
             className="rounded-none rounded-e-lg border-0 border-s border-border px-4 py-2"
             style={{ display: "inline-flex" }}
           >
-            {lang === "ar" ? "عقود الإيجار" : "Lease Contracts"}
+            {t("عقود الإيجار", "Lease Contracts")}
             <span className="ms-2 text-xs opacity-70">({leaseContracts.length})</span>
           </Button>
         </div>
@@ -1151,14 +1140,14 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder={lang === "ar" ? "بحث..." : "Search..."}
+              placeholder={t("بحث...", "Search...")}
               className="ps-9 w-56"
             />
             {search && (
               <span className="absolute top-1/2 -translate-y-1/2 end-1">
                 <IconButton
                   icon={X}
-                  aria-label={lang === "ar" ? "مسح البحث" : "Clear search"}
+                  aria-label={t("مسح البحث", "Clear search")}
                   variant="ghost"
                   size="icon"
                   onClick={() => setSearch("")}
@@ -1176,8 +1165,8 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
             >
               <Plus className="w-4 h-4" />
               {tab === "SALE"
-                ? lang === "ar" ? "عقد بيع جديد" : "New Sale Contract"
-                : lang === "ar" ? "عقد إيجار جديد" : "New Lease Contract"}
+                ? t("عقد بيع جديد", "New Sale Contract")
+                : t("عقد إيجار جديد", "New Lease Contract")}
             </Button>
           )}
         </div>
@@ -1196,17 +1185,11 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
               icon={<FileText className="h-12 w-12" aria-hidden="true" />}
               title={
                 tab === "SALE"
-                  ? lang === "ar"
-                    ? "لا توجد عقود بيع بعد"
-                    : "No sale contracts yet"
-                  : lang === "ar"
-                    ? "لا توجد عقود إيجار بعد"
-                    : "No lease contracts yet"
+                  ? t("لا توجد عقود بيع بعد", "No sale contracts yet")
+                  : t("لا توجد عقود إيجار بعد", "No lease contracts yet")
               }
               description={
-                lang === "ar"
-                  ? "تتبّع كل عقد إيجار أو بيع من المسودة حتى التوقيع."
-                  : "Track every lease and sale from draft to signed."
+                t("تتبّع كل عقد إيجار أو بيع من المسودة حتى التوقيع.", "Track every lease and sale from draft to signed.")
               }
               action={
                 <Button
@@ -1216,22 +1199,20 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
                 >
                   <Plus className="h-[18px] w-[18px]" />
                   {tab === "SALE"
-                    ? lang === "ar" ? "إنشاء عقد بيع" : "Create sale contract"
-                    : lang === "ar" ? "إنشاء عقد إيجار" : "Create lease contract"}
+                    ? t("إنشاء عقد بيع", "Create sale contract")
+                    : t("إنشاء عقد إيجار", "Create lease contract")}
                 </Button>
               }
               helpHref="/dashboard/help#contracts"
-              helpLabel={lang === "ar" ? "تعرّف على العقود" : "Learn about contracts"}
+              helpLabel={t("تعرّف على العقود", "Learn about contracts")}
             />
           ) : (
             <EmptyState
               variant="filtered"
               icon={<Search className="h-12 w-12" aria-hidden="true" />}
-              title={lang === "ar" ? "لا توجد نتائج مطابقة" : "No matching contracts"}
+              title={t("لا توجد نتائج مطابقة", "No matching contracts")}
               description={
-                lang === "ar"
-                  ? "جرّب تعديل البحث."
-                  : "Try adjusting your search."
+                t("جرّب تعديل البحث.", "Try adjusting your search.")
               }
               action={
                 <Button
@@ -1240,7 +1221,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
                   onClick={() => setSearch("")}
                   style={{ display: "inline-flex" }}
                 >
-                  {lang === "ar" ? "مسح الفلاتر" : "Clear filters"}
+                  {t("مسح الفلاتر", "Clear filters")}
                 </Button>
               }
             />
@@ -1260,13 +1241,13 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
             onExport={({ rows, columns: exportColumns }) =>
               exportToExcel({
                 filename: `sale-contracts-${new Date().toISOString().slice(0, 10)}`,
-                title: lang === "ar" ? "عقود البيع" : "Sale Contracts",
+                title: t("عقود البيع", "Sale Contracts"),
                 lang,
                 columns: exportColumns.map((c) => ({ header: c.header, key: c.id })),
                 data: rows.map((c) => ({
                   contractNumber: c.contractNumber ?? "—",
                   customer_name: c.customer.name,
-                  property: `${lang === "ar" ? "وحدة" : "Unit"} ${c.unit.number}${c.unit.buildingName ? ` — ${c.unit.buildingName}` : ""}`,
+                  property: `${t("وحدة", "Unit")} ${c.unit.number}${c.unit.buildingName ? ` — ${c.unit.buildingName}` : ""}`,
                   amount: SAR(Number(c.amount)),
                   status:
                     lang === "ar"
@@ -1306,7 +1287,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
                   </span>
                 }
                 subtitle={[
-                  `${lang === "ar" ? "وحدة" : "Unit"} ${row.unit.number}`,
+                  `${t("وحدة", "Unit")} ${row.unit.number}`,
                   <SARAmount key="amount" value={Number(row.amount)} size={12} compact className="tabular-nums" />,
                 ]}
                 trailing={
@@ -1323,8 +1304,8 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
                 onClick={() => setDetailContract(row)}
               />
             )}
-            emptyTitle={lang === "ar" ? "لا توجد عقود بيع" : "No sale contracts"}
-            emptyDescription={lang === "ar" ? "جرّب تعديل البحث." : "Try adjusting your search."}
+            emptyTitle={t("لا توجد عقود بيع", "No sale contracts")}
+            emptyDescription={t("جرّب تعديل البحث.", "Try adjusting your search.")}
           />
         ) : (
           <DataTable
@@ -1341,13 +1322,13 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
             onExport={({ rows, columns: exportColumns }) =>
               exportToExcel({
                 filename: `lease-contracts-${new Date().toISOString().slice(0, 10)}`,
-                title: lang === "ar" ? "عقود الإيجار" : "Lease Contracts",
+                title: t("عقود الإيجار", "Lease Contracts"),
                 lang,
                 columns: exportColumns.map((c) => ({ header: c.header, key: c.id })),
                 data: rows.map((c) => ({
                   contractNumber: c.contractNumber ?? "—",
                   customer_name: c.customer.name,
-                  property: `${lang === "ar" ? "وحدة" : "Unit"} ${c.unit.number}${c.unit.buildingName ? ` — ${c.unit.buildingName}` : ""}`,
+                  property: `${t("وحدة", "Unit")} ${c.unit.number}${c.unit.buildingName ? ` — ${c.unit.buildingName}` : ""}`,
                   amount: SAR(Number(c.amount)),
                   startDate: c.lease?.startDate
                     ? new Date(c.lease.startDate).toLocaleDateString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-SA")
@@ -1390,7 +1371,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
                   </span>
                 }
                 subtitle={[
-                  `${lang === "ar" ? "وحدة" : "Unit"} ${row.unit.number}`,
+                  `${t("وحدة", "Unit")} ${row.unit.number}`,
                   <SARAmount key="amount" value={Number(row.amount)} size={12} compact className="tabular-nums" />,
                 ]}
                 trailing={
@@ -1407,8 +1388,8 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
                 onClick={() => setDetailContract(row)}
               />
             )}
-            emptyTitle={lang === "ar" ? "لا توجد عقود إيجار" : "No lease contracts"}
-            emptyDescription={lang === "ar" ? "جرّب تعديل البحث." : "Try adjusting your search."}
+            emptyTitle={t("لا توجد عقود إيجار", "No lease contracts")}
+            emptyDescription={t("جرّب تعديل البحث.", "Try adjusting your search.")}
           />
         )}
       </Card>
@@ -1419,7 +1400,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
         onOpenChange={(open) => {
           if (!open) setDetailContract(null);
         }}
-        title={lang === "ar" ? "تفاصيل العقد" : "Contract Details"}
+        title={t("تفاصيل العقد", "Contract Details")}
         footer={
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <Button
@@ -1427,7 +1408,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
               onClick={() => setDetailContract(null)}
               style={{ display: "inline-flex" }}
             >
-              {lang === "ar" ? "إغلاق" : "Close"}
+              {t("إغلاق", "Close")}
             </Button>
             {/* CX-011 — Edit shown only for DRAFT (the only editable state). */}
             {detailContract?.status === "DRAFT" && canWrite && (
@@ -1437,7 +1418,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
                 className="gap-2"
               >
                 <Pencil className="h-4 w-4" />
-                {lang === "ar" ? "تعديل" : "Edit"}
+                {t("تعديل", "Edit")}
               </Button>
             )}
           </div>
@@ -1447,38 +1428,38 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
           <div className="space-y-3 py-2 text-sm">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <p className="text-muted-foreground text-xs">{lang === "ar" ? "رقم العقد" : "Contract #"}</p>
+                <p className="text-muted-foreground text-xs">{t("رقم العقد", "Contract #")}</p>
                 <p className="font-medium font-mono">{detailContract.contractNumber ?? "—"}</p>
               </div>
               <div>
-                <p className="text-muted-foreground text-xs">{lang === "ar" ? "النوع" : "Type"}</p>
+                <p className="text-muted-foreground text-xs">{t("النوع", "Type")}</p>
                 <p className="font-medium">
                   {detailContract.type === "SALE"
-                    ? lang === "ar" ? "بيع" : "Sale"
-                    : lang === "ar" ? "إيجار" : "Lease"}
+                    ? t("بيع", "Sale")
+                    : t("إيجار", "Lease")}
                 </p>
               </div>
               <div>
-                <p className="text-muted-foreground text-xs">{lang === "ar" ? "العميل" : "Client"}</p>
+                <p className="text-muted-foreground text-xs">{t("العميل", "Client")}</p>
                 <p className="font-medium">{detailContract.customer.name}</p>
               </div>
               <div>
-                <p className="text-muted-foreground text-xs">{lang === "ar" ? "الوحدة" : "Unit"}</p>
+                <p className="text-muted-foreground text-xs">{t("الوحدة", "Unit")}</p>
                 <p className="font-medium">{detailContract.unit.number}</p>
               </div>
               <div>
-                <p className="text-muted-foreground text-xs">{lang === "ar" ? "المبلغ" : "Amount"}</p>
+                <p className="text-muted-foreground text-xs">{t("المبلغ", "Amount")}</p>
                 <p className="font-medium">{SAR(Number(detailContract.amount))}</p>
               </div>
               <div>
-                <p className="text-muted-foreground text-xs">{lang === "ar" ? "الحالة" : "Status"}</p>
+                <p className="text-muted-foreground text-xs">{t("الحالة", "Status")}</p>
                 <Badge variant={CONTRACT_STATUS_VARIANT[detailContract.status] ?? "default"} size="sm">
                   {lang === "ar" ? (CONTRACT_STATUS_LABELS[detailContract.status]?.ar ?? detailContract.status) : (CONTRACT_STATUS_LABELS[detailContract.status]?.en ?? detailContract.status)}
                 </Badge>
               </div>
               {detailContract.signedAt && (
                 <div className="col-span-2">
-                  <p className="text-muted-foreground text-xs">{lang === "ar" ? "تاريخ التوقيع" : "Signed Date"}</p>
+                  <p className="text-muted-foreground text-xs">{t("تاريخ التوقيع", "Signed Date")}</p>
                   <p className="font-medium">
                     {new Date(detailContract.signedAt).toLocaleDateString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-SA")}
                   </p>
@@ -1521,13 +1502,13 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
             {journeyLoading && (
               <div className="flex items-center gap-2 py-2 text-xs text-muted-foreground">
                 <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
-                {lang === "ar" ? "جارٍ تحميل المسار..." : "Loading journey..."}
+                {t("جارٍ تحميل المسار...", "Loading journey...")}
               </div>
             )}
             {!journeyLoading && journey && (
               <div className="space-y-3 border-t border-border pt-3">
                 <h4 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                  {lang === "ar" ? "المسار" : "Journey"}
+                  {t("المسار", "Journey")}
                 </h4>
                 {journey.blockers.length > 0 && (
                   <ProcessBlockerBanner blockers={journey.blockers} lang={lang} />
@@ -1535,7 +1516,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
                 <LifecycleRail
                   stages={journey.stages}
                   lang={lang}
-                  ariaLabel={lang === "ar" ? "مراحل العقد" : "Contract lifecycle"}
+                  ariaLabel={t("مراحل العقد", "Contract lifecycle")}
                 />
                 <NextActionPanel actions={journey.nextActions} lang={lang} />
                 {journey.related.length > 0 && (
@@ -1548,9 +1529,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
                       className="h-auto p-0 text-xs"
                       style={{ display: "inline-flex" }}
                     >
-                      {lang === "ar"
-                        ? `السجلات المرتبطة (${journey.related.length})`
-                        : `Related records (${journey.related.length})`}
+                      {t(`السجلات المرتبطة (${journey.related.length})`, `Related records (${journey.related.length})`)}
                     </Button>
                     <RelatedContextPanel
                       open={journeyRelatedOpen}
@@ -1582,8 +1561,8 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
         }}
         title={
           editingContractId
-            ? lang === "ar" ? "تعديل عقد البيع" : "Edit Sale Contract"
-            : lang === "ar" ? "عقد بيع جديد" : "New Sale Contract"
+            ? t("تعديل عقد البيع", "Edit Sale Contract")
+            : t("عقد بيع جديد", "New Sale Contract")
         }
         footer={
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
@@ -1600,13 +1579,13 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
               }}
               style={{ display: "inline-flex" }}
             >
-              {lang === "ar" ? "إلغاء" : "Cancel"}
+              {t("إلغاء", "Cancel")}
             </Button>
             <Button type="submit" form="sale-contract-form" disabled={submitting} style={{ display: "inline-flex" }} className="gap-2">
               {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
               {editingContractId
-                ? lang === "ar" ? "حفظ التغييرات" : "Save changes"
-                : lang === "ar" ? "إنشاء العقد" : "Create Contract"}
+                ? t("حفظ التغييرات", "Save changes")
+                : t("إنشاء العقد", "Create Contract")}
             </Button>
           </div>
         }
@@ -1618,7 +1597,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
         >
           {/* Required fields legend */}
           <p className="text-caption text-muted-foreground text-xs">
-            {lang === "ar" ? "الحقول المطلوبة معلّمة بـ *" : "Required fields marked with *"}
+            {t("الحقول المطلوبة معلّمة بـ *", "Required fields marked with *")}
           </p>
 
           {/* Customer */}
@@ -1628,7 +1607,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
             render={({ field, fieldState }) => (
               <div className="space-y-1">
                 <label className="text-sm font-medium text-foreground">
-                  {lang === "ar" ? "العميل" : "Customer"} *
+                  {t("العميل", "Customer")} *
                 </label>
                 <div className="relative">
                   <Input
@@ -1639,7 +1618,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
                       field.onChange("");
                     }}
                     onBlur={field.onBlur}
-                    placeholder={lang === "ar" ? "ابحث عن العميل..." : "Search customer..."}
+                    placeholder={t("ابحث عن العميل...", "Search customer...")}
                     aria-invalid={!!fieldState.error}
                   />
                   {saleCustomerSearch && !field.value && saleCustomerOptions.length > 0 && (
@@ -1678,7 +1657,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
             render={({ field, fieldState }) => (
               <div className="space-y-1">
                 <label className="text-sm font-medium text-foreground">
-                  {lang === "ar" ? "الوحدة" : "Unit"} *
+                  {t("الوحدة", "Unit")} *
                 </label>
                 <div className="relative">
                   <Input
@@ -1689,7 +1668,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
                       field.onChange("");
                     }}
                     onBlur={field.onBlur}
-                    placeholder={lang === "ar" ? "ابحث عن وحدة..." : "Search unit..."}
+                    placeholder={t("ابحث عن وحدة...", "Search unit...")}
                     aria-invalid={!!fieldState.error}
                   />
                   {saleUnitSearch && !field.value && saleUnitOptions.length > 0 && (
@@ -1708,7 +1687,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
                           className="w-full justify-start rounded-none px-3 py-2 text-sm font-normal"
                           style={{ display: "flex" }}
                         >
-                          {lang === "ar" ? "وحدة" : "Unit"} {u.number}
+                          {t("وحدة", "Unit")} {u.number}
                           <span className="ms-2 text-xs text-muted-foreground">{u.status}</span>
                         </Button>
                       ))}
@@ -1729,7 +1708,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
             render={({ field, fieldState }) => (
               <div className="space-y-1">
                 <label className="text-sm font-medium text-foreground">
-                  {lang === "ar" ? "مبلغ العقد (ريال)" : "Contract Amount (SAR)"} *
+                  {t("مبلغ العقد (ريال)", "Contract Amount (SAR)")} *
                 </label>
                 <SARAmountInput
                   value={field.value ?? null}
@@ -1752,16 +1731,16 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
             render={({ field }) => (
               <div className="space-y-1">
                 <label className="text-sm font-medium text-foreground">
-                  {lang === "ar" ? "ملاحظات" : "Notes"}
+                  {t("ملاحظات", "Notes")}
                   {" "}
                   <span className="text-muted-foreground text-xs font-normal">
-                    ({lang === "ar" ? "اختياري" : "optional"})
+                    ({t("اختياري", "optional")})
                   </span>
                 </label>
                 <textarea
                   {...field}
                   rows={3}
-                  placeholder={lang === "ar" ? "ملاحظات اختيارية..." : "Optional notes..."}
+                  placeholder={t("ملاحظات اختيارية...", "Optional notes...")}
                   className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]"
                 />
               </div>
@@ -1786,8 +1765,8 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
         }}
         title={
           editingContractId
-            ? lang === "ar" ? "تعديل عقد الإيجار" : "Edit Lease Contract"
-            : lang === "ar" ? "عقد إيجار جديد" : "New Lease Contract"
+            ? t("تعديل عقد الإيجار", "Edit Lease Contract")
+            : t("عقد إيجار جديد", "New Lease Contract")
         }
         contentClassName="sm:max-w-[640px]"
         footer={
@@ -1805,13 +1784,13 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
               }}
               style={{ display: "inline-flex" }}
             >
-              {lang === "ar" ? "إلغاء" : "Cancel"}
+              {t("إلغاء", "Cancel")}
             </Button>
             <Button type="submit" form="lease-contract-form" disabled={submitting} style={{ display: "inline-flex" }} className="gap-2">
               {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
               {editingContractId
-                ? lang === "ar" ? "حفظ التغييرات" : "Save changes"
-                : lang === "ar" ? "إنشاء العقد" : "Create Contract"}
+                ? t("حفظ التغييرات", "Save changes")
+                : t("إنشاء العقد", "Create Contract")}
             </Button>
           </div>
         }
@@ -1823,7 +1802,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
         >
           {/* Required fields legend */}
           <p className="text-caption text-muted-foreground text-xs">
-            {lang === "ar" ? "الحقول المطلوبة معلّمة بـ *" : "Required fields marked with *"}
+            {t("الحقول المطلوبة معلّمة بـ *", "Required fields marked with *")}
           </p>
 
           {/* Tenant */}
@@ -1833,7 +1812,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
             render={({ field, fieldState }) => (
               <div className="space-y-1">
                 <label className="text-sm font-medium text-foreground">
-                  {lang === "ar" ? "المستأجر" : "Tenant/Customer"} *
+                  {t("المستأجر", "Tenant/Customer")} *
                 </label>
                 <div className="relative">
                   <Input
@@ -1844,7 +1823,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
                       field.onChange("");
                     }}
                     onBlur={field.onBlur}
-                    placeholder={lang === "ar" ? "ابحث عن المستأجر..." : "Search tenant..."}
+                    placeholder={t("ابحث عن المستأجر...", "Search tenant...")}
                     aria-invalid={!!fieldState.error}
                   />
                   {leaseCustomerSearch && !field.value && leaseCustomerOptions.length > 0 && (
@@ -1883,7 +1862,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
             render={({ field, fieldState }) => (
               <div className="space-y-1">
                 <label className="text-sm font-medium text-foreground">
-                  {lang === "ar" ? "الوحدة" : "Unit"} *
+                  {t("الوحدة", "Unit")} *
                 </label>
                 <div className="relative">
                   <Input
@@ -1894,7 +1873,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
                       field.onChange("");
                     }}
                     onBlur={field.onBlur}
-                    placeholder={lang === "ar" ? "ابحث عن وحدة متاحة..." : "Search available unit..."}
+                    placeholder={t("ابحث عن وحدة متاحة...", "Search available unit...")}
                     aria-invalid={!!fieldState.error}
                   />
                   {leaseUnitSearch && !field.value && leaseUnitOptions.length > 0 && (
@@ -1913,7 +1892,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
                           className="w-full justify-start rounded-none px-3 py-2 text-sm font-normal"
                           style={{ display: "flex" }}
                         >
-                          {lang === "ar" ? "وحدة" : "Unit"} {u.number}
+                          {t("وحدة", "Unit")} {u.number}
                         </Button>
                       ))}
                     </div>
@@ -1934,7 +1913,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
               render={({ field, fieldState }) => (
                 <div className="space-y-1">
                   <label className="text-sm font-medium text-foreground">
-                    {lang === "ar" ? "تاريخ البداية" : "Start Date"} *
+                    {t("تاريخ البداية", "Start Date")} *
                   </label>
                   <HijriDatePicker
                     value={field.value ? new Date(field.value) : null}
@@ -1954,7 +1933,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
               render={({ field, fieldState }) => (
                 <div className="space-y-1">
                   <label className="text-sm font-medium text-foreground">
-                    {lang === "ar" ? "تاريخ النهاية" : "End Date"} *
+                    {t("تاريخ النهاية", "End Date")} *
                   </label>
                   <HijriDatePicker
                     value={field.value ? new Date(field.value) : null}
@@ -1977,7 +1956,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
             render={({ field, fieldState }) => (
               <div className="space-y-1">
                 <label className="text-sm font-medium text-foreground">
-                  {lang === "ar" ? "إجمالي الإيجار (ريال)" : "Total Amount (SAR)"} *
+                  {t("إجمالي الإيجار (ريال)", "Total Amount (SAR)")} *
                 </label>
                 <SARAmountInput
                   value={field.value ?? null}
@@ -2000,17 +1979,18 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
             render={({ field }) => (
               <div className="space-y-1">
                 <label className="text-sm font-medium text-foreground">
-                  {lang === "ar" ? "دورية الدفع" : "Payment Frequency"}
+                  {t("دورية الدفع", "Payment Frequency")}
                 </label>
-                <select
+                <SelectField
                   {...field}
+                  aria-label={t("دورية الدفع", "Payment Frequency")}
                   className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]"
                 >
-                  <option value="MONTHLY">{lang === "ar" ? "شهري" : "Monthly"}</option>
-                  <option value="QUARTERLY">{lang === "ar" ? "ربع سنوي" : "Quarterly"}</option>
-                  <option value="SEMI_ANNUAL">{lang === "ar" ? "نصف سنوي" : "Semi-Annual"}</option>
-                  <option value="ANNUAL">{lang === "ar" ? "سنوي" : "Annual"}</option>
-                </select>
+                  <option value="MONTHLY">{t("شهري", "Monthly")}</option>
+                  <option value="QUARTERLY">{t("ربع سنوي", "Quarterly")}</option>
+                  <option value="SEMI_ANNUAL">{t("نصف سنوي", "Semi-Annual")}</option>
+                  <option value="ANNUAL">{t("سنوي", "Annual")}</option>
+                </SelectField>
               </div>
             )}
           />
@@ -2022,16 +2002,16 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
             render={({ field }) => (
               <div className="space-y-1">
                 <label className="text-sm font-medium text-foreground">
-                  {lang === "ar" ? "ملاحظات" : "Notes"}
+                  {t("ملاحظات", "Notes")}
                   {" "}
                   <span className="text-muted-foreground text-xs font-normal">
-                    ({lang === "ar" ? "اختياري" : "optional"})
+                    ({t("اختياري", "optional")})
                   </span>
                 </label>
                 <textarea
                   {...field}
                   rows={3}
-                  placeholder={lang === "ar" ? "ملاحظات اختيارية..." : "Optional notes..."}
+                  placeholder={t("ملاحظات اختيارية...", "Optional notes...")}
                   className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]"
                 />
               </div>
@@ -2044,18 +2024,14 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
       <ConfirmDialog
         open={signConfirmOpen}
         onOpenChange={setSignConfirmOpen}
-        title={lang === "ar" ? "توقيع العقد؟" : "Sign this contract?"}
+        title={t("توقيع العقد؟", "Sign this contract?")}
         description={
           signMissingDocs.length > 0
-            ? lang === "ar"
-              ? `تنبيه: توجد مستندات مطلوبة ناقصة (${signMissingDocs.length}). التوقيع نهائي ولا يمكن التراجع عنه.`
-              : `Warning: ${signMissingDocs.length} required document(s) still missing. Signing is final and cannot be undone.`
-            : lang === "ar"
-              ? "التوقيع نهائي ولا يمكن التراجع عنه."
-              : "Signing is final and cannot be undone."
+            ? t(`تنبيه: توجد مستندات مطلوبة ناقصة (${signMissingDocs.length}). التوقيع نهائي ولا يمكن التراجع عنه.`, `Warning: ${signMissingDocs.length} required document(s) still missing. Signing is final and cannot be undone.`)
+            : t("التوقيع نهائي ولا يمكن التراجع عنه.", "Signing is final and cannot be undone.")
         }
-        confirmLabel={lang === "ar" ? "توقيع" : "Sign"}
-        cancelLabel={lang === "ar" ? "إلغاء" : "Cancel"}
+        confirmLabel={t("توقيع", "Sign")}
+        cancelLabel={t("إلغاء", "Cancel")}
         onConfirm={confirmSign}
       />
 
@@ -2063,14 +2039,12 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
       <ConfirmDialog
         open={bulkDeleteOpen}
         onOpenChange={setBulkDeleteOpen}
-        title={lang === "ar" ? "حذف العقود المحددة؟" : "Delete selected contracts?"}
+        title={t("حذف العقود المحددة؟", "Delete selected contracts?")}
         description={
-          lang === "ar"
-            ? `سيتم حذف ${bulkDeleteIds.length} عقد مسودة نهائيًا ولا يمكن التراجع عن ذلك.`
-            : `This will permanently delete ${bulkDeleteIds.length} draft contract(s). This cannot be undone.`
+          t(`سيتم حذف ${bulkDeleteIds.length} عقد مسودة نهائيًا ولا يمكن التراجع عن ذلك.`, `This will permanently delete ${bulkDeleteIds.length} draft contract(s). This cannot be undone.`)
         }
-        confirmLabel={lang === "ar" ? "حذف" : "Delete"}
-        cancelLabel={lang === "ar" ? "إلغاء" : "Cancel"}
+        confirmLabel={t("حذف", "Delete")}
+        cancelLabel={t("إلغاء", "Cancel")}
         variant="destructive"
         onConfirm={confirmBulkDelete}
       />

@@ -1,12 +1,14 @@
 "use server";
 
-import { db } from "@repo/db";
+import { db, UnitStatus, CustomerStatus } from "@repo/db";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requirePermission } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
 import { checkLimit, FEATURE_KEYS } from "../../lib/entitlements";
 import { isValidUnitTransition } from "../../lib/units/state-machine";
+import { ROUTES } from "../../lib/routes";
+import { serialize } from "../../lib/serialize";
 
 // Module-private — NOT exported (this is a "use server" file; only async functions may be exported)
 const CreateUnitSchema = z.object({
@@ -79,17 +81,41 @@ export async function updateUnit(unitId: string, data: UpdateUnitInput) {
     data: safeData,
   });
 
-  revalidatePath("/dashboard/units");
-  return JSON.parse(JSON.stringify(updated));
+  revalidatePath(ROUTES.units);
+  return serialize(updated);
 }
 
-export async function massUpdateUnits(
-  units: { id: string; price?: number; status?: any }[]
-) {
+// Server actions are a trust boundary: the client passes `status` as a plain
+// string over the wire (UnitsView builds `{ id, status: newStatus }` where
+// newStatus is a string), so the public param keeps `status?: string`. We narrow
+// each value to the `UnitStatus` Prisma enum below — replacing the old unchecked
+// `as any` with a real runtime guard, so only valid enum members ever reach
+// Prisma (an invalid status now fails fast instead of silently flowing through).
+type MassUpdateUnitInput = { id: string; price?: number; status?: string };
+
+const UNIT_STATUS_VALUES = new Set<string>(Object.values(UnitStatus));
+
+function toUnitStatus(value: string | undefined): UnitStatus | undefined {
+  if (value === undefined) return undefined;
+  if (!UNIT_STATUS_VALUES.has(value)) {
+    throw new Error(`Invalid unit status: "${value}".`);
+  }
+  return value as UnitStatus;
+}
+
+export async function massUpdateUnits(units: MassUpdateUnitInput[]) {
   const session = await requirePermission("units:write");
 
+  // Narrow each wire-level status string to the UnitStatus enum up front (throws
+  // on any invalid value). Downstream code operates on typed UnitStatus only.
+  const typedUnits = units.map((u) => ({
+    id: u.id,
+    price: u.price,
+    status: toUnitStatus(u.status),
+  }));
+
   // Verify all units belong to org (also gives us current status for SM validation)
-  const unitIds = units.map((u) => u.id);
+  const unitIds = typedUnits.map((u) => u.id);
   const existingUnits = await db.unit.findMany({
     where: { id: { in: unitIds }, organizationId: session.organizationId },
     select: { id: true, number: true, status: true },
@@ -106,7 +132,7 @@ export async function massUpdateUnits(
   // Collect every invalid transition and reject the whole batch with one error.
   const invalidTransitions: string[] = [];
 
-  for (const u of units) {
+  for (const u of typedUnits) {
     if (!u.status) continue; // price-only update, no status change
     const current = currentById.get(u.id);
     if (!current) continue; // already caught above
@@ -130,7 +156,7 @@ export async function massUpdateUnits(
   // Block transitions to AVAILABLE or RESERVED when the unit has an active
   // SIGNED contract or a non-ended lease — these transitions would silently
   // contradict live business records.
-  const unitsGoingAvailableOrReserved = units.filter(
+  const unitsGoingAvailableOrReserved = typedUnits.filter(
     (u) => u.status === "AVAILABLE" || u.status === "RESERVED"
   );
 
@@ -172,7 +198,7 @@ export async function massUpdateUnits(
 
   // ── Execute batch update ──────────────────────────────────────────────────────
   const results = await db.$transaction(
-    units.map((u) =>
+    typedUnits.map((u) =>
       db.unit.update({
         where: { id: u.id },
         data: {
@@ -183,8 +209,8 @@ export async function massUpdateUnits(
     )
   );
 
-  revalidatePath("/dashboard/units");
-  return JSON.parse(JSON.stringify(results));
+  revalidatePath(ROUTES.units);
+  return serialize(results);
 }
 
 export async function getUnitsWithBuildings(filters?: {
@@ -203,7 +229,7 @@ export async function getUnitsWithBuildings(filters?: {
     skip,
     take: pageSize,
   });
-  return JSON.parse(JSON.stringify(units));
+  return serialize(units);
 }
 
 export async function createUnit(data: {
@@ -264,8 +290,8 @@ export async function createUnit(data: {
     },
   });
 
-  revalidatePath("/dashboard/units");
-  return JSON.parse(JSON.stringify(unit));
+  revalidatePath(ROUTES.units);
+  return serialize(unit);
 }
 
 export async function deleteUnit(unitId: string) {
@@ -279,7 +305,7 @@ export async function deleteUnit(unitId: string) {
   }
 
   await db.unit.delete({ where: { id: unitId } });
-  revalidatePath("/dashboard/units");
+  revalidatePath(ROUTES.units);
 }
 
 export async function getUnitFinancialSummary(unitId: string) {
@@ -310,12 +336,12 @@ export async function getUnitFinancialSummary(unitId: string) {
     s + Number(m.actualCost ?? m.estimatedCost ?? 0), 0);
   const saleRevenue = unit.contracts.reduce((s, c) => s + Number(c.amount), 0);
 
-  return JSON.parse(JSON.stringify({
+  return serialize({
     totalRentCollected,
     saleRevenue,
     totalMaintenanceCost,
     netIncome: totalRentCollected + saleRevenue - totalMaintenanceCost,
-  }));
+  });
 }
 
 export async function getActiveContractForUnit(unitId: string) {
@@ -335,7 +361,7 @@ export async function getActiveContractForUnit(unitId: string) {
     orderBy: { createdAt: "desc" },
   });
 
-  return contract ? JSON.parse(JSON.stringify(contract)) : null;
+  return contract ? serialize(contract) : null;
 }
 
 export async function getCustomersForUnitAction() {
@@ -344,11 +370,18 @@ export async function getCustomersForUnitAction() {
   const customers = await db.customer.findMany({
     where: {
       organizationId: session.organizationId,
-      status: { in: ["NEW", "INTERESTED", "QUALIFIED", "VIEWING"] as any },
+      status: {
+        in: [
+          CustomerStatus.NEW,
+          CustomerStatus.INTERESTED,
+          CustomerStatus.QUALIFIED,
+          CustomerStatus.VIEWING,
+        ],
+      },
     },
     select: { id: true, name: true, phone: true, status: true },
     orderBy: { name: "asc" },
   });
 
-  return JSON.parse(JSON.stringify(customers));
+  return serialize(customers);
 }

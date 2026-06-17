@@ -93,8 +93,17 @@ export async function consumeEmailVerificationToken(rawToken: string): Promise<C
           const updated = await tx.user.update({
             where: { id: token.userId },
             data: { emailVerified: now },
-            select: { id: true, email: true, role: true },
+            select: { id: true, email: true, role: true, organizationId: true },
           });
+          // E1: activate the registering admin's org on first email confirm.
+          // Guarded updateMany (appStatus: PENDING_VERIFICATION) is idempotent and
+          // never resurrects an EXPIRED org — only a still-pending one flips ACTIVE.
+          if (updated.organizationId) {
+            await tx.organization.updateMany({
+              where: { id: updated.organizationId, appStatus: "PENDING_VERIFICATION" },
+              data: { appStatus: "ACTIVE" },
+            });
+          }
           return {
             ok: true,
             userId: updated.id,

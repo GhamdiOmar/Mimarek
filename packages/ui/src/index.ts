@@ -112,3 +112,4 @@ export * from "./icons/RiyalIcon";
 /* ─── Utilities ────────────────────────────────────────────── */
 export * from "./lib/utils";
 export * from "./lib/format-sar";
+export * from "./lib/hijri";

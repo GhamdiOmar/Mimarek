@@ -21,7 +21,7 @@ interface MobileSearchSheetProps {
 }
 
 export function MobileSearchSheet({ open, onOpenChange }: MobileSearchSheetProps) {
-  const { lang } = useLanguage();
+  const { t, lang } = useLanguage();
   const [query, setQuery] = React.useState("");
   const inputRef = React.useRef<HTMLInputElement>(null);
 
@@ -55,7 +55,7 @@ export function MobileSearchSheet({ open, onOpenChange }: MobileSearchSheetProps
     <BottomSheet
       open={open}
       onOpenChange={onOpenChange}
-      title={lang === "ar" ? "البحث" : "Search"}
+      title={t("البحث", "Search")}
       srOnlyTitle
       className="!max-h-[100vh] !h-[100vh] !rounded-none"
     >
@@ -64,7 +64,7 @@ export function MobileSearchSheet({ open, onOpenChange }: MobileSearchSheetProps
         <div className="flex h-12 shrink-0 items-center gap-2 border-b border-border px-2">
           <IconButton
             icon={ArrowLeft}
-            aria-label={lang === "ar" ? "إغلاق" : "Close"}
+            aria-label={t("إغلاق", "Close")}
             onClick={() => onOpenChange(false)}
             variant="ghost"
             directional
@@ -76,14 +76,14 @@ export function MobileSearchSheet({ open, onOpenChange }: MobileSearchSheetProps
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder={lang === "ar" ? "ابحث عن عميل أو وحدة أو عقد..." : "Search customers, units, contracts..."}
-              aria-label={lang === "ar" ? "بحث" : "Search"}
+              placeholder={t("ابحث عن عميل أو وحدة أو عقد...", "Search customers, units, contracts...")}
+              aria-label={t("بحث", "Search")}
               className="w-full rounded-md bg-muted/40 py-2 ps-9 pe-9 text-sm outline-none focus:bg-background focus:ring-2 focus:ring-primary/30"
             />
             {query && (
               <IconButton
                 icon={X}
-                aria-label={lang === "ar" ? "مسح" : "Clear"}
+                aria-label={t("مسح", "Clear")}
                 onClick={() => setQuery("")}
                 variant="ghost"
                 className="absolute end-2 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full md:h-7 md:w-7"
@@ -94,7 +94,7 @@ export function MobileSearchSheet({ open, onOpenChange }: MobileSearchSheetProps
 
         {/* Result-count announcement for assistive tech. */}
         <span className="sr-only" role="status" aria-live="polite">
-          {isSearching ? (lang === "ar" ? `${resultCount} نتيجة` : `${resultCount} results`) : ""}
+          {isSearching ? (t(`${resultCount} نتيجة`, `${resultCount} results`)) : ""}
         </span>
 
         {/* Results */}
@@ -105,12 +105,10 @@ export function MobileSearchSheet({ open, onOpenChange }: MobileSearchSheetProps
                 <SearchIcon className="h-7 w-7 text-primary" />
               </div>
               <p className="mt-4 text-sm font-semibold text-foreground">
-                {lang === "ar" ? "ابدأ بالكتابة للبحث" : "Start typing to search"}
+                {t("ابدأ بالكتابة للبحث", "Start typing to search")}
               </p>
               <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed px-6">
-                {lang === "ar"
-                  ? "ابحث عن العملاء والوحدات والعقود والمزيد"
-                  : "Find customers, units, contracts and more"}
+                {t("ابحث عن العملاء والوحدات والعقود والمزيد", "Find customers, units, contracts and more")}
               </p>
             </div>
           )}
@@ -126,10 +124,10 @@ export function MobileSearchSheet({ open, onOpenChange }: MobileSearchSheetProps
           {isSearching && !loading && error && (
             <div role="alert" className="flex flex-col items-center justify-center py-20 text-center">
               <p className="text-sm font-semibold text-destructive">
-                {lang === "ar" ? "تعذّر إجراء البحث" : "Search failed"}
+                {t("تعذّر إجراء البحث", "Search failed")}
               </p>
               <p className="mt-1.5 text-xs text-muted-foreground px-6">
-                {lang === "ar" ? "حاول مرة أخرى." : "Please try again."}
+                {t("حاول مرة أخرى.", "Please try again.")}
               </p>
             </div>
           )}
@@ -137,7 +135,7 @@ export function MobileSearchSheet({ open, onOpenChange }: MobileSearchSheetProps
           {isSearching && !loading && !error && !hasAnyResults && (
             <div className="flex flex-col items-center justify-center py-20 text-center">
               <p className="text-sm font-semibold text-foreground">
-                {lang === "ar" ? "لا توجد نتائج" : "No results"}
+                {t("لا توجد نتائج", "No results")}
               </p>
               <p className="mt-1.5 text-xs text-muted-foreground px-6">
                 {lang === "ar"
@@ -193,7 +191,7 @@ export function MobileSearchSheet({ open, onOpenChange }: MobileSearchSheetProps
                           className="flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-xs font-medium text-primary hover:bg-muted/30 active:bg-muted/50 transition-colors"
                         >
                           <ArrowRight className="h-3.5 w-3.5 icon-directional" />
-                          <span>{lang === "ar" ? "عرض الكل" : "See all"}</span>
+                          <span>{t("عرض الكل", "See all")}</span>
                         </Link>
                       )}
                     </div>

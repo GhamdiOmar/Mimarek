@@ -3,6 +3,7 @@
 import { db, Prisma } from "@repo/db";
 import { z } from "zod";
 import { getSessionWithPermissions } from "../../lib/auth-helpers";
+import { serialize } from "../../lib/serialize";
 
 // ─── Saved DataTable views (CX-014) ─────────────────────────────────────────────
 //
@@ -57,7 +58,7 @@ export async function getSavedViews(tableKey: string): Promise<SavedTableViewDTO
     orderBy: { name: "asc" },
   });
 
-  return JSON.parse(JSON.stringify(views)) as SavedTableViewDTO[];
+  return serialize(views) as SavedTableViewDTO[];
 }
 
 /** Create a personal view owned by the current user+org. */
@@ -79,7 +80,7 @@ export async function createSavedView(input: {
     },
   });
 
-  return JSON.parse(JSON.stringify(created)) as SavedTableViewDTO;
+  return serialize(created) as SavedTableViewDTO;
 }
 
 /** Update name/config of a view the current user owns (own + same org only). */
@@ -118,7 +119,7 @@ export async function updateSavedView(input: {
     },
   });
 
-  return JSON.parse(JSON.stringify(updated)) as SavedTableViewDTO;
+  return serialize(updated) as SavedTableViewDTO;
 }
 
 /** Delete a view the current user owns (own + same org only). */

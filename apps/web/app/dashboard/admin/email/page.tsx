@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, CheckCircle2, ClipboardCopy, KeyRound, Mail, Save, Send, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { Button, Card, CardContent, CardHeader, CardTitle, Input, Switch } from "@repo/ui";
+import { Button, Card, CardContent, CardHeader, CardTitle, Input, Switch, SelectField } from "@repo/ui";
 import { PageHeader } from "@repo/ui/components/PageHeader";
 import { useLanguage } from "../../../../components/LanguageProvider";
 import { sanitizeError } from "../../../../lib/error-sanitizer";
@@ -271,8 +271,8 @@ export default function AdminEmailSettingsPage() {
               </label>
               <label className="space-y-2 text-sm font-medium">
                 {t.encryption}
-                <select
-                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                <SelectField
+                  aria-label={t.encryption}
                   value={form.smtpSecure ? "ssl" : "starttls"}
                   onChange={(e) => {
                     const ssl = e.target.value === "ssl";
@@ -282,7 +282,7 @@ export default function AdminEmailSettingsPage() {
                 >
                   <option value="ssl">SSL/TLS (465)</option>
                   <option value="starttls">STARTTLS (587)</option>
-                </select>
+                </SelectField>
               </label>
               <label className="space-y-2 text-sm font-medium">
                 {t.username}

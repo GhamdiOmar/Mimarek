@@ -17,7 +17,7 @@ export interface RouteErrorProps {
 }
 
 export function RouteError({ error, reset }: RouteErrorProps) {
-  const { lang } = useLanguage();
+  const { t, lang } = useLanguage();
 
   React.useEffect(() => {
     // eslint-disable-next-line no-console
@@ -25,14 +25,12 @@ export function RouteError({ error, reset }: RouteErrorProps) {
   }, [error]);
 
   const title =
-    lang === "ar" ? "حدث خطأ غير متوقع" : "Something went wrong";
+    t("حدث خطأ غير متوقع", "Something went wrong");
   const description =
-    lang === "ar"
-      ? "تعذّر تحميل هذه الصفحة. حاول مرة أخرى أو تواصل مع الدعم إذا استمرت المشكلة."
-      : "We couldn't load this page. Try again, or contact support if the problem persists.";
-  const retryLabel = lang === "ar" ? "حاول مرة أخرى" : "Try again";
-  const supportLabel = lang === "ar" ? "تواصل مع الدعم" : "Contact support";
-  const referenceLabel = lang === "ar" ? "المرجع" : "Reference";
+    t("تعذّر تحميل هذه الصفحة. حاول مرة أخرى أو تواصل مع الدعم إذا استمرت المشكلة.", "We couldn't load this page. Try again, or contact support if the problem persists.");
+  const retryLabel = t("حاول مرة أخرى", "Try again");
+  const supportLabel = t("تواصل مع الدعم", "Contact support");
+  const referenceLabel = t("المرجع", "Reference");
 
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center">

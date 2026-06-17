@@ -78,7 +78,7 @@ export default function CrmView({
   initialTeamMembers: any[];
   initialAvailableUnits: any[];
 }) {
-  const { lang } = useLanguage();
+  const { t, lang } = useLanguage();
   const { can } = usePermissions();
 
   // Seeded from the Server Component's masked getCustomers() result — no
@@ -173,9 +173,7 @@ export default function CrmView({
       setPageAvailableUnits(units);
     } catch {
       setError(
-        lang === "ar"
-          ? "تعذّر تحميل بيانات العملاء. يرجى المحاولة مجدداً."
-          : "Failed to load CRM data. Please try again."
+        t("تعذّر تحميل بيانات العملاء. يرجى المحاولة مجدداً.", "Failed to load CRM data. Please try again.")
       );
     } finally {
       setLoading(false);
@@ -237,7 +235,7 @@ export default function CrmView({
       {
         id: "name",
         accessorKey: "name",
-        header: lang === "ar" ? "الاسم" : "Name",
+        header: t("الاسم", "Name"),
         cell: ({ row }) => {
           const c = row.original;
           return (
@@ -253,7 +251,7 @@ export default function CrmView({
       {
         id: "phone",
         accessorKey: "phone",
-        header: lang === "ar" ? "الهاتف" : "Phone",
+        header: t("الهاتف", "Phone"),
         cell: ({ row }) =>
           row.original.phone ? (
             <span className="inline-flex items-center gap-1.5 font-mono text-sm text-muted-foreground" dir="ltr">
@@ -267,14 +265,14 @@ export default function CrmView({
       {
         id: "budget",
         accessorKey: "budget",
-        header: lang === "ar" ? "الميزانية" : "Budget",
+        header: t("الميزانية", "Budget"),
         sortingFn: (a, b) => Number(a.original.budget ?? 0) - Number(b.original.budget ?? 0),
         cell: ({ row }) => {
           const b = row.original.budget;
           return (
             <span className="text-sm text-muted-foreground">
               {b
-                ? `${Number(b).toLocaleString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-SA")} ${lang === "ar" ? "ر.س" : "SAR"}`
+                ? `${Number(b).toLocaleString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-SA")} ${t("ر.س", "SAR")}`
                 : "—"}
             </span>
           );
@@ -284,7 +282,7 @@ export default function CrmView({
       {
         id: "status",
         accessorKey: "status",
-        header: lang === "ar" ? "الحالة" : "Status",
+        header: t("الحالة", "Status"),
         cell: ({ row }) => {
           const statusCfg = getStatusConfig(row.original.status);
           return (
@@ -303,7 +301,7 @@ export default function CrmView({
       {
         id: "source",
         accessorKey: "source",
-        header: lang === "ar" ? "المصدر" : "Source",
+        header: t("المصدر", "Source"),
         cell: ({ row }) => {
           const s = row.original.source;
           return (
@@ -327,7 +325,7 @@ export default function CrmView({
             <div className="flex items-center justify-end gap-1">
               <IconButton
                 icon={Eye}
-                aria-label={lang === "ar" ? "عرض" : "View"}
+                aria-label={t("عرض", "View")}
                 variant="ghost"
                 onClick={(e) => {
                   e.stopPropagation();
@@ -337,7 +335,7 @@ export default function CrmView({
               {canDelete && (
                 <IconButton
                   icon={Trash2}
-                  aria-label={lang === "ar" ? "حذف" : "Delete"}
+                  aria-label={t("حذف", "Delete")}
                   variant="ghost"
                   className="text-destructive"
                   onClick={(e) => {
@@ -390,9 +388,7 @@ export default function CrmView({
     } catch {
       setCustomers(prev);
       setError(
-        lang === "ar"
-          ? "فشل تحديث حالة العميل. يرجى المحاولة مجدداً."
-          : "Failed to update status. Please try again."
+        t("فشل تحديث حالة العميل. يرجى المحاولة مجدداً.", "Failed to update status. Please try again.")
       );
     }
   }
@@ -433,9 +429,7 @@ export default function CrmView({
       setCustomers(prev);
       setMoveAnnouncement(null);
       setError(
-        lang === "ar"
-          ? "فشل تحديث حالة العميل. يرجى المحاولة مجدداً."
-          : "Failed to update status. Please try again."
+        t("فشل تحديث حالة العميل. يرجى المحاولة مجدداً.", "Failed to update status. Please try again.")
       );
     }
   }
@@ -463,9 +457,7 @@ export default function CrmView({
     } catch {
       setCustomers(prev);
       setError(
-        lang === "ar"
-          ? "فشل تحديث حالة العميل. يرجى المحاولة مجدداً."
-          : "Failed to update status. Please try again."
+        t("فشل تحديث حالة العميل. يرجى المحاولة مجدداً.", "Failed to update status. Please try again.")
       );
     } finally {
       setSavingLost(false);
@@ -496,9 +488,7 @@ export default function CrmView({
     } catch (err: any) {
       setError(
         err?.message ||
-          (lang === "ar"
-            ? "فشل حذف العميل. يرجى المحاولة مجدداً."
-            : "Failed to delete contact. Please try again.")
+          (t("فشل حذف العميل. يرجى المحاولة مجدداً.", "Failed to delete contact. Please try again."))
       );
     } finally {
       setDeleting(false);
@@ -608,22 +598,20 @@ export default function CrmView({
         <EmptyState
           variant="first-time"
           icon={<Users className="h-12 w-12" />}
-          title={lang === "ar" ? "لا يوجد عملاء بعد" : "No contacts yet"}
+          title={t("لا يوجد عملاء بعد", "No contacts yet")}
           description={
-            lang === "ar"
-              ? "أضف أول عميل محتمل وابدأ ببناء خط أعمالك."
-              : "Add your first lead and start building your pipeline."
+            t("أضف أول عميل محتمل وابدأ ببناء خط أعمالك.", "Add your first lead and start building your pipeline.")
           }
           action={
             canWrite ? (
               <Button size="sm" onClick={openAddCustomerModal} style={{ display: "inline-flex" }}>
                 <Plus className="h-4 w-4 me-1.5" />
-                {lang === "ar" ? "إضافة عميل" : "Add contact"}
+                {t("إضافة عميل", "Add contact")}
               </Button>
             ) : undefined
           }
           helpHref="/dashboard/help#crm"
-          helpLabel={lang === "ar" ? "تعرّف على CRM" : "Learn about CRM"}
+          helpLabel={t("تعرّف على CRM", "Learn about CRM")}
         />
       ) : (
         <EmptyState
@@ -631,7 +619,7 @@ export default function CrmView({
           icon={<Search className="h-10 w-10" />}
           title={emptyLabel[lang]}
           description={
-            lang === "ar" ? "جرّب تعديل البحث أو الفلاتر." : "Try adjusting your search or filters."
+            t("جرّب تعديل البحث أو الفلاتر.", "Try adjusting your search or filters.")
           }
           action={
             <Button
@@ -640,7 +628,7 @@ export default function CrmView({
               onClick={() => setSearch("")}
               style={{ display: "inline-flex" }}
             >
-              {lang === "ar" ? "مسح الفلاتر" : "Clear filters"}
+              {t("مسح الفلاتر", "Clear filters")}
             </Button>
           }
         />
@@ -704,12 +692,12 @@ export default function CrmView({
       dir={lang === "ar" ? "rtl" : "ltr"}
     >
       <AppBar
-        title={lang === "ar" ? "إدارة العملاء" : "CRM"}
+        title={t("إدارة العملاء", "CRM")}
         lang={lang}
         trailing={
           <IconButton
             icon={Filter}
-            aria-label={lang === "ar" ? "تصفية" : "Filter"}
+            aria-label={t("تصفية", "Filter")}
             variant="ghost"
             size="icon"
             className="h-10 w-10 rounded-full"
@@ -727,7 +715,7 @@ export default function CrmView({
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder={lang === "ar" ? "بحث بالاسم أو الهاتف..." : "Search by name or phone..."}
+            placeholder={t("بحث بالاسم أو الهاتف...", "Search by name or phone...")}
             className="h-10 ps-9"
           />
         </div>
@@ -735,18 +723,18 @@ export default function CrmView({
 
       <div className="px-4 pt-3">
         <MobileTabs
-          ariaLabel={lang === "ar" ? "تبويبات العملاء" : "CRM tabs"}
+          ariaLabel={t("تبويبات العملاء", "CRM tabs")}
           active={mobileTab}
           onChange={(k) => setMobileTab(k as "pipeline" | "leads" | "customers")}
           items={[
-            { key: "pipeline", label: lang === "ar" ? "مسار الفرص العقارية" : "Pipeline" },
+            { key: "pipeline", label: t("مسار الفرص العقارية", "Pipeline") },
             {
               key: "leads",
-              label: `${lang === "ar" ? "العملاء المحتملون" : "Leads"} (${mobileLeads.length})`,
+              label: `${t("العملاء المحتملون", "Leads")} (${mobileLeads.length})`,
             },
             {
               key: "customers",
-              label: `${lang === "ar" ? "العملاء" : "Customers"} (${mobileCustomers.length})`,
+              label: `${t("العملاء", "Customers")} (${mobileCustomers.length})`,
             },
           ]}
         />
@@ -776,7 +764,7 @@ export default function CrmView({
                 children:
                   stageCustomers.length === 0 ? (
                     <p className="py-4 text-center text-xs text-muted-foreground">
-                      {lang === "ar" ? "لا توجد صفقات في هذه المرحلة" : "No deals in this stage"}
+                      {t("لا توجد صفقات في هذه المرحلة", "No deals in this stage")}
                     </p>
                   ) : (
                     stageCustomers.map((c) => (
@@ -826,7 +814,7 @@ export default function CrmView({
       {canWrite && (
         <FAB
           icon={Plus}
-          label={lang === "ar" ? "إضافة عميل" : "New Contact"}
+          label={t("إضافة عميل", "New Contact")}
           onClick={openAddCustomerModal}
         />
       )}
@@ -835,7 +823,7 @@ export default function CrmView({
       <BottomSheet
         open={showMobileFilters}
         onOpenChange={setShowMobileFilters}
-        title={lang === "ar" ? "تصفية" : "Filters"}
+        title={t("تصفية", "Filters")}
         footer={
           <div className="flex items-center justify-between gap-2">
             <Button
@@ -846,13 +834,13 @@ export default function CrmView({
                 setShowLost(false);
               }}
             >
-              {lang === "ar" ? "مسح" : "Reset"}
+              {t("مسح", "Reset")}
             </Button>
             <Button
               style={{ display: "inline-flex" }}
               onClick={() => setShowMobileFilters(false)}
             >
-              {lang === "ar" ? "تطبيق" : "Apply"}
+              {t("تطبيق", "Apply")}
             </Button>
           </div>
         }
@@ -860,7 +848,7 @@ export default function CrmView({
         <div className="space-y-5">
           <div>
             <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {lang === "ar" ? "الحالة" : "Status"}
+              {t("الحالة", "Status")}
             </h4>
             <div className="flex flex-wrap gap-2">
               <Button
@@ -875,7 +863,7 @@ export default function CrmView({
                   setShowLost(false);
                 }}
               >
-                {lang === "ar" ? "الكل" : "All"}
+                {t("الكل", "All")}
               </Button>
               {PIPELINE_STAGES.map((s) => (
                 <Button
@@ -906,7 +894,7 @@ export default function CrmView({
                   setStatusFilter("");
                 }}
               >
-                {lang === "ar" ? "الخسائر فقط" : "Lost only"}
+                {t("الخسائر فقط", "Lost only")}
               </Button>
             </div>
           </div>
@@ -914,7 +902,7 @@ export default function CrmView({
           {hasPiiAccess && (
             <div>
               <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                {lang === "ar" ? "الخصوصية" : "Privacy"}
+                {t("الخصوصية", "Privacy")}
               </h4>
               <Button
                 type="button"
@@ -931,12 +919,8 @@ export default function CrmView({
               >
                 <Eye className="h-3.5 w-3.5" aria-hidden="true" />
                 {showPii
-                  ? lang === "ar"
-                    ? "إخفاء البيانات الحساسة"
-                    : "Hide PII"
-                  : lang === "ar"
-                    ? "عرض البيانات الحساسة"
-                    : "Show PII"}
+                  ? t("إخفاء البيانات الحساسة", "Hide PII")
+                  : t("عرض البيانات الحساسة", "Show PII")}
               </Button>
             </div>
           )}
@@ -944,9 +928,7 @@ export default function CrmView({
           <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 p-3 text-xs text-muted-foreground">
             <Handshake className="h-4 w-4 shrink-0" aria-hidden="true" />
             <span>
-              {lang === "ar"
-                ? "سحب البطاقات بين مراحل مسار الفرص متاح على سطح المكتب."
-                : "Drag-and-drop pipeline available on desktop."}
+              {t("سحب البطاقات بين مراحل مسار الفرص متاح على سطح المكتب.", "Drag-and-drop pipeline available on desktop.")}
             </span>
             <Building2 className="hidden h-4 w-4 shrink-0" aria-hidden="true" />
           </div>
@@ -962,11 +944,9 @@ export default function CrmView({
     >
       {/* ── Header ── */}
       <PageIntro
-        title={lang === "ar" ? "إدارة العملاء" : "CRM"}
+        title={t("إدارة العملاء", "CRM")}
         description={
-          lang === "ar"
-            ? "تتبع العملاء المحتملين وإدارة خط أنابيب المبيعات"
-            : "Track leads and manage your sales pipeline"
+          t("تتبع العملاء المحتملين وإدارة خط أنابيب المبيعات", "Track leads and manage your sales pipeline")
         }
         actions={
           <>
@@ -985,8 +965,8 @@ export default function CrmView({
               >
                 <Eye className="h-3.5 w-3.5" />
                 {showPii
-                  ? lang === "ar" ? "إخفاء البيانات الحساسة" : "Hide PII"
-                  : lang === "ar" ? "عرض البيانات الحساسة" : "Show PII"}
+                  ? t("إخفاء البيانات الحساسة", "Hide PII")
+                  : t("عرض البيانات الحساسة", "Show PII")}
               </Button>
             )}
             {canExport && (
@@ -998,7 +978,7 @@ export default function CrmView({
                 onClick={handleExport}
               >
                 <FileDown className="h-3.5 w-3.5" />
-                {lang === "ar" ? "تصدير" : "Export"}
+                {t("تصدير", "Export")}
               </Button>
             )}
             {canWrite && (
@@ -1010,7 +990,7 @@ export default function CrmView({
                 onClick={() => setShowImport(true)}
               >
                 <Upload className="h-3.5 w-3.5" />
-                {lang === "ar" ? "استيراد" : "Import"}
+                {t("استيراد", "Import")}
               </Button>
             )}
             {canWrite && (
@@ -1022,7 +1002,7 @@ export default function CrmView({
                 onClick={() => setShowAddModal(true)}
               >
                 <UserPlus className="h-3.5 w-3.5" />
-                {lang === "ar" ? "إضافة عميل" : "Add Customer"}
+                {t("إضافة عميل", "Add Customer")}
               </Button>
             )}
           </>
@@ -1048,7 +1028,7 @@ export default function CrmView({
           <p className="text-sm text-destructive">{error}</p>
           <IconButton
             icon={X}
-            aria-label={lang === "ar" ? "إغلاق" : "Dismiss"}
+            aria-label={t("إغلاق", "Dismiss")}
             variant="ghost"
             size="icon"
             className="h-7 w-7 text-destructive/70 hover:text-destructive"
@@ -1060,33 +1040,33 @@ export default function CrmView({
       {/* ── KPI Cards ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard
-          label={lang === "ar" ? "إجمالي جهات الاتصال" : "Active Contacts"}
+          label={t("إجمالي جهات الاتصال", "Active Contacts")}
           value={kpis.total}
-          subtitle={lang === "ar" ? "جميع العملاء النشطين" : "All active contacts"}
+          subtitle={t("جميع العملاء النشطين", "All active contacts")}
           icon={<Users className="h-[18px] w-[18px]" />}
           accentColor="primary"
           loading={loading}
         />
         <KPICard
-          label={lang === "ar" ? "عملاء جدد" : "New Leads"}
+          label={t("عملاء جدد", "New Leads")}
           value={kpis.newLeads}
-          subtitle={lang === "ar" ? "بانتظار التواصل" : "Awaiting first contact"}
+          subtitle={t("بانتظار التواصل", "Awaiting first contact")}
           icon={<UserPlus className="h-[18px] w-[18px]" />}
           accentColor="info"
           loading={loading}
         />
         <KPICard
-          label={lang === "ar" ? "في مسار الفرص" : "In Pipeline"}
+          label={t("في مسار الفرص", "In Pipeline")}
           value={kpis.inProgress}
-          subtitle={lang === "ar" ? "في مراحل متقدمة" : "Contacted through Negotiation"}
+          subtitle={t("في مراحل متقدمة", "Contacted through Negotiation")}
           icon={<TrendingUp className="h-[18px] w-[18px]" />}
           accentColor="warning"
           loading={loading}
         />
         <KPICard
-          label={lang === "ar" ? "خسائر" : "Lost Leads"}
+          label={t("خسائر", "Lost Leads")}
           value={kpis.lost}
-          subtitle={lang === "ar" ? "عملاء خرجوا من المسار" : "Exited pipeline"}
+          subtitle={t("عملاء خرجوا من المسار", "Exited pipeline")}
           icon={<AlertTriangle className="h-[18px] w-[18px]" />}
           accentColor="warning"
           loading={loading}
@@ -1106,7 +1086,7 @@ export default function CrmView({
               aria-pressed={!statusFilter && !showLost}
               onClick={() => { setStatusFilter(""); setShowLost(false); }}
             >
-              {lang === "ar" ? "الكل" : "All"} {customers.filter(c => c.status !== "LOST").length}
+              {t("الكل", "All")} {customers.filter(c => c.status !== "LOST").length}
             </Button>
             {PIPELINE_STAGES.map((s) => {
               const count = customers.filter((c) => c.status === s.key).length;
@@ -1133,7 +1113,7 @@ export default function CrmView({
               aria-pressed={showLost}
               onClick={() => { setShowLost((v) => !v); setStatusFilter(""); }}
             >
-              {lang === "ar" ? "خسائر" : "Lost"} {kpis.lost}
+              {t("خسائر", "Lost")} {kpis.lost}
             </Button>
           </div>
 
@@ -1147,7 +1127,7 @@ export default function CrmView({
               aria-pressed={viewMode === "kanban"}
               onClick={() => setViewMode("kanban")}
             >
-              {lang === "ar" ? "كانبان" : "Kanban"}
+              {t("كانبان", "Kanban")}
             </Button>
             <Button
               variant={viewMode === "list" ? "primary" : "subtle"}
@@ -1157,7 +1137,7 @@ export default function CrmView({
               aria-pressed={viewMode === "list"}
               onClick={() => setViewMode("list")}
             >
-              {lang === "ar" ? "قائمة" : "List"}
+              {t("قائمة", "List")}
             </Button>
           </div>
         </div>
@@ -1170,9 +1150,7 @@ export default function CrmView({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={
-              lang === "ar"
-                ? "ابحث بالاسم أو رقم الهاتف..."
-                : "Search by name or phone..."
+              t("ابحث بالاسم أو رقم الهاتف...", "Search by name or phone...")
             }
             className="w-full h-10 bg-background border border-input rounded-xl ps-10 pe-4 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring/30"
           />
@@ -1240,7 +1218,7 @@ export default function CrmView({
                       className="number-ltr mt-1 text-[11px] font-medium tabular-nums text-muted-foreground"
                     >
                       {colValue.toLocaleString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-SA")}{" "}
-                      {lang === "ar" ? "ر.س" : "SAR"}
+                      {t("ر.س", "SAR")}
                     </p>
                   )}
                 </div>
@@ -1274,7 +1252,7 @@ export default function CrmView({
                     }}
                   >
                     <Plus className="h-3.5 w-3.5" />
-                    {lang === "ar" ? "إضافة" : "Add"}
+                    {t("إضافة", "Add")}
                   </Button>
                 )}
               </div>
@@ -1292,11 +1270,9 @@ export default function CrmView({
           getRowId={(c) => c.id}
           pageSize={25}
           emptyIcon={<Users className="h-12 w-12" aria-hidden="true" />}
-          emptyTitle={lang === "ar" ? "لا توجد نتائج" : "No contacts found"}
+          emptyTitle={t("لا توجد نتائج", "No contacts found")}
           emptyDescription={
-            lang === "ar"
-              ? "حاول تعديل خيارات البحث أو الفلتر، أو أضف عميلاً جديداً."
-              : "Try adjusting your search or filter, or add a new contact."
+            t("حاول تعديل خيارات البحث أو الفلتر، أو أضف عميلاً جديداً.", "Try adjusting your search or filter, or add a new contact.")
           }
           emptyAction={
             !search.trim() && !statusFilter ? (
@@ -1306,7 +1282,7 @@ export default function CrmView({
                 className="gap-2"
               >
                 <UserPlus className="h-4 w-4" />
-                {lang === "ar" ? "إضافة عميل" : "Add contact"}
+                {t("إضافة عميل", "Add contact")}
               </Button>
             ) : undefined
           }
@@ -1342,7 +1318,7 @@ export default function CrmView({
                   )}
                   <span>
                     {c.budget
-                      ? `${Number(c.budget).toLocaleString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-SA")} ${lang === "ar" ? "ر.س" : "SAR"}`
+                      ? `${Number(c.budget).toLocaleString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-SA")} ${t("ر.س", "SAR")}`
                       : "—"}
                   </span>
                 </div>
@@ -1355,7 +1331,7 @@ export default function CrmView({
                   <div className="flex items-center gap-2">
                     <IconButton
                       icon={Eye}
-                      aria-label={lang === "ar" ? "عرض الملف" : "View profile"}
+                      aria-label={t("عرض الملف", "View profile")}
                       variant="ghost"
                       size="icon"
                       className="h-11 w-11 sm:h-8 sm:w-8 border border-border bg-background"
@@ -1367,7 +1343,7 @@ export default function CrmView({
                     {canDelete && (
                       <IconButton
                         icon={Trash2}
-                        aria-label={lang === "ar" ? "حذف" : "Delete"}
+                        aria-label={t("حذف", "Delete")}
                         variant="ghost"
                         size="icon"
                         className="h-11 w-11 sm:h-8 sm:w-8 border border-border bg-background"
@@ -1390,11 +1366,9 @@ export default function CrmView({
       <ResponsiveDialog
         open={showLostModal}
         onOpenChange={(open) => { if (!open) setShowLostModal(false); }}
-        title={lang === "ar" ? "تحديد سبب الخسارة" : "Mark as Lost"}
+        title={t("تحديد سبب الخسارة", "Mark as Lost")}
         description={
-          lang === "ar"
-            ? `الرجاء تحديد سبب خسارة العميل "${lostTarget?.name}"`
-            : `Please select why "${lostTarget?.name}" was lost`
+          t(`الرجاء تحديد سبب خسارة العميل "${lostTarget?.name}"`, `Please select why "${lostTarget?.name}" was lost`)
         }
         footer={
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
@@ -1404,7 +1378,7 @@ export default function CrmView({
               onClick={() => setShowLostModal(false)}
               disabled={savingLost}
             >
-              {lang === "ar" ? "إلغاء" : "Cancel"}
+              {t("إلغاء", "Cancel")}
             </Button>
             <Button
               variant="destructive"
@@ -1414,7 +1388,7 @@ export default function CrmView({
               disabled={!lostReason || savingLost}
             >
               {savingLost && <Loader2 className="h-4 w-4 animate-spin" />}
-              {lang === "ar" ? "تأكيد الخسارة" : "Confirm Lost"}
+              {t("تأكيد الخسارة", "Confirm Lost")}
             </Button>
           </div>
         }
@@ -1445,11 +1419,9 @@ export default function CrmView({
       <ResponsiveDialog
         open={showDeleteDialog}
         onOpenChange={setShowDeleteDialog}
-        title={lang === "ar" ? "تأكيد الحذف" : "Confirm Deletion"}
+        title={t("تأكيد الحذف", "Confirm Deletion")}
         description={
-          lang === "ar"
-            ? `هل أنت متأكد من حذف "${deleteTarget?.name}"؟ لا يمكن التراجع عن هذا الإجراء.`
-            : `Are you sure you want to delete "${deleteTarget?.name}"? This action cannot be undone.`
+          t(`هل أنت متأكد من حذف "${deleteTarget?.name}"؟ لا يمكن التراجع عن هذا الإجراء.`, `Are you sure you want to delete "${deleteTarget?.name}"? This action cannot be undone.`)
         }
         footer={
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
@@ -1459,7 +1431,7 @@ export default function CrmView({
               onClick={() => { setShowDeleteDialog(false); setError(null); }}
               disabled={deleting}
             >
-              {lang === "ar" ? "إلغاء" : "Cancel"}
+              {t("إلغاء", "Cancel")}
             </Button>
             <Button
               variant="destructive"
@@ -1469,7 +1441,7 @@ export default function CrmView({
               disabled={deleting}
             >
               {deleting && <Loader2 className="h-4 w-4 animate-spin" />}
-              {lang === "ar" ? "حذف" : "Delete"}
+              {t("حذف", "Delete")}
             </Button>
           </div>
         }

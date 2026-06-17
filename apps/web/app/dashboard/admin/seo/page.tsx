@@ -36,6 +36,7 @@ import {
   TabsTrigger,
   AppBar,
   EmptyState,
+  SelectField,
 } from "@repo/ui";
 import { PageHeader } from "@repo/ui/components/PageHeader";
 import { toast } from "sonner";
@@ -107,7 +108,7 @@ function AssetUploader({
 }
 
 export default function SeoSettingsPage() {
-  const { lang } = useLanguage();
+  const { t, lang } = useLanguage();
   const { data: session } = useSession();
   const userRole = session?.user?.role ?? "";
   const authorized = isSystemRole(userRole);
@@ -199,9 +200,9 @@ export default function SeoSettingsPage() {
     setSaving(section);
     try {
       await upsertSeoConfig(data);
-      toast.success(lang === "ar" ? "تم الحفظ بنجاح" : "Saved successfully");
+      toast.success(t("تم الحفظ بنجاح", "Saved successfully"));
     } catch {
-      toast.error(lang === "ar" ? "فشل الحفظ" : "Failed to save");
+      toast.error(t("فشل الحفظ", "Failed to save"));
     } finally {
       setSaving(null);
     }
@@ -288,7 +289,7 @@ export default function SeoSettingsPage() {
       dir={dir}
     >
       <AppBar
-        title={lang === "ar" ? "تحسين محركات البحث" : "SEO"}
+        title={t("تحسين محركات البحث", "SEO")}
         lang={lang}
       />
 
@@ -296,11 +297,9 @@ export default function SeoSettingsPage() {
         <div className="flex-1 px-4 pt-10">
           <EmptyState
             icon={<ShieldAlert className="h-10 w-10" aria-hidden="true" />}
-            title={lang === "ar" ? "غير مصرح" : "Unauthorized"}
+            title={t("غير مصرح", "Unauthorized")}
             description={
-              lang === "ar"
-                ? "هذه الصفحة متاحة لفريق المنصة فقط."
-                : "This page is available to platform staff only."
+              t("هذه الصفحة متاحة لفريق المنصة فقط.", "This page is available to platform staff only.")
             }
           />
         </div>
@@ -309,23 +308,23 @@ export default function SeoSettingsPage() {
           <div className="flex-1 px-4 py-4 space-y-6 pb-28">
             <section className="space-y-3">
               <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                {lang === "ar" ? "ميتاداتا" : "Metadata"}
+                {t("ميتاداتا", "Metadata")}
               </h2>
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-muted-foreground">
-                  {lang === "ar" ? "عنوان الموقع" : "Site title"}
+                  {t("عنوان الموقع", "Site title")}
                 </label>
                 <Input value={siteTitle} onChange={(e) => setSiteTitle(e.target.value)} />
               </div>
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-muted-foreground">
-                  {lang === "ar" ? "قالب العنوان" : "Title template"}
+                  {t("قالب العنوان", "Title template")}
                 </label>
                 <Input value={siteTitleTemplate} onChange={(e) => setSiteTitleTemplate(e.target.value)} />
               </div>
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-muted-foreground">
-                  {lang === "ar" ? "الوصف (عربي)" : "Description (AR)"}
+                  {t("الوصف (عربي)", "Description (AR)")}
                 </label>
                 <textarea
                   className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"
@@ -337,7 +336,7 @@ export default function SeoSettingsPage() {
               </div>
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-muted-foreground">
-                  {lang === "ar" ? "الوصف (إنجليزي)" : "Description (EN)"}
+                  {t("الوصف (إنجليزي)", "Description (EN)")}
                 </label>
                 <textarea
                   className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"
@@ -349,7 +348,7 @@ export default function SeoSettingsPage() {
               </div>
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-muted-foreground">
-                  {lang === "ar" ? "الرابط الأساسي" : "Canonical URL"}
+                  {t("الرابط الأساسي", "Canonical URL")}
                 </label>
                 <Input dir="ltr" value={canonicalUrl} onChange={(e) => setCanonicalUrl(e.target.value)} />
               </div>
@@ -357,7 +356,7 @@ export default function SeoSettingsPage() {
 
             <section className="space-y-3">
               <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                {lang === "ar" ? "التحليلات" : "Analytics"}
+                {t("التحليلات", "Analytics")}
               </h2>
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-muted-foreground">GTM Container ID</label>
@@ -391,7 +390,7 @@ export default function SeoSettingsPage() {
 
             <section className="space-y-3">
               <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                {lang === "ar" ? "التحقق" : "Verification"}
+                {t("التحقق", "Verification")}
               </h2>
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-muted-foreground">Google Search Console</label>
@@ -409,13 +408,13 @@ export default function SeoSettingsPage() {
               </h2>
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-muted-foreground">
-                  {lang === "ar" ? "اسم المنظمة" : "Organization name"}
+                  {t("اسم المنظمة", "Organization name")}
                 </label>
                 <Input value={schemaOrgName} onChange={(e) => setSchemaOrgName(e.target.value)} />
               </div>
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-muted-foreground">
-                  {lang === "ar" ? "رابط الشعار" : "Logo URL"}
+                  {t("رابط الشعار", "Logo URL")}
                 </label>
                 <Input dir="ltr" value={schemaOrgLogoUrl} onChange={(e) => setSchemaOrgLogoUrl(e.target.value)} />
               </div>
@@ -435,11 +434,11 @@ export default function SeoSettingsPage() {
 
             <section className="space-y-3">
               <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                {lang === "ar" ? "رخصة المنصة (فال)" : "REGA Platform License"}
+                {t("رخصة المنصة (فال)", "REGA Platform License")}
               </h2>
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-muted-foreground">
-                  {lang === "ar" ? "رقم رخصة فال للمنصة" : "REGA FAL License Number"}
+                  {t("رقم رخصة فال للمنصة", "REGA FAL License Number")}
                 </label>
                 <Input
                   dir="ltr"
@@ -460,12 +459,8 @@ export default function SeoSettingsPage() {
             >
               <Save className="h-4 w-4 me-2" />
               {saving !== null
-                ? lang === "ar"
-                  ? "جارٍ الحفظ..."
-                  : "Saving..."
-                : lang === "ar"
-                  ? "حفظ"
-                  : "Save"}
+                ? t("جارٍ الحفظ...", "Saving...")
+                : t("حفظ", "Save")}
             </Button>
           </div>
         </>
@@ -482,11 +477,9 @@ export default function SeoSettingsPage() {
         </div>
         <PageHeader
           className="flex-1"
-          title={lang === "ar" ? "إعدادات SEO والاكتشاف" : "SEO & Discoverability Settings"}
+          title={t("إعدادات SEO والاكتشاف", "SEO & Discoverability Settings")}
           description={
-            lang === "ar"
-              ? "إدارة ميتاداتا الموقع، العلامة التجارية، التحليلات، وإعدادات محركات البحث"
-              : "Manage site metadata, brand assets, analytics, and search engine settings"
+            t("إدارة ميتاداتا الموقع، العلامة التجارية، التحليلات، وإعدادات محركات البحث", "Manage site metadata, brand assets, analytics, and search engine settings")
           }
         />
       </div>
@@ -495,19 +488,19 @@ export default function SeoSettingsPage() {
         <TabsList className="flex flex-wrap gap-1 h-auto p-1">
           <TabsTrigger value="metadata" className="gap-2">
             <Globe className="h-4 w-4" />
-            {lang === "ar" ? "ميتاداتا SEO" : "SEO Metadata"}
+            {t("ميتاداتا SEO", "SEO Metadata")}
           </TabsTrigger>
           <TabsTrigger value="assets" className="gap-2">
             <ImageIcon className="h-4 w-4" />
-            {lang === "ar" ? "العلامة التجارية" : "Brand Assets"}
+            {t("العلامة التجارية", "Brand Assets")}
           </TabsTrigger>
           <TabsTrigger value="analytics" className="gap-2">
             <Tag className="h-4 w-4" />
-            {lang === "ar" ? "التحليلات" : "Analytics"}
+            {t("التحليلات", "Analytics")}
           </TabsTrigger>
           <TabsTrigger value="verification" className="gap-2">
             <Shield className="h-4 w-4" />
-            {lang === "ar" ? "التحقق" : "Verification"}
+            {t("التحقق", "Verification")}
           </TabsTrigger>
           <TabsTrigger value="robots" className="gap-2">
             <Code2 className="h-4 w-4" />
@@ -519,7 +512,7 @@ export default function SeoSettingsPage() {
           </TabsTrigger>
           <TabsTrigger value="rega" className="gap-2">
             <FileCheck2 className="h-4 w-4" />
-            {lang === "ar" ? "رخصة فال" : "REGA License"}
+            {t("رخصة فال", "REGA License")}
           </TabsTrigger>
         </TabsList>
 
@@ -528,28 +521,26 @@ export default function SeoSettingsPage() {
           <Card className="p-6 space-y-5">
             <div>
               <h3 className="font-semibold text-primary">
-                {lang === "ar" ? "ميتاداتا SEO الافتراضية" : "Default SEO Metadata"}
+                {t("ميتاداتا SEO الافتراضية", "Default SEO Metadata")}
               </h3>
               <p className="text-sm text-muted-foreground mt-1">
-                {lang === "ar"
-                  ? "هذه القيم تُطبَّق على جميع الصفحات العامة. تُغيِّر هذا الحقل فيصبح فعّالاً فوراً."
-                  : "These values apply globally to all public pages and take effect immediately."}
+                {t("هذه القيم تُطبَّق على جميع الصفحات العامة. تُغيِّر هذا الحقل فيصبح فعّالاً فوراً.", "These values apply globally to all public pages and take effect immediately.")}
               </p>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">{lang === "ar" ? "عنوان الموقع (افتراضي)" : "Site Title (default)"}</label>
+                <label className="text-sm font-medium">{t("عنوان الموقع (افتراضي)", "Site Title (default)")}</label>
                 <Input value={siteTitle} onChange={(e) => setSiteTitle(e.target.value)} placeholder="Mimaric | منصة إدارة العقارات" />
               </div>
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">{lang === "ar" ? "قالب العنوان" : "Title Template"}</label>
+                <label className="text-sm font-medium">{t("قالب العنوان", "Title Template")}</label>
                 <Input value={siteTitleTemplate} onChange={(e) => setSiteTitleTemplate(e.target.value)} placeholder="%s | Mimaric" />
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">{lang === "ar" ? "الوصف (عربي)" : "Description (Arabic)"}</label>
+              <label className="text-sm font-medium">{t("الوصف (عربي)", "Description (Arabic)")}</label>
               <textarea
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-primary"
                 rows={3}
@@ -561,7 +552,7 @@ export default function SeoSettingsPage() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">{lang === "ar" ? "الوصف (إنجليزي)" : "Description (English)"}</label>
+              <label className="text-sm font-medium">{t("الوصف (إنجليزي)", "Description (English)")}</label>
               <textarea
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-primary"
                 rows={3}
@@ -574,36 +565,34 @@ export default function SeoSettingsPage() {
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">{lang === "ar" ? "الرابط الأساسي (Canonical)" : "Canonical Base URL"}</label>
+                <label className="text-sm font-medium">{t("الرابط الأساسي (Canonical)", "Canonical Base URL")}</label>
                 <Input value={canonicalUrl} onChange={(e) => setCanonicalUrl(e.target.value)} placeholder="https://mimaric.app" dir="ltr" />
               </div>
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">{lang === "ar" ? "لغة Open Graph" : "OG Locale"}</label>
-                <select
-                  aria-label={lang === "ar" ? "لغة Open Graph" : "OG Locale"}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                <label className="text-sm font-medium">{t("لغة Open Graph", "OG Locale")}</label>
+                <SelectField
+                  aria-label={t("لغة Open Graph", "OG Locale")}
                   value={ogLocale}
                   onChange={(e) => setOgLocale(e.target.value)}
                 >
                   <option value="ar_SA">ar_SA — Arabic (Saudi)</option>
                   <option value="en_US">en_US — English</option>
-                </select>
+                </SelectField>
               </div>
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">{lang === "ar" ? "حساب Twitter/X" : "Twitter/X Handle"}</label>
+                <label className="text-sm font-medium">{t("حساب Twitter/X", "Twitter/X Handle")}</label>
                 <Input value={twitterHandle} onChange={(e) => setTwitterHandle(e.target.value)} placeholder="@mimaric_sa" dir="ltr" />
               </div>
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">{lang === "ar" ? "نوع Twitter Card" : "Twitter Card Type"}</label>
-                <select
-                  aria-label={lang === "ar" ? "نوع Twitter Card" : "Twitter Card Type"}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                <label className="text-sm font-medium">{t("نوع Twitter Card", "Twitter Card Type")}</label>
+                <SelectField
+                  aria-label={t("نوع Twitter Card", "Twitter Card Type")}
                   value={twitterCard}
                   onChange={(e) => setTwitterCard(e.target.value)}
                 >
                   <option value="summary_large_image">summary_large_image (recommended)</option>
                   <option value="summary">summary</option>
-                </select>
+                </SelectField>
               </div>
             </div>
 
@@ -613,7 +602,7 @@ export default function SeoSettingsPage() {
               style={{ display: "inline-flex" }}
             >
               <Save className="h-4 w-4 me-2" />
-              {saving === "metadata" ? (lang === "ar" ? "جارٍ الحفظ..." : "Saving...") : (lang === "ar" ? "حفظ الميتاداتا" : "Save Metadata")}
+              {saving === "metadata" ? (t("جارٍ الحفظ...", "Saving...")) : (t("حفظ الميتاداتا", "Save Metadata"))}
             </Button>
           </Card>
         </TabsContent>
@@ -623,48 +612,46 @@ export default function SeoSettingsPage() {
           <Card className="p-6 space-y-6">
             <div>
               <h3 className="font-semibold text-primary">
-                {lang === "ar" ? "أصول العلامة التجارية" : "Brand Assets"}
+                {t("أصول العلامة التجارية", "Brand Assets")}
               </h3>
               <p className="text-sm text-muted-foreground mt-1">
-                {lang === "ar"
-                  ? "رفع الشعارات، الأيقونة، وصورة الشبكات الاجتماعية. التغييرات تسري فوراً — لا يلزم إعادة النشر."
-                  : "Upload logos, favicon, and social sharing image. Changes take effect immediately — no redeployment needed."}
+                {t("رفع الشعارات، الأيقونة، وصورة الشبكات الاجتماعية. التغييرات تسري فوراً — لا يلزم إعادة النشر.", "Upload logos, favicon, and social sharing image. Changes take effect immediately — no redeployment needed.")}
               </p>
             </div>
 
             <div className="grid gap-6 sm:grid-cols-2">
               <AssetUploader
-                label={lang === "ar" ? "أيقونة الموقع (Favicon — 32×32)" : "Favicon (32×32 PNG/ICO)"}
+                label={t("أيقونة الموقع (Favicon — 32×32)", "Favicon (32×32 PNG/ICO)")}
                 currentUrl={faviconUrl}
                 onUploaded={(url) => { setFaviconUrl(url); save("favicon", { faviconUrl: url }); }}
                 lang={lang}
               />
               <AssetUploader
-                label={lang === "ar" ? "أيقونة Apple Touch (180×180)" : "Apple Touch Icon (180×180)"}
+                label={t("أيقونة Apple Touch (180×180)", "Apple Touch Icon (180×180)")}
                 currentUrl={appleTouchIconUrl}
                 onUploaded={(url) => { setAppleTouchIconUrl(url); save("appleTouchIcon", { appleTouchIconUrl: url }); }}
                 lang={lang}
               />
               <AssetUploader
-                label={lang === "ar" ? "صورة الشبكات الاجتماعية OG (1200×630)" : "OG / Social Image (1200×630)"}
+                label={t("صورة الشبكات الاجتماعية OG (1200×630)", "OG / Social Image (1200×630)")}
                 currentUrl={ogImageUrl}
                 onUploaded={(url) => { setOgImageUrl(url); save("ogImage", { ogImageUrl: url }); }}
                 lang={lang}
               />
               <AssetUploader
-                label={lang === "ar" ? "الشعار الأساسي" : "Primary Logo"}
+                label={t("الشعار الأساسي", "Primary Logo")}
                 currentUrl={logoUrl}
                 onUploaded={(url) => { setLogoUrl(url); save("logo", { logoUrl: url }); }}
                 lang={lang}
               />
               <AssetUploader
-                label={lang === "ar" ? "شعار الوضع الفاتح" : "Light Mode Logo"}
+                label={t("شعار الوضع الفاتح", "Light Mode Logo")}
                 currentUrl={logoLightUrl}
                 onUploaded={(url) => { setLogoLightUrl(url); save("logoLight", { logoLightUrl: url }); }}
                 lang={lang}
               />
               <AssetUploader
-                label={lang === "ar" ? "شعار الوضع الداكن" : "Dark Mode Logo"}
+                label={t("شعار الوضع الداكن", "Dark Mode Logo")}
                 currentUrl={logoDarkUrl}
                 onUploaded={(url) => { setLogoDarkUrl(url); save("logoDark", { logoDarkUrl: url }); }}
                 lang={lang}
@@ -678,13 +665,11 @@ export default function SeoSettingsPage() {
           <Card className="p-6 space-y-5">
             <div>
               <h3 className="font-semibold text-primary">
-                {lang === "ar" ? "إدارة العلامات والتحليلات" : "Tag Management & Analytics"}
+                {t("إدارة العلامات والتحليلات", "Tag Management & Analytics")}
               </h3>
               <div className="mt-2 rounded-md bg-info/10 border border-info/30 px-4 py-3">
                 <p className="text-sm text-info-strong">
-                  {lang === "ar"
-                    ? "💡 GTM موصى به — يتيح لك إضافة GA4، Meta Pixel، TikTok، Snapchat، LinkedIn، وX من واجهة GTM دون أي تغييرات في الكود."
-                    : "💡 GTM is recommended — it lets you add GA4, Meta Pixel, TikTok, Snapchat, LinkedIn, and X from the GTM interface without touching code."}
+                  {t("💡 GTM موصى به — يتيح لك إضافة GA4، Meta Pixel، TikTok، Snapchat، LinkedIn، وX من واجهة GTM دون أي تغييرات في الكود.", "💡 GTM is recommended — it lets you add GA4, Meta Pixel, TikTok, Snapchat, LinkedIn, and X from the GTM interface without touching code.")}
                 </p>
               </div>
             </div>
@@ -693,9 +678,9 @@ export default function SeoSettingsPage() {
               <div className="space-y-1.5">
                 <div className="flex items-center gap-2">
                   <label className="text-sm font-medium">
-                    {lang === "ar" ? "معرّف GTM Container" : "GTM Container ID"}
+                    {t("معرّف GTM Container", "GTM Container ID")}
                   </label>
-                  <Badge>{lang === "ar" ? "موصى به" : "Recommended"}</Badge>
+                  <Badge>{t("موصى به", "Recommended")}</Badge>
                 </div>
                 <Input
                   value={gtmContainerId}
@@ -703,12 +688,12 @@ export default function SeoSettingsPage() {
                   placeholder="GTM-XXXXXXX"
                   dir="ltr"
                 />
-                <p className="text-xs text-muted-foreground">{lang === "ar" ? "يبدأ بـ GTM-" : "Must start with GTM-"}</p>
+                <p className="text-xs text-muted-foreground">{t("يبدأ بـ GTM-", "Must start with GTM-")}</p>
               </div>
 
               <div className="space-y-1.5">
                 <label className="text-sm font-medium">
-                  {lang === "ar" ? "معرّف GA4 (بدون GTM فقط)" : "GA4 Measurement ID (only if not using GTM)"}
+                  {t("معرّف GA4 (بدون GTM فقط)", "GA4 Measurement ID (only if not using GTM)")}
                 </label>
                 <Input
                   value={ga4MeasurementId}
@@ -718,13 +703,13 @@ export default function SeoSettingsPage() {
                   disabled={!!gtmContainerId}
                 />
                 {gtmContainerId && (
-                  <p className="text-xs text-muted-foreground">{lang === "ar" ? "معطّل — GTM مفعّل، أضف GA4 من داخله" : "Disabled — GTM is active, add GA4 inside GTM"}</p>
+                  <p className="text-xs text-muted-foreground">{t("معطّل — GTM مفعّل، أضف GA4 من داخله", "Disabled — GTM is active, add GA4 inside GTM")}</p>
                 )}
               </div>
 
               <div className="space-y-1.5">
                 <label className="text-sm font-medium">
-                  {lang === "ar" ? "معرّف تحويلات Google Ads" : "Google Ads Conversion ID"}
+                  {t("معرّف تحويلات Google Ads", "Google Ads Conversion ID")}
                 </label>
                 <Input
                   value={gadsConversionId}
@@ -741,7 +726,7 @@ export default function SeoSettingsPage() {
               style={{ display: "inline-flex" }}
             >
               <Save className="h-4 w-4 me-2" />
-              {saving === "analytics" ? (lang === "ar" ? "جارٍ الحفظ..." : "Saving...") : (lang === "ar" ? "حفظ إعدادات التحليلات" : "Save Analytics Settings")}
+              {saving === "analytics" ? (t("جارٍ الحفظ...", "Saving...")) : (t("حفظ إعدادات التحليلات", "Save Analytics Settings"))}
             </Button>
           </Card>
         </TabsContent>
@@ -751,19 +736,17 @@ export default function SeoSettingsPage() {
           <Card className="p-6 space-y-5">
             <div>
               <h3 className="font-semibold text-primary">
-                {lang === "ar" ? "التحقق من ملكية الموقع" : "Webmaster Verification"}
+                {t("التحقق من ملكية الموقع", "Webmaster Verification")}
               </h3>
               <p className="text-sm text-muted-foreground mt-1">
-                {lang === "ar"
-                  ? "الصق قيمة content= فقط من الوسم <meta> — لا تصق الوسم كاملاً."
-                  : "Paste only the content= value from the <meta> tag — not the full tag."}
+                {t("الصق قيمة content= فقط من الوسم <meta> — لا تصق الوسم كاملاً.", "Paste only the content= value from the <meta> tag — not the full tag.")}
               </p>
             </div>
 
             <div className="space-y-4">
               <div className="space-y-1.5">
                 <label className="text-sm font-medium">
-                  {lang === "ar" ? "كود التحقق من Google Search Console" : "Google Search Console Verification"}
+                  {t("كود التحقق من Google Search Console", "Google Search Console Verification")}
                 </label>
                 <Input
                   value={gscVerificationCode}
@@ -772,14 +755,12 @@ export default function SeoSettingsPage() {
                   dir="ltr"
                 />
                 <p className="text-xs text-muted-foreground">
-                  {lang === "ar"
-                    ? "مثال: من <meta name=\"google-site-verification\" content=\"ABC123\" /> — الصق ABC123 فقط"
-                    : "Example: from <meta name=\"google-site-verification\" content=\"ABC123\" /> — paste only ABC123"}
+                  {t("مثال: من <meta name=\"google-site-verification\" content=\"ABC123\" /> — الصق ABC123 فقط", "Example: from <meta name=\"google-site-verification\" content=\"ABC123\" /> — paste only ABC123")}
                 </p>
               </div>
               <div className="space-y-1.5">
                 <label className="text-sm font-medium">
-                  {lang === "ar" ? "كود التحقق من Bing Webmaster" : "Bing Webmaster Verification"}
+                  {t("كود التحقق من Bing Webmaster", "Bing Webmaster Verification")}
                 </label>
                 <Input
                   value={bingVerificationCode}
@@ -796,7 +777,7 @@ export default function SeoSettingsPage() {
               style={{ display: "inline-flex" }}
             >
               <Save className="h-4 w-4 me-2" />
-              {saving === "verification" ? (lang === "ar" ? "جارٍ الحفظ..." : "Saving...") : (lang === "ar" ? "حفظ أكواد التحقق" : "Save Verification Codes")}
+              {saving === "verification" ? (t("جارٍ الحفظ...", "Saving...")) : (t("حفظ أكواد التحقق", "Save Verification Codes"))}
             </Button>
           </Card>
         </TabsContent>
@@ -809,19 +790,17 @@ export default function SeoSettingsPage() {
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="font-semibold text-primary">
-                    {lang === "ar" ? "محرر robots.txt" : "robots.txt Editor"}
+                    {t("محرر robots.txt", "robots.txt Editor")}
                   </h3>
                   <div className="flex items-center gap-1 rounded-md bg-warning/10 border border-warning/30 px-2 py-0.5">
                     <AlertTriangle className="h-3.5 w-3.5 text-warning" />
                     <span className="text-xs text-warning-strong font-medium">
-                      {lang === "ar" ? "تحذير" : "Warning"}
+                      {t("تحذير", "Warning")}
                     </span>
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {lang === "ar"
-                    ? "القواعد الخاطئة تمنع محركات البحث من فهرسة موقعك فوراً."
-                    : "Incorrect rules can block search engines from indexing your site immediately."}
+                  {t("القواعد الخاطئة تمنع محركات البحث من فهرسة موقعك فوراً.", "Incorrect rules can block search engines from indexing your site immediately.")}
                 </p>
               </div>
 
@@ -848,7 +827,7 @@ export default function SeoSettingsPage() {
                         className="h-auto py-0 px-0 text-xs"
                       >
                         <Plus className="h-3 w-3 me-1" />
-                        {lang === "ar" ? "إضافة" : "Add"}
+                        {t("إضافة", "Add")}
                       </Button>
                     </div>
                     {rule.allow.map((p, pi) => (
@@ -857,7 +836,7 @@ export default function SeoSettingsPage() {
                         <IconButton
                           icon={Trash2}
                           onClick={() => removePath(ri, "allow", pi)}
-                          aria-label={lang === "ar" ? "حذف" : "Delete"}
+                          aria-label={t("حذف", "Delete")}
                           variant="ghost"
                           size="icon"
                           className="text-destructive hover:text-destructive"
@@ -877,7 +856,7 @@ export default function SeoSettingsPage() {
                         className="h-auto py-0 px-0 text-xs"
                       >
                         <Plus className="h-3 w-3 me-1" />
-                        {lang === "ar" ? "إضافة" : "Add"}
+                        {t("إضافة", "Add")}
                       </Button>
                     </div>
                     {rule.disallow.map((p, pi) => (
@@ -886,7 +865,7 @@ export default function SeoSettingsPage() {
                         <IconButton
                           icon={Trash2}
                           onClick={() => removePath(ri, "disallow", pi)}
-                          aria-label={lang === "ar" ? "حذف" : "Delete"}
+                          aria-label={t("حذف", "Delete")}
                           variant="ghost"
                           size="icon"
                           className="text-destructive hover:text-destructive"
@@ -903,14 +882,14 @@ export default function SeoSettingsPage() {
                 style={{ display: "inline-flex" }}
               >
                 <Save className="h-4 w-4 me-2" />
-                {saving === "robots" ? (lang === "ar" ? "جارٍ الحفظ..." : "Saving...") : (lang === "ar" ? "حفظ robots.txt" : "Save robots.txt")}
+                {saving === "robots" ? (t("جارٍ الحفظ...", "Saving...")) : (t("حفظ robots.txt", "Save robots.txt"))}
               </Button>
             </Card>
 
             {/* Preview */}
             <Card className="p-6 space-y-3">
               <h3 className="font-semibold text-primary">
-                {lang === "ar" ? "معاينة مباشرة" : "Live Preview"}
+                {t("معاينة مباشرة", "Live Preview")}
               </h3>
               <pre className="rounded-md bg-muted p-4 text-xs font-mono leading-relaxed overflow-auto max-h-80 text-foreground/80">
                 {renderRobotsPreview(robotsRules)}
@@ -925,22 +904,20 @@ export default function SeoSettingsPage() {
           <Card className="p-6 space-y-5">
             <div>
               <h3 className="font-semibold text-primary">
-                {lang === "ar" ? "بيانات Schema.org للمنظمة" : "Organization Schema.org Data"}
+                {t("بيانات Schema.org للمنظمة", "Organization Schema.org Data")}
               </h3>
               <p className="text-sm text-muted-foreground mt-1">
-                {lang === "ar"
-                  ? "هذه البيانات تُحقن تلقائياً كـ JSON-LD في كل صفحة لتحسين ظهور الموقع في نتائج البحث."
-                  : "This data is automatically injected as JSON-LD on every page to improve rich search results."}
+                {t("هذه البيانات تُحقن تلقائياً كـ JSON-LD في كل صفحة لتحسين ظهور الموقع في نتائج البحث.", "This data is automatically injected as JSON-LD on every page to improve rich search results.")}
               </p>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">{lang === "ar" ? "اسم المنظمة" : "Organization Name"}</label>
+                <label className="text-sm font-medium">{t("اسم المنظمة", "Organization Name")}</label>
                 <Input value={schemaOrgName} onChange={(e) => setSchemaOrgName(e.target.value)} placeholder="Mimaric" />
               </div>
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">{lang === "ar" ? "رابط الشعار" : "Logo URL"}</label>
+                <label className="text-sm font-medium">{t("رابط الشعار", "Logo URL")}</label>
                 <Input value={schemaOrgLogoUrl} onChange={(e) => setSchemaOrgLogoUrl(e.target.value)} placeholder="https://mimaric.app/assets/brand/logo.png" dir="ltr" />
               </div>
               <div className="space-y-1.5">
@@ -963,7 +940,7 @@ export default function SeoSettingsPage() {
               style={{ display: "inline-flex" }}
             >
               <Save className="h-4 w-4 me-2" />
-              {saving === "schema" ? (lang === "ar" ? "جارٍ الحفظ..." : "Saving...") : (lang === "ar" ? "حفظ بيانات Schema" : "Save Schema Data")}
+              {saving === "schema" ? (t("جارٍ الحفظ...", "Saving...")) : (t("حفظ بيانات Schema", "Save Schema Data"))}
             </Button>
           </Card>
         </TabsContent>
@@ -973,18 +950,16 @@ export default function SeoSettingsPage() {
           <Card className="p-6 space-y-5">
             <div>
               <h3 className="font-semibold text-primary">
-                {lang === "ar" ? "رخصة المنصة الإلكترونية (فال)" : "REGA Platform License"}
+                {t("رخصة المنصة الإلكترونية (فال)", "REGA Platform License")}
               </h3>
               <p className="text-sm text-muted-foreground mt-1">
-                {lang === "ar"
-                  ? "رقم رخصة فال للمنصة الإلكترونية العقارية الصادرة من الهيئة العامة للعقار — مطلوب لنشر إعلانات السوق."
-                  : "Mimaric's REGA electronic-real-estate-platform advertising license — required before the marketplace can publish listings."}
+                {t("رقم رخصة فال للمنصة الإلكترونية العقارية الصادرة من الهيئة العامة للعقار — مطلوب لنشر إعلانات السوق.", "Mimaric's REGA electronic-real-estate-platform advertising license — required before the marketplace can publish listings.")}
               </p>
             </div>
 
             <div className="space-y-1.5">
               <label htmlFor="rega-fal-license" className="text-sm font-medium">
-                {lang === "ar" ? "رقم رخصة فال للمنصة" : "REGA FAL License Number"}
+                {t("رقم رخصة فال للمنصة", "REGA FAL License Number")}
               </label>
               <Input
                 id="rega-fal-license"
@@ -994,9 +969,7 @@ export default function SeoSettingsPage() {
                 dir="ltr"
               />
               <p className="text-xs text-muted-foreground">
-                {lang === "ar"
-                  ? "يُعرض هذا الرقم كسطر امتثال صغير في صفحة تسجيل الدخول والصفحة الرئيسية. اتركه فارغاً لعرض «قيد الإصدار»."
-                  : "Displayed as a small compliance line on the login and landing pages. Leave blank to show \"pending issuance\"."}
+                {t("يُعرض هذا الرقم كسطر امتثال صغير في صفحة تسجيل الدخول والصفحة الرئيسية. اتركه فارغاً لعرض «قيد الإصدار».", "Displayed as a small compliance line on the login and landing pages. Leave blank to show \"pending issuance\".")}
               </p>
             </div>
 
@@ -1007,8 +980,8 @@ export default function SeoSettingsPage() {
             >
               <Save className="h-4 w-4 me-2" />
               {saving === "rega"
-                ? (lang === "ar" ? "جارٍ الحفظ..." : "Saving...")
-                : (lang === "ar" ? "حفظ رقم الرخصة" : "Save License Number")}
+                ? (t("جارٍ الحفظ...", "Saving..."))
+                : (t("حفظ رقم الرخصة", "Save License Number"))}
             </Button>
           </Card>
         </TabsContent>
