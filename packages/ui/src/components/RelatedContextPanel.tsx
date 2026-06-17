@@ -15,19 +15,17 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "../lib/utils";
+import type { LocalizedText } from "../lib/localized-text";
 import { ResponsiveDialog } from "./mobile/ResponsiveDialog";
 import { EmptyState } from "./EmptyState";
 import { DirectionalIcon } from "./DirectionalIcon";
 
 /**
- * Structurally identical to `@repo/types` `RelatedRecordSummary` —
- * re-declared locally to keep `@repo/ui` decoupled from `@repo/types`.
- * Producers type with `@repo/types`; shapes are assignable.
+ * `RelatedRecord` is structurally identical to `@repo/types`
+ * `RelatedRecordSummary`; `LocalizedText` is `@repo/ui`'s own copy (see
+ * `../lib/localized-text`) so the package stays decoupled from `@repo/types`.
+ * Producers type with `@repo/types`; the shapes are assignable.
  */
-interface LocalizedText {
-  ar: string;
-  en: string;
-}
 type RelatedKind =
   | "customer"
   | "unit"

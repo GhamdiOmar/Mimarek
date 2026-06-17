@@ -41,7 +41,7 @@ import { exportToExcel } from "../../../lib/export";
 type DocumentsViewProps = { initialDocs: any[] };
 
 export default function DocumentsView({ initialDocs }: DocumentsViewProps) {
-  const { lang } = useLanguage();
+  const { t, lang } = useLanguage();
   const { can } = usePermissions();
   const canWrite = can("documents:write");
   const [docs, setDocs] = React.useState<any[]>(initialDocs);
@@ -116,7 +116,7 @@ export default function DocumentsView({ initialDocs }: DocumentsViewProps) {
       const data = await getDocuments();
       setDocs(data);
     } catch {
-      setLoadError(lang === "ar" ? "تعذّر تحميل الوثائق" : "Failed to load documents");
+      setLoadError(t("تعذّر تحميل الوثائق", "Failed to load documents"));
     } finally {
       setLoading(false);
     }
@@ -137,7 +137,7 @@ export default function DocumentsView({ initialDocs }: DocumentsViewProps) {
       // Refresh list
       await loadDocs();
     } catch (err) {
-      setUploadError(lang === "ar" ? "فشل تسجيل الوثيقة" : "Failed to register document");
+      setUploadError(t("فشل تسجيل الوثيقة", "Failed to register document"));
     }
   };
 
@@ -147,15 +147,15 @@ export default function DocumentsView({ initialDocs }: DocumentsViewProps) {
     exportToExcel({
       data: docs,
       columns: [
-        { header: lang === "ar" ? "اسم الوثيقة" : "Document Name", key: "name", width: 35 },
-        { header: lang === "ar" ? "التصنيف" : "Category", key: "category", width: 20 },
-        { header: lang === "ar" ? "النوع" : "Type", key: "type", width: 15 },
-        { header: lang === "ar" ? "تاريخ الرفع" : "Uploaded Date", key: "createdAt", width: 20, render: (val: any) => val ? new Date(val).toLocaleDateString("en-CA") : "" },
-        { header: lang === "ar" ? "رفع بواسطة" : "Uploaded By", key: "uploadedBy", width: 25, render: (val: any) => val?.name ?? val ?? "" },
+        { header: t("اسم الوثيقة", "Document Name"), key: "name", width: 35 },
+        { header: t("التصنيف", "Category"), key: "category", width: 20 },
+        { header: t("النوع", "Type"), key: "type", width: 15 },
+        { header: t("تاريخ الرفع", "Uploaded Date"), key: "createdAt", width: 20, render: (val: any) => val ? new Date(val).toLocaleDateString("en-CA") : "" },
+        { header: t("رفع بواسطة", "Uploaded By"), key: "uploadedBy", width: 25, render: (val: any) => val?.name ?? val ?? "" },
       ],
-      filename: lang === "ar" ? "سجل_الوثائق" : "documents_list",
+      filename: t("سجل_الوثائق", "documents_list"),
       lang,
-      title: lang === "ar" ? "سجل الوثائق — ميماريك" : "Document List — Mimaric",
+      title: t("سجل الوثائق — ميماريك", "Document List — Mimaric"),
     });
     } finally {
       setExporting(false);
@@ -169,7 +169,7 @@ export default function DocumentsView({ initialDocs }: DocumentsViewProps) {
       className="md:hidden -m-4 sm:-m-6 min-h-dvh flex flex-col bg-background"
       dir={lang === "ar" ? "rtl" : "ltr"}
     >
-      <AppBar title={lang === "ar" ? "المستندات" : "Documents"} lang={lang} />
+      <AppBar title={t("المستندات", "Documents")} lang={lang} />
 
       <div className="px-4 pt-3">
         <div className="relative">
@@ -181,7 +181,7 @@ export default function DocumentsView({ initialDocs }: DocumentsViewProps) {
             value={mobileSearch}
             onChange={(e) => setMobileSearch(e.target.value)}
             placeholder={
-              lang === "ar" ? "ابحث باسم الملف..." : "Search by file name..."
+              t("ابحث باسم الملف...", "Search by file name...")
             }
             className="h-10 ps-9"
           />
@@ -193,7 +193,7 @@ export default function DocumentsView({ initialDocs }: DocumentsViewProps) {
         className="-mx-4 flex gap-2 overflow-x-auto px-4 pt-3 pb-1 [&::-webkit-scrollbar]:hidden"
         style={{ scrollbarWidth: "none" }}
         role="tablist"
-        aria-label={lang === "ar" ? "تصفية الفئة" : "Category filter"}
+        aria-label={t("تصفية الفئة", "Category filter")}
       >
         {mobileCategories.map((cat) => {
           const isActive = activeCategory === cat.id;
@@ -244,11 +244,9 @@ export default function DocumentsView({ initialDocs }: DocumentsViewProps) {
             <EmptyState
               variant="first-time"
               icon={<CloudUpload className="h-12 w-12" aria-hidden="true" />}
-              title={lang === "ar" ? "لا توجد وثائق بعد" : "No documents yet"}
+              title={t("لا توجد وثائق بعد", "No documents yet")}
               description={
-                lang === "ar"
-                  ? "ارفع المخططات والعقود والمستندات في مكان واحد آمن."
-                  : "Upload blueprints, contracts, and records in one safe place."
+                t("ارفع المخططات والعقود والمستندات في مكان واحد آمن.", "Upload blueprints, contracts, and records in one safe place.")
               }
               action={
                 canWrite ? (
@@ -258,20 +256,20 @@ export default function DocumentsView({ initialDocs }: DocumentsViewProps) {
                     style={{ display: "inline-flex" }}
                   >
                     <CloudUpload className="h-4 w-4 me-1.5" />
-                    {lang === "ar" ? "رفع وثيقة" : "Upload document"}
+                    {t("رفع وثيقة", "Upload document")}
                   </Button>
                 ) : undefined
               }
               helpHref="/dashboard/help#documents"
-              helpLabel={lang === "ar" ? "تعرّف على خزنة الوثائق" : "Learn about the vault"}
+              helpLabel={t("تعرّف على خزنة الوثائق", "Learn about the vault")}
             />
           ) : (
             <EmptyState
               variant="filtered"
               icon={<CloudUpload className="h-10 w-10" aria-hidden="true" />}
-              title={lang === "ar" ? "لا توجد نتائج مطابقة" : "No matching documents"}
+              title={t("لا توجد نتائج مطابقة", "No matching documents")}
               description={
-                lang === "ar" ? "جرّب فئة أو بحثاً آخر." : "Try a different category or search."
+                t("جرّب فئة أو بحثاً آخر.", "Try a different category or search.")
               }
               action={
                 <Button
@@ -283,7 +281,7 @@ export default function DocumentsView({ initialDocs }: DocumentsViewProps) {
                   }}
                   style={{ display: "inline-flex" }}
                 >
-                  {lang === "ar" ? "مسح الفلاتر" : "Clear filters"}
+                  {t("مسح الفلاتر", "Clear filters")}
                 </Button>
               }
             />
@@ -295,7 +293,7 @@ export default function DocumentsView({ initialDocs }: DocumentsViewProps) {
             {mobileFiltered.map((doc, idx) => {
               const Icon = pickFileIcon(doc.type);
               const uploader =
-                doc.uploadedBy?.name ?? doc.uploadedBy ?? (lang === "ar" ? "غير معروف" : "Unknown");
+                doc.uploadedBy?.name ?? doc.uploadedBy ?? (t("غير معروف", "Unknown"));
               const date = doc.createdAt
                 ? new Date(doc.createdAt).toLocaleDateString(
                     lang === "ar" ? "ar-SA-u-nu-latn" : "en-SA"
@@ -331,16 +329,14 @@ export default function DocumentsView({ initialDocs }: DocumentsViewProps) {
               onUploadError={(error: Error) => {
                 console.error(error);
                 setUploadError(
-                  lang === "ar"
-                    ? "تعذّر رفع الملف. يُرجى المحاولة مرة أخرى."
-                    : "We couldn't upload this file. Please try again."
+                  t("تعذّر رفع الملف. يُرجى المحاولة مرة أخرى.", "We couldn't upload this file. Please try again.")
                 );
               }}
             />
           </div>
           <FAB
             icon={CloudUpload}
-            label={lang === "ar" ? "رفع" : "Upload"}
+            label={t("رفع", "Upload")}
             onClick={triggerMobileUpload}
           />
         </>
@@ -353,24 +349,22 @@ export default function DocumentsView({ initialDocs }: DocumentsViewProps) {
       {/* Header */}
       <PageHeader
         className="px-2"
-        title={lang === "ar" ? "خزنة الوثائق" : "Document Vault"}
+        title={t("خزنة الوثائق", "Document Vault")}
         description={
-          lang === "ar"
-            ? "إدارة وتخزين كافة الوثائق الهندسية والقانونية للمشاريع."
-            : "Manage and store all engineering and legal project documents."
+          t("إدارة وتخزين كافة الوثائق الهندسية والقانونية للمشاريع.", "Manage and store all engineering and legal project documents.")
         }
         actions={
           <>
             <Button variant="outline" size="sm" style={{ display: "inline-flex" }} onClick={handleExportDocuments} disabled={exporting} className="gap-2">
               {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-              {exporting ? (lang === "ar" ? "جاري التصدير..." : "Exporting...") : (lang === "ar" ? "تصدير القائمة" : "Export List")}
+              {exporting ? (t("جاري التصدير...", "Exporting...")) : (t("تصدير القائمة", "Export List"))}
             </Button>
             <UploadButton
               endpoint="blueprintUploader"
               onClientUploadComplete={handleUploadComplete}
               onUploadError={(error: Error) => {
                 console.error(error);
-                setUploadError(lang === "ar" ? "تعذّر رفع الملف. يُرجى المحاولة مرة أخرى." : "We couldn't upload this file. Please try again.");
+                setUploadError(t("تعذّر رفع الملف. يُرجى المحاولة مرة أخرى.", "We couldn't upload this file. Please try again."));
               }}
               appearance={{
                 button: "bg-secondary hover:bg-green-bright text-white text-sm font-bold gap-2 flex h-9 px-4 rounded-md",
@@ -380,7 +374,7 @@ export default function DocumentsView({ initialDocs }: DocumentsViewProps) {
                 button: (
                   <div className="flex items-center gap-2">
                     <CloudUpload className="h-[18px] w-[18px]" />
-                    {lang === "ar" ? "رفع وثيقة" : "Upload Document"}
+                    {t("رفع وثيقة", "Upload Document")}
                   </div>
                 )
               }}
@@ -395,7 +389,7 @@ export default function DocumentsView({ initialDocs }: DocumentsViewProps) {
           <p className="text-sm text-destructive flex-1">{uploadError}</p>
           <IconButton
             icon={X}
-            aria-label={lang === "ar" ? "إغلاق" : "Dismiss"}
+            aria-label={t("إغلاق", "Dismiss")}
             variant="ghost"
             onClick={() => setUploadError(null)}
             className="text-destructive/70 hover:text-destructive"
@@ -408,7 +402,7 @@ export default function DocumentsView({ initialDocs }: DocumentsViewProps) {
         {/* Categories Sidebar */}
         <div className="lg:col-span-1 space-y-4">
            <div className="bg-card rounded-md border border-border p-6 shadow-sm">
-              <h2 className="text-xs font-bold uppercase tracking-widest text-primary mb-4 font-latin">{lang === "ar" ? "التصنيفات" : "Categories"}</h2>
+              <h2 className="text-xs font-bold uppercase tracking-widest text-primary mb-4 font-latin">{t("التصنيفات", "Categories")}</h2>
               <div className="space-y-1">
                  {[
                    { id: "all",       label: { ar: "جميع الوثائق", en: "All Documents" } },
@@ -450,12 +444,12 @@ export default function DocumentsView({ initialDocs }: DocumentsViewProps) {
                   type="text"
                   value={desktopSearch}
                   onChange={(e) => setDesktopSearch(e.target.value)}
-                  placeholder={lang === "ar" ? "بحث في الوثائق..." : "Search documents..."}
+                  placeholder={t("بحث في الوثائق...", "Search documents...")}
                   className="w-full bg-muted/30 border-transparent rounded py-2 pe-10 ps-4 text-sm outline-none focus:bg-card focus:border-border transition-all"
                 />
              </div>
              <div className="flex items-center gap-2">
-                <Button variant="secondary" size="sm" className="h-11 w-11 sm:h-8 sm:w-8 p-0" aria-label={lang === "ar" ? "تحديد" : "Select"}>
+                <Button variant="secondary" size="sm" className="h-11 w-11 sm:h-8 sm:w-8 p-0" aria-label={t("تحديد", "Select")}>
                    <SquareDashedMousePointer className="h-[18px] w-[18px]" />
                 </Button>
                 <div className="h-4 w-px bg-border mx-1" />
@@ -488,11 +482,9 @@ export default function DocumentsView({ initialDocs }: DocumentsViewProps) {
                <EmptyState
                  variant="first-time"
                  icon={<CloudUpload className="h-12 w-12" aria-hidden="true" />}
-                 title={lang === "ar" ? "لا توجد وثائق بعد" : "No documents yet"}
+                 title={t("لا توجد وثائق بعد", "No documents yet")}
                  description={
-                   lang === "ar"
-                     ? "ارفع المخططات والعقود والمستندات في مكان واحد آمن."
-                     : "Upload blueprints, contracts, and records in one safe place."
+                   t("ارفع المخططات والعقود والمستندات في مكان واحد آمن.", "Upload blueprints, contracts, and records in one safe place.")
                  }
                  action={
                    canWrite ? (
@@ -502,20 +494,20 @@ export default function DocumentsView({ initialDocs }: DocumentsViewProps) {
                        className="gap-2"
                      >
                        <CloudUpload className="h-[18px] w-[18px]" />
-                       {lang === "ar" ? "رفع وثيقة" : "Upload document"}
+                       {t("رفع وثيقة", "Upload document")}
                      </Button>
                    ) : undefined
                  }
                  helpHref="/dashboard/help#documents"
-                 helpLabel={lang === "ar" ? "تعرّف على خزنة الوثائق" : "Learn about the vault"}
+                 helpLabel={t("تعرّف على خزنة الوثائق", "Learn about the vault")}
                />
              ) : (
                <EmptyState
                  variant="filtered"
                  icon={<CloudUpload className="h-12 w-12" aria-hidden="true" />}
-                 title={lang === "ar" ? "لا توجد وثائق في هذه الفئة" : "No documents in this category"}
+                 title={t("لا توجد وثائق في هذه الفئة", "No documents in this category")}
                  description={
-                   lang === "ar" ? "جرّب فئة أخرى." : "Try another category."
+                   t("جرّب فئة أخرى.", "Try another category.")
                  }
                  action={
                    <Button
@@ -524,7 +516,7 @@ export default function DocumentsView({ initialDocs }: DocumentsViewProps) {
                      onClick={() => { setActiveCategory("all"); setDesktopSearch(""); }}
                      style={{ display: "inline-flex" }}
                    >
-                     {lang === "ar" ? "عرض الكل" : "View all"}
+                     {t("عرض الكل", "View all")}
                    </Button>
                  }
                />
@@ -542,7 +534,7 @@ export default function DocumentsView({ initialDocs }: DocumentsViewProps) {
                       </div>
                       <IconButton
                         icon={MoreVertical}
-                        aria-label={lang === "ar" ? "المزيد" : "More"}
+                        aria-label={t("المزيد", "More")}
                         variant="ghost"
                         className="h-11 w-11 sm:h-8 sm:w-8"
                       />
@@ -557,7 +549,7 @@ export default function DocumentsView({ initialDocs }: DocumentsViewProps) {
                       <Badge variant="available" className="text-[9px] bg-muted text-muted-foreground border-none">{doc.category}</Badge>
                       <ActionLink
                         asChild
-                        aria-label={lang === "ar" ? `تنزيل ${doc.name}` : `Download ${doc.name}`}
+                        aria-label={t(`تنزيل ${doc.name}`, `Download ${doc.name}`)}
                         className="h-11 w-11 sm:h-8 sm:w-8 rounded-full hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-secondary transition-all no-underline hover:no-underline"
                       >
                         <a href={doc.url} target="_blank" rel="noopener noreferrer">

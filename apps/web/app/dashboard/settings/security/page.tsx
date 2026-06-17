@@ -18,7 +18,7 @@ import { PasswordStrengthHint } from "../../../../components/PasswordStrengthHin
 import { changePassword } from "../../../actions/password";
 
 export default function SecuritySettingsPage() {
-  const { lang } = useLanguage();
+  const { t, lang } = useLanguage();
   const { data: session } = useSession();
   const [currentPassword, setCurrentPassword] = React.useState("");
   const [newPassword, setNewPassword] = React.useState("");
@@ -49,7 +49,7 @@ export default function SecuritySettingsPage() {
           setError(result.details.map((e: any) => e[lang]).join(" "));
         } else {
           const msg = errorMessages[result.error];
-          setError(msg ? msg[lang] : (lang === "ar" ? "حدث خطأ." : "An error occurred."));
+          setError(msg ? msg[lang] : (t("حدث خطأ.", "An error occurred.")));
         }
       } else {
         setSuccess(true);
@@ -63,7 +63,7 @@ export default function SecuritySettingsPage() {
         }, 1500);
       }
     } catch {
-      setError(lang === "ar" ? "حدث خطأ في النظام." : "System error.");
+      setError(t("حدث خطأ في النظام.", "System error."));
     } finally {
       setLoading(false);
     }
@@ -79,13 +79,13 @@ export default function SecuritySettingsPage() {
       {success && (
         <div className="p-3 bg-success/10 border border-success/30 text-success-strong text-sm rounded-lg flex items-center gap-2">
           <CheckCircle2 className="h-[18px] w-[18px]" />
-          {lang === "ar" ? "تم تحديث كلمة المرور بنجاح." : "Password updated successfully."}
+          {t("تم تحديث كلمة المرور بنجاح.", "Password updated successfully.")}
         </div>
       )}
 
       <div className="space-y-2">
         <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-          {lang === "ar" ? "كلمة المرور الحالية" : "Current Password"}
+          {t("كلمة المرور الحالية", "Current Password")}
         </label>
         <Input
           type="password"
@@ -98,7 +98,7 @@ export default function SecuritySettingsPage() {
 
       <div className="space-y-2">
         <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-          {lang === "ar" ? "كلمة المرور الجديدة" : "New Password"}
+          {t("كلمة المرور الجديدة", "New Password")}
         </label>
         <Input
           type="password"
@@ -116,7 +116,7 @@ export default function SecuritySettingsPage() {
 
       <div className="space-y-2">
         <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-          {lang === "ar" ? "تأكيد كلمة المرور الجديدة" : "Confirm New Password"}
+          {t("تأكيد كلمة المرور الجديدة", "Confirm New Password")}
         </label>
         <Input
           type="password"
@@ -135,8 +135,8 @@ export default function SecuritySettingsPage() {
       >
         <CheckCircle2 className="h-[18px] w-[18px]" />
         {loading
-          ? (lang === "ar" ? "جاري التحديث..." : "Updating...")
-          : (lang === "ar" ? "تحديث كلمة المرور" : "Update Password")}
+          ? (t("جاري التحديث...", "Updating..."))
+          : (t("تحديث كلمة المرور", "Update Password"))}
       </Button>
     </div>
   );
@@ -149,11 +149,9 @@ export default function SecuritySettingsPage() {
         dir={lang === "ar" ? "rtl" : "ltr"}
       >
         <AppBar
-          title={lang === "ar" ? "الأمان" : "Security"}
+          title={t("الأمان", "Security")}
           subtitle={
-            lang === "ar"
-              ? "إدارة كلمة المرور والأمان."
-              : "Manage password & security."
+            t("إدارة كلمة المرور والأمان.", "Manage password & security.")
           }
           lang={lang}
           onBack={() => { window.history.back(); }}
@@ -163,7 +161,7 @@ export default function SecuritySettingsPage() {
           {/* Password section header */}
           <div className="pt-2">
             <h2 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-1">
-              {lang === "ar" ? "الحساب" : "Account"}
+              {t("الحساب", "Account")}
             </h2>
           </div>
 
@@ -172,11 +170,9 @@ export default function SecuritySettingsPage() {
             <DataCard
               icon={KeyRound}
               iconTone="purple"
-              title={lang === "ar" ? "كلمة المرور" : "Password"}
+              title={t("كلمة المرور", "Password")}
               subtitle={
-                lang === "ar"
-                  ? "قم بتغيير كلمة المرور الخاصة بك"
-                  : "Change your account password"
+                t("قم بتغيير كلمة المرور الخاصة بك", "Change your account password")
               }
               trailing={
                 <span className="text-muted-foreground">
@@ -195,7 +191,7 @@ export default function SecuritySettingsPage() {
           {/* Security tips */}
           <div className="pt-4">
             <h2 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-1">
-              {lang === "ar" ? "نصائح الأمان" : "Security tips"}
+              {t("نصائح الأمان", "Security tips")}
             </h2>
           </div>
 
@@ -205,12 +201,10 @@ export default function SecuritySettingsPage() {
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold text-foreground">
-                {lang === "ar" ? "استخدم عبارة مرور قوية" : "Use a strong passphrase"}
+                {t("استخدم عبارة مرور قوية", "Use a strong passphrase")}
               </p>
               <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
-                {lang === "ar"
-                  ? "استخدم عبارة من 3 كلمات عشوائية أو أكثر لحماية حسابك."
-                  : "Use a passphrase of 3+ random words to protect your account."}
+                {t("استخدم عبارة من 3 كلمات عشوائية أو أكثر لحماية حسابك.", "Use a passphrase of 3+ random words to protect your account.")}
               </p>
             </div>
           </div>
@@ -229,11 +223,9 @@ export default function SecuritySettingsPage() {
               setConfirmPassword("");
             }
           }}
-          title={lang === "ar" ? "تغيير كلمة المرور" : "Change Password"}
+          title={t("تغيير كلمة المرور", "Change Password")}
           description={
-            lang === "ar"
-              ? "استخدم عبارة من 3+ كلمات عشوائية"
-              : "Use a passphrase of 3+ random words"
+            t("استخدم عبارة من 3+ كلمات عشوائية", "Use a passphrase of 3+ random words")
           }
         >
           {passwordForm}
@@ -249,11 +241,11 @@ export default function SecuritySettingsPage() {
                 <DirectionalIcon icon={ArrowLeft} className="h-5 w-5" />
               </Link>
               <h1 className="text-2xl font-bold text-foreground">
-                {lang === "ar" ? "الأمان" : "Security"}
+                {t("الأمان", "Security")}
               </h1>
             </div>
             <p className="text-sm text-muted-foreground mt-1">
-              {lang === "ar" ? "تغيير كلمة المرور وإعدادات الأمان." : "Change your password and security settings."}
+              {t("تغيير كلمة المرور وإعدادات الأمان.", "Change your password and security settings.")}
             </p>
           </div>
         </div>
@@ -266,8 +258,8 @@ export default function SecuritySettingsPage() {
                   <Lock className="h-6 w-6" />
                 </div>
                 <div>
-                  <h2 className="text-sm font-bold text-foreground">{lang === "ar" ? "تغيير كلمة المرور" : "Change Password"}</h2>
-                  <p className="text-[10px] text-muted-foreground">{lang === "ar" ? "استخدم عبارة من 3+ كلمات عشوائية" : "Use a passphrase of 3+ random words"}</p>
+                  <h2 className="text-sm font-bold text-foreground">{t("تغيير كلمة المرور", "Change Password")}</h2>
+                  <p className="text-[10px] text-muted-foreground">{t("استخدم عبارة من 3+ كلمات عشوائية", "Use a passphrase of 3+ random words")}</p>
                 </div>
               </div>
             </div>

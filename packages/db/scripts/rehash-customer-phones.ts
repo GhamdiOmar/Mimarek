@@ -50,11 +50,15 @@ function getPepper(): string {
   return pepper;
 }
 
+// NOTE: superseded by packages/db/scripts/envelope-backfill-pii.ts (A1 v1: envelope). Kept v1:-aware for safety.
 // Mirrors apps/web/lib/encryption.ts decrypt(): returns the value unchanged if it
 // is not in our 3-part iv:authTag:ciphertext format (graceful pre-migration path).
+// v1:-aware: a versioned value (v1:iv:tag:ct) has the prefix stripped before splitting,
+// so it decrypts correctly instead of being returned as ciphertext.
 function decrypt(value: string): string {
   if (!value || !value.includes(":")) return value;
-  const parts = value.split(":");
+  const body = value.startsWith("v1:") ? value.slice("v1:".length) : value;
+  const parts = body.split(":");
   if (parts.length !== 3) return value;
   try {
     const iv = Buffer.from(parts[0]!, "base64");

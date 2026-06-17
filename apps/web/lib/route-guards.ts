@@ -84,6 +84,7 @@ export const ROUTE_GUARDS: Record<string, RouteGuard> = {
   "/dashboard/admin/email": { permission: "billing:admin", audience: "platform" },
   "/dashboard/admin/tickets": { permission: "billing:admin", audience: "platform" },
   "/dashboard/admin/marketplace": { permission: "marketplace:moderate", audience: "platform" },
+  "/dashboard/admin/data-retention": { permission: "billing:admin", audience: "platform" },
   // /dashboard/admin/coupons + /dashboard/admin/subscriptions are not in nav but
   // are platform surfaces (CLAUDE.md §8.2). The longest-prefix audience match on
   // "/dashboard/admin" covers them for the edge gate; listed here for clarity is
@@ -92,8 +93,8 @@ export const ROUTE_GUARDS: Record<string, RouteGuard> = {
   // ── Shared (both audiences — system users NOT redirected away) ─────────────
   // These are not rendered as nav items; they exist so auth.config.ts's
   // audience lookup keeps system users on them.
-  // /dashboard/more hub was decommissioned — only the profile sub-route remains.
-  "/dashboard/more/profile": { permission: "dashboard:read", audience: "shared" },
+  // /dashboard/more was fully decommissioned (E2) — the profile surface moved into
+  // /dashboard/settings#profile. No /dashboard/more route remains.
   "/dashboard/notifications": { permission: "notifications:read", audience: "shared" },
 };
 
@@ -106,18 +107,22 @@ export function routeGuardFor(href: string): RouteGuard | undefined {
 }
 
 /**
- * Resolve the audience for an arbitrary pathname using LONGEST-PREFIX match.
+ * Resolve the FULL guard ({ permission, audience }) for an arbitrary pathname
+ * using LONGEST-PREFIX match.
  *
- * Needed by the edge gate (auth.config.ts) for nested/dynamic routes that are
- * not exact keys — e.g. `/dashboard/admin/coupons`, `/dashboard/crm/123`,
+ * Needed by the edge gate (auth.config.ts) and the F2 middleware (middleware.ts)
+ * for nested/dynamic routes that are not exact keys — e.g.
+ * `/dashboard/admin/coupons`, `/dashboard/crm/123`,
  * `/dashboard/notifications/settings`. The most specific matching key wins.
  *
  * Match rule: a key K matches pathname P if P === K or P starts with K + "/".
- * Returns the matched guard's audience, or `undefined` if no key matches (the
- * caller decides the default — see auth.config.ts, where "no match" under
- * /dashboard is treated as tenant, preserving the old allowlist semantics).
+ * Returns the matched `RouteGuard`, or `undefined` if no key matches (the caller
+ * decides the default — auth.config.ts treats "no match" under /dashboard as
+ * tenant; middleware.ts defaults the permission to `dashboard:read`).
+ *
+ * EDGE-SAFE: pure data scan, no Node imports — see the file-header contract.
  */
-export function audienceForPath(pathname: string): RouteGuard["audience"] | undefined {
+export function routeGuardForPath(pathname: string): RouteGuard | undefined {
   let bestKey: string | undefined;
   for (const key of Object.keys(ROUTE_GUARDS)) {
     if (pathname === key || pathname.startsWith(key + "/")) {
@@ -126,5 +131,16 @@ export function audienceForPath(pathname: string): RouteGuard["audience"] | unde
       }
     }
   }
-  return bestKey ? ROUTE_GUARDS[bestKey]!.audience : undefined;
+  return bestKey ? ROUTE_GUARDS[bestKey]! : undefined;
+}
+
+/**
+ * Resolve the audience for an arbitrary pathname using LONGEST-PREFIX match.
+ *
+ * Thin wrapper over {@link routeGuardForPath} — kept as a named export because
+ * auth.config.ts only needs the audience. Returns the matched guard's audience,
+ * or `undefined` if no key matches.
+ */
+export function audienceForPath(pathname: string): RouteGuard["audience"] | undefined {
+  return routeGuardForPath(pathname)?.audience;
 }

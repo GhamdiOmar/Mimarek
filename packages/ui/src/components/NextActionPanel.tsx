@@ -4,17 +4,15 @@ import * as React from "react";
 import Link from "next/link";
 import { User, CalendarClock } from "lucide-react";
 import { cn } from "../lib/utils";
+import type { LocalizedText } from "../lib/localized-text";
 import { Button } from "./Button";
 
 /**
- * Structurally identical to `@repo/types` `NextBestAction` — re-declared
- * locally to keep `@repo/ui` decoupled from `@repo/types` (no workspace-dep
- * change). Producers type with `@repo/types`; shapes are assignable.
+ * `NextAction` is structurally identical to `@repo/types` `NextBestAction`;
+ * `LocalizedText` is `@repo/ui`'s own copy (see `../lib/localized-text`) so the
+ * package stays decoupled from `@repo/types`. Producers type with `@repo/types`;
+ * the shapes are assignable.
  */
-interface LocalizedText {
-  ar: string;
-  en: string;
-}
 export interface NextAction {
   label: LocalizedText;
   href?: string;

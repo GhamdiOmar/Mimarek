@@ -39,7 +39,7 @@ export function AppTopbar() {
   const pathname = usePathname();
   const router = useRouter();
   const { data: session } = useSession();
-  const { lang, setLang } = useLanguage();
+  const { t, lang, setLang } = useLanguage();
 
   const [unreadCount, setUnreadCount] = React.useState(0);
   const [notifications, setNotifications] = React.useState<any[]>([]);
@@ -56,7 +56,7 @@ export function AppTopbar() {
   );
   const hasResults = groups.length > 0;
 
-  const userName = session?.user?.name ?? (lang === "ar" ? "مستخدم" : "User");
+  const userName = session?.user?.name ?? (t("مستخدم", "User"));
   const userRole = (session?.user as any)?.role ?? "USER";
   const roleLabel = roleLabels[userRole] ?? { ar: "مستخدم", en: "User" };
 
@@ -106,13 +106,13 @@ export function AppTopbar() {
 
   // Breadcrumbs
   const segments = pathname.replace("/dashboard", "").split("/").filter(Boolean);
-  const crumbs = [{ label: lang === "ar" ? "لوحة التحكم" : "Dashboard", href: "/dashboard" }];
+  const crumbs = [{ label: t("لوحة التحكم", "Dashboard"), href: "/dashboard" }];
   let path = "/dashboard";
   segments.forEach((seg) => {
     path += `/${seg}`;
     crumbs.push({ label: breadcrumbLabels[seg]?.[lang] || seg, href: path });
   });
-  if (crumbs.length === 1) crumbs.push({ label: lang === "ar" ? "نظرة عامة" : "Overview", href: "/dashboard" });
+  if (crumbs.length === 1) crumbs.push({ label: t("نظرة عامة", "Overview"), href: "/dashboard" });
 
   const visibleNotifs =
     notifCategory === "all"
@@ -147,25 +147,25 @@ export function AppTopbar() {
             onChange={(e) => handleSearchInput(e.target.value)}
             onFocus={() => setShowSearch(Boolean(searchQuery.trim()))}
             onBlur={() => setTimeout(() => setShowSearch(false), 200)}
-            placeholder={lang === "ar" ? "بحث..." : "Search..."}
-            aria-label={lang === "ar" ? "بحث" : "Search"}
+            placeholder={t("بحث...", "Search...")}
+            aria-label={t("بحث", "Search")}
             className="w-full bg-muted/40 border border-transparent rounded-md py-2 ps-9 pe-3 text-sm focus:bg-background focus:border-border focus:ring-2 focus:ring-ring/20 transition-all outline-none placeholder:text-muted-foreground"
           />
           {/* Result-count announcement for assistive tech. */}
           <span className="sr-only" role="status" aria-live="polite">
-            {isSearching ? (lang === "ar" ? `${resultCount} نتيجة` : `${resultCount} results`) : ""}
+            {isSearching ? (t(`${resultCount} نتيجة`, `${resultCount} results`)) : ""}
           </span>
           {showSearch && isSearching && (
             <div className="absolute top-full mt-1 w-full bg-card rounded-lg shadow-md border border-border z-50 max-h-80 overflow-y-auto">
               {showSpinner && (
                 <div className="flex items-center justify-center gap-2 px-3 py-4 text-sm text-muted-foreground">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>{lang === "ar" ? "جارٍ البحث…" : "Searching…"}</span>
+                  <span>{t("جارٍ البحث…", "Searching…")}</span>
                 </div>
               )}
               {error && !showSpinner && (
                 <div role="alert" className="px-3 py-4 text-sm text-destructive text-center">
-                  {lang === "ar" ? "تعذّر إجراء البحث. حاول مرة أخرى." : "We couldn't run the search. Please try again."}
+                  {t("تعذّر إجراء البحث. حاول مرة أخرى.", "We couldn't run the search. Please try again.")}
                 </div>
               )}
               {!showSpinner && !error && SEARCH_ENTITY_ORDER.map((type) => {
@@ -199,7 +199,7 @@ export function AppTopbar() {
                         onClick={() => { setShowSearch(false); setSearchQuery(""); }}
                       >
                         <ArrowRight className="h-3.5 w-3.5 icon-directional" />
-                        <span>{lang === "ar" ? "عرض الكل" : "See all"}</span>
+                        <span>{t("عرض الكل", "See all")}</span>
                       </Link>
                     )}
                   </div>
@@ -232,12 +232,8 @@ export function AppTopbar() {
                 icon={Bell}
                 aria-label={
                   unreadCount > 0
-                    ? lang === "ar"
-                      ? `الإشعارات، ${unreadCount} غير مقروء`
-                      : `Notifications, ${unreadCount} unread`
-                    : lang === "ar"
-                      ? "الإشعارات"
-                      : "Notifications"
+                    ? t(`الإشعارات، ${unreadCount} غير مقروء`, `Notifications, ${unreadCount} unread`)
+                    : t("الإشعارات", "Notifications")
                 }
                 variant="ghost"
               />
@@ -251,10 +247,10 @@ export function AppTopbar() {
           <PopoverContent align="start" sideOffset={8} className="w-[calc(100vw-2rem)] sm:w-96 p-0 max-h-[480px] overflow-hidden rounded-xl">
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/20">
-              <span className="text-sm font-bold text-foreground">{lang === "ar" ? "الإشعارات" : "Notifications"}</span>
+              <span className="text-sm font-bold text-foreground">{t("الإشعارات", "Notifications")}</span>
               {unreadCount > 0 && (
                 <Button onClick={handleMarkAllRead} variant="link" size="sm">
-                  {lang === "ar" ? "تحديد الكل كمقروء" : "Mark all read"}
+                  {t("تحديد الكل كمقروء", "Mark all read")}
                 </Button>
               )}
             </div>
@@ -283,8 +279,8 @@ export function AppTopbar() {
                   <Bell className="h-6 w-6 mx-auto text-muted-foreground/30 mb-2" />
                   <p className="text-sm text-muted-foreground">
                     {notifCategory === "all"
-                      ? lang === "ar" ? "لا توجد إشعارات" : "No notifications"
-                      : lang === "ar" ? "لا توجد إشعارات في هذه الفئة" : "No notifications in this category"}
+                      ? t("لا توجد إشعارات", "No notifications")
+                      : t("لا توجد إشعارات في هذه الفئة", "No notifications in this category")}
                   </p>
                 </div>
               ) : (
@@ -336,11 +332,11 @@ export function AppTopbar() {
           onClick={() => setLang(lang === "ar" ? "en" : "ar")}
           variant="ghost"
           size="sm"
-          aria-label={lang === "ar" ? "Switch to English" : "تغيير للعربية"}
+          aria-label={t("Switch to English", "تغيير للعربية")}
           className="gap-1.5 px-2.5"
         >
           <Globe className="h-4 w-4" />
-          <span className="text-xs font-medium hidden sm:inline">{lang === "ar" ? "EN" : "ع"}</span>
+          <span className="text-xs font-medium hidden sm:inline">{t("EN", "ع")}</span>
         </Button>
 
         <div className="h-6 w-px bg-border mx-0.5" />
@@ -348,7 +344,7 @@ export function AppTopbar() {
         {/* User */}
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="ghost" size="icon" className="group p-1.5 h-auto w-auto" aria-label={lang === "ar" ? "الملف الشخصي" : "Profile"}>
+            <Button variant="ghost" size="icon" className="group p-1.5 h-auto w-auto" aria-label={t("الملف الشخصي", "Profile")}>
               <div className="h-8 w-8 rounded-full bg-muted border border-border flex items-center justify-center overflow-hidden transition-all group-hover:border-primary/40">
                 <User className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
               </div>
@@ -386,7 +382,7 @@ export function AppTopbar() {
                 className="w-full justify-start gap-2.5 px-4 py-2 h-auto text-destructive hover:bg-destructive/10 hover:text-destructive"
               >
                 <DirectionalIcon icon={LogOut} className="h-4 w-4" />
-                <span>{lang === "ar" ? "تسجيل الخروج" : "Sign Out"}</span>
+                <span>{t("تسجيل الخروج", "Sign Out")}</span>
               </Button>
             </div>
           </PopoverContent>

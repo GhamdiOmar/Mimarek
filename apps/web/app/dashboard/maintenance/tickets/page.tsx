@@ -41,6 +41,7 @@ import {
   Field,
   SelectField,
   Input,
+  HijriDatePicker,
 } from "@repo/ui";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -66,7 +67,7 @@ import { trackEvent, AnalyticsEvent } from "../../../../lib/analytics";
 
 export default function MaintenancePage() {
   const router = useRouter();
-  const { lang } = useLanguage();
+  const { t, lang } = useLanguage();
   const [requests, setRequests] = React.useState<any[]>([]);
   const [stats, setStats] = React.useState<any>(null);
   const [loading, setLoading] = React.useState(true);
@@ -100,20 +101,20 @@ export default function MaintenancePage() {
       z.object({
         title: z
           .string()
-          .min(1, lang === "ar" ? "العنوان مطلوب" : "Title is required"),
+          .min(1, t("العنوان مطلوب", "Title is required")),
         description: z
           .string()
-          .min(1, lang === "ar" ? "الوصف مطلوب" : "Description is required"),
+          .min(1, t("الوصف مطلوب", "Description is required")),
         category: z
           .string()
-          .min(1, lang === "ar" ? "التصنيف مطلوب" : "Category is required"),
+          .min(1, t("التصنيف مطلوب", "Category is required")),
         priority: z
           .string()
-          .min(1, lang === "ar" ? "الأولوية مطلوبة" : "Priority is required"),
+          .min(1, t("الأولوية مطلوبة", "Priority is required")),
         // Unit is required only when creating; the edit path does not send it.
         unitId: editingId
           ? z.string().optional()
-          : z.string().min(1, lang === "ar" ? "الوحدة مطلوبة" : "Unit is required"),
+          : z.string().min(1, t("الوحدة مطلوبة", "Unit is required")),
         assignedToId: z.string().optional(),
         scheduledDate: z.string().optional(),
         estimatedCost: z.string().optional(),
@@ -253,9 +254,7 @@ export default function MaintenancePage() {
     } catch (e) {
       console.error(e);
       setSaveError(
-        lang === "ar"
-          ? "تعذّر حفظ الطلب. حاول مرة أخرى أو تواصل مع الدعم."
-          : "We couldn't save the request. Try again or contact support.",
+        t("تعذّر حفظ الطلب. حاول مرة أخرى أو تواصل مع الدعم.", "We couldn't save the request. Try again or contact support."),
       );
     } finally {
       setSaving(false);
@@ -282,46 +281,46 @@ export default function MaintenancePage() {
   function handleExport() {
     exportToExcel({
       data: requests,
-      filename: lang === "ar" ? "طلبات_الصيانة" : "maintenance_requests",
-      title: lang === "ar" ? "تقرير طلبات الصيانة" : "Maintenance Requests Report",
+      filename: t("طلبات_الصيانة", "maintenance_requests"),
+      title: t("تقرير طلبات الصيانة", "Maintenance Requests Report"),
       lang,
       columns: [
         {
-          header: lang === "ar" ? "رقم الطلب" : "Request #",
+          header: t("رقم الطلب", "Request #"),
           key: "requestNumber",
           width: 18,
         },
         {
-          header: lang === "ar" ? "العنوان" : "Title",
+          header: t("العنوان", "Title"),
           key: "title",
           width: 30,
         },
         {
-          header: lang === "ar" ? "التصنيف" : "Category",
+          header: t("التصنيف", "Category"),
           key: "category",
           width: 18,
           render: (val: string) => categoryLabels[val]?.[lang] ?? val,
         },
         {
-          header: lang === "ar" ? "الأولوية" : "Priority",
+          header: t("الأولوية", "Priority"),
           key: "priority",
           width: 15,
           render: (val: string) => priorityLabels[val]?.[lang] ?? val,
         },
         {
-          header: lang === "ar" ? "الحالة" : "Status",
+          header: t("الحالة", "Status"),
           key: "status",
           width: 18,
           render: (val: string) => statusLabels[val]?.[lang] ?? val,
         },
         {
-          header: lang === "ar" ? "المُعيَّن إليه" : "Assigned To",
+          header: t("المُعيَّن إليه", "Assigned To"),
           key: "assignedTo",
           width: 22,
-          render: (val: any) => val?.name ?? (lang === "ar" ? "غير معيّن" : "Unassigned"),
+          render: (val: any) => val?.name ?? (t("غير معيّن", "Unassigned")),
         },
         {
-          header: lang === "ar" ? "تاريخ الإنشاء" : "Created Date",
+          header: t("تاريخ الإنشاء", "Created Date"),
           key: "createdAt",
           width: 18,
           render: (val: string) => val ? new Date(val).toLocaleDateString("en-SA") : "—",
@@ -332,7 +331,7 @@ export default function MaintenancePage() {
 
   // Build status filter tabs for FilterBar
   const statusFilterOptions = [
-    { label: lang === "ar" ? "الكل" : "All", value: "" },
+    { label: t("الكل", "All"), value: "" },
     ...Object.entries(statusLabels).map(([k, v]) => ({
       label: v[lang],
       value: k,
@@ -345,10 +344,10 @@ export default function MaintenancePage() {
   // ─── Mobile helpers ───────────────────────────────────────────
   // Mobile tabs reflect status (aligned with desktop FilterBar tabs)
   const mobileTabs = [
-    { key: "", label: lang === "ar" ? "الكل" : "All" },
+    { key: "", label: t("الكل", "All") },
     { key: "OPEN", label: statusLabels.OPEN![lang] },
     { key: "IN_PROGRESS", label: statusLabels.IN_PROGRESS![lang] },
-    { key: "OVERDUE", label: lang === "ar" ? "متأخرة" : "Overdue" },
+    { key: "OVERDUE", label: t("متأخرة", "Overdue") },
     { key: "RESOLVED", label: statusLabels.RESOLVED![lang] },
   ];
 
@@ -385,7 +384,7 @@ export default function MaintenancePage() {
   }, [requests, filterStatus]);
 
   function formatShortDate(d: string | Date | null | undefined): string {
-    if (!d) return lang === "ar" ? "بدون موعد" : "No date";
+    if (!d) return t("بدون موعد", "No date");
     return new Date(d).toLocaleDateString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-SA", {
       month: "short",
       day: "numeric",
@@ -396,7 +395,7 @@ export default function MaintenancePage() {
   const columns: ColumnDef<any, any>[] = [
     {
       accessorKey: "title",
-      header: lang === "ar" ? "العنوان" : "Title",
+      header: t("العنوان", "Title"),
       cell: ({ row }) => {
         const r = row.original;
         return (
@@ -406,7 +405,7 @@ export default function MaintenancePage() {
           >
             {r.title}
             {r.isPreventive && (
-              <span className="text-[9px] text-success me-1">[{lang === "ar" ? "وقائي" : "Preventive"}]</span>
+              <span className="text-[9px] text-success me-1">[{t("وقائي", "Preventive")}]</span>
             )}
           </Link>
         );
@@ -415,7 +414,7 @@ export default function MaintenancePage() {
     },
     {
       accessorKey: "unit",
-      header: lang === "ar" ? "الوحدة" : "Unit",
+      header: t("الوحدة", "Unit"),
       cell: ({ row }) => {
         const r = row.original;
         return (
@@ -428,7 +427,7 @@ export default function MaintenancePage() {
     },
     {
       accessorKey: "category",
-      header: lang === "ar" ? "التصنيف" : "Category",
+      header: t("التصنيف", "Category"),
       cell: ({ row }) => {
         const cat = categoryLabels[row.original.category] ?? { ar: row.original.category, en: row.original.category };
         return <span className="text-xs text-muted-foreground">{cat[lang]}</span>;
@@ -437,7 +436,7 @@ export default function MaintenancePage() {
     },
     {
       accessorKey: "priority",
-      header: lang === "ar" ? "الأولوية" : "Priority",
+      header: t("الأولوية", "Priority"),
       cell: ({ row }) => {
         const priority = priorityLabels[row.original.priority] ?? { ar: row.original.priority, en: row.original.priority, color: "text-muted-foreground" };
         return <span className={`text-xs font-semibold ${priority.color}`}>{priority[lang]}</span>;
@@ -446,7 +445,7 @@ export default function MaintenancePage() {
     },
     {
       accessorKey: "status",
-      header: lang === "ar" ? "الحالة" : "Status",
+      header: t("الحالة", "Status"),
       cell: ({ row }) => {
         const r = row.original;
         const statusLabel = statusLabels[r.status] ?? { ar: r.status, en: r.status };
@@ -463,7 +462,7 @@ export default function MaintenancePage() {
     },
     {
       accessorKey: "assignedTo",
-      header: lang === "ar" ? "المُعيَّن" : "Assigned",
+      header: t("المُعيَّن", "Assigned"),
       cell: ({ row }) => (
         <span className="text-xs text-muted-foreground">
           {row.original.assignedTo?.name ?? "—"}
@@ -473,7 +472,7 @@ export default function MaintenancePage() {
     },
     {
       accessorKey: "dueDate",
-      header: lang === "ar" ? "الاستحقاق" : "Due",
+      header: t("الاستحقاق", "Due"),
       cell: ({ row }) => {
         const r = row.original;
         const isOverdue = r.dueDate && new Date(r.dueDate) < new Date() && !["RESOLVED", "CLOSED"].includes(r.status);
@@ -500,19 +499,19 @@ export default function MaintenancePage() {
             <Link href={`/dashboard/maintenance/${r.id}`}>
               <IconButton
                 icon={Eye}
-                aria-label={lang === "ar" ? "عرض" : "View"}
+                aria-label={t("عرض", "View")}
                 variant="ghost"
               />
             </Link>
             <IconButton
               icon={Pencil}
-              aria-label={lang === "ar" ? "تعديل" : "Edit"}
+              aria-label={t("تعديل", "Edit")}
               variant="ghost"
               onClick={() => openEdit(r)}
             />
             <IconButton
               icon={Trash2}
-              aria-label={lang === "ar" ? "حذف" : "Delete"}
+              aria-label={t("حذف", "Delete")}
               variant="ghost"
               className="text-destructive hover:text-destructive/80"
               onClick={() => handleDelete(r.id)}
@@ -527,12 +526,12 @@ export default function MaintenancePage() {
     <>
     <div className="md:hidden -m-4 sm:-m-6 min-h-dvh flex flex-col bg-background">
       <AppBar
-        title={lang === "ar" ? "الصيانة" : "Maintenance"}
+        title={t("الصيانة", "Maintenance")}
         lang={lang}
         trailing={
           <IconButton
             icon={Filter}
-            aria-label={lang === "ar" ? "تصفية" : "Filter"}
+            aria-label={t("تصفية", "Filter")}
             onClick={() => setShowFilters(true)}
             variant="ghost"
             className="h-11 w-11 rounded-full"
@@ -551,7 +550,7 @@ export default function MaintenancePage() {
               : ""
           }
           onChange={(k) => setFilterStatus(k)}
-          ariaLabel={lang === "ar" ? "تصفية الحالة" : "Status filter"}
+          ariaLabel={t("تصفية الحالة", "Status filter")}
         />
       </div>
 
@@ -565,11 +564,9 @@ export default function MaintenancePage() {
             <EmptyState
               variant="filtered"
               icon={<Search className="h-10 w-10" />}
-              title={lang === "ar" ? "لا توجد نتائج مطابقة" : "No matching requests"}
+              title={t("لا توجد نتائج مطابقة", "No matching requests")}
               description={
-                lang === "ar"
-                  ? "جرّب تعديل الفلاتر أو البحث بكلمات أخرى."
-                  : "Try adjusting the filters or search terms."
+                t("جرّب تعديل الفلاتر أو البحث بكلمات أخرى.", "Try adjusting the filters or search terms.")
               }
               action={
                 <Button
@@ -583,7 +580,7 @@ export default function MaintenancePage() {
                     setSearch("");
                   }}
                 >
-                  {lang === "ar" ? "مسح الفلاتر" : "Clear filters"}
+                  {t("مسح الفلاتر", "Clear filters")}
                 </Button>
               }
             />
@@ -591,20 +588,18 @@ export default function MaintenancePage() {
             <EmptyState
               variant="first-time"
               icon={<Wrench className="h-12 w-12" />}
-              title={lang === "ar" ? "لا توجد طلبات صيانة بعد" : "No maintenance requests yet"}
+              title={t("لا توجد طلبات صيانة بعد", "No maintenance requests yet")}
               description={
-                lang === "ar"
-                  ? "أنشئ طلبات صيانة وتابع حالتها حتى الإغلاق."
-                  : "Log maintenance requests and track them through to resolution."
+                t("أنشئ طلبات صيانة وتابع حالتها حتى الإغلاق.", "Log maintenance requests and track them through to resolution.")
               }
               action={
                 <Button size="sm" onClick={openCreate} style={{ display: "inline-flex" }}>
                   <Plus className="h-4 w-4 me-1.5" />
-                  {lang === "ar" ? "طلب جديد" : "New request"}
+                  {t("طلب جديد", "New request")}
                 </Button>
               }
               helpHref="/dashboard/help#maintenance"
-              helpLabel={lang === "ar" ? "تعرّف على الصيانة" : "Learn about maintenance"}
+              helpLabel={t("تعرّف على الصيانة", "Learn about maintenance")}
             />
           )
         ) : (
@@ -646,14 +641,14 @@ export default function MaintenancePage() {
 
       <FAB
         icon={Plus}
-        label={lang === "ar" ? "طلب جديد" : "New ticket"}
+        label={t("طلب جديد", "New ticket")}
         onClick={openCreate}
       />
 
       <BottomSheet
         open={showFilters}
         onOpenChange={setShowFilters}
-        title={lang === "ar" ? "تصفية الطلبات" : "Filter requests"}
+        title={t("تصفية الطلبات", "Filter requests")}
         footer={
           <div className="flex items-center justify-between gap-2">
             <Button
@@ -666,14 +661,14 @@ export default function MaintenancePage() {
                 setSearch("");
               }}
             >
-              {lang === "ar" ? "مسح الكل" : "Clear all"}
+              {t("مسح الكل", "Clear all")}
             </Button>
             <Button
               size="sm"
               style={{ display: "inline-flex" }}
               onClick={() => setShowFilters(false)}
             >
-              {lang === "ar" ? "تطبيق" : "Apply"}
+              {t("تطبيق", "Apply")}
             </Button>
           </div>
         }
@@ -681,23 +676,24 @@ export default function MaintenancePage() {
         <div className="space-y-4 py-2">
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-muted-foreground">
-              {lang === "ar" ? "بحث" : "Search"}
+              {t("بحث", "Search")}
             </label>
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className={inputClass}
               placeholder={
-                lang === "ar" ? "بحث بالعنوان..." : "Search by title..."
+                t("بحث بالعنوان...", "Search by title...")
               }
             />
           </div>
 
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-muted-foreground">
-              {lang === "ar" ? "الوحدة" : "Unit"}
+              {t("الوحدة", "Unit")}
             </label>
-            <select
+            <SelectField
+              aria-label={t("الوحدة", "Unit")}
               value={/* no unit filter in server action yet, use category proxy */ ""}
               onChange={() => {
                 /* Unit filter is not wired to server action; kept for future */
@@ -706,41 +702,43 @@ export default function MaintenancePage() {
               disabled
             >
               <option value="">
-                {lang === "ar" ? "كل الوحدات" : "All units"}
+                {t("كل الوحدات", "All units")}
               </option>
               {units.map((u: any) => (
                 <option key={u.id} value={u.id}>
                   {u.number} — {u.building?.name ?? ""}
                 </option>
               ))}
-            </select>
+            </SelectField>
           </div>
 
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-muted-foreground">
-              {lang === "ar" ? "الأولوية" : "Priority"}
+              {t("الأولوية", "Priority")}
             </label>
-            <select
+            <SelectField
+              aria-label={t("الأولوية", "Priority")}
               value={filterPriority}
               onChange={(e) => setFilterPriority(e.target.value)}
               className={inputClass}
             >
               <option value="">
-                {lang === "ar" ? "كل الأولويات" : "All priorities"}
+                {t("كل الأولويات", "All priorities")}
               </option>
               {Object.entries(priorityLabels).map(([k, v]) => (
                 <option key={k} value={k}>
                   {v[lang]}
                 </option>
               ))}
-            </select>
+            </SelectField>
           </div>
 
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-muted-foreground">
-              {lang === "ar" ? "المُعيَّن إليه" : "Assignee"}
+              {t("المُعيَّن إليه", "Assignee")}
             </label>
-            <select
+            <SelectField
+              aria-label={t("المُعيَّن إليه", "Assignee")}
               value=""
               onChange={() => {
                 /* Assignee filter is not wired to server action; kept for future */
@@ -749,34 +747,35 @@ export default function MaintenancePage() {
               disabled
             >
               <option value="">
-                {lang === "ar" ? "الجميع" : "Everyone"}
+                {t("الجميع", "Everyone")}
               </option>
               {users.map((u: any) => (
                 <option key={u.id} value={u.id}>
                   {u.name}
                 </option>
               ))}
-            </select>
+            </SelectField>
           </div>
 
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-muted-foreground">
-              {lang === "ar" ? "التصنيف" : "Category"}
+              {t("التصنيف", "Category")}
             </label>
-            <select
+            <SelectField
+              aria-label={t("التصنيف", "Category")}
               value={filterCategory}
               onChange={(e) => setFilterCategory(e.target.value)}
               className={inputClass}
             >
               <option value="">
-                {lang === "ar" ? "كل التصنيفات" : "All categories"}
+                {t("كل التصنيفات", "All categories")}
               </option>
               {Object.entries(categoryLabels).map(([k, v]) => (
                 <option key={k} value={k}>
                   {v[lang]}
                 </option>
               ))}
-            </select>
+            </SelectField>
           </div>
         </div>
       </BottomSheet>
@@ -785,26 +784,24 @@ export default function MaintenancePage() {
     <div className="hidden md:block space-y-6 animate-in fade-in duration-500">
       {/* Header */}
       <PageIntro
-        title={lang === "ar" ? "الصيانة" : "Maintenance"}
+        title={t("الصيانة", "Maintenance")}
         description={
-          lang === "ar"
-            ? "تتبع طلبات الصيانة وإدارة الأولويات وقياس مستوى الخدمة"
-            : "Track maintenance requests, manage priorities, and measure SLA performance"
+          t("تتبع طلبات الصيانة وإدارة الأولويات وقياس مستوى الخدمة", "Track maintenance requests, manage priorities, and measure SLA performance")
         }
         actions={
           <>
             <Button size="sm" className="gap-2" onClick={openCreate} style={{ display: "inline-flex" }}>
               <Plus className="h-4 w-4" />
-              {lang === "ar" ? "طلب جديد" : "New Request"}
+              {t("طلب جديد", "New Request")}
             </Button>
             <Button variant="outline" size="sm" style={{ display: "inline-flex" }} onClick={handleExport}>
               <Download className="h-4 w-4" />
-              {lang === "ar" ? "تصدير" : "Export"}
+              {t("تصدير", "Export")}
             </Button>
             <Link href="/dashboard/maintenance/preventive">
               <Button variant="outline" size="sm" className="gap-2" style={{ display: "inline-flex" }}>
                 <CalendarCheck className="h-4 w-4" />
-                {lang === "ar" ? "الصيانة الوقائية" : "Preventive Plans"}
+                {t("الصيانة الوقائية", "Preventive Plans")}
               </Button>
             </Link>
           </>
@@ -814,45 +811,45 @@ export default function MaintenancePage() {
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         <KPICard
-          label={lang === "ar" ? "مفتوحة" : "Open"}
+          label={t("مفتوحة", "Open")}
           value={stats?.open ?? "—"}
-          subtitle={lang === "ar" ? "طلبات بانتظار التعيين" : "Awaiting assignment"}
+          subtitle={t("طلبات بانتظار التعيين", "Awaiting assignment")}
           icon={<AlertTriangle className="h-5 w-5" />}
           accentColor="warning"
           loading={loading}
           compact
         />
         <KPICard
-          label={lang === "ar" ? "معيّنة" : "Assigned"}
+          label={t("معيّنة", "Assigned")}
           value={stats?.assigned ?? "—"}
-          subtitle={lang === "ar" ? "تم تعيين فني" : "Technician assigned"}
+          subtitle={t("تم تعيين فني", "Technician assigned")}
           icon={<UserCircle className="h-5 w-5" />}
           accentColor="info"
           loading={loading}
           compact
         />
         <KPICard
-          label={lang === "ar" ? "قيد التنفيذ" : "In Progress"}
+          label={t("قيد التنفيذ", "In Progress")}
           value={stats?.inProgress ?? "—"}
-          subtitle={lang === "ar" ? "جارٍ العمل عليها" : "Work underway"}
+          subtitle={t("جارٍ العمل عليها", "Work underway")}
           icon={<Clock className="h-5 w-5" />}
           accentColor="primary"
           loading={loading}
           compact
         />
         <KPICard
-          label={lang === "ar" ? "متأخرة" : "Overdue"}
+          label={t("متأخرة", "Overdue")}
           value={stats?.overdue ?? "—"}
-          subtitle={lang === "ar" ? "تجاوزت الموعد المحدد" : "Past due date"}
+          subtitle={t("تجاوزت الموعد المحدد", "Past due date")}
           icon={<AlertTriangle className="h-5 w-5" />}
           accentColor="destructive"
           loading={loading}
           compact
         />
         <KPICard
-          label={lang === "ar" ? "مكتملة هذا الشهر" : "Completed (Month)"}
+          label={t("مكتملة هذا الشهر", "Completed (Month)")}
           value={stats?.completedThisMonth ?? "—"}
-          subtitle={lang === "ar" ? "تم الحل هذا الشهر" : "Resolved this month"}
+          subtitle={t("تم الحل هذا الشهر", "Resolved this month")}
           icon={<CheckCircle className="h-5 w-5" />}
           accentColor="success"
           loading={loading}
@@ -865,31 +862,33 @@ export default function MaintenancePage() {
         filters={statusFilterOptions}
         activeFilter={filterStatus}
         onFilterChange={(v) => setFilterStatus(v)}
-        searchPlaceholder={lang === "ar" ? "بحث بالعنوان..." : "Search by title..."}
+        searchPlaceholder={t("بحث بالعنوان...", "Search by title...")}
         searchValue={search}
         onSearchChange={setSearch}
         actions={
           <div className="flex items-center gap-2">
-            <select
+            <SelectField
+              aria-label={t("الأولوية", "Priority")}
               value={filterPriority}
               onChange={(e) => setFilterPriority(e.target.value)}
               className="h-9 px-3 rounded-md border border-input bg-background text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
-              <option value="">{lang === "ar" ? "كل الأولويات" : "All Priorities"}</option>
+              <option value="">{t("كل الأولويات", "All Priorities")}</option>
               {Object.entries(priorityLabels).map(([k, v]) => (
                 <option key={k} value={k}>{v[lang]}</option>
               ))}
-            </select>
-            <select
+            </SelectField>
+            <SelectField
+              aria-label={t("التصنيف", "Category")}
               value={filterCategory}
               onChange={(e) => setFilterCategory(e.target.value)}
               className="h-9 px-3 rounded-md border border-input bg-background text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
-              <option value="">{lang === "ar" ? "كل التصنيفات" : "All Categories"}</option>
+              <option value="">{t("كل التصنيفات", "All Categories")}</option>
               {Object.entries(categoryLabels).map(([k, v]) => (
                 <option key={k} value={k}>{v[lang]}</option>
               ))}
-            </select>
+            </SelectField>
           </div>
         }
       />
@@ -938,13 +937,13 @@ export default function MaintenancePage() {
         }}
         emptyTitle={
           filterStatus || search || filterPriority || filterCategory
-            ? (lang === "ar" ? "لا توجد نتائج مطابقة" : "No matching requests")
-            : (lang === "ar" ? "لا توجد طلبات صيانة بعد" : "No maintenance requests yet")
+            ? (t("لا توجد نتائج مطابقة", "No matching requests"))
+            : (t("لا توجد طلبات صيانة بعد", "No maintenance requests yet"))
         }
         emptyDescription={
           filterStatus || search || filterPriority || filterCategory
-            ? (lang === "ar" ? "جرّب تعديل الفلاتر أو البحث بكلمات أخرى." : "Try adjusting the filters or search terms.")
-            : (lang === "ar" ? "أنشئ طلبات صيانة وتابع حالتها حتى الإغلاق." : "Log maintenance requests and track them through to resolution.")
+            ? (t("جرّب تعديل الفلاتر أو البحث بكلمات أخرى.", "Try adjusting the filters or search terms."))
+            : (t("أنشئ طلبات صيانة وتابع حالتها حتى الإغلاق.", "Log maintenance requests and track them through to resolution."))
         }
       />
 
@@ -954,14 +953,14 @@ export default function MaintenancePage() {
         onOpenChange={setShowModal}
         title={
           editingId
-            ? (lang === "ar" ? "تعديل طلب الصيانة" : "Edit Request")
-            : (lang === "ar" ? "طلب صيانة جديد" : "New Request")
+            ? (t("تعديل طلب الصيانة", "Edit Request"))
+            : (t("طلب صيانة جديد", "New Request"))
         }
         contentClassName="sm:max-w-[640px]"
         footer={
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <Button variant="secondary" size="sm" onClick={() => setShowModal(false)} disabled={saving} style={{ display: "inline-flex" }}>
-              {lang === "ar" ? "إلغاء" : "Cancel"}
+              {t("إلغاء", "Cancel")}
             </Button>
             <Button
               type="submit"
@@ -972,7 +971,7 @@ export default function MaintenancePage() {
               style={{ display: "inline-flex" }}
             >
               {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-              {editingId ? (lang === "ar" ? "تحديث" : "Update") : (lang === "ar" ? "إنشاء" : "Create")}
+              {editingId ? (t("تحديث", "Update")) : (t("إنشاء", "Create"))}
             </Button>
           </div>
         }
@@ -983,9 +982,7 @@ export default function MaintenancePage() {
           className="space-y-4 py-4"
         >
           <p className="text-xs text-muted-foreground">
-            {lang === "ar"
-              ? "الحقول المطلوبة معلّمة بـ *"
-              : "Required fields marked with *"}
+            {t("الحقول المطلوبة معلّمة بـ *", "Required fields marked with *")}
           </p>
 
           {saveError && (
@@ -1002,7 +999,7 @@ export default function MaintenancePage() {
             control={control}
             render={({ field, fieldState }) => (
               <Field
-                label={lang === "ar" ? "العنوان" : "Title"}
+                label={t("العنوان", "Title")}
                 required
                 error={fieldState.error?.message}
               >
@@ -1013,9 +1010,7 @@ export default function MaintenancePage() {
                     onChange={field.onChange}
                     onBlur={field.onBlur}
                     placeholder={
-                      lang === "ar"
-                        ? "مثال: تسريب ماء في الحمام"
-                        : "e.g. Water leak in bathroom"
+                      t("مثال: تسريب ماء في الحمام", "e.g. Water leak in bathroom")
                     }
                   />
                 )}
@@ -1028,7 +1023,7 @@ export default function MaintenancePage() {
             control={control}
             render={({ field, fieldState }) => (
               <Field
-                label={lang === "ar" ? "الوصف" : "Description"}
+                label={t("الوصف", "Description")}
                 required
                 error={fieldState.error?.message}
               >
@@ -1051,7 +1046,7 @@ export default function MaintenancePage() {
               control={control}
               render={({ field, fieldState }) => (
                 <SelectField
-                  label={lang === "ar" ? "التصنيف" : "Category"}
+                  label={t("التصنيف", "Category")}
                   requiredMark
                   error={fieldState.error?.message}
                   value={field.value}
@@ -1069,7 +1064,7 @@ export default function MaintenancePage() {
               control={control}
               render={({ field, fieldState }) => (
                 <SelectField
-                  label={lang === "ar" ? "الأولوية" : "Priority"}
+                  label={t("الأولوية", "Priority")}
                   requiredMark
                   error={fieldState.error?.message}
                   value={field.value}
@@ -1090,14 +1085,14 @@ export default function MaintenancePage() {
               control={control}
               render={({ field, fieldState }) => (
                 <SelectField
-                  label={lang === "ar" ? "الوحدة" : "Unit"}
+                  label={t("الوحدة", "Unit")}
                   requiredMark
                   error={fieldState.error?.message}
                   value={field.value ?? ""}
                   onChange={field.onChange}
                   onBlur={field.onBlur}
                 >
-                  <option value="">{lang === "ar" ? "اختر الوحدة" : "Select Unit"}</option>
+                  <option value="">{t("اختر الوحدة", "Select Unit")}</option>
                   {units.map((u: any) => (
                     <option key={u.id} value={u.id}>
                       {u.number}
@@ -1113,12 +1108,12 @@ export default function MaintenancePage() {
             control={control}
             render={({ field }) => (
               <SelectField
-                label={lang === "ar" ? "تعيين إلى" : "Assign To"}
+                label={t("تعيين إلى", "Assign To")}
                 value={field.value ?? ""}
                 onChange={field.onChange}
                 onBlur={field.onBlur}
               >
-                <option value="">{lang === "ar" ? "— بدون تعيين —" : "— Unassigned —"}</option>
+                <option value="">{t("— بدون تعيين —", "— Unassigned —")}</option>
                 {users.map((u: any) => (
                   <option key={u.id} value={u.id}>{u.name} ({u.role})</option>
                 ))}
@@ -1132,16 +1127,17 @@ export default function MaintenancePage() {
               control={control}
               render={({ field, fieldState }) => (
                 <Field
-                  label={lang === "ar" ? "تاريخ مجدول" : "Scheduled Date"}
+                  label={t("تاريخ مجدول", "Scheduled Date")}
                   error={fieldState.error?.message}
                 >
                   {(f) => (
-                    <Input
-                      {...f}
-                      type="date"
-                      value={field.value ?? ""}
-                      onChange={field.onChange}
-                      onBlur={field.onBlur}
+                    <HijriDatePicker
+                      id={f.id}
+                      locale={lang === "ar" ? "ar" : "en"}
+                      value={field.value ? new Date(field.value) : null}
+                      onChange={(d) =>
+                        field.onChange(d ? d.toISOString().slice(0, 10) : "")
+                      }
                     />
                   )}
                 </Field>
@@ -1152,7 +1148,7 @@ export default function MaintenancePage() {
               control={control}
               render={({ field, fieldState }) => (
                 <Field
-                  label={lang === "ar" ? "التكلفة التقديرية" : "Est. Cost"}
+                  label={t("التكلفة التقديرية", "Est. Cost")}
                   error={fieldState.error?.message}
                 >
                   {(f) => (
@@ -1174,7 +1170,7 @@ export default function MaintenancePage() {
             name="notes"
             control={control}
             render={({ field }) => (
-              <Field label={lang === "ar" ? "ملاحظات" : "Notes"}>
+              <Field label={t("ملاحظات", "Notes")}>
                 {(f) => (
                   <textarea
                     {...f}
@@ -1195,9 +1191,9 @@ export default function MaintenancePage() {
       <ConfirmDialog
         open={confirmDeleteOpen}
         onOpenChange={setConfirmDeleteOpen}
-        title={lang === "ar" ? "هل أنت متأكد من حذف طلب الصيانة هذا؟" : "Are you sure you want to delete this request?"}
-        confirmLabel={lang === "ar" ? "حذف" : "Delete"}
-        cancelLabel={lang === "ar" ? "إلغاء" : "Cancel"}
+        title={t("هل أنت متأكد من حذف طلب الصيانة هذا؟", "Are you sure you want to delete this request?")}
+        confirmLabel={t("حذف", "Delete")}
+        cancelLabel={t("إلغاء", "Cancel")}
         onConfirm={executeDelete}
         variant="destructive"
       />

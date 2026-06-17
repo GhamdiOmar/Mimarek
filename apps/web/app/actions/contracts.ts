@@ -4,6 +4,8 @@ import { db } from "@repo/db";
 import { revalidatePath } from "next/cache";
 import { requirePermission } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
+import { ROUTES, routeToContract } from "../../lib/routes";
+import { serialize } from "../../lib/serialize";
 import { syncDealStageForUnit } from "../../lib/server/pipeline-sync";
 import { getNextSequenceValue, GLOBAL_SEQUENCE_SCOPE } from "../../lib/sequence";
 import { CONTRACT_TRANSITIONS, isValidContractTransition } from "../../lib/contracts/state-machine";
@@ -140,6 +142,7 @@ export async function createContract(data: {
       // Create Lease
       const lease = await tx.lease.create({
         data: {
+          organizationId: session.organizationId,
           unitId: data.unitId,
           customerId: data.customerId,
           startDate: start,
@@ -211,8 +214,8 @@ export async function createContract(data: {
 
   logAuditEvent({ userId: session.userId, userEmail: session.email, userRole: session.role, action: "CREATE", resource: "Contract", resourceId: contract.id, organizationId: session.organizationId });
 
-  revalidatePath("/dashboard/contracts");
-  return JSON.parse(JSON.stringify(contract));
+  revalidatePath(ROUTES.contracts);
+  return serialize(contract);
 }
 
 export async function getContract(contractId: string) {
@@ -231,7 +234,7 @@ export async function getContract(contractId: string) {
     throw new Error("Contract not found or you don't have access. Please verify the contract exists.");
   }
 
-  return JSON.parse(JSON.stringify(contract));
+  return serialize(contract);
 }
 
 export async function getContracts(filters?: {
@@ -264,7 +267,7 @@ export async function getContracts(filters?: {
     skip,
     take: pageSize,
   });
-  return JSON.parse(JSON.stringify(contracts));
+  return serialize(contracts);
 }
 
 export async function updateContractStatus(
@@ -430,9 +433,9 @@ export async function updateContractStatus(
   // ── Post-tx: audit log (fire-and-forget on global db — consistent with leases.ts) ──
   logAuditEvent({ userId: session.userId, userEmail: session.email, userRole: session.role, action: "UPDATE", resource: "Contract", resourceId: contractId, metadata: { previousStatus: contract.status, newStatus: status }, organizationId: session.organizationId });
 
-  revalidatePath("/dashboard/contracts");
-  revalidatePath("/dashboard/units");
-  return JSON.parse(JSON.stringify(updated));
+  revalidatePath(ROUTES.contracts);
+  revalidatePath(ROUTES.units);
+  return serialize(updated);
 }
 
 /**
@@ -608,9 +611,9 @@ export async function updateContract(
     organizationId: session.organizationId,
   });
 
-  revalidatePath("/dashboard/contracts");
-  revalidatePath(`/dashboard/contracts/${contractId}`);
-  return JSON.parse(JSON.stringify(updated));
+  revalidatePath(ROUTES.contracts);
+  revalidatePath(routeToContract(contractId));
+  return serialize(updated);
 }
 
 export async function deleteContract(contractId: string) {
@@ -643,8 +646,8 @@ export async function deleteContract(contractId: string) {
 
   logAuditEvent({ userId: session.userId, userEmail: session.email, userRole: session.role, action: "DELETE", resource: "Contract", resourceId: contractId, organizationId: session.organizationId });
 
-  revalidatePath("/dashboard/contracts");
-  revalidatePath("/dashboard/units");
+  revalidatePath(ROUTES.contracts);
+  revalidatePath(ROUTES.units);
 }
 
 // ─── CX-010: Bulk operations on contracts ───────────────────────────────────
@@ -744,8 +747,8 @@ export async function bulkUpdateContractStatus(
     organizationId: session.organizationId,
   });
 
-  revalidatePath("/dashboard/contracts");
-  revalidatePath("/dashboard/units");
+  revalidatePath(ROUTES.contracts);
+  revalidatePath(ROUTES.units);
   return {
     updatedCount: eligible.length,
     skippedCount: skipped.length + notFound.length,
@@ -807,8 +810,8 @@ export async function bulkDeleteContracts(ids: string[]) {
     organizationId: session.organizationId,
   });
 
-  revalidatePath("/dashboard/contracts");
-  revalidatePath("/dashboard/units");
+  revalidatePath(ROUTES.contracts);
+  revalidatePath(ROUTES.units);
   return { deletedCount: contracts.length };
 }
 
@@ -850,8 +853,8 @@ export async function updateContractAmounts(
     organizationId: session.organizationId,
   });
 
-  revalidatePath(`/dashboard/contracts/${contractId}`);
-  return JSON.parse(JSON.stringify(updated));
+  revalidatePath(routeToContract(contractId));
+  return serialize(updated);
 }
 
 export async function recordBuyerSignature(contractId: string, signatureUrl: string) {
@@ -881,7 +884,7 @@ export async function recordBuyerSignature(contractId: string, signatureUrl: str
     organizationId: session.organizationId,
   });
 
-  revalidatePath(`/dashboard/contracts/${contractId}`);
-  return JSON.parse(JSON.stringify(updated));
+  revalidatePath(routeToContract(contractId));
+  return serialize(updated);
 }
 

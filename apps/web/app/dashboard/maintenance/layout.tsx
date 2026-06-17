@@ -52,13 +52,13 @@ export default function MaintenanceLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { lang } = useLanguage();
+  const { t, lang } = useLanguage();
   const pathname = usePathname() ?? "";
 
   return (
     <div>
       <nav
-        aria-label={lang === "ar" ? "تبويبات الصيانة" : "Maintenance sections"}
+        aria-label={t("تبويبات الصيانة", "Maintenance sections")}
         className="sticky top-0 z-[20] -mx-4 mb-4 border-b border-border bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:-mx-6 md:px-6"
       >
         <div className="flex items-center gap-1 overflow-x-auto">

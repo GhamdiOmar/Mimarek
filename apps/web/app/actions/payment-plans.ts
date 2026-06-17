@@ -5,6 +5,8 @@ import { z } from "zod";
 import { requirePermission } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
 import { revalidatePath } from "next/cache";
+import { routeToContract } from "../../lib/routes";
+import { serialize } from "../../lib/serialize";
 
 // ─── RED: Payment Plans ─────────────────────────────────────────────────────
 
@@ -44,6 +46,7 @@ export async function createPaymentPlan(
       organizationId: session.organizationId,
       installments: {
         create: data.installments.map((inst, idx) => ({
+          organizationId: session.organizationId,
           installmentNumber: idx + 1,
           amount: inst.amount,
           dueDate: new Date(inst.dueDate),
@@ -64,8 +67,8 @@ export async function createPaymentPlan(
     organizationId: session.organizationId,
   });
 
-  revalidatePath(`/dashboard/contracts/${contractId}`);
-  return JSON.parse(JSON.stringify(plan));
+  revalidatePath(routeToContract(contractId));
+  return serialize(plan);
 }
 
 export async function getPaymentPlan(contractId: string) {
@@ -79,7 +82,7 @@ export async function getPaymentPlan(contractId: string) {
   });
 
   if (!plan) return null;
-  return JSON.parse(JSON.stringify(plan));
+  return serialize(plan);
 }
 
 const RecordInstallmentPaymentSchema = z.object({
@@ -257,7 +260,7 @@ export async function recordInstallmentPayment(
         },
       });
       if (existing) {
-        return JSON.parse(JSON.stringify(existing));
+        return serialize(existing);
       }
     }
     throw e;
@@ -282,7 +285,7 @@ export async function recordInstallmentPayment(
     });
   }
 
-  return JSON.parse(JSON.stringify(txResult.row));
+  return serialize(txResult.row);
 }
 
 export async function getPaymentPlanSummary(contractId: string) {

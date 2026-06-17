@@ -59,6 +59,7 @@ ALTER TABLE IF EXISTS public."PaymentPlanInstallment"    ENABLE ROW LEVEL SECURI
 ALTER TABLE IF EXISTS public."ContractTemplate"          ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public."Lease"                     ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public."RentInstallment"           ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public."RentPayment"               ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public."Document"                  ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public."MaintenanceRequest"        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public."PreventiveMaintenancePlan" ENABLE ROW LEVEL SECURITY;
@@ -85,6 +86,7 @@ ALTER TABLE IF EXISTS public."PaymentTransaction"        ENABLE ROW LEVEL SECURI
 ALTER TABLE IF EXISTS public."PaymentMethod"             ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public."GatewayConfig"             ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public."WebhookEvent"              ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public."DataRetentionRun"          ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public."Coupon"                    ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public."CouponRedemption"          ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public."CustomerActivity"          ENABLE ROW LEVEL SECURITY;

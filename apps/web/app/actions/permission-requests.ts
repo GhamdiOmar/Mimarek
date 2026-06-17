@@ -2,6 +2,7 @@
 
 import { db } from "@repo/db";
 import { revalidatePath } from "next/cache";
+import { ROUTES } from "../../lib/routes";
 import { requirePermission, getSessionOrThrow } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
 import { createNotification, notifyAdmins } from "../../lib/create-notification";
@@ -58,7 +59,7 @@ export async function createPermissionRequest(data: {
     organizationId: session.organizationId,
   });
 
-  revalidatePath("/dashboard/help");
+  revalidatePath(ROUTES.help);
   return request;
 }
 
@@ -164,6 +165,6 @@ export async function reviewPermissionRequest(
     organizationId: session.organizationId,
   });
 
-  revalidatePath("/dashboard/help");
+  revalidatePath(ROUTES.help);
   return updated;
 }

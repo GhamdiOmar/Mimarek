@@ -2,6 +2,7 @@
 
 import { db } from "@repo/db";
 import { requirePermission } from "../../lib/auth-helpers";
+import { serialize } from "../../lib/serialize";
 
 export async function getDashboardStats() {
   const session = await requirePermission("dashboard:read");
@@ -214,7 +215,7 @@ export async function getDashboardRecentDeals() {
     take: 5,
   });
 
-  return JSON.parse(JSON.stringify(deals));
+  return serialize(deals);
 }
 
 export async function getDashboardUpcomingPayments() {
@@ -245,7 +246,7 @@ export async function getDashboardUpcomingPayments() {
     take: 5,
   });
 
-  return JSON.parse(JSON.stringify(installments));
+  return serialize(installments);
 }
 
 export async function getDashboardMaintenanceSummary() {

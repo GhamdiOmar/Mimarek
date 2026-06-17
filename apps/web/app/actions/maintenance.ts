@@ -5,6 +5,8 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requirePermission } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
+import { ROUTES, routeToMaintenanceRequest } from "../../lib/routes";
+import { serialize } from "../../lib/serialize";
 
 const CreateMaintenanceRequestSchema = z.object({
   title: z.string().min(1),
@@ -121,8 +123,8 @@ export async function createMaintenanceRequest(data: {
     },
   });
 
-  revalidatePath("/dashboard/maintenance/tickets");
-  return JSON.parse(JSON.stringify(request));
+  revalidatePath(ROUTES.maintenanceTickets);
+  return serialize(request);
 }
 
 // ─── Get Maintenance Requests (List) ──────────────────────────────────────────
@@ -166,7 +168,7 @@ export async function getMaintenanceRequests(filters?: {
     skip,
     take: pageSize,
   });
-  return JSON.parse(JSON.stringify(results));
+  return serialize(results);
 }
 
 // ─── Get Single Maintenance Request ───────────────────────────────────────────
@@ -183,7 +185,7 @@ export async function getMaintenanceRequest(id: string) {
     },
   });
   if (!request) throw new Error("Request not found or you don't have access. Please refresh the page and try again.");
-  return JSON.parse(JSON.stringify(request));
+  return serialize(request);
 }
 
 // ─── Update Maintenance Request ───────────────────────────────────────────────
@@ -267,9 +269,9 @@ export async function updateMaintenanceRequest(
     data: updateData,
   });
 
-  revalidatePath("/dashboard/maintenance/tickets");
-  revalidatePath(`/dashboard/maintenance/${requestId}`);
-  return JSON.parse(JSON.stringify(updated));
+  revalidatePath(ROUTES.maintenanceTickets);
+  revalidatePath(routeToMaintenanceRequest(requestId));
+  return serialize(updated);
 }
 
 // ─── Delete Maintenance Request ───────────────────────────────────────────────
@@ -294,7 +296,7 @@ export async function deleteMaintenanceRequest(requestId: string) {
   });
 
   await db.maintenanceRequest.delete({ where: { id: requestId } });
-  revalidatePath("/dashboard/maintenance/tickets");
+  revalidatePath(ROUTES.maintenanceTickets);
 }
 
 // ─── Get Assignable Users ─────────────────────────────────────────────────────
@@ -358,7 +360,7 @@ export async function getMaintenanceForUnit(unitId: string) {
     },
     orderBy: { createdAt: "desc" },
   });
-  return JSON.parse(JSON.stringify(results));
+  return serialize(results);
 }
 
 // ─── Get Units for Maintenance Selectors ──────────────────────────────────────
@@ -370,5 +372,5 @@ export async function getUnitsForMaintenance() {
     where: { organizationId: session.organizationId },
     orderBy: { number: "asc" },
   });
-  return JSON.parse(JSON.stringify(units));
+  return serialize(units);
 }

@@ -2,6 +2,8 @@
 
 import { db } from "@repo/db";
 import { revalidatePath } from "next/cache";
+import { ROUTES } from "../../lib/routes";
+import { serialize } from "../../lib/serialize";
 import { requirePermission, getTenantSessionOrThrow, getSessionOrThrow } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
 
@@ -28,7 +30,7 @@ export async function getOrganization() {
   const org = await db.organization.findUnique({
     where: { id: session.organizationId },
   });
-  return JSON.parse(JSON.stringify(org));
+  return serialize(org);
 }
 
 export async function updateOrganization(data: {
@@ -65,11 +67,11 @@ export async function updateOrganization(data: {
 
   logAuditEvent({ userId: session.userId, userEmail: session.email, userRole: session.role, action: "UPDATE", resource: "Organization", resourceId: session.organizationId, metadata: { fields: Object.keys(data) }, organizationId: session.organizationId });
 
-  revalidatePath("/dashboard/settings");
-  return JSON.parse(JSON.stringify(org));
+  revalidatePath(ROUTES.settings);
+  return serialize(org);
 }
 
 export async function clearAppCache() {
   await getTenantSessionOrThrow();
-  revalidatePath("/dashboard", "layout");
+  revalidatePath(ROUTES.dashboard, "layout");
 }

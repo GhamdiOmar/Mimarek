@@ -25,6 +25,7 @@ model Organization {
   entityType          EntityType? // MOC: establishment, company, branch, etc.
   legalForm           LegalForm? // MOC: LLC, JSC, sole proprietorship, etc.
   registrationStatus  RegistrationStatus? // MOC: active, expired, suspended, etc.
+  appStatus           OrgAppStatus                @default(ACTIVE) // Mimaric app-level org lifecycle (E1)
   registrationDate    DateTime? // CR registration date
   expiryDate          DateTime? // CR expiry date
   capitalAmountSar    Decimal?                    @db.Decimal(14, 2) // Declared capital in SAR
@@ -64,6 +65,15 @@ model Organization {
 
   // ── DataTable saved-views (CX-014) ──
   savedTableViews SavedTableView[]
+
+  // ── QA-DB-04/05: denormalized tenant back-relations (FK + NOT-NULL, A4) ──
+  // These mirror the child tables' direct `organizationId` column added for
+  // org-scoped list/AR queries. They are denormalized — the canonical owner is
+  // still Unit/PaymentPlan — so the relation names are suffixed `…Denorm`.
+  leasesDenorm                   Lease[]                  @relation("LeaseOrg")
+  reservationsDenorm             Reservation[]            @relation("ReservationOrg")
+  paymentPlansDenorm             PaymentPlan[]            @relation("PaymentPlanOrg")
+  paymentPlanInstallmentsDenorm  PaymentPlanInstallment[] @relation("PaymentPlanInstallmentOrg")
 }
 
 enum OrgType {
@@ -71,6 +81,12 @@ enum OrgType {
   PROPERTY_MANAGEMENT
   DEVELOPER
   MIXED
+}
+
+enum OrgAppStatus {
+  ACTIVE
+  PENDING_VERIFICATION
+  EXPIRED
 }
 
 enum EntityType {
@@ -340,9 +356,10 @@ model Reservation {
   // QA-DB-05: immutable cross-org snapshots — no FK (cross-org), no @@index (not queried).
   buyerOrgId           String?
   sellerOrgId          String?
-  // QA-DB-04: denormalized tenant column (NULLABLE this release; backfilled via
-  // 2026-06-orgid-backfill.sql ← unit.organizationId; FK + NOT-NULL are deferred).
-  organizationId       String?
+  // QA-DB-04 (A4): denormalized tenant column — NOT-NULL + FK, backfilled via
+  // 2026-06-orgid-backfill.sql ← unit.organizationId before the push.
+  organizationId       String
+  organization         Organization           @relation("ReservationOrg", fields: [organizationId], references: [id])
   createdAt            DateTime               @default(now())
   updatedAt            DateTime               @updatedAt
 
@@ -473,9 +490,14 @@ model PaymentPlan {
   downPayment    Decimal?                 @db.Decimal(14, 2)
   status         PaymentPlanStatus        @default(DRAFT_PLAN)
   installments   PaymentPlanInstallment[]
-  organizationId String?
+  // QA-DB-04 (A4): denormalized tenant column — NOT-NULL + FK. Backfilled via
+  // 2026-06-orgid-backfill.sql ← unit.organizationId (through contract.unitId).
+  organizationId String
+  organization   Organization             @relation("PaymentPlanOrg", fields: [organizationId], references: [id])
   createdAt      DateTime                 @default(now())
   updatedAt      DateTime                 @updatedAt
+
+  @@index([organizationId])
 }
 
 enum PaymentPlanStatus {
@@ -498,9 +520,10 @@ model PaymentPlanInstallment {
   paymentMethod     String?
   referenceNumber   String?
   paymentReference  String?
-  // QA-DB-04: denormalized tenant column (NULLABLE this release; backfilled via
-  // 2026-06-orgid-backfill.sql ← paymentPlan.organizationId; FK + NOT-NULL are deferred).
-  organizationId    String?
+  // QA-DB-04 (A4): denormalized tenant column — NOT-NULL + FK, backfilled via
+  // 2026-06-orgid-backfill.sql ← paymentPlan.organizationId before the push.
+  organizationId    String
+  organization      Organization      @relation("PaymentPlanInstallmentOrg", fields: [organizationId], references: [id])
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
 
@@ -570,9 +593,10 @@ model Lease {
   installments   RentInstallment[]
   ejarContractId String? // For Ejar integration
   contract       Contract? // Linked contract (reverse relation)
-  // QA-DB-04: denormalized tenant column (NULLABLE this release; backfilled via
-  // 2026-06-orgid-backfill.sql ← unit.organizationId; FK + NOT-NULL are deferred).
-  organizationId String?
+  // QA-DB-04 (A4): denormalized tenant column — NOT-NULL + FK, backfilled via
+  // 2026-06-orgid-backfill.sql ← unit.organizationId before the push.
+  organizationId String
+  organization   Organization      @relation("LeaseOrg", fields: [organizationId], references: [id])
   createdAt      DateTime          @default(now())
   updatedAt      DateTime          @updatedAt
 
@@ -604,11 +628,47 @@ model RentInstallment {
   referenceNumber  String?
   paymentReference String?
   notes            String?
+  payments         RentPayment[] // I2: append-only ledger of payment/reversal/refund/adjustment txns
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
 
   @@index([leaseId])
   @@unique([leaseId, paymentReference])
+}
+
+// ─── RentPayment (I2 append-only ledger) ────────────────────────────────────
+// One row per money movement against an installment. NO `updatedAt`: rows are
+// immutable by contract (append-only), which also sidesteps the §4 @updatedAt
+// populated-table `db push` hazard. `amount` is signed — PAYMENT/ADJUSTMENT > 0,
+// REVERSAL/REFUND < 0. `createdById` is intentionally a bare String with no FK
+// relation to User (keeps the User model untouched). Idempotency is enforced by
+// the [installmentId, idempotencyKey] unique constraint.
+
+model RentPayment {
+  id             String          @id @default(cuid())
+  installmentId  String
+  installment    RentInstallment @relation(fields: [installmentId], references: [id])
+  leaseId        String
+  amount         Decimal         @db.Decimal(14, 2) // signed: PAYMENT/ADJUSTMENT > 0; REVERSAL/REFUND < 0
+  txType         RentPaymentType @default(PAYMENT)
+  idempotencyKey String
+  channel        String?
+  reference      String?
+  notes          String?
+  createdById    String?
+  createdAt      DateTime        @default(now())
+
+  @@unique([installmentId, idempotencyKey])
+  @@index([installmentId])
+  @@index([leaseId])
+  @@index([installmentId, txType])
+}
+
+enum RentPaymentType {
+  PAYMENT
+  REVERSAL
+  REFUND
+  ADJUSTMENT
 }
 
 enum PaymentStatus {
@@ -1408,6 +1468,29 @@ model WebhookEvent {
   @@index([createdAt])
 }
 
+// ─── DataRetentionRun (PDPL/NDMO destruction audit) ─────────────────────────
+// Append-only audit row per retention sweep (cron or manual). `results` holds the
+// per-category deleted-count breakdown as JSON. No FK to User on triggeredById —
+// kept as a denormalized snapshot so a run record survives the actor's deletion.
+
+model DataRetentionRun {
+  id               String    @id @default(cuid())
+  trigger          String // "CRON" | "MANUAL"
+  dryRun           Boolean   @default(false)
+  startedAt        DateTime  @default(now())
+  finishedAt       DateTime?
+  status           String    @default("RUNNING") // RUNNING|SUCCESS|SKIPPED_LOCKED|FAILED
+  results          Json?
+  totalDeleted     Int       @default(0)
+  error            String?   @db.Text
+  triggeredById    String?
+  triggeredByEmail String?
+  createdAt        DateTime  @default(now())
+
+  @@index([startedAt])
+  @@index([status])
+}
+
 // ─── Coupon (code-based discount) ───────────────────────────────────────────
 
 model Coupon {
@@ -1609,6 +1692,17 @@ model SystemConfig {
   emailLastTestAt       DateTime?
   emailLastTestStatus   String?
   emailLastTestMessage  String?   @db.Text
+
+  // ─── Data Retention (PDPL/NDMO) — platform-admin destruction & scheduler ─────
+  // Per-category retention windows (days) and the daily-scheduler controls.
+  // All defaulted so a `db push` is safe on the already-populated singleton row.
+  retentionAuditLogDays     Int       @default(730)
+  retentionConsentLogDays   Int       @default(730)
+  retentionNotificationDays Int       @default(180)
+  retentionWebhookEventDays Int       @default(90)
+  retentionSchedulerEnabled Boolean   @default(false)
+  retentionRunHour          Int       @default(3)
+  lastRetentionRunAt        DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

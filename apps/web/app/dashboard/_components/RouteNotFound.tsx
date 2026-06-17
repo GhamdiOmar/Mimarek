@@ -10,15 +10,13 @@ import { Button, EmptyState } from "@repo/ui";
 import { useLanguage } from "../../../components/LanguageProvider";
 
 export function RouteNotFound() {
-  const { lang } = useLanguage();
+  const { t, lang } = useLanguage();
 
-  const title = lang === "ar" ? "الصفحة غير موجودة" : "Page not found";
+  const title = t("الصفحة غير موجودة", "Page not found");
   const description =
-    lang === "ar"
-      ? "الصفحة التي تبحث عنها غير موجودة أو تم نقلها."
-      : "The page you're looking for doesn't exist or has been moved.";
+    t("الصفحة التي تبحث عنها غير موجودة أو تم نقلها.", "The page you're looking for doesn't exist or has been moved.");
   const backLabel =
-    lang === "ar" ? "العودة إلى لوحة التحكم" : "Back to dashboard";
+    t("العودة إلى لوحة التحكم", "Back to dashboard");
 
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center">

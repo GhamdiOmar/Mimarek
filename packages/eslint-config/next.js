@@ -226,6 +226,100 @@ const requireActionGuard = {
 };
 
 /**
+ * Custom rule: `mimaric/no-raw-revalidate-path` (C1 — shared-seam adoption).
+ *
+ * Bans `revalidatePath("/dashboard...")` / `revalidatePath("/portal...")` with a
+ * raw string-literal path in `app/actions/**`. Route paths must come from the
+ * `ROUTES` registry (lib/routes.ts) or its `routeTo*` helpers so a route rename
+ * is a single edit — a stray literal silently keeps pointing at a deleted route
+ * and ships a stale cache (AGENTS.md §8.5 stale-rename hazard). Dynamic
+ * (template-literal) paths are unaffected; use a `routeTo*` helper for those.
+ */
+const noRawRevalidatePath = {
+  meta: {
+    type: "problem",
+    docs: {
+      description:
+        "Disallow raw string-literal app paths in revalidatePath(...) inside app/actions/** — use ROUTES from lib/routes.ts.",
+    },
+    messages: {
+      rawPath:
+        'Don\'t pass a raw path string to revalidatePath("{{path}}"). Import ROUTES (or a routeTo* ' +
+        "helper) from lib/routes.ts and call revalidatePath(ROUTES.x) so a route rename is one edit " +
+        "and never leaves a stale-cache literal behind (AGENTS.md §8.5 / C1).",
+    },
+    schema: [],
+  },
+  create(context) {
+    const filename = context.filename || context.getFilename();
+    const inActions = /\/app\/actions\//.test(filename.replace(/\\/g, "/"));
+    return {
+      "CallExpression[callee.name='revalidatePath']"(node) {
+        if (!inActions) return;
+        const first = node.arguments[0];
+        if (
+          first &&
+          first.type === "Literal" &&
+          typeof first.value === "string" &&
+          (first.value.startsWith("/dashboard") || first.value.startsWith("/portal"))
+        ) {
+          context.report({ node: first, messageId: "rawPath", data: { path: first.value } });
+        }
+      },
+    };
+  },
+};
+
+/**
+ * Custom rule: `mimaric/no-inline-json-serialize` (C1 — shared-seam adoption).
+ *
+ * Bans the inline `JSON.parse(JSON.stringify(x))` Decimal/Date-stripping idiom in
+ * `app/actions/**`. There is one seam — `serialize()` (lib/serialize.ts); inlining
+ * the round-trip scatters the same brittle pattern across ~24 files and hides the
+ * single place it could be hardened. Use `serialize(x)` (keep any `as T` cast).
+ */
+const noInlineJsonSerialize = {
+  meta: {
+    type: "problem",
+    docs: {
+      description:
+        "Disallow inline JSON.parse(JSON.stringify(...)) in app/actions/** — use serialize() from lib/serialize.ts.",
+    },
+    messages: {
+      inlineSerialize:
+        "Don't inline JSON.parse(JSON.stringify(x)) — import { serialize } from lib/serialize.ts and " +
+        "call serialize(x) (the one Decimal/Date-safe seam). Keep any `as T` cast (AGENTS.md / C1).",
+    },
+    schema: [],
+  },
+  create(context) {
+    const filename = context.filename || context.getFilename();
+    const inActions = /\/app\/actions\//.test(filename.replace(/\\/g, "/"));
+    return {
+      // Outer JSON.parse( JSON.stringify(...) ) call.
+      "CallExpression[callee.object.name='JSON'][callee.property.name='parse']"(node) {
+        if (!inActions) return;
+        const arg = node.arguments[0];
+        if (
+          arg &&
+          arg.type === "CallExpression" &&
+          arg.callee &&
+          arg.callee.type === "MemberExpression" &&
+          arg.callee.object &&
+          arg.callee.object.type === "Identifier" &&
+          arg.callee.object.name === "JSON" &&
+          arg.callee.property &&
+          arg.callee.property.type === "Identifier" &&
+          arg.callee.property.name === "stringify"
+        ) {
+          context.report({ node, messageId: "inlineSerialize" });
+        }
+      },
+    };
+  },
+};
+
+/**
  * A custom ESLint configuration for libraries that use Next.js.
  *
  * @type {import("eslint").Linter.Config[]}
@@ -305,6 +399,15 @@ export const nextJsConfig = [
                 "Use <Button> or <IconButton> from @repo/ui instead of a raw <button>. " +
                 "Exception: semantic toggle switches (<button role=\"switch\">) may suppress this rule with an inline eslint-disable comment referencing AGENTS.md §6.6.",
             },
+            {
+              // C1: raw <select> is banned — use the governed <SelectField> from
+              // @repo/ui so labels, ids, RTL, and error state are consistent
+              // (B1 already removed every raw select; this keeps them gone).
+              element: "select",
+              message:
+                "Use <SelectField> from @repo/ui instead of a raw <select> so the field " +
+                "label/id wiring, RTL, and validation state stay governed (AGENTS.md §6.7 / C1).",
+            },
           ],
         },
       ],
@@ -347,12 +450,17 @@ export const nextJsConfig = [
           // QA-SEC-01: every exported "use server" action under app/actions/**
           // must call an authorization guard helper.
           "require-action-guard": requireActionGuard,
+          // C1 shared-seam adoption: force ROUTES + serialize() in app/actions/**.
+          "no-raw-revalidate-path": noRawRevalidatePath,
+          "no-inline-json-serialize": noInlineJsonSerialize,
         },
       },
     },
     rules: {
       "mimaric/no-non-async-export-in-use-server": "error",
       "mimaric/require-action-guard": "error",
+      "mimaric/no-raw-revalidate-path": "error",
+      "mimaric/no-inline-json-serialize": "error",
       "no-restricted-syntax": [
         "error",
         {

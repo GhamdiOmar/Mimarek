@@ -24,7 +24,7 @@ import {
   LayoutGrid, ClipboardList, Wallet, Users, Building2, TrendingUp, FileText,
   Store, Tags, CreditCard, Wrench, BarChart3, Receipt, ShieldCheck, SearchCheck,
   Mail, TicketCheck, ShieldAlert, Settings, CalendarCheck, Gauge, HelpCircle,
-  X, ArrowLeft, type LucideIcon,
+  DatabaseBackup, X, ArrowLeft, type LucideIcon,
 } from "lucide-react";
 import { cn } from "@repo/ui/lib/utils";
 import { Button, DirectionalIcon } from "@repo/ui";
@@ -36,6 +36,7 @@ const ICONS: Record<string, LucideIcon> = {
   LayoutGrid, ClipboardList, Wallet, Users, Building2, TrendingUp, FileText,
   Store, Tags, CreditCard, Wrench, BarChart3, Receipt, ShieldCheck, SearchCheck,
   Mail, TicketCheck, ShieldAlert, Settings, CalendarCheck, Gauge, HelpCircle,
+  DatabaseBackup,
 };
 
 const COACHMARK_KEY = "mimaric.circlemenu.coachmark.v1";

@@ -273,7 +273,7 @@ export default function FinanceView({
                     fontSize={11}
                     tickFormatter={(v) => {
                       const n = String(v).match(/(\d+)/)?.[1] ?? v;
-                      return lang === "ar" ? `أسبوع ${n}` : `Wk ${n}`;
+                      return t(`أسبوع ${n}`, `Wk ${n}`);
                     }}
                   />
                   <YAxis

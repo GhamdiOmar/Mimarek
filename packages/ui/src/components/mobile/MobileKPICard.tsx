@@ -20,7 +20,15 @@ export type MobileKPITone =
   | "red"
   | "blue";
 
-/** Legacy delta shape — kept for callers that still pass a pre-formatted string. */
+/**
+ * Legacy delta shape — kept for callers that still pass a pre-formatted string.
+ *
+ * @deprecated Use the canonical {@link KPIDelta} (`{ value, direction, isGoodIfUp }`)
+ * from `../KPICard` instead. `KPIDelta` carries the numeric value + semantic
+ * direction so the card can color and format the delta itself (§6.8.1). This
+ * `{ label, direction }` shape only exists for the `isKPIDelta` runtime guard
+ * to disambiguate old call sites; new code should not produce it.
+ */
 export interface MobileKPIDelta {
   label: string;
   direction: "up" | "down" | "flat";

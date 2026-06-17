@@ -51,6 +51,7 @@ const navSeeds: NavSeed[] = [
   { label: { ar: "إعدادات البريد", en: "Email Settings" }, icon: "Mail", href: "/dashboard/admin/email", section: "system" },
   { label: { ar: "تذاكر الدعم", en: "Support Tickets" }, icon: "TicketCheck", href: "/dashboard/admin/tickets", section: "system" },
   { label: { ar: "إدارة السوق", en: "Marketplace Moderation" }, icon: "ShieldAlert", href: "/dashboard/admin/marketplace", section: "system" },
+  { label: { ar: "الاحتفاظ بالبيانات", en: "Data Retention" }, icon: "DatabaseBackup", href: "/dashboard/admin/data-retention", section: "system" },
   { label: { ar: "الإعدادات", en: "Settings" }, icon: "Settings", href: "/dashboard/settings", section: "system" },
 ];
 
@@ -103,6 +104,7 @@ export const breadcrumbLabels: Record<string, { ar: string; en: string }> = {
   "email": { ar: "إعدادات البريد", en: "Email Settings" },
   "coupons": { ar: "الكوبونات", en: "Coupons" },
   "subscriptions": { ar: "الاشتراكات", en: "Subscriptions" },
+  "data-retention": { ar: "الاحتفاظ بالبيانات", en: "Data Retention" },
   "help": { ar: "المساعدة", en: "Help" },
   "new": { ar: "جديد", en: "New" },
   "onboarding": { ar: "التهيئة", en: "Onboarding" },

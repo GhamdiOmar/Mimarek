@@ -36,6 +36,7 @@ import {
   AccordionContent,
   Input as UIInput,
   Textarea,
+  SelectField,
   BottomSheet,
   DataTable,
   Badge,
@@ -105,7 +106,7 @@ export default function HelpPage() {
   const { data: session } = useSession();
   const userRole = (session?.user as any)?.role ?? "USER";
   const isOrgAdmin = hasPermission(userRole, "help:manage_permissions");
-  const { lang } = useLanguage();
+  const { t, lang } = useLanguage();
   const [activeTab, setActiveTab] = React.useState<Tab>("overview");
 
   // FAQ state
@@ -253,9 +254,7 @@ export default function HelpPage() {
       setMyTickets(tickets);
     } catch (e: any) {
       toast.error(
-        lang === "ar"
-          ? "تعذّر إرسال التذكرة. يُرجى المحاولة مرة أخرى."
-          : "We couldn't submit your ticket. Please try again.",
+        t("تعذّر إرسال التذكرة. يُرجى المحاولة مرة أخرى.", "We couldn't submit your ticket. Please try again."),
       );
       console.error(e);
     }
@@ -272,9 +271,7 @@ export default function HelpPage() {
       setMyRequests(reqs);
     } catch (e: any) {
       toast.error(
-        lang === "ar"
-          ? "تعذّر إرسال طلب الصلاحيات. يُرجى المحاولة مرة أخرى."
-          : "We couldn't submit your permission request. Please try again.",
+        t("تعذّر إرسال طلب الصلاحيات. يُرجى المحاولة مرة أخرى.", "We couldn't submit your permission request. Please try again."),
       );
       console.error(e);
     }
@@ -291,9 +288,7 @@ export default function HelpPage() {
       setPendingJoinRequests(reqs);
     } catch (e: any) {
       toast.error(
-        lang === "ar"
-          ? "تعذّر حفظ المراجعة. يُرجى المحاولة مرة أخرى."
-          : "We couldn't save your review. Please try again.",
+        t("تعذّر حفظ المراجعة. يُرجى المحاولة مرة أخرى.", "We couldn't save your review. Please try again."),
       );
       console.error(e);
     } finally {
@@ -306,17 +301,13 @@ export default function HelpPage() {
     try {
       await cancelJoinRequest(requestId);
       toast.success(
-        lang === "ar"
-          ? "تم إلغاء طلب الانضمام بنجاح."
-          : "Join request cancelled successfully.",
+        t("تم إلغاء طلب الانضمام بنجاح.", "Join request cancelled successfully."),
       );
       const updated = await getMyJoinRequests();
       setMyJoinRequests(updated);
     } catch (e: any) {
       toast.error(
-        lang === "ar"
-          ? "تعذّر إلغاء الطلب. يُرجى المحاولة مرة أخرى."
-          : "We couldn't cancel this request. Please try again.",
+        t("تعذّر إلغاء الطلب. يُرجى المحاولة مرة أخرى.", "We couldn't cancel this request. Please try again."),
       );
       console.error(e);
     } finally {
@@ -334,9 +325,7 @@ export default function HelpPage() {
       setPendingRequests(reqs);
     } catch (e: any) {
       toast.error(
-        lang === "ar"
-          ? "تعذّر حفظ المراجعة. يُرجى المحاولة مرة أخرى."
-          : "We couldn't save your review. Please try again.",
+        t("تعذّر حفظ المراجعة. يُرجى المحاولة مرة أخرى.", "We couldn't save your review. Please try again."),
       );
       console.error(e);
     } finally {
@@ -405,16 +394,16 @@ export default function HelpPage() {
     exportToExcel({
       data: tickets,
       columns: [
-        { header: lang === "ar" ? "رقم التذكرة" : "Ticket #", key: "ticketNumber", width: 15 },
-        { header: lang === "ar" ? "الموضوع" : "Subject", key: "subject", width: 35 },
-        { header: lang === "ar" ? "الحالة" : "Status", key: "status", width: 18 },
-        { header: lang === "ar" ? "الأولوية" : "Priority", key: "priority", width: 15 },
-        { header: lang === "ar" ? "الفئة" : "Category", key: "category", width: 20, render: (val: any) => { const c = CATEGORY_OPTIONS.find((o) => o.value === val); return c ? c.label[lang] : val ?? ""; } },
-        { header: lang === "ar" ? "تاريخ الإنشاء" : "Created Date", key: "createdAt", width: 18, render: (val: any) => val ? new Date(val).toLocaleDateString("en-CA") : "" },
+        { header: t("رقم التذكرة", "Ticket #"), key: "ticketNumber", width: 15 },
+        { header: t("الموضوع", "Subject"), key: "subject", width: 35 },
+        { header: t("الحالة", "Status"), key: "status", width: 18 },
+        { header: t("الأولوية", "Priority"), key: "priority", width: 15 },
+        { header: t("الفئة", "Category"), key: "category", width: 20, render: (val: any) => { const c = CATEGORY_OPTIONS.find((o) => o.value === val); return c ? c.label[lang] : val ?? ""; } },
+        { header: t("تاريخ الإنشاء", "Created Date"), key: "createdAt", width: 18, render: (val: any) => val ? new Date(val).toLocaleDateString("en-CA") : "" },
       ],
-      filename: lang === "ar" ? "سجل_التذاكر" : "tickets_list",
+      filename: t("سجل_التذاكر", "tickets_list"),
       lang,
-      title: lang === "ar" ? "سجل التذاكر — ميماريك" : "Tickets List — Mimaric",
+      title: t("سجل التذاكر — ميماريك", "Tickets List — Mimaric"),
     });
   };
 
@@ -477,7 +466,7 @@ export default function HelpPage() {
     {
       id: "subject",
       accessorKey: "subject",
-      header: lang === "ar" ? "الموضوع" : "Subject",
+      header: t("الموضوع", "Subject"),
       cell: ({ row }) => (
         <Link
           href={`/dashboard/help/tickets/${row.original.id}`}
@@ -490,7 +479,7 @@ export default function HelpPage() {
     {
       id: "category",
       accessorKey: "category",
-      header: lang === "ar" ? "الفئة" : "Category",
+      header: t("الفئة", "Category"),
       cell: ({ row }) => (
         <span className="text-xs text-muted-foreground">
           {categoryLabel(row.original.category)}
@@ -500,20 +489,20 @@ export default function HelpPage() {
     {
       id: "priority",
       accessorKey: "priority",
-      header: lang === "ar" ? "الأولوية" : "Priority",
+      header: t("الأولوية", "Priority"),
       cell: ({ row }) => priorityBadge(row.original.priority),
       meta: { align: "center" },
     },
     {
       id: "status",
       accessorKey: "status",
-      header: lang === "ar" ? "الحالة" : "Status",
+      header: t("الحالة", "Status"),
       cell: ({ row }) => statusBadge(row.original.status),
       meta: { align: "center" },
     },
     {
       id: "messages",
-      header: () => <MessageSquare className="h-3.5 w-3.5" aria-label={lang === "ar" ? "الرسائل" : "Messages"} />,
+      header: () => <MessageSquare className="h-3.5 w-3.5" aria-label={t("الرسائل", "Messages")} />,
       cell: ({ row }) => (
         <span className="text-xs text-muted-foreground tabular-nums">
           {row.original._count?.messages ?? 0}
@@ -525,7 +514,7 @@ export default function HelpPage() {
     {
       id: "createdAt",
       accessorKey: "createdAt",
-      header: lang === "ar" ? "التاريخ" : "Date",
+      header: t("التاريخ", "Date"),
       cell: ({ row }) => (
         <span className="text-xs text-muted-foreground">
           {new Date(row.original.createdAt).toLocaleDateString("en-CA")}
@@ -538,7 +527,7 @@ export default function HelpPage() {
     {
       id: "requestedRole",
       accessorKey: "requestedRole",
-      header: lang === "ar" ? "الدور المطلوب" : "Requested Role",
+      header: t("الدور المطلوب", "Requested Role"),
       cell: ({ row }) => (
         <span className="font-medium">{row.original.requestedRole}</span>
       ),
@@ -546,7 +535,7 @@ export default function HelpPage() {
     {
       id: "reason",
       accessorKey: "reason",
-      header: lang === "ar" ? "السبب" : "Reason",
+      header: t("السبب", "Reason"),
       cell: ({ row }) => (
         <span className="text-xs text-muted-foreground block max-w-[200px] truncate">
           {row.original.reason}
@@ -556,14 +545,14 @@ export default function HelpPage() {
     {
       id: "status",
       accessorKey: "status",
-      header: lang === "ar" ? "الحالة" : "Status",
+      header: t("الحالة", "Status"),
       cell: ({ row }) => statusBadge(row.original.status),
       meta: { align: "center" },
     },
     {
       id: "reviewNote",
       accessorKey: "reviewNote",
-      header: lang === "ar" ? "ملاحظة المراجع" : "Review Note",
+      header: t("ملاحظة المراجع", "Review Note"),
       cell: ({ row }) => (
         <span className="text-xs text-muted-foreground">
           {row.original.reviewNote ?? "—"}
@@ -573,7 +562,7 @@ export default function HelpPage() {
     {
       id: "createdAt",
       accessorKey: "createdAt",
-      header: lang === "ar" ? "التاريخ" : "Date",
+      header: t("التاريخ", "Date"),
       cell: ({ row }) => (
         <span className="text-xs text-muted-foreground">
           {new Date(row.original.createdAt).toLocaleDateString("en-CA")}
@@ -585,7 +574,7 @@ export default function HelpPage() {
   const pendingPermRequestColumns: ColumnDef<any, unknown>[] = [
     {
       id: "user",
-      header: lang === "ar" ? "المستخدم" : "User",
+      header: t("المستخدم", "User"),
       cell: ({ row }) => (
         <div>
           <div className="font-medium">{row.original.user?.name}</div>
@@ -595,13 +584,13 @@ export default function HelpPage() {
     },
     {
       id: "currentRole",
-      header: lang === "ar" ? "الدور الحالي" : "Current Role",
+      header: t("الدور الحالي", "Current Role"),
       cell: ({ row }) => <span className="text-xs">{row.original.user?.role}</span>,
     },
     {
       id: "requestedRole",
       accessorKey: "requestedRole",
-      header: lang === "ar" ? "الدور المطلوب" : "Requested Role",
+      header: t("الدور المطلوب", "Requested Role"),
       cell: ({ row }) => (
         <span className="text-xs font-bold text-secondary">{row.original.requestedRole}</span>
       ),
@@ -609,7 +598,7 @@ export default function HelpPage() {
     {
       id: "reason",
       accessorKey: "reason",
-      header: lang === "ar" ? "السبب" : "Reason",
+      header: t("السبب", "Reason"),
       cell: ({ row }) => (
         <span className="text-xs text-muted-foreground block max-w-[200px]">
           {row.original.reason}
@@ -619,7 +608,7 @@ export default function HelpPage() {
     {
       id: "createdAt",
       accessorKey: "createdAt",
-      header: lang === "ar" ? "التاريخ" : "Date",
+      header: t("التاريخ", "Date"),
       cell: ({ row }) => (
         <span className="text-xs text-muted-foreground">
           {new Date(row.original.createdAt).toLocaleDateString("en-CA")}
@@ -628,7 +617,7 @@ export default function HelpPage() {
     },
     {
       id: "action",
-      header: lang === "ar" ? "إجراء" : "Action",
+      header: t("إجراء", "Action"),
       enableSorting: false,
       cell: ({ row }) => {
         const req = row.original;
@@ -639,15 +628,15 @@ export default function HelpPage() {
                 type="text"
                 value={reviewNote}
                 onChange={(e) => setReviewNote(e.target.value)}
-                placeholder={lang === "ar" ? "ملاحظة (اختياري)" : "Note (optional)"}
+                placeholder={t("ملاحظة (اختياري)", "Note (optional)")}
                 className="w-full border border-border rounded px-2 py-1 text-xs outline-none"
               />
               <div className="flex gap-1">
                 <Button size="sm" variant="success" onClick={() => handleReview(req.id, "APPROVED")} disabled={reviewActionLoading} className="h-6 px-2 text-[10px]" style={{ display: "inline-flex" }}>
-                  {reviewActionLoading ? <Loader2 className="h-3 w-3 me-1 animate-spin" /> : <CheckCircle2 className="h-3 w-3 me-1" />}{lang === "ar" ? "موافقة" : "Approve"}
+                  {reviewActionLoading ? <Loader2 className="h-3 w-3 me-1 animate-spin" /> : <CheckCircle2 className="h-3 w-3 me-1" />}{t("موافقة", "Approve")}
                 </Button>
                 <Button size="sm" variant="destructive" onClick={() => handleReview(req.id, "DECLINED")} disabled={reviewActionLoading} className="h-6 px-2 text-[10px]" style={{ display: "inline-flex" }}>
-                  {reviewActionLoading ? <Loader2 className="h-3 w-3 me-1 animate-spin" /> : <XCircle className="h-3 w-3 me-1" />}{lang === "ar" ? "رفض" : "Decline"}
+                  {reviewActionLoading ? <Loader2 className="h-3 w-3 me-1 animate-spin" /> : <XCircle className="h-3 w-3 me-1" />}{t("رفض", "Decline")}
                 </Button>
               </div>
             </div>
@@ -655,7 +644,7 @@ export default function HelpPage() {
         }
         return (
           <Button size="sm" variant="secondary" onClick={() => setReviewingId(req.id)} className="h-7 text-xs">
-            {lang === "ar" ? "مراجعة" : "Review"}
+            {t("مراجعة", "Review")}
           </Button>
         );
       },
@@ -665,7 +654,7 @@ export default function HelpPage() {
   const pendingJoinRequestColumns: ColumnDef<any, unknown>[] = [
     {
       id: "user",
-      header: lang === "ar" ? "المستخدم" : "User",
+      header: t("المستخدم", "User"),
       cell: ({ row }) => (
         <div>
           <div className="font-medium">{row.original.user?.name}</div>
@@ -676,7 +665,7 @@ export default function HelpPage() {
     {
       id: "crNumber",
       accessorKey: "crNumber",
-      header: lang === "ar" ? "رقم السجل" : "CR Number",
+      header: t("رقم السجل", "CR Number"),
       cell: ({ row }) => (
         <span className="font-mono text-xs">{row.original.crNumber}</span>
       ),
@@ -684,7 +673,7 @@ export default function HelpPage() {
     {
       id: "reason",
       accessorKey: "reason",
-      header: lang === "ar" ? "السبب" : "Reason",
+      header: t("السبب", "Reason"),
       cell: ({ row }) => (
         <span className="text-xs text-muted-foreground block max-w-[200px]">
           {row.original.reason ?? "—"}
@@ -694,7 +683,7 @@ export default function HelpPage() {
     {
       id: "createdAt",
       accessorKey: "createdAt",
-      header: lang === "ar" ? "التاريخ" : "Date",
+      header: t("التاريخ", "Date"),
       cell: ({ row }) => (
         <span className="text-xs text-muted-foreground">
           {new Date(row.original.createdAt).toLocaleDateString("en-CA")}
@@ -703,7 +692,7 @@ export default function HelpPage() {
     },
     {
       id: "action",
-      header: lang === "ar" ? "إجراء" : "Action",
+      header: t("إجراء", "Action"),
       enableSorting: false,
       cell: ({ row }) => {
         const req = row.original;
@@ -714,15 +703,15 @@ export default function HelpPage() {
                 type="text"
                 value={joinReviewNote}
                 onChange={(e) => setJoinReviewNote(e.target.value)}
-                placeholder={lang === "ar" ? "ملاحظة (اختياري)" : "Note (optional)"}
+                placeholder={t("ملاحظة (اختياري)", "Note (optional)")}
                 className="w-full border border-border rounded px-2 py-1 text-xs outline-none"
               />
               <div className="flex gap-1">
                 <Button size="sm" variant="success" onClick={() => handleJoinReview(req.id, "APPROVED_JOIN")} disabled={joinReviewActionLoading} className="h-6 px-2 text-[10px]" style={{ display: "inline-flex" }}>
-                  {joinReviewActionLoading ? <Loader2 className="h-3 w-3 me-1 animate-spin" /> : <CheckCircle2 className="h-3 w-3 me-1" />}{lang === "ar" ? "موافقة" : "Approve"}
+                  {joinReviewActionLoading ? <Loader2 className="h-3 w-3 me-1 animate-spin" /> : <CheckCircle2 className="h-3 w-3 me-1" />}{t("موافقة", "Approve")}
                 </Button>
                 <Button size="sm" variant="destructive" onClick={() => handleJoinReview(req.id, "DECLINED_JOIN")} disabled={joinReviewActionLoading} className="h-6 px-2 text-[10px]" style={{ display: "inline-flex" }}>
-                  {joinReviewActionLoading ? <Loader2 className="h-3 w-3 me-1 animate-spin" /> : <XCircle className="h-3 w-3 me-1" />}{lang === "ar" ? "رفض" : "Decline"}
+                  {joinReviewActionLoading ? <Loader2 className="h-3 w-3 me-1 animate-spin" /> : <XCircle className="h-3 w-3 me-1" />}{t("رفض", "Decline")}
                 </Button>
               </div>
             </div>
@@ -730,7 +719,7 @@ export default function HelpPage() {
         }
         return (
           <Button size="sm" variant="secondary" onClick={() => setJoinReviewingId(req.id)} className="h-7 text-xs">
-            {lang === "ar" ? "مراجعة" : "Review"}
+            {t("مراجعة", "Review")}
           </Button>
         );
       },
@@ -745,8 +734,8 @@ export default function HelpPage() {
       dir={lang === "ar" ? "rtl" : "ltr"}
     >
       <AppBar
-        title={lang === "ar" ? "المساعدة" : "Help"}
-        subtitle={lang === "ar" ? "الأسئلة والدعم" : "FAQs & Support"}
+        title={t("المساعدة", "Help")}
+        subtitle={t("الأسئلة والدعم", "FAQs & Support")}
         lang={lang}
       />
 
@@ -755,13 +744,13 @@ export default function HelpPage() {
         {isOrgAdmin && (
           <div className="px-4 pt-4 grid grid-cols-2 gap-3">
             <MobileKPICard
-              label={lang === "ar" ? "تذاكر مفتوحة" : "Open Tickets"}
+              label={t("تذاكر مفتوحة", "Open Tickets")}
               value={<span className="tabular-nums">{mobileTicketStats.open}</span>}
               icon={Ticket}
               tone="amber"
             />
             <MobileKPICard
-              label={lang === "ar" ? "تم الحل" : "Resolved"}
+              label={t("تم الحل", "Resolved")}
               value={<span className="tabular-nums">{mobileTicketStats.resolved}</span>}
               icon={CheckCircle2}
               tone="green"
@@ -779,7 +768,7 @@ export default function HelpPage() {
             <UIInput
               value={mobileSearch}
               onChange={(e) => setMobileSearch(e.target.value)}
-              placeholder={lang === "ar" ? "ابحث في الأسئلة..." : "Search FAQs..."}
+              placeholder={t("ابحث في الأسئلة...", "Search FAQs...")}
               className="h-10 ps-9"
             />
           </div>
@@ -799,12 +788,10 @@ export default function HelpPage() {
             </span>
             <div className="min-w-0 flex-1 text-start">
               <div className="text-sm font-semibold text-foreground">
-                {lang === "ar" ? "تواصل مع الدعم الفني" : "Contact Support"}
+                {t("تواصل مع الدعم الفني", "Contact Support")}
               </div>
               <div className="mt-0.5 text-xs text-muted-foreground">
-                {lang === "ar"
-                  ? "افتح تذكرة جديدة وسيرد عليك فريقنا قريباً"
-                  : "Open a new ticket and our team will reply shortly"}
+                {t("افتح تذكرة جديدة وسيرد عليك فريقنا قريباً", "Open a new ticket and our team will reply shortly")}
               </div>
             </div>
             <ChevronRight
@@ -817,13 +804,13 @@ export default function HelpPage() {
         {/* FAQ categories */}
         <div className="px-4 pt-5 pb-4">
           <h2 className="mb-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-            {lang === "ar" ? "الأسئلة الشائعة" : "FAQs"}
+            {t("الأسئلة الشائعة", "FAQs")}
           </h2>
           {mobileFaqsByCategory.length === 0 ? (
             <div className="rounded-2xl border border-border bg-card p-6 text-center">
-              <p className="text-sm text-muted-foreground">{lang === "ar" ? "لا توجد نتائج مطابقة." : "No matching FAQs."}</p>
+              <p className="text-sm text-muted-foreground">{t("لا توجد نتائج مطابقة.", "No matching FAQs.")}</p>
               <Button variant="outline" size="sm" className="mt-3" style={{ display: "inline-flex" }} onClick={() => setMobileNewTicketOpen(true)}>
-                {lang === "ar" ? "افتح تذكرة" : "Open a ticket"}
+                {t("افتح تذكرة", "Open a ticket")}
               </Button>
             </div>
           ) : (
@@ -878,11 +865,9 @@ export default function HelpPage() {
           <div>
             <div>
               <DataCard
-                title={lang === "ar" ? "طلب ترقية صلاحيات" : "Request Permission Upgrade"}
+                title={t("طلب ترقية صلاحيات", "Request Permission Upgrade")}
                 subtitle={
-                  lang === "ar"
-                    ? `دورك الحالي: ${userRole}`
-                    : `Current role: ${userRole}`
+                  t(`دورك الحالي: ${userRole}`, `Current role: ${userRole}`)
                 }
                 icon={ShieldCheck}
                 iconTone="amber"
@@ -902,7 +887,7 @@ export default function HelpPage() {
 
       <FAB
         icon={Plus}
-        label={lang === "ar" ? "تذكرة جديدة" : "New ticket"}
+        label={t("تذكرة جديدة", "New ticket")}
         onClick={() => setMobileNewTicketOpen(true)}
       />
 
@@ -910,8 +895,8 @@ export default function HelpPage() {
       <BottomSheet
         open={mobileNewTicketOpen}
         onOpenChange={setMobileNewTicketOpen}
-        title={lang === "ar" ? "تذكرة جديدة" : "New Ticket"}
-        description={lang === "ar" ? "صف المشكلة وسيتواصل فريق الدعم معك." : "Describe the issue and our support team will reply."}
+        title={t("تذكرة جديدة", "New Ticket")}
+        description={t("صف المشكلة وسيتواصل فريق الدعم معك.", "Describe the issue and our support team will reply.")}
         footer={
           <div className="flex items-center gap-2">
             <Button
@@ -921,7 +906,7 @@ export default function HelpPage() {
               onClick={() => setMobileNewTicketOpen(false)}
               disabled={ticketLoading}
             >
-              {lang === "ar" ? "إلغاء" : "Cancel"}
+              {t("إلغاء", "Cancel")}
             </Button>
             <Button
               className="flex-1 min-h-11 gap-1"
@@ -940,8 +925,8 @@ export default function HelpPage() {
                 <Send className="h-4 w-4 rtl:scale-x-[-1]" aria-hidden="true" />
               )}
               {ticketLoading
-                ? lang === "ar" ? "جاري الإرسال..." : "Submitting..."
-                : lang === "ar" ? "إرسال" : "Submit"}
+                ? t("جاري الإرسال...", "Submitting...")
+                : t("إرسال", "Submit")}
             </Button>
           </div>
         }
@@ -949,7 +934,7 @@ export default function HelpPage() {
         <div className="space-y-4">
           <div>
             <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-              {lang === "ar" ? "الموضوع" : "Subject"}
+              {t("الموضوع", "Subject")}
               <span className="text-destructive ms-1">*</span>
             </label>
             <UIInput
@@ -958,12 +943,12 @@ export default function HelpPage() {
                 setTicketForm({ ...ticketForm, subject: e.target.value });
                 if (ticketErrors.subject) setTicketErrors((prev) => ({ ...prev, subject: false }));
               }}
-              placeholder={lang === "ar" ? "مثال: مشكلة في تسجيل الدخول" : "e.g. Login issue"}
+              placeholder={t("مثال: مشكلة في تسجيل الدخول", "e.g. Login issue")}
               className={ticketErrors.subject ? "border-destructive" : undefined}
             />
             {ticketErrors.subject && (
               <p className="mt-1 text-xs text-destructive">
-                {lang === "ar" ? "هذا الحقل مطلوب" : "This field is required"}
+                {t("هذا الحقل مطلوب", "This field is required")}
               </p>
             )}
           </div>
@@ -971,9 +956,10 @@ export default function HelpPage() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                {lang === "ar" ? "الفئة" : "Category"}
+                {t("الفئة", "Category")}
               </label>
-              <select
+              <SelectField
+                aria-label={t("الفئة", "Category")}
                 value={ticketForm.category}
                 onChange={(e) => setTicketForm({ ...ticketForm, category: e.target.value })}
                 className="mt-1 h-11 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -981,13 +967,14 @@ export default function HelpPage() {
                 {CATEGORY_OPTIONS.map((o) => (
                   <option key={o.value} value={o.value}>{o.label[lang]}</option>
                 ))}
-              </select>
+              </SelectField>
             </div>
             <div>
               <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                {lang === "ar" ? "الأولوية" : "Priority"}
+                {t("الأولوية", "Priority")}
               </label>
-              <select
+              <SelectField
+                aria-label={t("الأولوية", "Priority")}
                 value={ticketForm.priority}
                 onChange={(e) => setTicketForm({ ...ticketForm, priority: e.target.value })}
                 className="mt-1 h-11 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -995,13 +982,13 @@ export default function HelpPage() {
                 {PRIORITY_OPTIONS.map((o) => (
                   <option key={o.value} value={o.value}>{o.label[lang]}</option>
                 ))}
-              </select>
+              </SelectField>
             </div>
           </div>
 
           <div>
             <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-              {lang === "ar" ? "الوصف" : "Description"}
+              {t("الوصف", "Description")}
               <span className="text-destructive ms-1">*</span>
             </label>
             <Textarea
@@ -1010,13 +997,13 @@ export default function HelpPage() {
                 setTicketForm({ ...ticketForm, description: e.target.value });
                 if (ticketErrors.description) setTicketErrors((prev) => ({ ...prev, description: false }));
               }}
-              placeholder={lang === "ar" ? "وصف المشكلة أو الطلب..." : "Describe the issue or request..."}
+              placeholder={t("وصف المشكلة أو الطلب...", "Describe the issue or request...")}
               rows={4}
               className={ticketErrors.description ? "border-destructive" : undefined}
             />
             {ticketErrors.description && (
               <p className="mt-1 text-xs text-destructive">
-                {lang === "ar" ? "هذا الحقل مطلوب" : "This field is required"}
+                {t("هذا الحقل مطلوب", "This field is required")}
               </p>
             )}
           </div>
@@ -1029,8 +1016,8 @@ export default function HelpPage() {
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500" dir={lang === "ar" ? "rtl" : "ltr"}>
       {/* Header */}
       <PageHeader
-        title={lang === "ar" ? "مركز المساعدة" : "Help Center"}
-        description={lang === "ar" ? "الأسئلة الشائعة، الدعم الفني، وطلب الصلاحيات" : "FAQs, technical support, and permission requests"}
+        title={t("مركز المساعدة", "Help Center")}
+        description={t("الأسئلة الشائعة، الدعم الفني، وطلب الصلاحيات", "FAQs, technical support, and permission requests")}
       />
 
       {/* Tabs */}
@@ -1063,8 +1050,8 @@ export default function HelpPage() {
         <div className="space-y-6">
           {/* Search hero */}
           <div className="bg-card rounded-lg border border-border p-6 md:p-8 text-center">
-            <h2 className="text-lg font-bold text-foreground">{lang === "ar" ? "كيف يمكننا مساعدتك؟" : "How can we help?"}</h2>
-            <p className="mt-1 text-sm text-muted-foreground">{lang === "ar" ? "ابحث في الأسئلة والأدلة، أو تواصل مع الدعم." : "Search our FAQs and guides, or contact support."}</p>
+            <h2 className="text-lg font-bold text-foreground">{t("كيف يمكننا مساعدتك؟", "How can we help?")}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">{t("ابحث في الأسئلة والأدلة، أو تواصل مع الدعم.", "Search our FAQs and guides, or contact support.")}</p>
             <form
               onSubmit={(e) => { e.preventDefault(); goToFaq({ search: overviewSearch, category: "all" }); }}
               className="relative mx-auto mt-4 max-w-xl"
@@ -1074,8 +1061,8 @@ export default function HelpPage() {
                 type="text"
                 value={overviewSearch}
                 onChange={(e) => setOverviewSearch(e.target.value)}
-                placeholder={lang === "ar" ? "ابحث في المساعدة..." : "Search help..."}
-                aria-label={lang === "ar" ? "ابحث في المساعدة" : "Search help"}
+                placeholder={t("ابحث في المساعدة...", "Search help...")}
+                aria-label={t("ابحث في المساعدة", "Search help")}
                 className="w-full bg-background border border-border rounded-md py-2.5 ps-10 pe-4 text-sm focus:border-primary/30 focus:ring-0 outline-none"
               />
             </form>
@@ -1083,7 +1070,7 @@ export default function HelpPage() {
 
           {/* Popular questions */}
           <div>
-            <h3 className="mb-3 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">{lang === "ar" ? "الأسئلة الأكثر شيوعاً" : "Popular questions"}</h3>
+            <h3 className="mb-3 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">{t("الأسئلة الأكثر شيوعاً", "Popular questions")}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               {popularFaqs.map((item) => (
                 <Button
@@ -1109,8 +1096,8 @@ export default function HelpPage() {
               style={{ display: "inline-flex" }}
             >
               <LifeBuoy className="h-8 w-8 text-secondary mb-3" />
-              <h3 className="font-bold text-foreground">{lang === "ar" ? "تواصل مع الدعم" : "Contact Support"}</h3>
-              <p className="text-xs text-muted-foreground mt-1">{lang === "ar" ? "افتح تذكرة وسيرد عليك فريقنا" : "Open a ticket and our team will reply"}</p>
+              <h3 className="font-bold text-foreground">{t("تواصل مع الدعم", "Contact Support")}</h3>
+              <p className="text-xs text-muted-foreground mt-1">{t("افتح تذكرة وسيرد عليك فريقنا", "Open a ticket and our team will reply")}</p>
             </Button>
             <Button
               variant="outline"
@@ -1119,8 +1106,8 @@ export default function HelpPage() {
               style={{ display: "inline-flex" }}
             >
               <BookOpen className="h-8 w-8 text-info mb-3" />
-              <h3 className="font-bold text-foreground">{lang === "ar" ? "الأسئلة والأدلة" : "FAQs & Guides"}</h3>
-              <p className="text-xs text-muted-foreground mt-1">{lang === "ar" ? "تصفّح كل الأسئلة وأدلة الاستخدام" : "Browse all FAQs and usage guides"}</p>
+              <h3 className="font-bold text-foreground">{t("الأسئلة والأدلة", "FAQs & Guides")}</h3>
+              <p className="text-xs text-muted-foreground mt-1">{t("تصفّح كل الأسئلة وأدلة الاستخدام", "Browse all FAQs and usage guides")}</p>
             </Button>
             <Button
               variant="outline"
@@ -1129,8 +1116,8 @@ export default function HelpPage() {
               style={{ display: "inline-flex" }}
             >
               <ShieldCheck className="h-8 w-8 text-warning mb-3" />
-              <h3 className="font-bold text-foreground">{lang === "ar" ? "طلب صلاحيات" : "Request Permissions"}</h3>
-              <p className="text-xs text-muted-foreground mt-1">{lang === "ar" ? "اطلب ترقية صلاحياتك في النظام" : "Request a role upgrade in the system"}</p>
+              <h3 className="font-bold text-foreground">{t("طلب صلاحيات", "Request Permissions")}</h3>
+              <p className="text-xs text-muted-foreground mt-1">{t("اطلب ترقية صلاحياتك في النظام", "Request a role upgrade in the system")}</p>
             </Button>
           </div>
         </div>
@@ -1145,7 +1132,7 @@ export default function HelpPage() {
               type="text"
               value={faqSearch}
               onChange={(e) => setFaqSearch(e.target.value)}
-              placeholder={lang === "ar" ? "ابحث في الأسئلة الشائعة..." : "Search FAQs..."}
+              placeholder={t("ابحث في الأسئلة الشائعة...", "Search FAQs...")}
               className="w-full bg-card border border-border rounded-md py-2.5 pe-10 ps-4 text-sm focus:border-primary/30 focus:ring-0 outline-none"
             />
           </div>
@@ -1160,7 +1147,7 @@ export default function HelpPage() {
               className="rounded-full whitespace-nowrap"
               style={{ display: "inline-flex" }}
             >
-              {lang === "ar" ? "الكل" : "All"}
+              {t("الكل", "All")}
             </Button>
             {FAQ_CATEGORIES.map((cat) => (
               <Button
@@ -1192,7 +1179,7 @@ export default function HelpPage() {
                 style={{ display: "inline-flex" }}
                 onClick={() => { setActiveTab("tickets"); setShowNewTicket(true); }}
               >
-                {lang === "ar" ? "لم تجد ما تبحث عنه؟ افتح تذكرة" : "Didn't find it? Open a ticket"}
+                {t("لم تجد ما تبحث عنه؟ افتح تذكرة", "Didn't find it? Open a ticket")}
               </Button>
             </div>
           ) : faqCategory === "all" && !faqSearch ? (
@@ -1219,7 +1206,7 @@ export default function HelpPage() {
 
           {/* Guides */}
           <div>
-            <h2 className="text-lg font-bold text-foreground mb-4">{lang === "ar" ? "أدلة الاستخدام" : "Usage Guides"}</h2>
+            <h2 className="text-lg font-bold text-foreground mb-4">{t("أدلة الاستخدام", "Usage Guides")}</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {GUIDE_ITEMS.map((guide, idx) => (
                 <div key={guide.id} className="bg-card rounded-md border border-border overflow-hidden flex flex-col">
@@ -1269,14 +1256,14 @@ export default function HelpPage() {
       {activeTab === "tickets" && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-foreground">{lang === "ar" ? "تذاكري" : "My Tickets"}</h2>
+            <h2 className="text-lg font-bold text-foreground">{t("تذاكري", "My Tickets")}</h2>
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" style={{ display: "inline-flex" }} onClick={handleExportTickets}>
                 <Download className="h-4 w-4" />
-                {lang === "ar" ? "تصدير التذاكر" : "Export Tickets"}
+                {t("تصدير التذاكر", "Export Tickets")}
               </Button>
               <Button size="sm" onClick={() => setShowNewTicket(!showNewTicket)}>
-                {lang === "ar" ? "تذكرة جديدة" : "New Ticket"}
+                {t("تذكرة جديدة", "New Ticket")}
               </Button>
             </div>
           </div>
@@ -1289,38 +1276,38 @@ export default function HelpPage() {
                   type="text"
                   value={ticketForm.subject}
                   onChange={(e) => { setTicketForm({ ...ticketForm, subject: e.target.value }); if (ticketErrors.subject) setTicketErrors((prev) => ({ ...prev, subject: false })); }}
-                  placeholder={lang === "ar" ? "الموضوع" : "Subject"}
+                  placeholder={t("الموضوع", "Subject")}
                   className={`w-full border rounded-md px-3 py-2 text-sm focus:border-primary/30 outline-none ${ticketErrors.subject ? "border-destructive" : "border-border"}`}
                 />
                 {ticketErrors.subject && (
-                  <p className="text-xs text-destructive mt-1">{lang === "ar" ? "هذا الحقل مطلوب" : "This field is required"}</p>
+                  <p className="text-xs text-destructive mt-1">{t("هذا الحقل مطلوب", "This field is required")}</p>
                 )}
               </div>
               <div className="flex gap-3">
-                <select value={ticketForm.category} onChange={(e) => setTicketForm({ ...ticketForm, category: e.target.value })} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                <SelectField aria-label={t("الفئة", "Category")} value={ticketForm.category} onChange={(e) => setTicketForm({ ...ticketForm, category: e.target.value })} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                   {CATEGORY_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label[lang]}</option>)}
-                </select>
-                <select value={ticketForm.priority} onChange={(e) => setTicketForm({ ...ticketForm, priority: e.target.value })} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                </SelectField>
+                <SelectField aria-label={t("الأولوية", "Priority")} value={ticketForm.priority} onChange={(e) => setTicketForm({ ...ticketForm, priority: e.target.value })} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                   {PRIORITY_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label[lang]}</option>)}
-                </select>
+                </SelectField>
               </div>
               <div>
                 <textarea
                   value={ticketForm.description}
                   onChange={(e) => { setTicketForm({ ...ticketForm, description: e.target.value }); if (ticketErrors.description) setTicketErrors((prev) => ({ ...prev, description: false })); }}
-                  placeholder={lang === "ar" ? "وصف المشكلة أو الطلب..." : "Describe the issue or request..."}
+                  placeholder={t("وصف المشكلة أو الطلب...", "Describe the issue or request...")}
                   rows={4}
                   className={`w-full border rounded-md px-3 py-2 text-sm focus:border-primary/30 outline-none resize-none ${ticketErrors.description ? "border-destructive" : "border-border"}`}
                 />
                 {ticketErrors.description && (
-                  <p className="text-xs text-destructive mt-1">{lang === "ar" ? "هذا الحقل مطلوب" : "This field is required"}</p>
+                  <p className="text-xs text-destructive mt-1">{t("هذا الحقل مطلوب", "This field is required")}</p>
                 )}
               </div>
               <div className="flex gap-2 justify-end">
-                <Button variant="ghost" size="sm" onClick={() => setShowNewTicket(false)} disabled={ticketLoading} style={{ display: "inline-flex" }}>{lang === "ar" ? "إلغاء" : "Cancel"}</Button>
+                <Button variant="ghost" size="sm" onClick={() => setShowNewTicket(false)} disabled={ticketLoading} style={{ display: "inline-flex" }}>{t("إلغاء", "Cancel")}</Button>
                 <Button variant="success" size="sm" onClick={handleSubmitTicket} disabled={ticketLoading} style={{ display: "inline-flex" }} className="gap-1">
                   {ticketLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
-                  {ticketLoading ? (lang === "ar" ? "جاري الإرسال..." : "Submitting...") : (lang === "ar" ? "إرسال" : "Submit")}
+                  {ticketLoading ? (t("جاري الإرسال...", "Submitting...")) : (t("إرسال", "Submit"))}
                 </Button>
               </div>
             </div>
@@ -1332,8 +1319,8 @@ export default function HelpPage() {
             locale={lang}
             pagination={false}
             getRowId={(t) => t.id}
-            emptyTitle={lang === "ar" ? "لا توجد تذاكر" : "No tickets yet"}
-            emptyDescription={lang === "ar" ? "ستظهر تذاكرك هنا عند إنشائها." : "Your support tickets will appear here once you create them."}
+            emptyTitle={t("لا توجد تذاكر", "No tickets yet")}
+            emptyDescription={t("ستظهر تذاكرك هنا عند إنشائها.", "Your support tickets will appear here once you create them.")}
             mobileCard={(ticket: any) => (
               <div className="space-y-2">
                 <div className="flex items-start justify-between gap-2">
@@ -1368,36 +1355,36 @@ export default function HelpPage() {
         <div className="space-y-6">
           {/* Request Form */}
           <div className="bg-card p-4 rounded-md border border-border space-y-3">
-            <h2 className="font-bold text-foreground">{lang === "ar" ? "طلب ترقية الصلاحيات" : "Request Permission Upgrade"}</h2>
-            <p className="text-xs text-muted-foreground">{lang === "ar" ? "دورك الحالي: " : "Your current role: "}<span className="font-bold">{userRole}</span></p>
-            <select value={permForm.requestedRole} onChange={(e) => setPermForm({ ...permForm, requestedRole: e.target.value })} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
-              <option value="">{lang === "ar" ? "اختر الدور المطلوب" : "Select requested role"}</option>
+            <h2 className="font-bold text-foreground">{t("طلب ترقية الصلاحيات", "Request Permission Upgrade")}</h2>
+            <p className="text-xs text-muted-foreground">{t("دورك الحالي: ", "Your current role: ")}<span className="font-bold">{userRole}</span></p>
+            <SelectField aria-label={t("الدور المطلوب", "Requested role")} value={permForm.requestedRole} onChange={(e) => setPermForm({ ...permForm, requestedRole: e.target.value })} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+              <option value="">{t("اختر الدور المطلوب", "Select requested role")}</option>
               {ROLE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label[lang]} ({o.value})</option>)}
-            </select>
+            </SelectField>
             <textarea
               value={permForm.reason}
               onChange={(e) => setPermForm({ ...permForm, reason: e.target.value })}
-              placeholder={lang === "ar" ? "سبب الطلب..." : "Reason for request..."}
+              placeholder={t("سبب الطلب...", "Reason for request...")}
               rows={3}
               className="w-full border border-border rounded-md px-3 py-2 text-sm focus:border-primary/30 outline-none resize-none"
             />
             <Button variant="success" size="sm" onClick={handleSubmitPermRequest} disabled={permLoading || !permForm.requestedRole || !permForm.reason.trim()}>
               <Send className="h-3.5 w-3.5 me-1" />
-              {permLoading ? "..." : (lang === "ar" ? "إرسال الطلب" : "Submit Request")}
+              {permLoading ? "..." : (t("إرسال الطلب", "Submit Request"))}
             </Button>
           </div>
 
           {/* Request History */}
           <div>
-            <h3 className="font-bold text-foreground mb-2">{lang === "ar" ? "سجل الطلبات" : "Request History"}</h3>
+            <h3 className="font-bold text-foreground mb-2">{t("سجل الطلبات", "Request History")}</h3>
             <DataTable
               columns={permHistoryColumns}
               data={myRequests}
               locale={lang}
               pagination={false}
               getRowId={(r) => r.id}
-              emptyTitle={lang === "ar" ? "لا توجد طلبات" : "No requests yet"}
-              emptyDescription={lang === "ar" ? "ستظهر طلبات الصلاحيات هنا." : "Your permission requests will appear here."}
+              emptyTitle={t("لا توجد طلبات", "No requests yet")}
+              emptyDescription={t("ستظهر طلبات الصلاحيات هنا.", "Your permission requests will appear here.")}
               mobileCard={(req: any) => (
                 <div className="space-y-2">
                   <div className="flex items-start justify-between gap-2">
@@ -1409,7 +1396,7 @@ export default function HelpPage() {
                   </div>
                   {req.reviewNote && (
                     <div className="text-xs text-muted-foreground">
-                      <span className="font-medium">{lang === "ar" ? "ملاحظة المراجع: " : "Review note: "}</span>
+                      <span className="font-medium">{t("ملاحظة المراجع: ", "Review note: ")}</span>
                       {req.reviewNote}
                     </div>
                   )}
@@ -1428,7 +1415,7 @@ export default function HelpPage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-bold text-foreground">
-              {lang === "ar" ? "طلبات الانضمام للمنشأة" : "My Organization Join Requests"}
+              {t("طلبات الانضمام للمنشأة", "My Organization Join Requests")}
             </h2>
           </div>
 
@@ -1436,12 +1423,10 @@ export default function HelpPage() {
             <div className="bg-card rounded-md border border-border p-10 text-center space-y-3">
               <Users className="mx-auto h-10 w-10 text-muted-foreground/40" aria-hidden="true" />
               <p className="font-medium text-foreground">
-                {lang === "ar" ? "لا توجد طلبات انضمام" : "No join requests yet"}
+                {t("لا توجد طلبات انضمام", "No join requests yet")}
               </p>
               <p className="text-sm text-muted-foreground">
-                {lang === "ar"
-                  ? "ستظهر هنا طلبات الانضمام التي أرسلتها إلى منشآت أخرى."
-                  : "Join requests you send to organizations will appear here."}
+                {t("ستظهر هنا طلبات الانضمام التي أرسلتها إلى منشآت أخرى.", "Join requests you send to organizations will appear here.")}
               </p>
             </div>
           ) : (
@@ -1475,14 +1460,14 @@ export default function HelpPage() {
                     <div className="flex flex-wrap gap-x-6 gap-y-1 text-xs text-muted-foreground">
                       <span>
                         <span className="font-medium text-foreground">
-                          {lang === "ar" ? "تاريخ الإرسال: " : "Submitted: "}
+                          {t("تاريخ الإرسال: ", "Submitted: ")}
                         </span>
                         <span dir="ltr" className="tabular-nums">{submittedDate}</span>
                       </span>
                       {isPending && expiryDate && (
                         <span>
                           <span className="font-medium text-foreground">
-                            {lang === "ar" ? "ينتهي: " : "Expires: "}
+                            {t("ينتهي: ", "Expires: ")}
                           </span>
                           <span dir="ltr" className="tabular-nums">{expiryDate}</span>
                         </span>
@@ -1492,7 +1477,7 @@ export default function HelpPage() {
                     {req.reviewNote && (
                       <p className="text-xs text-muted-foreground bg-muted/30 rounded px-3 py-2">
                         <span className="font-medium text-foreground">
-                          {lang === "ar" ? "ملاحظة المراجع: " : "Review note: "}
+                          {t("ملاحظة المراجع: ", "Review note: ")}
                         </span>
                         {req.reviewNote}
                       </p>
@@ -1514,8 +1499,8 @@ export default function HelpPage() {
                             <XCircle className="h-3.5 w-3.5" aria-hidden="true" />
                           )}
                           {cancellingJoinId === req.id
-                            ? (lang === "ar" ? "جاري الإلغاء..." : "Cancelling...")
-                            : (lang === "ar" ? "إلغاء الطلب" : "Cancel request")}
+                            ? (t("جاري الإلغاء...", "Cancelling..."))
+                            : (t("إلغاء الطلب", "Cancel request"))}
                         </Button>
                       </div>
                     )}
@@ -1532,15 +1517,15 @@ export default function HelpPage() {
         <div className="space-y-6">
           {/* Pending Permission Requests */}
           <div>
-            <h2 className="text-lg font-bold text-foreground mb-3">{lang === "ar" ? "طلبات الصلاحيات المعلقة" : "Pending Permission Requests"}</h2>
+            <h2 className="text-lg font-bold text-foreground mb-3">{t("طلبات الصلاحيات المعلقة", "Pending Permission Requests")}</h2>
             <DataTable
               columns={pendingPermRequestColumns}
               data={pendingRequests}
               locale={lang}
               pagination={false}
               getRowId={(r) => r.id}
-              emptyTitle={lang === "ar" ? "لا توجد طلبات معلقة" : "No pending requests"}
-              emptyDescription={lang === "ar" ? "ستظهر هنا طلبات ترقية الصلاحيات التي تنتظر المراجعة." : "Permission-upgrade requests awaiting review will appear here."}
+              emptyTitle={t("لا توجد طلبات معلقة", "No pending requests")}
+              emptyDescription={t("ستظهر هنا طلبات ترقية الصلاحيات التي تنتظر المراجعة.", "Permission-upgrade requests awaiting review will appear here.")}
               mobileCard={(req: any) => (
                 <div className="space-y-2">
                   <div className="flex items-start justify-between gap-2">
@@ -1567,21 +1552,21 @@ export default function HelpPage() {
                           type="text"
                           value={reviewNote}
                           onChange={(e) => setReviewNote(e.target.value)}
-                          placeholder={lang === "ar" ? "ملاحظة (اختياري)" : "Note (optional)"}
+                          placeholder={t("ملاحظة (اختياري)", "Note (optional)")}
                           className="w-full border border-border rounded px-2 py-1 text-xs outline-none"
                         />
                         <div className="flex gap-2">
                           <Button size="sm" variant="success" onClick={() => handleReview(req.id, "APPROVED")} disabled={reviewActionLoading} className="h-8 px-3 text-xs flex-1" style={{ display: "inline-flex" }}>
-                            {reviewActionLoading ? <Loader2 className="h-3 w-3 me-1 animate-spin" /> : <CheckCircle2 className="h-3 w-3 me-1" />}{lang === "ar" ? "موافقة" : "Approve"}
+                            {reviewActionLoading ? <Loader2 className="h-3 w-3 me-1 animate-spin" /> : <CheckCircle2 className="h-3 w-3 me-1" />}{t("موافقة", "Approve")}
                           </Button>
                           <Button size="sm" variant="destructive" onClick={() => handleReview(req.id, "DECLINED")} disabled={reviewActionLoading} className="h-8 px-3 text-xs flex-1" style={{ display: "inline-flex" }}>
-                            {reviewActionLoading ? <Loader2 className="h-3 w-3 me-1 animate-spin" /> : <XCircle className="h-3 w-3 me-1" />}{lang === "ar" ? "رفض" : "Decline"}
+                            {reviewActionLoading ? <Loader2 className="h-3 w-3 me-1 animate-spin" /> : <XCircle className="h-3 w-3 me-1" />}{t("رفض", "Decline")}
                           </Button>
                         </div>
                       </div>
                     ) : (
                       <Button size="sm" variant="secondary" onClick={() => setReviewingId(req.id)} className="h-8 text-xs w-full">
-                        {lang === "ar" ? "مراجعة" : "Review"}
+                        {t("مراجعة", "Review")}
                       </Button>
                     )}
                   </div>
@@ -1592,15 +1577,15 @@ export default function HelpPage() {
 
           {/* Pending Join Requests */}
           <div>
-            <h2 className="text-lg font-bold text-foreground mb-3">{lang === "ar" ? "طلبات الانضمام المعلقة" : "Pending Join Requests"}</h2>
+            <h2 className="text-lg font-bold text-foreground mb-3">{t("طلبات الانضمام المعلقة", "Pending Join Requests")}</h2>
             <DataTable
               columns={pendingJoinRequestColumns}
               data={pendingJoinRequests}
               locale={lang}
               pagination={false}
               getRowId={(r) => r.id}
-              emptyTitle={lang === "ar" ? "لا توجد طلبات انضمام" : "No pending join requests"}
-              emptyDescription={lang === "ar" ? "ستظهر هنا طلبات الانضمام للمنظمة التي تنتظر المراجعة." : "Organization join requests awaiting review will appear here."}
+              emptyTitle={t("لا توجد طلبات انضمام", "No pending join requests")}
+              emptyDescription={t("ستظهر هنا طلبات الانضمام للمنظمة التي تنتظر المراجعة.", "Organization join requests awaiting review will appear here.")}
               mobileCard={(req: any) => (
                 <div className="space-y-2">
                   <div className="flex items-start justify-between gap-2">
@@ -1623,21 +1608,21 @@ export default function HelpPage() {
                           type="text"
                           value={joinReviewNote}
                           onChange={(e) => setJoinReviewNote(e.target.value)}
-                          placeholder={lang === "ar" ? "ملاحظة (اختياري)" : "Note (optional)"}
+                          placeholder={t("ملاحظة (اختياري)", "Note (optional)")}
                           className="w-full border border-border rounded px-2 py-1 text-xs outline-none"
                         />
                         <div className="flex gap-2">
                           <Button size="sm" variant="success" onClick={() => handleJoinReview(req.id, "APPROVED_JOIN")} disabled={joinReviewActionLoading} className="h-8 px-3 text-xs flex-1" style={{ display: "inline-flex" }}>
-                            {joinReviewActionLoading ? <Loader2 className="h-3 w-3 me-1 animate-spin" /> : <CheckCircle2 className="h-3 w-3 me-1" />}{lang === "ar" ? "موافقة" : "Approve"}
+                            {joinReviewActionLoading ? <Loader2 className="h-3 w-3 me-1 animate-spin" /> : <CheckCircle2 className="h-3 w-3 me-1" />}{t("موافقة", "Approve")}
                           </Button>
                           <Button size="sm" variant="destructive" onClick={() => handleJoinReview(req.id, "DECLINED_JOIN")} disabled={joinReviewActionLoading} className="h-8 px-3 text-xs flex-1" style={{ display: "inline-flex" }}>
-                            {joinReviewActionLoading ? <Loader2 className="h-3 w-3 me-1 animate-spin" /> : <XCircle className="h-3 w-3 me-1" />}{lang === "ar" ? "رفض" : "Decline"}
+                            {joinReviewActionLoading ? <Loader2 className="h-3 w-3 me-1 animate-spin" /> : <XCircle className="h-3 w-3 me-1" />}{t("رفض", "Decline")}
                           </Button>
                         </div>
                       </div>
                     ) : (
                       <Button size="sm" variant="secondary" onClick={() => setJoinReviewingId(req.id)} className="h-8 text-xs w-full">
-                        {lang === "ar" ? "مراجعة" : "Review"}
+                        {t("مراجعة", "Review")}
                       </Button>
                     )}
                   </div>

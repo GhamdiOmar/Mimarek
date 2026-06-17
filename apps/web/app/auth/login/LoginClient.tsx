@@ -60,6 +60,10 @@ export default function LoginClient({ falLicense }: { falLicense?: string | null
       ar: "يرجى تأكيد بريدك الإلكتروني أولاً. تحقّق من بريدك أو أعد إرسال رابط التأكيد.",
       en: "Please verify your email first. Check your inbox or resend the verification link."
     },
+    ORG_EXPIRED: {
+      ar: "انتهت صلاحية هذا الحساب لعدم تأكيد البريد الإلكتروني في الوقت المحدد. يرجى التواصل مع الدعم.",
+      en: "This account expired because the email wasn't verified in time. Please contact support."
+    },
     DATABASE_ERROR: {
       ar: "فشل الاتصال بقاعدة البيانات. يرجى المحاولة لاحقاً.",
       en: "Database connection failed. Please try again later."

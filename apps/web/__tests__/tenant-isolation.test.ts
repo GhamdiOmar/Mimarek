@@ -33,16 +33,21 @@ let seed: Record<string, Row[]>;
 // `dbHolder.stub` is reassigned each test; `db` is a STABLE proxy forwarding to
 // the live stub. Both live in a vi.hoisted block so they exist before the
 // hoisted vi.mock factory runs (avoids the TDZ that a top-level const hits).
-// CustomerStatus is the only Prisma enum these actions import as a named export.
 const { dbHolder, dbProxy } = vi.hoisted(() => {
   const dbHolder: { stub: any } = { stub: undefined };
   const dbProxy = new Proxy({} as any, { get: (_t, model) => dbHolder.stub?.[model] });
   return { dbHolder, dbProxy };
 });
-vi.mock("@repo/db", () => ({
-  db: dbProxy,
-  CustomerStatus: { ACTIVE: "ACTIVE", LOST: "LOST", LEAD: "LEAD" },
-}));
+// Provide the REAL Prisma enums (UnitStatus, CustomerStatus, …) so module-load
+// enum reads work — `units.ts` runs `Object.values(UnitStatus)` at import time, so
+// a hand-stubbed/partial enum makes the action crash on load. We pull the enums
+// from `@prisma/client` (pure generated value objects) instead of spreading the
+// `@repo/db` barrel, because that barrel constructs the Prisma client and THROWS
+// without `DATABASE_URL` (unset in the test env). `db` itself is the in-memory stub.
+vi.mock("@repo/db", async () => {
+  const prisma = await vi.importActual<typeof import("@prisma/client")>("@prisma/client");
+  return { ...prisma, db: dbProxy };
+});
 
 vi.mock("../auth", () => ({ auth, signIn, signOut, handlers: {} }));
 vi.mock("next/cache", () => ({ revalidatePath: () => {}, revalidateTag: () => {}, unstable_cache: (fn: any) => fn }));

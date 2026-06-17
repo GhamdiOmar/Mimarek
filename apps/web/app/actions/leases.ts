@@ -2,6 +2,8 @@
 
 import { db } from "@repo/db";
 import { revalidatePath } from "next/cache";
+import { ROUTES } from "../../lib/routes";
+import { serialize } from "../../lib/serialize";
 import { requirePermission } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
 
@@ -27,7 +29,7 @@ export async function getLeases(filters?: { status?: string }) {
   });
 
   // Serialize Decimal/Date for client components
-  return JSON.parse(JSON.stringify(results));
+  return serialize(results);
 }
 
 export async function terminateLease(leaseId: string) {
@@ -62,6 +64,6 @@ export async function terminateLease(leaseId: string) {
 
   logAuditEvent({ userId: session.userId, userEmail: session.email, userRole: session.role, action: "UPDATE", resource: "Lease", resourceId: leaseId, metadata: { newStatus: "TERMINATED" }, organizationId: session.organizationId });
 
-  revalidatePath("/dashboard/contracts");
-  revalidatePath("/dashboard/units");
+  revalidatePath(ROUTES.contracts);
+  revalidatePath(ROUTES.units);
 }

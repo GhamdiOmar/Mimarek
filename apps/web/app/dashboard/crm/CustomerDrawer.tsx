@@ -27,6 +27,8 @@ import {
   IconButton,
   ActionLink,
   Input,
+  SelectField,
+  HijriDatePicker,
   ResponsiveDialog,
   QuickActionRail,
   DirectionalIcon,
@@ -348,23 +350,40 @@ export function CustomerDrawer({
     }
   }
 
-  const todayStr = new Date().toISOString().split("T")[0];
-
   return (
     <>
       {/* Overlay */}
       <div
-        className="fixed inset-0 z-[90] bg-black/40 backdrop-blur-sm animate-in fade-in duration-200"
+        className="fixed inset-0 z-[90] bg-overlay/40 backdrop-blur-sm animate-in fade-in duration-200"
         onClick={onClose}
       />
 
-      {/* Drawer */}
+      {/* Drawer
+          RTL-logical shell (B2): on md+ it is a full-height side panel anchored to the
+          INLINE-END (right in LTR, left in RTL) via `end-0`; on <md it becomes a
+          bottom-sheet (inset-x-0, bottom-0, capped height, rounded top). The entrance
+          uses a direction-agnostic fade/slide so it never animates the wrong way in RTL
+          — `slide-in-from-right` was LTR-locked and is removed. A full ResponsiveDialog
+          re-platform is intentionally NOT done: its desktop leg is a CENTER-screen modal,
+          which would destroy this wide, end-anchored, full-height drawer surface. */}
       <div
         className={cn(
-          "fixed top-0 bottom-0 z-[100] w-full max-w-md bg-card border-border shadow-2xl flex flex-col animate-in slide-in-from-right duration-300 end-0 border-s"
+          "fixed z-[100] bg-card border-border shadow-2xl flex flex-col",
+          // Mobile: bottom-sheet
+          "inset-x-0 bottom-0 max-h-[90dvh] rounded-t-2xl border-t pb-safe-bottom",
+          "animate-in fade-in slide-in-from-bottom duration-300",
+          // Desktop (md+): full-height end-anchored side drawer
+          "md:inset-x-auto md:inset-y-0 md:end-0 md:w-full md:max-w-md md:max-h-none md:rounded-none md:border-t-0 md:border-s md:pb-0",
+          "md:slide-in-from-bottom-0",
         )}
         dir={lang === "ar" ? "rtl" : "ltr"}
       >
+        {/* Mobile bottom-sheet grab handle (hidden on md+ side drawer) */}
+        <div
+          aria-hidden="true"
+          className="md:hidden mx-auto mt-3 h-1.5 w-10 shrink-0 rounded-full bg-muted-foreground/30"
+        />
+
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-border">
           <div className="flex items-center gap-3">
@@ -1013,21 +1032,16 @@ export function CustomerDrawer({
                 dir="ltr"
               />
             </div>
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-muted-foreground">
-                {lang === "ar" ? "المصدر" : "Source"}
-              </label>
-              <select
-                value={editForm.source}
-                onChange={(e) => setEditForm({ ...editForm, source: e.target.value })}
-                className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <option value="">{lang === "ar" ? "اختر المصدر" : "Select source"}</option>
-                {Object.entries(SOURCE_LABELS).map(([key, label]) => (
-                  <option key={key} value={key}>{label[lang]}</option>
-                ))}
-              </select>
-            </div>
+            <SelectField
+              label={lang === "ar" ? "المصدر" : "Source"}
+              value={editForm.source}
+              onChange={(e) => setEditForm({ ...editForm, source: e.target.value })}
+            >
+              <option value="">{lang === "ar" ? "اختر المصدر" : "Select source"}</option>
+              {Object.entries(SOURCE_LABELS).map(([key, label]) => (
+                <option key={key} value={key}>{label[lang]}</option>
+              ))}
+            </SelectField>
             <div className="space-y-1">
               <label className="text-xs font-bold text-muted-foreground">
                 {lang === "ar" ? "الميزانية (ريال)" : "Budget (SAR)"}
@@ -1041,37 +1055,28 @@ export function CustomerDrawer({
                 min="0"
               />
             </div>
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-muted-foreground">
-                {lang === "ar" ? "نوع العقار المطلوب" : "Property Interest"}
-              </label>
-              <select
-                value={editForm.propertyTypeInterest}
-                onChange={(e) => setEditForm({ ...editForm, propertyTypeInterest: e.target.value })}
-                className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <option value="">{lang === "ar" ? "اختر النوع" : "Select type"}</option>
-                {PROPERTY_TYPES.map((pt) => (
-                  <option key={pt.key} value={pt.key}>{pt.label[lang]}</option>
-                ))}
-              </select>
-            </div>
+            <SelectField
+              label={lang === "ar" ? "نوع العقار المطلوب" : "Property Interest"}
+              value={editForm.propertyTypeInterest}
+              onChange={(e) => setEditForm({ ...editForm, propertyTypeInterest: e.target.value })}
+            >
+              <option value="">{lang === "ar" ? "اختر النوع" : "Select type"}</option>
+              {PROPERTY_TYPES.map((pt) => (
+                <option key={pt.key} value={pt.key}>{pt.label[lang]}</option>
+              ))}
+            </SelectField>
             {teamMembers.length > 0 && (
-              <div className="col-span-2 space-y-1">
-                <label className="text-xs font-bold text-muted-foreground">
-                  {lang === "ar" ? "المسؤول" : "Agent"}
-                </label>
-                <select
-                  value={editForm.agentId}
-                  onChange={(e) => setEditForm({ ...editForm, agentId: e.target.value })}
-                  className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  <option value="">{lang === "ar" ? "غير معين" : "Unassigned"}</option>
-                  {teamMembers.map((m: any) => (
-                    <option key={m.id} value={m.id}>{m.name ?? m.email}</option>
-                  ))}
-                </select>
-              </div>
+              <SelectField
+                label={lang === "ar" ? "المسؤول" : "Agent"}
+                value={editForm.agentId}
+                onChange={(e) => setEditForm({ ...editForm, agentId: e.target.value })}
+                wrapperClassName="col-span-2"
+              >
+                <option value="">{lang === "ar" ? "غير معين" : "Unassigned"}</option>
+                {teamMembers.map((m: any) => (
+                  <option key={m.id} value={m.id}>{m.name ?? m.email}</option>
+                ))}
+              </SelectField>
             )}
           </div>
 
@@ -1331,11 +1336,11 @@ export function CustomerDrawer({
               <label className="text-xs font-bold text-muted-foreground">
                 {lang === "ar" ? "تاريخ انتهاء الحجز *" : "Reservation Expiry Date *"}
               </label>
-              <Input
-                type="date"
-                value={convertExpiry}
-                onChange={(e) => setConvertExpiry(e.target.value)}
-                min={todayStr}
+              <HijriDatePicker
+                locale={lang}
+                value={convertExpiry ? new Date(convertExpiry) : null}
+                onChange={(d) => setConvertExpiry(d ? d.toISOString().slice(0, 10) : "")}
+                placeholder={lang === "ar" ? "اختر تاريخًا" : "Pick a date"}
               />
             </div>
 

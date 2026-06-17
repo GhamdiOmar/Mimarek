@@ -3,6 +3,7 @@
 import { db } from "@repo/db";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { ROUTES } from "../../lib/routes";
 import { requirePermission } from "../../lib/auth-helpers";
 import { encrypt } from "../../lib/encryption";
 import { getEmailSettings, sendTransactionalEmail } from "../../lib/email";
@@ -89,7 +90,7 @@ export async function saveEmailSettingsAction(raw: z.input<typeof saveEmailSetti
     organizationId: session.organizationId,
   });
 
-  revalidatePath("/dashboard/admin/email");
+  revalidatePath(ROUTES.adminEmail);
   return { success: true };
 }
 
@@ -125,7 +126,7 @@ export async function clearSmtpPasswordAction() {
     organizationId: session.organizationId,
   });
 
-  revalidatePath("/dashboard/admin/email");
+  revalidatePath(ROUTES.adminEmail);
   return { success: true };
 }
 
@@ -173,6 +174,6 @@ export async function sendTestEmailAction(recipient: string) {
     organizationId: session.organizationId,
   });
 
-  revalidatePath("/dashboard/admin/email");
+  revalidatePath(ROUTES.adminEmail);
   return result;
 }

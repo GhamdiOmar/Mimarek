@@ -6,6 +6,8 @@ import { requirePermission, getSessionWithPermissions } from "../../lib/auth-hel
 import { decryptCustomerData } from "../../lib/pii-crypto";
 import { maskCustomerPii } from "../../lib/pii-masking";
 import { logAuditEvent } from "../../lib/audit";
+import { ROUTES } from "../../lib/routes";
+import { serialize } from "../../lib/serialize";
 import { createReservation } from "./reservations";
 import { updateCustomerStatus } from "./customers";
 import {
@@ -60,9 +62,9 @@ export async function addCustomerInterest(
     organizationId: session.organizationId,
   });
 
-  revalidatePath("/dashboard/crm");
-  revalidatePath("/dashboard/units");
-  return JSON.parse(JSON.stringify(interest));
+  revalidatePath(ROUTES.crm);
+  revalidatePath(ROUTES.units);
+  return serialize(interest);
 }
 
 // ─── Drop a property interest (no unit status change) ─────────────────────────
@@ -96,9 +98,9 @@ export async function dropCustomerInterest(interestId: string) {
   // Customer.status is a derived cache — recompute after dropping a deal.
   await syncCustomerPipelineStatus(interest.customerId);
 
-  revalidatePath("/dashboard/crm");
-  revalidatePath("/dashboard/units");
-  return JSON.parse(JSON.stringify(updated));
+  revalidatePath(ROUTES.crm);
+  revalidatePath(ROUTES.units);
+  return serialize(updated);
 }
 
 // ─── Update a Deal's pipeline stage ───────────────────────────────────────────
@@ -135,9 +137,9 @@ export async function updateDealStage(dealId: string, stage: DealStage, lostReas
   // Customer.status is now derived from the deal pipeline.
   await syncCustomerPipelineStatus(deal.customerId);
 
-  revalidatePath("/dashboard/crm");
-  revalidatePath("/dashboard/reservations");
-  return JSON.parse(JSON.stringify(updated));
+  revalidatePath(ROUTES.crm);
+  revalidatePath(ROUTES.reservations);
+  return serialize(updated);
 }
 
 // Kanban column key → DealStage. Columns with no deal-stage equivalent
@@ -247,10 +249,10 @@ export async function convertInterestToDeal(
   // longer writes Customer.status directly).
   await syncCustomerPipelineStatus(interest.customerId);
 
-  revalidatePath("/dashboard/crm");
-  revalidatePath("/dashboard/reservations");
-  revalidatePath("/dashboard/units");
-  return JSON.parse(JSON.stringify(reservation));
+  revalidatePath(ROUTES.crm);
+  revalidatePath(ROUTES.reservations);
+  revalidatePath(ROUTES.units);
+  return serialize(reservation);
 }
 
 // ─── Get all interests for a customer ─────────────────────────────────────────
@@ -284,7 +286,7 @@ export async function getCustomerInterests(customerId: string) {
     orderBy: { createdAt: "desc" },
   });
 
-  return JSON.parse(JSON.stringify(interests));
+  return serialize(interests);
 }
 
 // ─── Get all customers interested in a specific unit ──────────────────────────
@@ -347,7 +349,7 @@ export async function getCustomerInterestsForUnit(unitId: string) {
     };
   });
 
-  return JSON.parse(JSON.stringify(maskedInterests));
+  return serialize(maskedInterests);
 }
 
 // ─── Get available units for interest linking (org-scoped) ────────────────────
@@ -376,5 +378,5 @@ export async function getAvailableUnitsForInterest() {
     orderBy: { updatedAt: "desc" },
   });
 
-  return JSON.parse(JSON.stringify(units));
+  return serialize(units);
 }

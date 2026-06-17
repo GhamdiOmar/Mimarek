@@ -21,7 +21,7 @@ import { useLanguage } from "./LanguageProvider";
  */
 export function ThemeToggle({ className }: { className?: string }) {
   const { resolvedTheme, setTheme } = useTheme();
-  const { lang } = useLanguage();
+  const { t, lang } = useLanguage();
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => setMounted(true), []);
 
@@ -36,12 +36,8 @@ export function ThemeToggle({ className }: { className?: string }) {
       onCheckedChange={(checked) => setTheme(checked ? "light" : "dark")}
       aria-label={
         isDark
-          ? lang === "ar"
-            ? "التبديل إلى الوضع الفاتح"
-            : "Switch to light mode"
-          : lang === "ar"
-            ? "التبديل إلى الوضع الداكن"
-            : "Switch to dark mode"
+          ? t("التبديل إلى الوضع الفاتح", "Switch to light mode")
+          : t("التبديل إلى الوضع الداكن", "Switch to dark mode")
       }
       className={cn(
         "relative inline-flex h-8 w-16 shrink-0 cursor-pointer items-center rounded-full border border-border bg-muted/60 transition-colors",

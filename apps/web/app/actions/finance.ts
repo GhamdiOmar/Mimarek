@@ -2,13 +2,8 @@
 
 import { db } from "@repo/db";
 import { requirePermission } from "../../lib/auth-helpers";
-
-/** effectivePaid — canonical formula per spec §4 */
-function effectivePaid(r: { status: string; amount: any; paidAmount: any }): number {
-  return r.status === "PAID"
-    ? Number(r.paidAmount ?? r.amount)
-    : Number(r.paidAmount ?? 0);
-}
+import { effectivePaid } from "../../lib/money";
+import { serialize } from "../../lib/serialize";
 
 export async function getFinanceStats() {
   const session = await requirePermission("finance:read");
@@ -107,7 +102,7 @@ export async function getUnitRevenueBreakdown() {
     },
   });
 
-  return JSON.parse(JSON.stringify(
+  return serialize(
     units.map(u => {
       const rentIncome = u.leases.reduce((s, l) =>
         s + l.installments.reduce((is, i) => is + effectivePaid(i), 0), 0);
@@ -122,5 +117,5 @@ export async function getUnitRevenueBreakdown() {
         netIncome: rentIncome - maintenanceCost,
       };
     }).filter(u => u.rentIncome > 0 || u.maintenanceCost > 0)
-  ));
+  );
 }

@@ -2,6 +2,7 @@
 
 import { db } from "@repo/db";
 import { revalidatePath } from "next/cache";
+import { ROUTES, routeToHelpTicket } from "../../lib/routes";
 import { requirePermission } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
 import { createNotification, notifyAdmins } from "../../lib/create-notification";
@@ -76,7 +77,7 @@ export async function createSupportTicket(data: {
     organizationId: session.organizationId,
   });
 
-  revalidatePath("/dashboard/help");
+  revalidatePath(ROUTES.help);
   return ticket;
 }
 
@@ -205,7 +206,7 @@ export async function addTicketMessage(ticketId: string, message: string) {
     });
   }
 
-  revalidatePath(`/dashboard/help/tickets/${ticketId}`);
+  revalidatePath(routeToHelpTicket(ticketId));
   return ticketMessage;
 }
 
@@ -254,8 +255,8 @@ export async function updateTicketStatus(ticketId: string, status: string) {
     organizationId: session.organizationId,
   });
 
-  revalidatePath(`/dashboard/help/tickets/${ticketId}`);
-  revalidatePath("/dashboard/help");
+  revalidatePath(routeToHelpTicket(ticketId));
+  revalidatePath(ROUTES.help);
   return updated;
 }
 

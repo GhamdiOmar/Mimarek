@@ -16,13 +16,13 @@ interface KsaCitySelectProps {
  * Groups cities by region and supports type-ahead filtering.
  */
 export function KsaCitySelect({ value, onChange, placeholder, className }: KsaCitySelectProps) {
-  const { lang } = useLanguage();
+  const { t, lang } = useLanguage();
   const [search, setSearch] = React.useState("");
   const [open, setOpen] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
   const dropdownRef = React.useRef<HTMLDivElement>(null);
 
-  const defaultPlaceholder = lang === "ar" ? "اختر المدينة..." : "Select city...";
+  const defaultPlaceholder = t("اختر المدينة...", "Select city...");
 
   const filtered = React.useMemo(() => {
     if (!search.trim()) return KSA_CITIES;
@@ -71,7 +71,7 @@ export function KsaCitySelect({ value, onChange, placeholder, className }: KsaCi
         <div className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border bg-popover shadow-md">
           {filtered.length === 0 ? (
             <div className="px-3 py-2 text-sm text-muted-foreground">
-              {lang === "ar" ? "لا توجد نتائج" : "No results"}
+              {t("لا توجد نتائج", "No results")}
             </div>
           ) : (
             filtered.map((city) => (

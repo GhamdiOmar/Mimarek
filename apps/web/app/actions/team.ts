@@ -2,6 +2,7 @@
 
 import { db, type UserRole } from "@repo/db";
 import { revalidatePath } from "next/cache";
+import { ROUTES } from "../../lib/routes";
 import { requirePermission } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
 import { isSystemRole } from "../../lib/permissions";
@@ -45,7 +46,7 @@ export async function updateTeamMember(userId: string, data: { role?: UserRole; 
 
   logAuditEvent({ userId: session.userId, userEmail: session.email, userRole: session.role, action: "UPDATE", resource: "User", resourceId: userId, metadata: { fields: Object.keys(data) }, organizationId: session.organizationId });
 
-  revalidatePath("/dashboard/settings/team");
+  revalidatePath(ROUTES.settingsTeam);
   return updated;
 }
 
@@ -66,5 +67,5 @@ export async function removeTeamMember(userId: string) {
 
   logAuditEvent({ userId: session.userId, userEmail: session.email, userRole: session.role, action: "DELETE", resource: "User", resourceId: userId, organizationId: session.organizationId });
 
-  revalidatePath("/dashboard/settings/team");
+  revalidatePath(ROUTES.settingsTeam);
 }

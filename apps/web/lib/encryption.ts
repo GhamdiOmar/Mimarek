@@ -4,6 +4,14 @@ const ALGORITHM = "aes-256-gcm";
 const IV_LENGTH = 12;
 const AUTH_TAG_LENGTH = 16;
 
+/**
+ * Ciphertext envelope version marker (A1). Every value produced by encrypt() is
+ * prefixed with this so the DB layer can enforce a CHECK constraint and the read
+ * path can distinguish versioned ciphertext from legacy ciphertext and plaintext.
+ * Base64 never contains ":", so the prefix + colon-delimited body stays unambiguous.
+ */
+const VERSION_PREFIX = "v1:";
+
 function getKey(): Buffer {
   const key = process.env.PII_ENCRYPTION_KEY;
   if (!key) {
@@ -14,7 +22,7 @@ function getKey(): Buffer {
 
 /**
  * Encrypt plaintext using AES-256-GCM.
- * Returns format: iv:authTag:ciphertext (all base64)
+ * Returns format: v1:iv:authTag:ciphertext (the iv/tag/ct parts all base64).
  */
 export function encrypt(plaintext: string): string {
   const key = getKey();
@@ -25,31 +33,48 @@ export function encrypt(plaintext: string): string {
   encrypted += cipher.final("base64");
   const authTag = cipher.getAuthTag();
 
-  return `${iv.toString("base64")}:${authTag.toString("base64")}:${encrypted}`;
+  return `${VERSION_PREFIX}${iv.toString("base64")}:${authTag.toString("base64")}:${encrypted}`;
+}
+
+/**
+ * Classify a stored field value by its ciphertext envelope (A1):
+ *  - "versioned": carries the v1: prefix and a well-formed 3-part body → current format.
+ *  - "legacy":    no prefix but a bare iv:tag:ct 3-part body → pre-A1 ciphertext.
+ *  - "plaintext": anything else (empty, no colon, or wrong part count, including a
+ *                 v1: prefix with a malformed body) → NOT our ciphertext.
+ * Pure function: no key/pepper access, safe to call on the read hot-path.
+ */
+export function classifyCiphertext(value: string): "versioned" | "legacy" | "plaintext" {
+  if (!value) return "plaintext";
+  if (value.startsWith(VERSION_PREFIX)) {
+    return value.slice(VERSION_PREFIX.length).split(":").length === 3 ? "versioned" : "plaintext";
+  }
+  return value.includes(":") && value.split(":").length === 3 ? "legacy" : "plaintext";
 }
 
 /**
  * Decrypt a value encrypted with encrypt().
  *
- * Legacy-plaintext convenience (QA-SEC-06):
- *  - If the value has no ":" or does not split into exactly 3 parts it is
- *    clearly NOT our iv:tag:ciphertext format → return as-is (pre-migration
- *    plaintext or unrelated string).
- *  - If the value IS in iv:tag:ciphertext shape and decipher.final() throws
- *    (GCM auth-tag mismatch, tampered ciphertext, or wrong key) we MUST NOT
- *    silently return the ciphertext — that would defeat AES-GCM tamper
- *    detection.  Instead: log a security event (no secrets in the message)
- *    and re-throw so the caller surfaces an error.
+ * Envelope-aware (A1) + legacy-plaintext convenience (QA-SEC-06):
+ *  - "plaintext" per classifyCiphertext() → return as-is (pre-migration plaintext
+ *    or an unrelated string; unchanged passthrough behaviour).
+ *  - "versioned" → strip the v1: prefix, then decrypt the iv:tag:ct body.
+ *  - "legacy"    → decrypt the bare iv:tag:ct body directly.
+ *  Both ciphertext classes flow through the SAME AES-256-GCM path below — only the
+ *  prefix-strip differs. If decipher.final() throws (GCM auth-tag mismatch, tampered
+ *  ciphertext, or wrong key) we MUST NOT silently return the ciphertext — that would
+ *  defeat AES-GCM tamper detection. Instead: log a security event (no secrets) and
+ *  re-throw so the caller surfaces an error.
  */
 export function decrypt(encryptedValue: string): string {
-  if (!encryptedValue || !encryptedValue.includes(":")) {
-    return encryptedValue; // Not encrypted — legacy plaintext, return as-is
+  const kind = classifyCiphertext(encryptedValue);
+  if (kind === "plaintext") {
+    return encryptedValue; // Not our ciphertext — legacy plaintext, return as-is
   }
 
-  const parts = encryptedValue.split(":");
-  if (parts.length !== 3) {
-    return encryptedValue; // Not our format — return as-is
-  }
+  // Strip the v1: prefix for versioned values; legacy values have no prefix.
+  const body = kind === "versioned" ? encryptedValue.slice(VERSION_PREFIX.length) : encryptedValue;
+  const parts = body.split(":");
 
   // Value matches iv:tag:ciphertext shape — treat as encrypted.
   // Any decryption failure here is security-relevant (tampering / key mismatch).

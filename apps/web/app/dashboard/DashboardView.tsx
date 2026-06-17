@@ -35,6 +35,7 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 import { useLanguage } from "../../components/LanguageProvider";
 import { useDateRangeQuery } from "../../lib/use-date-range-query";
+import { useMounted } from "../../lib/use-mounted";
 import type { RoleTaskQueueResult } from "../actions/role-task-queue";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -178,7 +179,7 @@ export default function DashboardView({
   const hasCustomRange = searchParams.has("from") && searchParams.has("to");
   const periodLabel = React.useMemo(() => {
     if (!hasCustomRange || !range.from || !range.to) {
-      return lang === "ar" ? "هذا الشهر" : "this month";
+      return t("هذا الشهر", "this month");
     }
     const fmtDate = new Intl.DateTimeFormat(lang === "ar" ? "ar-SA-u-nu-latn" : "en-GB", {
       month: "short",
@@ -190,9 +191,15 @@ export default function DashboardView({
   const formatNumber = (n: number) => n.toLocaleString("en-US");
   const firstName = (userName || t("مستخدم", "User")).split(" ")[0] ?? t("مستخدم", "User");
 
+  // `new Date().getHours()` is computed at render, so the server's wall-clock
+  // hour can land in a different greeting bucket than the client's → hydration
+  // mismatch. Gate it behind `useMounted`: render a neutral, hour-independent
+  // greeting on the server + first client render, then refine after mount.
+  const mounted = useMounted();
   const hour = new Date().getHours();
-  const greeting =
-    lang === "ar"
+  const greeting = !mounted
+    ? t("أهلاً", "Welcome")
+    : lang === "ar"
       ? hour < 12 ? "صباح الخير" : "مساء الخير"
       : hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
 

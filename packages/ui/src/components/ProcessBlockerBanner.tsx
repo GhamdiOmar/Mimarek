@@ -4,16 +4,14 @@ import * as React from "react";
 import Link from "next/link";
 import { AlertTriangle, AlertCircle, X, ChevronDown } from "lucide-react";
 import { cn } from "../lib/utils";
+import type { LocalizedText } from "../lib/localized-text";
 
 /**
- * Structurally identical to `@repo/types` `ProcessBlocker` — re-declared
- * locally to keep `@repo/ui` decoupled from `@repo/types`. Producers type
- * with `@repo/types`; shapes are assignable.
+ * `ProcessBlocker` is structurally identical to `@repo/types` `ProcessBlocker`;
+ * `LocalizedText` is `@repo/ui`'s own copy (see `../lib/localized-text`) so the
+ * package stays decoupled from `@repo/types`. Producers type with `@repo/types`;
+ * the shapes are assignable.
  */
-interface LocalizedText {
-  ar: string;
-  en: string;
-}
 type BlockerSeverity = "warning" | "error";
 export interface ProcessBlocker {
   id: string;

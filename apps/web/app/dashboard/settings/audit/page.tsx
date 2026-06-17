@@ -25,6 +25,7 @@ import {
   EmptyState,
   DirectionalIcon,
   DataTable,
+  SelectField,
   type ColumnDef,
   type ActivityTimelineEvent,
   type ActivityTimelineTone,
@@ -348,19 +349,20 @@ export default function AuditLogPage() {
             })}
           </div>
           <div className="flex items-center gap-2">
-            <select
+            <SelectField
+              aria-label={t.filterResource}
               value={resourceFilter}
               onChange={(e) => {
                 setResourceFilter(e.target.value);
                 setPage(1);
               }}
-              className="h-10 w-full rounded-md border border-border bg-background px-3 text-xs text-foreground"
+              className="h-10 text-xs text-foreground"
             >
               <option value="">{t.filterResource}: {t.all}</option>
               {RESOURCES.map((r) => (
                 <option key={r} value={r}>{r}</option>
               ))}
-            </select>
+            </SelectField>
           </div>
         </div>
 
@@ -463,28 +465,28 @@ export default function AuditLogPage() {
         <div className="flex flex-wrap gap-3 mb-4">
           <div className="flex items-center gap-2">
             <Filter className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-            <select
+            <SelectField
               aria-label={t.filterAction}
               value={actionFilter}
               onChange={(e) => { setActionFilter(e.target.value); setPage(1); }}
-              className="text-xs bg-surface border border-border rounded-md px-2 py-1.5"
+              className="h-auto w-auto text-xs px-2 py-1.5"
             >
               <option value="">{t.filterAction}: {t.all}</option>
               {ACTIONS.map((a) => (
                 <option key={a} value={a}>{a}</option>
               ))}
-            </select>
-            <select
+            </SelectField>
+            <SelectField
               aria-label={t.filterResource}
               value={resourceFilter}
               onChange={(e) => { setResourceFilter(e.target.value); setPage(1); }}
-              className="text-xs bg-surface border border-border rounded-md px-2 py-1.5"
+              className="h-auto w-auto text-xs px-2 py-1.5"
             >
               <option value="">{t.filterResource}: {t.all}</option>
               {RESOURCES.map((r) => (
                 <option key={r} value={r}>{r}</option>
               ))}
-            </select>
+            </SelectField>
           </div>
         </div>
 

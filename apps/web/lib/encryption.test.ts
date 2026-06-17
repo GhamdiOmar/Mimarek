@@ -19,7 +19,7 @@ afterAll(() => {
 
 // Imported after the env vars above are declared; encryption.ts reads the key
 // lazily inside encrypt()/decrypt(), so beforeAll() still wins.
-import { encrypt, decrypt, hashForSearch } from "./encryption";
+import { encrypt, decrypt, hashForSearch, classifyCiphertext } from "./encryption";
 
 describe("encryption — AES-256-GCM round-trip", () => {
   it("decrypt(encrypt(x)) === x for ASCII, Arabic, and Saudi phone formats", () => {
@@ -28,8 +28,10 @@ describe("encryption — AES-256-GCM round-trip", () => {
     }
   });
 
-  it("produces the iv:tag:ciphertext shape (3 base64 parts)", () => {
-    const parts = encrypt("secret").split(":");
+  it("produces the v1:iv:tag:ciphertext envelope (prefix + 3 base64 parts)", () => {
+    const out = encrypt("secret");
+    expect(out.startsWith("v1:")).toBe(true);
+    const parts = out.slice("v1:".length).split(":");
     expect(parts).toHaveLength(3);
     parts.forEach((p) => expect(p.length).toBeGreaterThan(0));
   });
@@ -41,10 +43,12 @@ describe("encryption — AES-256-GCM round-trip", () => {
 
 describe("encryption — QA-SEC-06 fail-closed", () => {
   it("THROWS on a tampered ciphertext (GCM auth-tag mismatch)", () => {
-    const [iv, tag, ct] = encrypt("sensitive").split(":");
+    // Strip the v1: envelope prefix, then split the iv:tag:ct body.
+    const [iv, tag, ct] = encrypt("sensitive").slice("v1:".length).split(":");
     // Flip the last char of the ciphertext to corrupt it without changing shape.
     const flipped = ct!.slice(0, -1) + (ct!.endsWith("A") ? "B" : "A");
-    expect(() => decrypt(`${iv}:${tag}:${flipped}`)).toThrow();
+    // Re-prepend v1: so it stays a well-formed versioned envelope with bad ciphertext.
+    expect(() => decrypt(`v1:${iv}:${tag}:${flipped}`)).toThrow();
   });
 
   it("THROWS when decrypting under the wrong key (no silent fail-open)", () => {
@@ -70,6 +74,35 @@ describe("encryption — legacy-plaintext passthrough", () => {
     // Exactly 3 colon-separated parts but not valid base64 GCM data: this is the
     // ambiguous shape we deliberately treat as encrypted and fail closed on.
     expect(() => decrypt("not:a:cipher")).toThrow();
+  });
+});
+
+describe("classifyCiphertext — envelope classifier (A1)", () => {
+  it("classifies a fresh encrypt() output as versioned", () => {
+    expect(classifyCiphertext(encrypt("x"))).toBe("versioned");
+  });
+
+  it("classifies a bare iv:tag:ct (3 parts, no prefix) as legacy", () => {
+    const legacy = encrypt("x").slice("v1:".length); // strip the prefix → pre-A1 shape
+    expect(classifyCiphertext(legacy)).toBe("legacy");
+  });
+
+  it("classifies non-ciphertext as plaintext (empty, no colon, wrong part count, malformed v1:)", () => {
+    expect(classifyCiphertext("")).toBe("plaintext");
+    expect(classifyCiphertext("0551234567")).toBe("plaintext"); // no colon
+    expect(classifyCiphertext("a:b")).toBe("plaintext"); // 2 parts
+    expect(classifyCiphertext("a:b:c:d")).toBe("plaintext"); // 4 parts
+    expect(classifyCiphertext("v1:a:b")).toBe("plaintext"); // prefixed but malformed body
+  });
+
+  it("round-trips a versioned value through decrypt()", () => {
+    expect(decrypt(encrypt("+966551234567"))).toBe("+966551234567");
+  });
+
+  it("decrypts a legacy (un-prefixed) ciphertext through the same path", () => {
+    const legacy = encrypt("legacy-secret").slice("v1:".length);
+    expect(classifyCiphertext(legacy)).toBe("legacy");
+    expect(decrypt(legacy)).toBe("legacy-secret");
   });
 });
 

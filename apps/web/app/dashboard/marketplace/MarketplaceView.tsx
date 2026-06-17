@@ -33,6 +33,7 @@ import {
   Skeleton,
   DataTable,
   IconButton,
+  SelectField,
   type ColumnDef,
 } from "@repo/ui";
 import { cn } from "@repo/ui/lib/utils";
@@ -128,7 +129,7 @@ export default function MarketplaceView(props: MarketplaceViewProps) {
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 function MarketplacePage({ initialListings, initialSellerOrgs }: MarketplaceViewProps) {
-  const { lang } = useLanguage();
+  const { t, lang } = useLanguage();
   const { can } = usePermissions();
   const router = useRouter();
   const pathname = usePathname();
@@ -257,7 +258,7 @@ function MarketplacePage({ initialListings, initialSellerOrgs }: MarketplaceView
       );
       setWithdrawTarget(null);
     } catch (err: unknown) {
-      setWithdrawError(err instanceof Error ? err.message : (lang === "ar" ? "فشل سحب الاستفسار" : "Failed to withdraw inquiry"));
+      setWithdrawError(err instanceof Error ? err.message : (t("فشل سحب الاستفسار", "Failed to withdraw inquiry")));
     } finally {
       setWithdrawing(false);
     }
@@ -275,7 +276,7 @@ function MarketplacePage({ initialListings, initialSellerOrgs }: MarketplaceView
       {
         accessorKey: "listing",
         id: "listing",
-        header: lang === "ar" ? "الإعلان" : "Listing",
+        header: t("الإعلان", "Listing"),
         enableSorting: false,
         enableHiding: false,
         cell: ({ row }) => (
@@ -290,7 +291,7 @@ function MarketplacePage({ initialListings, initialSellerOrgs }: MarketplaceView
       {
         accessorKey: "listing.city",
         id: "city",
-        header: lang === "ar" ? "المدينة" : "City",
+        header: t("المدينة", "City"),
         enableSorting: false,
         cell: ({ row }) => (
           <span className="text-sm text-foreground">
@@ -301,7 +302,7 @@ function MarketplacePage({ initialListings, initialSellerOrgs }: MarketplaceView
       {
         accessorKey: "listing.price",
         id: "price",
-        header: lang === "ar" ? "السعر" : "Price",
+        header: t("السعر", "Price"),
         enableSorting: false,
         meta: { numeric: true },
         cell: ({ row }) => (
@@ -313,7 +314,7 @@ function MarketplacePage({ initialListings, initialSellerOrgs }: MarketplaceView
       {
         accessorKey: "status",
         id: "status",
-        header: lang === "ar" ? "الحالة" : "Status",
+        header: t("الحالة", "Status"),
         enableSorting: false,
         cell: ({ row }) => (
           <Badge
@@ -329,7 +330,7 @@ function MarketplacePage({ initialListings, initialSellerOrgs }: MarketplaceView
       {
         accessorKey: "transfer",
         id: "transfer",
-        header: lang === "ar" ? "التحويل" : "Transfer",
+        header: t("التحويل", "Transfer"),
         enableSorting: false,
         cell: ({ row }) =>
           row.original.transfer ? (
@@ -343,7 +344,7 @@ function MarketplacePage({ initialListings, initialSellerOrgs }: MarketplaceView
       {
         accessorKey: "createdAt",
         id: "createdAt",
-        header: lang === "ar" ? "التاريخ" : "Date",
+        header: t("التاريخ", "Date"),
         enableSorting: false,
         cell: ({ row }) => (
           <span className="text-xs text-muted-foreground">
@@ -363,7 +364,7 @@ function MarketplacePage({ initialListings, initialSellerOrgs }: MarketplaceView
             <div className="flex items-center gap-1">
               <IconButton
                 icon={X}
-                aria-label={lang === "ar" ? "سحب" : "Withdraw"}
+                aria-label={t("سحب", "Withdraw")}
                 variant="ghost"
                 size="sm"
                 className="text-destructive hover:text-destructive"
@@ -385,18 +386,16 @@ function MarketplacePage({ initialListings, initialSellerOrgs }: MarketplaceView
     <div className="space-y-6 p-4 md:p-6" dir={lang === "ar" ? "rtl" : "ltr"}>
       {/* Page header */}
       <PageIntro
-        title={lang === "ar" ? "السوق العقاري" : "Property Marketplace"}
+        title={t("السوق العقاري", "Property Marketplace")}
         description={
-          lang === "ar"
-            ? "تصفّح العقارات المتاحة للبيع من المطورين والمؤسسات الأخرى"
-            : "Browse properties listed for sale by developers and other organizations"
+          t("تصفّح العقارات المتاحة للبيع من المطورين والمؤسسات الأخرى", "Browse properties listed for sale by developers and other organizations")
         }
         actions={
           can("marketplace:manage_own") ? (
             <Button asChild variant="secondary" className="gap-2">
               <Link href="/dashboard/marketplace/my-listings">
                 <Tags className="h-4 w-4" aria-hidden="true" />
-                {lang === "ar" ? "إعلاناتي" : "My Listings"}
+                {t("إعلاناتي", "My Listings")}
               </Link>
             </Button>
           ) : undefined
@@ -413,7 +412,7 @@ function MarketplacePage({ initialListings, initialSellerOrgs }: MarketplaceView
           aria-pressed={activeTab === "browse"}
           className="rounded-full whitespace-nowrap"
         >
-          {lang === "ar" ? "تصفّح الإعلانات" : "Browse Listings"}
+          {t("تصفّح الإعلانات", "Browse Listings")}
         </Button>
         <Button
           type="button"
@@ -423,7 +422,7 @@ function MarketplacePage({ initialListings, initialSellerOrgs }: MarketplaceView
           aria-pressed={activeTab === "inquiries"}
           className="rounded-full whitespace-nowrap"
         >
-          {lang === "ar" ? "استفساراتي" : "My Inquiries"}
+          {t("استفساراتي", "My Inquiries")}
         </Button>
       </div>
 
@@ -437,8 +436,8 @@ function MarketplacePage({ initialListings, initialSellerOrgs }: MarketplaceView
               <div className="relative flex-1">
                 <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
                 <Input
-                  aria-label={lang === "ar" ? "بحث في الإعلانات" : "Search listings"}
-                  placeholder={lang === "ar" ? "ابحث بالعنوان أو المدينة..." : "Search by title or city…"}
+                  aria-label={t("بحث في الإعلانات", "Search listings")}
+                  placeholder={t("ابحث بالعنوان أو المدينة...", "Search by title or city…")}
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
                   className="ps-9"
@@ -448,11 +447,11 @@ function MarketplacePage({ initialListings, initialSellerOrgs }: MarketplaceView
                 type="button"
                 variant="outline"
                 onClick={() => setShowFilters((v) => !v)}
-                aria-label={lang === "ar" ? "تصفية" : "Filters"}
+                aria-label={t("تصفية", "Filters")}
                 aria-expanded={showFilters}
               >
                 <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
-                <span className="ms-1.5 hidden sm:inline">{lang === "ar" ? "تصفية" : "Filters"}</span>
+                <span className="ms-1.5 hidden sm:inline">{t("تصفية", "Filters")}</span>
                 {hasActiveFilters && (
                   <span className="ms-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground font-bold">
                     {[city, district, propertyType, minPrice, maxPrice, minArea, maxArea, sellerOrgId, bedrooms, maxBuildingAge].filter(Boolean).length}
@@ -460,7 +459,7 @@ function MarketplacePage({ initialListings, initialSellerOrgs }: MarketplaceView
                 )}
               </Button>
               <Button type="submit" variant="primary">
-                {lang === "ar" ? "بحث" : "Search"}
+                {t("بحث", "Search")}
               </Button>
             </div>
 
@@ -470,64 +469,64 @@ function MarketplacePage({ initialListings, initialSellerOrgs }: MarketplaceView
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
                   <div className="space-y-1">
                     <label className="text-xs font-medium text-muted-foreground">
-                      {lang === "ar" ? "المدينة" : "City"}
+                      {t("المدينة", "City")}
                     </label>
                     <Input
-                      aria-label={lang === "ar" ? "المدينة" : "City"}
+                      aria-label={t("المدينة", "City")}
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
-                      placeholder={lang === "ar" ? "الرياض..." : "Riyadh…"}
+                      placeholder={t("الرياض...", "Riyadh…")}
                     />
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-medium text-muted-foreground">
-                      {lang === "ar" ? "الحي" : "District"}
+                      {t("الحي", "District")}
                     </label>
                     <Input
-                      aria-label={lang === "ar" ? "الحي" : "District"}
+                      aria-label={t("الحي", "District")}
                       value={district}
                       onChange={(e) => setDistrict(e.target.value)}
-                      placeholder={lang === "ar" ? "العليا..." : "Al Olaya…"}
+                      placeholder={t("العليا...", "Al Olaya…")}
                     />
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-medium text-muted-foreground">
-                      {lang === "ar" ? "نوع العقار" : "Property Type"}
+                      {t("نوع العقار", "Property Type")}
                     </label>
-                    <select
-                      aria-label={lang === "ar" ? "نوع العقار" : "Property type"}
+                    <SelectField
+                      aria-label={t("نوع العقار", "Property type")}
                       value={propertyType}
                       onChange={(e) => setPropertyType(e.target.value)}
                       className="flex h-9 w-full rounded-md border border-border bg-background px-3 py-1 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                     >
-                      <option value="">{lang === "ar" ? "الكل" : "All"}</option>
+                      <option value="">{t("الكل", "All")}</option>
                       {Object.entries(PROPERTY_TYPE_LABELS).map(([k, v]) => (
                         <option key={k} value={k}>{lang === "ar" ? v.ar : v.en}</option>
                       ))}
-                    </select>
+                    </SelectField>
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-medium text-muted-foreground">
-                      {lang === "ar" ? "البائع" : "Seller"}
+                      {t("البائع", "Seller")}
                     </label>
-                    <select
-                      aria-label={lang === "ar" ? "البائع" : "Seller org"}
+                    <SelectField
+                      aria-label={t("البائع", "Seller org")}
                       value={sellerOrgId}
                       onChange={(e) => setSellerOrgId(e.target.value)}
                       className="flex h-9 w-full rounded-md border border-border bg-background px-3 py-1 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                     >
-                      <option value="">{lang === "ar" ? "الكل" : "All"}</option>
+                      <option value="">{t("الكل", "All")}</option>
                       {sellerOrgs.map((o) => (
                         <option key={o.id} value={o.id}>{o.name ?? o.id}</option>
                       ))}
-                    </select>
+                    </SelectField>
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-medium text-muted-foreground">
-                      {lang === "ar" ? "أدنى سعر (ر.س)" : "Min Price (SAR)"}
+                      {t("أدنى سعر (ر.س)", "Min Price (SAR)")}
                     </label>
                     <Input
-                      aria-label={lang === "ar" ? "أدنى سعر" : "Min price"}
+                      aria-label={t("أدنى سعر", "Min price")}
                       type="number"
                       min={0}
                       value={minPrice}
@@ -537,10 +536,10 @@ function MarketplacePage({ initialListings, initialSellerOrgs }: MarketplaceView
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-medium text-muted-foreground">
-                      {lang === "ar" ? "أقصى سعر (ر.س)" : "Max Price (SAR)"}
+                      {t("أقصى سعر (ر.س)", "Max Price (SAR)")}
                     </label>
                     <Input
-                      aria-label={lang === "ar" ? "أقصى سعر" : "Max price"}
+                      aria-label={t("أقصى سعر", "Max price")}
                       type="number"
                       min={0}
                       value={maxPrice}
@@ -550,10 +549,10 @@ function MarketplacePage({ initialListings, initialSellerOrgs }: MarketplaceView
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-medium text-muted-foreground">
-                      {lang === "ar" ? "أدنى مساحة (م²)" : "Min Area (m²)"}
+                      {t("أدنى مساحة (م²)", "Min Area (m²)")}
                     </label>
                     <Input
-                      aria-label={lang === "ar" ? "أدنى مساحة" : "Min area"}
+                      aria-label={t("أدنى مساحة", "Min area")}
                       type="number"
                       min={0}
                       value={minArea}
@@ -563,10 +562,10 @@ function MarketplacePage({ initialListings, initialSellerOrgs }: MarketplaceView
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-medium text-muted-foreground">
-                      {lang === "ar" ? "أقصى مساحة (م²)" : "Max Area (m²)"}
+                      {t("أقصى مساحة (م²)", "Max Area (m²)")}
                     </label>
                     <Input
-                      aria-label={lang === "ar" ? "أقصى مساحة" : "Max area"}
+                      aria-label={t("أقصى مساحة", "Max area")}
                       type="number"
                       min={0}
                       value={maxArea}
@@ -576,10 +575,10 @@ function MarketplacePage({ initialListings, initialSellerOrgs }: MarketplaceView
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-medium text-muted-foreground">
-                      {lang === "ar" ? "أدنى عدد غرف" : "Min Bedrooms"}
+                      {t("أدنى عدد غرف", "Min Bedrooms")}
                     </label>
                     <Input
-                      aria-label={lang === "ar" ? "أدنى عدد غرف" : "Min bedrooms"}
+                      aria-label={t("أدنى عدد غرف", "Min bedrooms")}
                       type="number"
                       min={0}
                       value={bedrooms}
@@ -589,10 +588,10 @@ function MarketplacePage({ initialListings, initialSellerOrgs }: MarketplaceView
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-medium text-muted-foreground">
-                      {lang === "ar" ? "أقصى عمر المبنى (سنة)" : "Max Building Age (yrs)"}
+                      {t("أقصى عمر المبنى (سنة)", "Max Building Age (yrs)")}
                     </label>
                     <Input
-                      aria-label={lang === "ar" ? "أقصى عمر المبنى" : "Max building age"}
+                      aria-label={t("أقصى عمر المبنى", "Max building age")}
                       type="number"
                       min={0}
                       value={maxBuildingAge}
@@ -605,11 +604,11 @@ function MarketplacePage({ initialListings, initialSellerOrgs }: MarketplaceView
                   {hasActiveFilters && (
                     <Button type="button" variant="ghost" size="sm" onClick={clearFilters}>
                       <X className="h-3.5 w-3.5 me-1" aria-hidden="true" />
-                      {lang === "ar" ? "مسح الفلاتر" : "Clear filters"}
+                      {t("مسح الفلاتر", "Clear filters")}
                     </Button>
                   )}
                   <Button type="submit" variant="primary" size="sm">
-                    {lang === "ar" ? "تطبيق" : "Apply"}
+                    {t("تطبيق", "Apply")}
                   </Button>
                 </div>
               </Card>
@@ -627,17 +626,15 @@ function MarketplacePage({ initialListings, initialSellerOrgs }: MarketplaceView
             <EmptyState
               variant="filtered"
               icon={<Store className="h-12 w-12" aria-hidden="true" />}
-              title={lang === "ar" ? "لا توجد إعلانات مطابقة" : "No listings found"}
+              title={t("لا توجد إعلانات مطابقة", "No listings found")}
               description={
-                lang === "ar"
-                  ? "جرّب تعديل معايير البحث أو مسح الفلاتر لعرض جميع الإعلانات"
-                  : "Try adjusting your search criteria or clear filters to see all listings"
+                t("جرّب تعديل معايير البحث أو مسح الفلاتر لعرض جميع الإعلانات", "Try adjusting your search criteria or clear filters to see all listings")
               }
               action={
                 hasActiveFilters ? (
                   <Button variant="primary" onClick={clearFilters}>
                     <X className="h-4 w-4 me-1.5" aria-hidden="true" />
-                    {lang === "ar" ? "مسح الفلاتر" : "Clear filters"}
+                    {t("مسح الفلاتر", "Clear filters")}
                   </Button>
                 ) : undefined
               }
@@ -692,7 +689,7 @@ function MarketplacePage({ initialListings, initialSellerOrgs }: MarketplaceView
                           </p>
                           {listing.area != null && (
                             <p className="text-xs text-muted-foreground">
-                              {listing.area} {lang === "ar" ? "م²" : "m²"}
+                              {listing.area} {t("م²", "m²")}
                             </p>
                           )}
                         </div>
@@ -708,15 +705,15 @@ function MarketplacePage({ initialListings, initialSellerOrgs }: MarketplaceView
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>{lang === "ar" ? "رقم الإعلان" : "Listing #"}</TableHead>
-                        <TableHead>{lang === "ar" ? "العنوان" : "Title"}</TableHead>
-                        <TableHead>{lang === "ar" ? "الموقع" : "Location"}</TableHead>
-                        <TableHead>{lang === "ar" ? "النوع" : "Type"}</TableHead>
-                        <TableHead>{lang === "ar" ? "الغرف" : "Beds"}</TableHead>
-                        <TableHead>{lang === "ar" ? "المساحة" : "Area"}</TableHead>
-                        <TableHead>{lang === "ar" ? "السعر" : "Price"}</TableHead>
-                        <TableHead>{lang === "ar" ? "البائع" : "Seller"}</TableHead>
-                        <TableHead>{lang === "ar" ? "المشاهدات" : "Views"}</TableHead>
+                        <TableHead>{t("رقم الإعلان", "Listing #")}</TableHead>
+                        <TableHead>{t("العنوان", "Title")}</TableHead>
+                        <TableHead>{t("الموقع", "Location")}</TableHead>
+                        <TableHead>{t("النوع", "Type")}</TableHead>
+                        <TableHead>{t("الغرف", "Beds")}</TableHead>
+                        <TableHead>{t("المساحة", "Area")}</TableHead>
+                        <TableHead>{t("السعر", "Price")}</TableHead>
+                        <TableHead>{t("البائع", "Seller")}</TableHead>
+                        <TableHead>{t("المشاهدات", "Views")}</TableHead>
                         <TableHead />
                       </TableRow>
                     </TableHeader>
@@ -754,7 +751,7 @@ function MarketplacePage({ initialListings, initialSellerOrgs }: MarketplaceView
                           </TableCell>
                           <TableCell>
                             <span className="text-sm text-foreground">
-                              {listing.area != null ? `${listing.area} ${lang === "ar" ? "م²" : "m²"}` : "—"}
+                              {listing.area != null ? `${listing.area} ${t("م²", "m²")}` : "—"}
                             </span>
                           </TableCell>
                           <TableCell>
@@ -776,7 +773,7 @@ function MarketplacePage({ initialListings, initialSellerOrgs }: MarketplaceView
                           <TableCell>
                             <Button asChild variant="ghost" size="sm">
                               <Link href={`/dashboard/marketplace/${listing.id}`}>
-                                {lang === "ar" ? "عرض" : "View"}
+                                {t("عرض", "View")}
                               </Link>
                             </Button>
                           </TableCell>
@@ -804,15 +801,13 @@ function MarketplacePage({ initialListings, initialSellerOrgs }: MarketplaceView
             <EmptyState
               variant="first-time"
               icon={<Inbox className="h-12 w-12" aria-hidden="true" />}
-              title={lang === "ar" ? "لا توجد استفسارات بعد" : "No inquiries yet"}
+              title={t("لا توجد استفسارات بعد", "No inquiries yet")}
               description={
-                lang === "ar"
-                  ? "تصفّح الإعلانات وأبدِ اهتمامك بالعقارات التي تستوفي متطلباتك"
-                  : "Browse listings and express interest in properties that meet your requirements"
+                t("تصفّح الإعلانات وأبدِ اهتمامك بالعقارات التي تستوفي متطلباتك", "Browse listings and express interest in properties that meet your requirements")
               }
               action={
                 <Button variant="primary" onClick={() => setActiveTab("browse")}>
-                  {lang === "ar" ? "تصفّح الإعلانات" : "Browse Listings"}
+                  {t("تصفّح الإعلانات", "Browse Listings")}
                 </Button>
               }
             />
@@ -824,11 +819,9 @@ function MarketplacePage({ initialListings, initialSellerOrgs }: MarketplaceView
               pagination
               pageSize={10}
               getRowId={(r) => r.id}
-              emptyTitle={lang === "ar" ? "لا توجد استفسارات" : "No inquiries"}
+              emptyTitle={t("لا توجد استفسارات", "No inquiries")}
               emptyDescription={
-                lang === "ar"
-                  ? "لم يتم العثور على استفسارات مطابقة"
-                  : "No matching inquiries found"
+                t("لم يتم العثور على استفسارات مطابقة", "No matching inquiries found")
               }
               mobileCard={(inq) => (
                 <Card className="p-4">
@@ -869,7 +862,7 @@ function MarketplacePage({ initialListings, initialSellerOrgs }: MarketplaceView
                           setWithdrawError(null);
                         }}
                       >
-                        {lang === "ar" ? "سحب" : "Withdraw"}
+                        {t("سحب", "Withdraw")}
                       </Button>
                     )}
                   </div>
@@ -884,7 +877,7 @@ function MarketplacePage({ initialListings, initialSellerOrgs }: MarketplaceView
       <ResponsiveDialog
         open={!!withdrawTarget}
         onOpenChange={(open) => { if (!open) setWithdrawTarget(null); }}
-        title={lang === "ar" ? "سحب الاستفسار" : "Withdraw Inquiry"}
+        title={t("سحب الاستفسار", "Withdraw Inquiry")}
         description={
           lang === "ar"
             ? `هل أنت متأكد من سحب استفسارك على "${withdrawTarget?.listing.title ?? withdrawTarget?.listing.listingNumber}"؟ لا يمكن التراجع عن هذا الإجراء.`
@@ -897,7 +890,7 @@ function MarketplacePage({ initialListings, initialSellerOrgs }: MarketplaceView
               onClick={() => setWithdrawTarget(null)}
               disabled={withdrawing}
             >
-              {lang === "ar" ? "إلغاء" : "Cancel"}
+              {t("إلغاء", "Cancel")}
             </Button>
             <Button
               variant="destructive"
@@ -909,7 +902,7 @@ function MarketplacePage({ initialListings, initialSellerOrgs }: MarketplaceView
               ) : (
                 <Handshake className="h-4 w-4 me-1.5" aria-hidden="true" />
               )}
-              {lang === "ar" ? "تأكيد السحب" : "Confirm Withdraw"}
+              {t("تأكيد السحب", "Confirm Withdraw")}
             </Button>
           </div>
         }

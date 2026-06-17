@@ -8,6 +8,7 @@ import { hash as bcryptHash } from "@node-rs/bcrypt";
 import { validatePassword } from "../../lib/password-policy";
 import { logAuditEvent } from "../../lib/audit";
 import { checkRateLimit } from "../../lib/rate-limit";
+import { verifyTurnstile } from "../../lib/turnstile";
 import { sendTransactionalEmail } from "../../lib/email";
 import { verificationEmail } from "../../lib/email-templates";
 import {
@@ -50,6 +51,9 @@ export async function loginAction(formData: FormData) {
       }
       if (message === "EMAIL_NOT_VERIFIED") {
         return { error: "EMAIL_NOT_VERIFIED" };
+      }
+      if (message === "ORG_EXPIRED") {
+        return { error: "ORG_EXPIRED" };
       }
       if (message === "DATABASE_ERROR") {
         return { error: "DATABASE_ERROR" };
@@ -105,8 +109,20 @@ export async function registerUser(data: {
   email: string;
   password: string;
   accountType?: "individual" | "company";
+  captchaToken?: string;
 }) {
   const accountType = data.accountType ?? "individual";
+
+  // Read the client IP once — used both by Turnstile scoring and rate-limiting.
+  const h = await headers();
+  const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim();
+
+  // CAPTCHA FIRST — verify before any password validation / bcrypt so a bot that
+  // fails the challenge burns zero CPU. Graceful-degrades: when TURNSTILE_SECRET_KEY
+  // is unset (dev/local), verifyTurnstile returns true and this gate is a no-op.
+  if (!(await verifyTurnstile(data.captchaToken, ip))) {
+    return { error: "CAPTCHA_FAILED" };
+  }
 
   // Validate password
   const validation = validatePassword(data.password, { name: data.name, email: data.email });
@@ -117,8 +133,6 @@ export async function registerUser(data: {
   // Rate limiting — OWASP anti-automation on registration
   // Per-IP: 5 attempts / hour (carrier-grade NAT safe; skip if header absent)
   // Per-normalized-email: 3 attempts / hour (defeats +aliasing)
-  const h = await headers();
-  const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim();
   // Normalize email for rate-limit key only: lowercase + strip +suffix from local part
   const localPart = data.email.split("@")[0] ?? "";
   const domain = data.email.split("@")[1] ?? "";
@@ -148,6 +162,10 @@ export async function registerUser(data: {
         data: {
           name: orgName,
           entityType: accountType === "company" ? "COMPANY" : "ESTABLISHMENT",
+          // E1: org starts pending; flips to ACTIVE when the registering admin
+          // confirms their email (consumeEmailVerificationToken). The
+          // expire-unverified-orgs cron marks it EXPIRED after 14 days unverified.
+          appStatus: "PENDING_VERIFICATION",
         },
       });
 
@@ -254,13 +272,13 @@ export async function resendVerificationAction(email: string) {
   const h = await headers();
   const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim();
   if (ip) {
-    const ipRl = await checkRateLimit(`resend-verification:ip:${ip}`, 5, 60 * 60 * 1000);
+    const ipRl = await checkRateLimit(`resend-verification:ip:${ip}`, 5, 60 * 60 * 1000, { failClosed: true });
     if (!ipRl.allowed) {
       return { success: true };
     }
   }
   if (normalizedEmail) {
-    const emailRl = await checkRateLimit(`resend-verification:email:${normalizedEmail}`, 3, 60 * 60 * 1000);
+    const emailRl = await checkRateLimit(`resend-verification:email:${normalizedEmail}`, 3, 60 * 60 * 1000, { failClosed: true });
     if (!emailRl.allowed) {
       return { success: true };
     }

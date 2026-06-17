@@ -20,6 +20,7 @@ import {
   RefreshCw,
   Loader2,
   Trash2,
+  Mail,
 } from "lucide-react";
 import {
   Button,
@@ -34,19 +35,35 @@ import {
   AccordionContent,
   CRInput,
   SaudiPhoneInput,
+  SelectField,
+  HijriDatePicker,
 } from "@repo/ui";
 import Link from "next/link";
 import { toast } from "sonner";
 import { getOrganization, updateOrganization, clearAppCache } from "../../actions/organization";
 import { usePermissions } from "../../../hooks/usePermissions";
 import { getUserPreferences, updateLandingPage } from "../../actions/preferences";
+import { useSession } from "../../../components/SimpleSessionProvider";
+import { roleLabels } from "../../../components/shell/nav-items";
 
-const selectClass =
-  "h-10 w-full rounded-md border border-input bg-background px-3 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
+function initialsOf(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return (parts[0] ?? "?").slice(0, 2).toUpperCase();
+  return `${parts[0]?.[0] ?? ""}${parts[parts.length - 1]?.[0] ?? ""}`.toUpperCase();
+}
 
 export default function OrgSettingsPage() {
   const { can } = usePermissions();
-  const { lang } = useLanguage();
+  const { t, lang } = useLanguage();
+  const { data: session } = useSession();
+
+  const sessionUser = session?.user ?? {};
+  const profileName =
+    sessionUser.name ?? (t("مستخدم ميماريك", "Mimaric User"));
+  const profileEmail = sessionUser.email ?? "";
+  const profileRole = (sessionUser as { role?: string }).role ?? "USER";
+  const profileRoleLabel = (roleLabels[profileRole] ?? { ar: "مستخدم", en: "User" })[lang];
   const [org, setOrg] = React.useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
@@ -198,9 +215,7 @@ export default function OrgSettingsPage() {
     } catch (err: unknown) {
       console.error("Failed to save organization settings:", err);
       toast.error(
-        lang === "ar"
-          ? "تعذّر حفظ التغييرات. يرجى المحاولة مرة أخرى أو التواصل مع الدعم."
-          : "We couldn't save your changes. Try again or contact support.",
+        t("تعذّر حفظ التغييرات. يرجى المحاولة مرة أخرى أو التواصل مع الدعم.", "We couldn't save your changes. Try again or contact support."),
       );
     } finally {
       setSaving(false);
@@ -215,16 +230,45 @@ export default function OrgSettingsPage() {
         dir={lang === "ar" ? "rtl" : "ltr"}
       >
         <AppBar
-          title={lang === "ar" ? "إعدادات المؤسسة" : "Organization settings"}
+          title={t("إعدادات المؤسسة", "Organization settings")}
           subtitle={
-            lang === "ar"
-              ? "الملف التعريفي والبيانات التجارية"
-              : "Profile & commercial data"
+            t("الملف التعريفي والبيانات التجارية", "Profile & commercial data")
           }
           lang={lang}
         />
 
         <div className="flex-1 px-4 py-4 pb-28 space-y-4">
+          {/* Profile (user identity) — scroll target for /dashboard/settings#profile */}
+          <section
+            id="profile"
+            aria-label={t("الملف الشخصي", "Profile")}
+            className="scroll-mt-20 rounded-lg border border-border bg-card p-4 space-y-4"
+          >
+            <div className="flex items-center gap-3">
+              <span
+                aria-hidden="true"
+                className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-lg font-semibold"
+              >
+                {initialsOf(profileName)}
+              </span>
+              <div className="min-w-0">
+                <p className="text-base font-bold text-foreground truncate">{profileName}</p>
+                <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-medium text-primary">
+                  <ShieldCheck className="h-3 w-3" aria-hidden="true" />
+                  {profileRoleLabel}
+                </span>
+              </div>
+            </div>
+            {profileEmail && (
+              <div className="flex items-center gap-2 rounded-md bg-muted/40 px-3 py-2">
+                <Mail className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                <span className="text-xs text-foreground truncate font-latin" dir="ltr">
+                  {profileEmail}
+                </span>
+              </div>
+            )}
+          </section>
+
           {/* Header identity card */}
           <div className="rounded-lg border border-border bg-card p-4 flex items-center gap-3">
             <div className="h-14 w-14 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
@@ -243,7 +287,7 @@ export default function OrgSettingsPage() {
 
           {loading ? (
             <div className="py-10 text-center text-sm text-muted-foreground animate-pulse">
-              {lang === "ar" ? "جاري التحميل..." : "Loading..."}
+              {t("جاري التحميل...", "Loading...")}
             </div>
           ) : (
             <Accordion type="multiple" className="rounded-lg border border-border bg-card divide-y divide-border">
@@ -254,14 +298,14 @@ export default function OrgSettingsPage() {
                     <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
                       <Building2 className="h-4 w-4" />
                     </span>
-                    {lang === "ar" ? "البيانات الأساسية" : "Core Identity"}
+                    {t("البيانات الأساسية", "Core Identity")}
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="pb-4">
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                        {lang === "ar" ? "اسم المنظمة" : "Organization Name"} *
+                        {t("اسم المنظمة", "Organization Name")} *
                       </label>
                       <Input
                         value={form.name}
@@ -270,37 +314,37 @@ export default function OrgSettingsPage() {
                       />
                       {fieldErrors.name && (
                         <p className="text-xs text-destructive">
-                          {lang === "ar" ? "هذا الحقل مطلوب" : "This field is required"}
+                          {t("هذا الحقل مطلوب", "This field is required")}
                         </p>
                       )}
                     </div>
                     <div className="space-y-2">
                       <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                        {lang === "ar" ? "الاسم بالعربي" : "Official Arabic Name"}
+                        {t("الاسم بالعربي", "Official Arabic Name")}
                       </label>
                       <Input className="h-11" value={form.nameArabic} onChange={(e) => set("nameArabic", e.target.value)} dir="rtl" />
                     </div>
                     <div className="space-y-2">
                       <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                        {lang === "ar" ? "الاسم بالإنجليزي" : "Official English Name"}
+                        {t("الاسم بالإنجليزي", "Official English Name")}
                       </label>
                       <Input className="h-11" value={form.nameEnglish} onChange={(e) => set("nameEnglish", e.target.value)} dir="ltr" />
                     </div>
                     <div className="space-y-2">
                       <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                        {lang === "ar" ? "رقم السجل التجاري" : "Commercial Registration"}
+                        {t("رقم السجل التجاري", "Commercial Registration")}
                       </label>
                       <CRInput className="h-11" placeholder="1010XXXXXX" value={form.crNumber} onChange={(raw) => set("crNumber", raw)} />
                     </div>
                     <div className="space-y-2">
                       <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                        {lang === "ar" ? "الرقم الضريبي" : "VAT Number"}
+                        {t("الرقم الضريبي", "VAT Number")}
                       </label>
                       <Input className="h-11 font-latin" placeholder="3000XXXXXX00003" value={form.vatNumber} onChange={(e) => set("vatNumber", e.target.value)} dir="ltr" />
                     </div>
                     <div className="space-y-2">
                       <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                        {lang === "ar" ? "الرقم الموحد" : "Unified Number"}
+                        {t("الرقم الموحد", "Unified Number")}
                       </label>
                       <Input className="h-11 font-latin" placeholder="70XXXXXXXX" value={form.unifiedNumber} onChange={(e) => set("unifiedNumber", e.target.value)} dir="ltr" />
                     </div>
@@ -315,80 +359,88 @@ export default function OrgSettingsPage() {
                     <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
                       <Briefcase className="h-4 w-4" />
                     </span>
-                    {lang === "ar" ? "بيانات وزارة التجارة" : "Ministry of Commerce"}
+                    {t("بيانات وزارة التجارة", "Ministry of Commerce")}
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="pb-4">
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                        {lang === "ar" ? "نوع المنشأة" : "Entity Type"}
+                        {t("نوع المنشأة", "Entity Type")}
                       </label>
-                      <select value={form.entityType} onChange={(e) => set("entityType", e.target.value)} className="h-11 w-full rounded-md border border-border bg-background px-3 text-sm">
-                        <option value="">{lang === "ar" ? "اختر..." : "Select..."}</option>
-                        <option value="ESTABLISHMENT">{lang === "ar" ? "مؤسسة" : "Establishment"}</option>
-                        <option value="COMPANY">{lang === "ar" ? "شركة" : "Company"}</option>
-                        <option value="BRANCH">{lang === "ar" ? "فرع" : "Branch"}</option>
-                        <option value="PROFESSIONAL_ENTITY">{lang === "ar" ? "كيان مهني" : "Professional Entity"}</option>
-                        <option value="FOREIGN_COMPANY_BRANCH">{lang === "ar" ? "فرع شركة أجنبية" : "Foreign Company Branch"}</option>
-                      </select>
+                      <SelectField aria-label={t("نوع المنشأة", "Entity Type")} value={form.entityType} onChange={(e) => set("entityType", e.target.value)} className="h-11">
+                        <option value="">{t("اختر...", "Select...")}</option>
+                        <option value="ESTABLISHMENT">{t("مؤسسة", "Establishment")}</option>
+                        <option value="COMPANY">{t("شركة", "Company")}</option>
+                        <option value="BRANCH">{t("فرع", "Branch")}</option>
+                        <option value="PROFESSIONAL_ENTITY">{t("كيان مهني", "Professional Entity")}</option>
+                        <option value="FOREIGN_COMPANY_BRANCH">{t("فرع شركة أجنبية", "Foreign Company Branch")}</option>
+                      </SelectField>
                     </div>
                     <div className="space-y-2">
                       <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                        {lang === "ar" ? "الشكل القانوني" : "Legal Form"}
+                        {t("الشكل القانوني", "Legal Form")}
                       </label>
-                      <select value={form.legalForm} onChange={(e) => set("legalForm", e.target.value)} className="h-11 w-full rounded-md border border-border bg-background px-3 text-sm">
-                        <option value="">{lang === "ar" ? "اختر..." : "Select..."}</option>
-                        <option value="SOLE_PROPRIETORSHIP">{lang === "ar" ? "مؤسسة فردية" : "Sole Proprietorship"}</option>
-                        <option value="LIMITED_LIABILITY_COMPANY">{lang === "ar" ? "شركة ذات مسؤولية محدودة" : "LLC"}</option>
-                        <option value="JOINT_STOCK_COMPANY">{lang === "ar" ? "شركة مساهمة" : "Joint Stock Company"}</option>
-                        <option value="SIMPLIFIED_JOINT_STOCK_COMPANY">{lang === "ar" ? "شركة مساهمة مبسطة" : "Simplified JSC"}</option>
-                        <option value="GENERAL_PARTNERSHIP">{lang === "ar" ? "شركة تضامنية" : "General Partnership"}</option>
-                        <option value="LIMITED_PARTNERSHIP">{lang === "ar" ? "شركة توصية" : "Limited Partnership"}</option>
-                        <option value="PROFESSIONAL_COMPANY">{lang === "ar" ? "شركة مهنية" : "Professional Company"}</option>
-                      </select>
+                      <SelectField aria-label={t("الشكل القانوني", "Legal Form")} value={form.legalForm} onChange={(e) => set("legalForm", e.target.value)} className="h-11">
+                        <option value="">{t("اختر...", "Select...")}</option>
+                        <option value="SOLE_PROPRIETORSHIP">{t("مؤسسة فردية", "Sole Proprietorship")}</option>
+                        <option value="LIMITED_LIABILITY_COMPANY">{t("شركة ذات مسؤولية محدودة", "LLC")}</option>
+                        <option value="JOINT_STOCK_COMPANY">{t("شركة مساهمة", "Joint Stock Company")}</option>
+                        <option value="SIMPLIFIED_JOINT_STOCK_COMPANY">{t("شركة مساهمة مبسطة", "Simplified JSC")}</option>
+                        <option value="GENERAL_PARTNERSHIP">{t("شركة تضامنية", "General Partnership")}</option>
+                        <option value="LIMITED_PARTNERSHIP">{t("شركة توصية", "Limited Partnership")}</option>
+                        <option value="PROFESSIONAL_COMPANY">{t("شركة مهنية", "Professional Company")}</option>
+                      </SelectField>
                     </div>
                     <div className="space-y-2">
                       <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                        {lang === "ar" ? "حالة التسجيل" : "Registration Status"}
+                        {t("حالة التسجيل", "Registration Status")}
                       </label>
-                      <select value={form.registrationStatus} onChange={(e) => set("registrationStatus", e.target.value)} className="h-11 w-full rounded-md border border-border bg-background px-3 text-sm">
-                        <option value="">{lang === "ar" ? "اختر..." : "Select..."}</option>
-                        <option value="ACTIVE_REG">{lang === "ar" ? "نشط" : "Active"}</option>
-                        <option value="EXPIRED_REG">{lang === "ar" ? "منتهي" : "Expired"}</option>
-                        <option value="SUSPENDED_REG">{lang === "ar" ? "موقوف" : "Suspended"}</option>
-                        <option value="CANCELLED_REG">{lang === "ar" ? "ملغي" : "Cancelled"}</option>
-                      </select>
+                      <SelectField aria-label={t("حالة التسجيل", "Registration Status")} value={form.registrationStatus} onChange={(e) => set("registrationStatus", e.target.value)} className="h-11">
+                        <option value="">{t("اختر...", "Select...")}</option>
+                        <option value="ACTIVE_REG">{t("نشط", "Active")}</option>
+                        <option value="EXPIRED_REG">{t("منتهي", "Expired")}</option>
+                        <option value="SUSPENDED_REG">{t("موقوف", "Suspended")}</option>
+                        <option value="CANCELLED_REG">{t("ملغي", "Cancelled")}</option>
+                      </SelectField>
                     </div>
                     <div className="space-y-2">
                       <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                        {lang === "ar" ? "رأس المال (ر.س)" : "Capital (SAR)"}
+                        {t("رأس المال (ر.س)", "Capital (SAR)")}
                       </label>
                       <Input className="h-11 tabular-nums" type="number" value={form.capitalAmountSar} onChange={(e) => set("capitalAmountSar", e.target.value)} dir="ltr" />
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-2">
                         <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                          {lang === "ar" ? "تاريخ التسجيل" : "Reg. Date"}
+                          {t("تاريخ التسجيل", "Reg. Date")}
                         </label>
-                        <Input className="h-11" type="date" value={form.registrationDate} onChange={(e) => set("registrationDate", e.target.value)} />
+                        <HijriDatePicker
+                          className="h-11"
+                          value={form.registrationDate ? new Date(form.registrationDate) : null}
+                          onChange={(d) => set("registrationDate", d ? d.toISOString().slice(0, 10) : "")}
+                        />
                       </div>
                       <div className="space-y-2">
                         <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                          {lang === "ar" ? "تاريخ الانتهاء" : "Expiry"}
+                          {t("تاريخ الانتهاء", "Expiry")}
                         </label>
-                        <Input className="h-11" type="date" value={form.expiryDate} onChange={(e) => set("expiryDate", e.target.value)} />
+                        <HijriDatePicker
+                          className="h-11"
+                          value={form.expiryDate ? new Date(form.expiryDate) : null}
+                          onChange={(d) => set("expiryDate", d ? d.toISOString().slice(0, 10) : "")}
+                        />
                       </div>
                     </div>
                     <div className="space-y-2">
                       <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                        {lang === "ar" ? "رمز النشاط" : "Activity Code"}
+                        {t("رمز النشاط", "Activity Code")}
                       </label>
                       <Input className="h-11" value={form.mainActivityCode} onChange={(e) => set("mainActivityCode", e.target.value)} dir="ltr" />
                     </div>
                     <div className="space-y-2">
                       <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                        {lang === "ar" ? "اسم النشاط" : "Activity Name"}
+                        {t("اسم النشاط", "Activity Name")}
                       </label>
                       <Input className="h-11" value={form.mainActivityNameAr} onChange={(e) => set("mainActivityNameAr", e.target.value)} />
                     </div>
@@ -403,32 +455,32 @@ export default function OrgSettingsPage() {
                     <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
                       <Phone className="h-4 w-4" />
                     </span>
-                    {lang === "ar" ? "بيانات التواصل" : "Contact Information"}
+                    {t("بيانات التواصل", "Contact Information")}
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="pb-4">
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                        {lang === "ar" ? "رقم الجوال" : "Mobile"}
+                        {t("رقم الجوال", "Mobile")}
                       </label>
                       <SaudiPhoneInput className="h-11" placeholder="05XXXXXXXX" value={form.contactMobile} onChange={(e164) => set("contactMobile", e164)} />
                     </div>
                     <div className="space-y-2">
                       <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                        {lang === "ar" ? "الهاتف الثابت" : "Phone"}
+                        {t("الهاتف الثابت", "Phone")}
                       </label>
                       <SaudiPhoneInput className="h-11" placeholder="011XXXXXXX" value={form.contactPhone} onChange={(e164) => set("contactPhone", e164)} />
                     </div>
                     <div className="space-y-2">
                       <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                        {lang === "ar" ? "البريد الإلكتروني" : "Email"}
+                        {t("البريد الإلكتروني", "Email")}
                       </label>
                       <Input className="h-11" type="email" placeholder="info@company.sa" value={form.contactEmail} onChange={(e) => set("contactEmail", e.target.value)} dir="ltr" />
                     </div>
                     <div className="space-y-2">
                       <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                        {lang === "ar" ? "الموقع الإلكتروني" : "Website"}
+                        {t("الموقع الإلكتروني", "Website")}
                       </label>
                       <Input className="h-11" type="url" placeholder="https://company.sa" value={form.contactWebsite} onChange={(e) => set("contactWebsite", e.target.value)} dir="ltr" />
                     </div>
@@ -443,58 +495,58 @@ export default function OrgSettingsPage() {
                     <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
                       <MapPin className="h-4 w-4" />
                     </span>
-                    {lang === "ar" ? "العنوان الوطني" : "National Address"}
+                    {t("العنوان الوطني", "National Address")}
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="pb-4">
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                        {lang === "ar" ? "المنطقة" : "Region"}
+                        {t("المنطقة", "Region")}
                       </label>
                       <Input className="h-11" value={form.addrRegion} onChange={(e) => set("addrRegion", e.target.value)} />
                     </div>
                     <div className="space-y-2">
                       <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                        {lang === "ar" ? "المدينة" : "City"}
+                        {t("المدينة", "City")}
                       </label>
                       <Input className="h-11" value={form.addrCity} onChange={(e) => set("addrCity", e.target.value)} />
                     </div>
                     <div className="space-y-2">
                       <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                        {lang === "ar" ? "الحي" : "District"}
+                        {t("الحي", "District")}
                       </label>
                       <Input className="h-11" value={form.addrDistrict} onChange={(e) => set("addrDistrict", e.target.value)} />
                     </div>
                     <div className="space-y-2">
                       <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                        {lang === "ar" ? "اسم الشارع" : "Street"}
+                        {t("اسم الشارع", "Street")}
                       </label>
                       <Input className="h-11" value={form.addrStreet} onChange={(e) => set("addrStreet", e.target.value)} />
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-2">
                         <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                          {lang === "ar" ? "المبنى" : "Building"}
+                          {t("المبنى", "Building")}
                         </label>
                         <Input className="h-11" value={form.addrBuilding} onChange={(e) => set("addrBuilding", e.target.value)} dir="ltr" maxLength={4} />
                       </div>
                       <div className="space-y-2">
                         <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                          {lang === "ar" ? "الرمز البريدي" : "Postal"}
+                          {t("الرمز البريدي", "Postal")}
                         </label>
                         <Input className="h-11" value={form.addrPostal} onChange={(e) => set("addrPostal", e.target.value)} dir="ltr" maxLength={5} />
                       </div>
                     </div>
                     <div className="space-y-2">
                       <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                        {lang === "ar" ? "الرقم الإضافي" : "Additional No."}
+                        {t("الرقم الإضافي", "Additional No.")}
                       </label>
                       <Input className="h-11" value={form.addrAdditional} onChange={(e) => set("addrAdditional", e.target.value)} dir="ltr" maxLength={4} />
                     </div>
                     <div className="space-y-2">
                       <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                        {lang === "ar" ? "العنوان المختصر" : "Short Address"}
+                        {t("العنوان المختصر", "Short Address")}
                       </label>
                       <Input className="h-11" value={form.addrShort} onChange={(e) => set("addrShort", e.target.value)} dir="ltr" maxLength={8} />
                     </div>
@@ -509,16 +561,17 @@ export default function OrgSettingsPage() {
                     <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
                       <Home className="h-4 w-4" />
                     </span>
-                    {lang === "ar" ? "التفضيلات" : "Preferences"}
+                    {t("التفضيلات", "Preferences")}
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="pb-4">
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                        {lang === "ar" ? "الصفحة الرئيسية" : "Landing Page"}
+                        {t("الصفحة الرئيسية", "Landing Page")}
                       </label>
-                      <select
+                      <SelectField
+                        aria-label={t("الصفحة الرئيسية", "Landing Page")}
                         value={landingPage}
                         onChange={async (e) => {
                           const value = e.target.value;
@@ -532,21 +585,21 @@ export default function OrgSettingsPage() {
                             setSavingLanding(false);
                           }
                         }}
-                        className="h-11 w-full rounded-md border border-border bg-background px-3 text-sm"
+                        className="h-11"
                       >
-                        <option value="/dashboard">{lang === "ar" ? "نظرة عامة" : "Overview"}</option>
-                        <option value="/dashboard/units">{lang === "ar" ? "الوحدات" : "Units"}</option>
-                        <option value="/dashboard/crm">{lang === "ar" ? "العملاء" : "Customers"}</option>
-                        <option value="/dashboard/contracts">{lang === "ar" ? "المبيعات" : "Sales"}</option>
-                        <option value="/dashboard/leases">{lang === "ar" ? "الإيجارات" : "Leases"}</option>
-                        <option value="/dashboard/finance">{lang === "ar" ? "المالية" : "Finance"}</option>
-                        <option value="/dashboard/maintenance">{lang === "ar" ? "الصيانة" : "Maintenance"}</option>
-                        <option value="/dashboard/reports">{lang === "ar" ? "التقارير" : "Reports"}</option>
-                        <option value="/dashboard/settings">{lang === "ar" ? "الإعدادات" : "Settings"}</option>
-                      </select>
+                        <option value="/dashboard">{t("نظرة عامة", "Overview")}</option>
+                        <option value="/dashboard/units">{t("الوحدات", "Units")}</option>
+                        <option value="/dashboard/crm">{t("العملاء", "Customers")}</option>
+                        <option value="/dashboard/contracts">{t("المبيعات", "Sales")}</option>
+                        <option value="/dashboard/leases">{t("الإيجارات", "Leases")}</option>
+                        <option value="/dashboard/finance">{t("المالية", "Finance")}</option>
+                        <option value="/dashboard/maintenance">{t("الصيانة", "Maintenance")}</option>
+                        <option value="/dashboard/reports">{t("التقارير", "Reports")}</option>
+                        <option value="/dashboard/settings">{t("الإعدادات", "Settings")}</option>
+                      </SelectField>
                       {savingLanding && (
                         <p className="text-[11px] text-muted-foreground">
-                          {lang === "ar" ? "جاري الحفظ..." : "Saving..."}
+                          {t("جاري الحفظ...", "Saving...")}
                         </p>
                       )}
                     </div>
@@ -571,7 +624,7 @@ export default function OrgSettingsPage() {
                       ) : (
                         <Trash2 className="h-4 w-4" />
                       )}
-                      {lang === "ar" ? "مسح الذاكرة المؤقتة" : "Clear Cache"}
+                      {t("مسح الذاكرة المؤقتة", "Clear Cache")}
                     </Button>
                   </div>
                 </AccordionContent>
@@ -590,10 +643,10 @@ export default function OrgSettingsPage() {
               </span>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-foreground">
-                  {lang === "ar" ? "فريق العمل" : "Team"}
+                  {t("فريق العمل", "Team")}
                 </p>
                 <p className="text-[11px] text-muted-foreground">
-                  {lang === "ar" ? "إدارة الأعضاء والأدوار" : "Manage members & roles"}
+                  {t("إدارة الأعضاء والأدوار", "Manage members & roles")}
                 </p>
               </div>
               <span className="text-muted-foreground rtl:scale-x-[-1]">›</span>
@@ -608,10 +661,10 @@ export default function OrgSettingsPage() {
                 </span>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-foreground">
-                    {lang === "ar" ? "سجل المراجعة" : "Audit Trail"}
+                    {t("سجل المراجعة", "Audit Trail")}
                   </p>
                   <p className="text-[11px] text-muted-foreground">
-                    {lang === "ar" ? "تتبع الوصول والتعديلات" : "Track access & changes"}
+                    {t("تتبع الوصول والتعديلات", "Track access & changes")}
                   </p>
                 </div>
                 <span className="text-muted-foreground rtl:scale-x-[-1]">›</span>
@@ -626,10 +679,10 @@ export default function OrgSettingsPage() {
               </span>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-foreground">
-                  {lang === "ar" ? "الأمان" : "Security"}
+                  {t("الأمان", "Security")}
                 </p>
                 <p className="text-[11px] text-muted-foreground">
-                  {lang === "ar" ? "تغيير كلمة المرور" : "Change password"}
+                  {t("تغيير كلمة المرور", "Change password")}
                 </p>
               </div>
               <span className="text-muted-foreground rtl:scale-x-[-1]">›</span>
@@ -641,7 +694,7 @@ export default function OrgSettingsPage() {
             className="flex items-center justify-center gap-2 text-xs text-muted-foreground hover:text-primary transition-colors py-3"
           >
             <RefreshCw className="h-3.5 w-3.5" />
-            {lang === "ar" ? "إعادة تشغيل معالج الإعداد" : "Re-run Setup Wizard"}
+            {t("إعادة تشغيل معالج الإعداد", "Re-run Setup Wizard")}
           </Link>
         </div>
 
@@ -649,8 +702,8 @@ export default function OrgSettingsPage() {
           icon={saving ? Loader2 : Save}
           label={
             saving
-              ? (lang === "ar" ? "جاري الحفظ..." : "Saving...")
-              : (lang === "ar" ? "حفظ التغييرات" : "Save Changes")
+              ? (t("جاري الحفظ...", "Saving..."))
+              : (t("حفظ التغييرات", "Save Changes"))
           }
           onClick={saving ? undefined : handleSave}
         />
@@ -659,11 +712,9 @@ export default function OrgSettingsPage() {
       {/* ─── Desktop (≥ md) ────────────────────────────────────────────── */}
       <div className="hidden md:block space-y-8 animate-in fade-in duration-500">
       <PageHeader
-        title={lang === "ar" ? "إعدادات المنظمة" : "Organization Settings"}
+        title={t("إعدادات المنظمة", "Organization Settings")}
         description={
-          lang === "ar"
-            ? "إدارة الملف التعريفي والبيانات التجارية لمنشأتك."
-            : "Manage your organization's profile and commercial data."
+          t("إدارة الملف التعريفي والبيانات التجارية لمنشأتك.", "Manage your organization's profile and commercial data.")
         }
       />
 
@@ -694,16 +745,14 @@ export default function OrgSettingsPage() {
             <div className="p-8 space-y-6">
               {/* Core Identity */}
               <FormSection
-                title={lang === "ar" ? "البيانات الأساسية" : "Core Identity"}
+                title={t("البيانات الأساسية", "Core Identity")}
                 description={
-                  lang === "ar"
-                    ? "الاسم الرسمي وأرقام التسجيل"
-                    : "Official name and registration numbers"
+                  t("الاسم الرسمي وأرقام التسجيل", "Official name and registration numbers")
                 }
               >
                 <div className="space-y-2">
                   <label htmlFor="settings-org-name" className="text-xs font-medium text-muted-foreground">
-                    {lang === "ar" ? "اسم المنظمة" : "Organization Name"} *
+                    {t("اسم المنظمة", "Organization Name")} *
                   </label>
                   <Input
                     id="settings-org-name"
@@ -713,7 +762,7 @@ export default function OrgSettingsPage() {
                   />
                   {fieldErrors.name && (
                     <p className="text-xs text-destructive">
-                      {lang === "ar" ? "هذا الحقل مطلوب" : "This field is required"}
+                      {t("هذا الحقل مطلوب", "This field is required")}
                     </p>
                   )}
                 </div>
@@ -721,7 +770,7 @@ export default function OrgSettingsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label htmlFor="settings-name-arabic" className="text-xs font-medium text-muted-foreground">
-                      {lang === "ar" ? "الاسم الرسمي بالعربي" : "Official Arabic Name"}
+                      {t("الاسم الرسمي بالعربي", "Official Arabic Name")}
                     </label>
                     <Input
                       id="settings-name-arabic"
@@ -732,7 +781,7 @@ export default function OrgSettingsPage() {
                   </div>
                   <div className="space-y-2">
                     <label htmlFor="settings-name-english" className="text-xs font-medium text-muted-foreground">
-                      {lang === "ar" ? "الاسم الرسمي بالإنجليزي" : "Official English Name"}
+                      {t("الاسم الرسمي بالإنجليزي", "Official English Name")}
                     </label>
                     <Input
                       id="settings-name-english"
@@ -746,7 +795,7 @@ export default function OrgSettingsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground">
-                      {lang === "ar" ? "رقم السجل التجاري (CR)" : "Commercial Registration"}
+                      {t("رقم السجل التجاري (CR)", "Commercial Registration")}
                     </label>
                     <CRInput
                       placeholder="1010XXXXXX"
@@ -757,7 +806,7 @@ export default function OrgSettingsPage() {
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground">
-                      {lang === "ar" ? "الرقم الضريبي (VAT)" : "VAT Number"}
+                      {t("الرقم الضريبي (VAT)", "VAT Number")}
                     </label>
                     <div className="relative">
                       <Briefcase
@@ -776,7 +825,7 @@ export default function OrgSettingsPage() {
 
                 <div className="space-y-2">
                   <label className="text-xs font-medium text-muted-foreground">
-                    {lang === "ar" ? "الرقم الموحد" : "Unified Number"}
+                    {t("الرقم الموحد", "Unified Number")}
                   </label>
                   <Input
                     placeholder="70XXXXXXXX"
@@ -791,106 +840,102 @@ export default function OrgSettingsPage() {
               {/* MOC Section */}
               <FormSection
                 title={
-                  lang === "ar"
-                    ? "بيانات وزارة التجارة (MOC)"
-                    : "Ministry of Commerce Data (MOC)"
+                  t("بيانات وزارة التجارة (MOC)", "Ministry of Commerce Data (MOC)")
                 }
                 description={
-                  lang === "ar"
-                    ? "نوع المنشأة والشكل القانوني والنشاط"
-                    : "Entity type, legal form, and activity details"
+                  t("نوع المنشأة والشكل القانوني والنشاط", "Entity type, legal form, and activity details")
                 }
               >
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label htmlFor="settings-entity-type" className="text-xs font-medium text-muted-foreground">
-                      {lang === "ar" ? "نوع المنشأة" : "Entity Type"}
+                      {t("نوع المنشأة", "Entity Type")}
                     </label>
-                    <select
+                    <SelectField
                       id="settings-entity-type"
+                      aria-label={t("نوع المنشأة", "Entity Type")}
                       value={form.entityType}
                       onChange={(e) => set("entityType", e.target.value)}
-                      className={selectClass}
                     >
-                      <option value="">{lang === "ar" ? "اختر..." : "Select..."}</option>
+                      <option value="">{t("اختر...", "Select...")}</option>
                       <option value="ESTABLISHMENT">
-                        {lang === "ar" ? "مؤسسة" : "Establishment"}
+                        {t("مؤسسة", "Establishment")}
                       </option>
-                      <option value="COMPANY">{lang === "ar" ? "شركة" : "Company"}</option>
-                      <option value="BRANCH">{lang === "ar" ? "فرع" : "Branch"}</option>
+                      <option value="COMPANY">{t("شركة", "Company")}</option>
+                      <option value="BRANCH">{t("فرع", "Branch")}</option>
                       <option value="PROFESSIONAL_ENTITY">
-                        {lang === "ar" ? "كيان مهني" : "Professional Entity"}
+                        {t("كيان مهني", "Professional Entity")}
                       </option>
                       <option value="FOREIGN_COMPANY_BRANCH">
-                        {lang === "ar" ? "فرع شركة أجنبية" : "Foreign Company Branch"}
+                        {t("فرع شركة أجنبية", "Foreign Company Branch")}
                       </option>
-                    </select>
+                    </SelectField>
                   </div>
                   <div className="space-y-2">
                     <label htmlFor="settings-legal-form" className="text-xs font-medium text-muted-foreground">
-                      {lang === "ar" ? "الشكل القانوني" : "Legal Form"}
+                      {t("الشكل القانوني", "Legal Form")}
                     </label>
-                    <select
+                    <SelectField
                       id="settings-legal-form"
+                      aria-label={t("الشكل القانوني", "Legal Form")}
                       value={form.legalForm}
                       onChange={(e) => set("legalForm", e.target.value)}
-                      className={selectClass}
                     >
-                      <option value="">{lang === "ar" ? "اختر..." : "Select..."}</option>
+                      <option value="">{t("اختر...", "Select...")}</option>
                       <option value="SOLE_PROPRIETORSHIP">
-                        {lang === "ar" ? "مؤسسة فردية" : "Sole Proprietorship"}
+                        {t("مؤسسة فردية", "Sole Proprietorship")}
                       </option>
                       <option value="LIMITED_LIABILITY_COMPANY">
-                        {lang === "ar" ? "شركة ذات مسؤولية محدودة" : "LLC"}
+                        {t("شركة ذات مسؤولية محدودة", "LLC")}
                       </option>
                       <option value="JOINT_STOCK_COMPANY">
-                        {lang === "ar" ? "شركة مساهمة" : "Joint Stock Company"}
+                        {t("شركة مساهمة", "Joint Stock Company")}
                       </option>
                       <option value="SIMPLIFIED_JOINT_STOCK_COMPANY">
-                        {lang === "ar" ? "شركة مساهمة مبسطة" : "Simplified JSC"}
+                        {t("شركة مساهمة مبسطة", "Simplified JSC")}
                       </option>
                       <option value="GENERAL_PARTNERSHIP">
-                        {lang === "ar" ? "شركة تضامنية" : "General Partnership"}
+                        {t("شركة تضامنية", "General Partnership")}
                       </option>
                       <option value="LIMITED_PARTNERSHIP">
-                        {lang === "ar" ? "شركة توصية" : "Limited Partnership"}
+                        {t("شركة توصية", "Limited Partnership")}
                       </option>
                       <option value="PROFESSIONAL_COMPANY">
-                        {lang === "ar" ? "شركة مهنية" : "Professional Company"}
+                        {t("شركة مهنية", "Professional Company")}
                       </option>
-                    </select>
+                    </SelectField>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label htmlFor="settings-reg-status" className="text-xs font-medium text-muted-foreground">
-                      {lang === "ar" ? "حالة التسجيل" : "Registration Status"}
+                      {t("حالة التسجيل", "Registration Status")}
                     </label>
-                    <select
+                    <SelectField
                       id="settings-reg-status"
+                      aria-label={t("حالة التسجيل", "Registration Status")}
                       value={form.registrationStatus}
                       onChange={(e) => set("registrationStatus", e.target.value)}
-                      className={selectClass}
                     >
-                      <option value="">{lang === "ar" ? "اختر..." : "Select..."}</option>
+                      <option value="">{t("اختر...", "Select...")}</option>
                       <option value="ACTIVE_REG">
-                        {lang === "ar" ? "نشط" : "Active"}
+                        {t("نشط", "Active")}
                       </option>
                       <option value="EXPIRED_REG">
-                        {lang === "ar" ? "منتهي" : "Expired"}
+                        {t("منتهي", "Expired")}
                       </option>
                       <option value="SUSPENDED_REG">
-                        {lang === "ar" ? "موقوف" : "Suspended"}
+                        {t("موقوف", "Suspended")}
                       </option>
                       <option value="CANCELLED_REG">
-                        {lang === "ar" ? "ملغي" : "Cancelled"}
+                        {t("ملغي", "Cancelled")}
                       </option>
-                    </select>
+                    </SelectField>
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground">
-                      {lang === "ar" ? "رأس المال (ر.س)" : "Capital (SAR)"}
+                      {t("رأس المال (ر.س)", "Capital (SAR)")}
                     </label>
                     <Input
                       type="number"
@@ -905,26 +950,24 @@ export default function OrgSettingsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label htmlFor="settings-reg-date" className="text-xs font-medium text-muted-foreground">
-                      {lang === "ar" ? "تاريخ التسجيل" : "Registration Date"}
+                      {t("تاريخ التسجيل", "Registration Date")}
                     </label>
-                    <Input
+                    <HijriDatePicker
                       id="settings-reg-date"
-                      type="date"
-                      value={form.registrationDate}
-                      onChange={(e) => set("registrationDate", e.target.value)}
                       className="font-dm-sans"
+                      value={form.registrationDate ? new Date(form.registrationDate) : null}
+                      onChange={(d) => set("registrationDate", d ? d.toISOString().slice(0, 10) : "")}
                     />
                   </div>
                   <div className="space-y-2">
                     <label htmlFor="settings-expiry-date" className="text-xs font-medium text-muted-foreground">
-                      {lang === "ar" ? "تاريخ الانتهاء" : "Expiry Date"}
+                      {t("تاريخ الانتهاء", "Expiry Date")}
                     </label>
-                    <Input
+                    <HijriDatePicker
                       id="settings-expiry-date"
-                      type="date"
-                      value={form.expiryDate}
-                      onChange={(e) => set("expiryDate", e.target.value)}
                       className="font-dm-sans"
+                      value={form.expiryDate ? new Date(form.expiryDate) : null}
+                      onChange={(d) => set("expiryDate", d ? d.toISOString().slice(0, 10) : "")}
                     />
                   </div>
                 </div>
@@ -932,7 +975,7 @@ export default function OrgSettingsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground">
-                      {lang === "ar" ? "رمز النشاط" : "Activity Code"}
+                      {t("رمز النشاط", "Activity Code")}
                     </label>
                     <Input
                       value={form.mainActivityCode}
@@ -943,13 +986,13 @@ export default function OrgSettingsPage() {
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground">
-                      {lang === "ar" ? "اسم النشاط" : "Activity Name"}
+                      {t("اسم النشاط", "Activity Name")}
                     </label>
                     <Input
                       value={form.mainActivityNameAr}
                       onChange={(e) => set("mainActivityNameAr", e.target.value)}
                       placeholder={
-                        lang === "ar" ? "التطوير العقاري" : "Real Estate Development"
+                        t("التطوير العقاري", "Real Estate Development")
                       }
                     />
                   </div>
@@ -958,7 +1001,7 @@ export default function OrgSettingsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label htmlFor="settings-trade-arabic" className="text-xs font-medium text-muted-foreground">
-                      {lang === "ar" ? "الاسم التجاري بالعربي" : "Trade Name (Arabic)"}
+                      {t("الاسم التجاري بالعربي", "Trade Name (Arabic)")}
                     </label>
                     <Input
                       id="settings-trade-arabic"
@@ -969,7 +1012,7 @@ export default function OrgSettingsPage() {
                   </div>
                   <div className="space-y-2">
                     <label htmlFor="settings-trade-english" className="text-xs font-medium text-muted-foreground">
-                      {lang === "ar" ? "الاسم التجاري بالإنجليزي" : "Trade Name (English)"}
+                      {t("الاسم التجاري بالإنجليزي", "Trade Name (English)")}
                     </label>
                     <Input
                       id="settings-trade-english"
@@ -983,17 +1026,15 @@ export default function OrgSettingsPage() {
 
               {/* Contact Information */}
               <FormSection
-                title={lang === "ar" ? "بيانات التواصل" : "Contact Information"}
+                title={t("بيانات التواصل", "Contact Information")}
                 description={
-                  lang === "ar"
-                    ? "أرقام الهاتف والبريد والموقع الإلكتروني"
-                    : "Phone numbers, email, and website"
+                  t("أرقام الهاتف والبريد والموقع الإلكتروني", "Phone numbers, email, and website")
                 }
               >
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground">
-                      {lang === "ar" ? "رقم الجوال" : "Mobile"}
+                      {t("رقم الجوال", "Mobile")}
                     </label>
                     <SaudiPhoneInput
                       value={form.contactMobile}
@@ -1003,7 +1044,7 @@ export default function OrgSettingsPage() {
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground">
-                      {lang === "ar" ? "الهاتف الثابت" : "Phone"}
+                      {t("الهاتف الثابت", "Phone")}
                     </label>
                     <SaudiPhoneInput
                       value={form.contactPhone}
@@ -1015,7 +1056,7 @@ export default function OrgSettingsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground">
-                      {lang === "ar" ? "البريد الإلكتروني" : "Email"}
+                      {t("البريد الإلكتروني", "Email")}
                     </label>
                     <Input
                       value={form.contactEmail}
@@ -1026,7 +1067,7 @@ export default function OrgSettingsPage() {
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground">
-                      {lang === "ar" ? "الموقع الإلكتروني" : "Website"}
+                      {t("الموقع الإلكتروني", "Website")}
                     </label>
                     <Input
                       value={form.contactWebsite}
@@ -1040,49 +1081,47 @@ export default function OrgSettingsPage() {
 
               {/* National Address */}
               <FormSection
-                title={lang === "ar" ? "العنوان الوطني" : "National Address"}
+                title={t("العنوان الوطني", "National Address")}
                 description={
-                  lang === "ar"
-                    ? "عنوان المنشأة حسب نظام العنوان الوطني"
-                    : "Registered address per Saudi National Address system"
+                  t("عنوان المنشأة حسب نظام العنوان الوطني", "Registered address per Saudi National Address system")
                 }
               >
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground">
-                      {lang === "ar" ? "المنطقة" : "Region"}
+                      {t("المنطقة", "Region")}
                     </label>
                     <Input
                       value={form.addrRegion}
                       onChange={(e) => set("addrRegion", e.target.value)}
-                      placeholder={lang === "ar" ? "منطقة الرياض" : "Riyadh Region"}
+                      placeholder={t("منطقة الرياض", "Riyadh Region")}
                     />
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground">
-                      {lang === "ar" ? "المدينة" : "City"}
+                      {t("المدينة", "City")}
                     </label>
                     <Input
                       value={form.addrCity}
                       onChange={(e) => set("addrCity", e.target.value)}
-                      placeholder={lang === "ar" ? "الرياض" : "Riyadh"}
+                      placeholder={t("الرياض", "Riyadh")}
                     />
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground">
-                      {lang === "ar" ? "الحي" : "District"}
+                      {t("الحي", "District")}
                     </label>
                     <Input
                       value={form.addrDistrict}
                       onChange={(e) => set("addrDistrict", e.target.value)}
-                      placeholder={lang === "ar" ? "العليا" : "Al Olaya"}
+                      placeholder={t("العليا", "Al Olaya")}
                     />
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label htmlFor="settings-addr-street" className="text-xs font-medium text-muted-foreground">
-                      {lang === "ar" ? "اسم الشارع" : "Street"}
+                      {t("اسم الشارع", "Street")}
                     </label>
                     <Input
                       id="settings-addr-street"
@@ -1092,7 +1131,7 @@ export default function OrgSettingsPage() {
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground">
-                      {lang === "ar" ? "رقم المبنى" : "Building No."}
+                      {t("رقم المبنى", "Building No.")}
                     </label>
                     <Input
                       value={form.addrBuilding}
@@ -1106,7 +1145,7 @@ export default function OrgSettingsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground">
-                      {lang === "ar" ? "الرمز البريدي" : "Postal Code"}
+                      {t("الرمز البريدي", "Postal Code")}
                     </label>
                     <Input
                       value={form.addrPostal}
@@ -1118,7 +1157,7 @@ export default function OrgSettingsPage() {
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground">
-                      {lang === "ar" ? "الرقم الإضافي" : "Additional No."}
+                      {t("الرقم الإضافي", "Additional No.")}
                     </label>
                     <Input
                       value={form.addrAdditional}
@@ -1130,7 +1169,7 @@ export default function OrgSettingsPage() {
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground">
-                      {lang === "ar" ? "العنوان المختصر" : "Short Address"}
+                      {t("العنوان المختصر", "Short Address")}
                     </label>
                     <Input
                       value={form.addrShort}
@@ -1150,7 +1189,7 @@ export default function OrgSettingsPage() {
                   className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors"
                 >
                   <RefreshCw className="h-3.5 w-3.5" />
-                  {lang === "ar" ? "إعادة تشغيل معالج الإعداد" : "Re-run Setup Wizard"}
+                  {t("إعادة تشغيل معالج الإعداد", "Re-run Setup Wizard")}
                 </Link>
                 <Button
                   className="gap-2"
@@ -1160,12 +1199,8 @@ export default function OrgSettingsPage() {
                 >
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                   {saving
-                    ? lang === "ar"
-                      ? "جاري الحفظ..."
-                      : "Saving..."
-                    : lang === "ar"
-                      ? "حفظ التغييرات"
-                      : "Save Changes"}
+                    ? t("جاري الحفظ...", "Saving...")
+                    : t("حفظ التغييرات", "Save Changes")}
                 </Button>
               </div>
             </div>
@@ -1174,6 +1209,40 @@ export default function OrgSettingsPage() {
 
         {/* Sidebar */}
         <div className="space-y-6">
+          {/* Profile (user identity) — scroll target for /dashboard/settings#profile */}
+          <section
+            id="profile"
+            aria-label={t("الملف الشخصي", "Profile")}
+            className="scroll-mt-24 rounded-lg border border-border bg-card p-6 shadow-sm space-y-4"
+          >
+            <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+              {t("الملف الشخصي", "Profile")}
+            </h3>
+            <div className="flex items-center gap-4">
+              <span
+                aria-hidden="true"
+                className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-lg font-semibold"
+              >
+                {initialsOf(profileName)}
+              </span>
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-foreground truncate">{profileName}</p>
+                <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-medium text-primary">
+                  <ShieldCheck className="h-3 w-3" aria-hidden="true" />
+                  {profileRoleLabel}
+                </span>
+              </div>
+            </div>
+            {profileEmail && (
+              <div className="flex items-center gap-2 rounded-md bg-muted/40 px-3 py-2">
+                <Mail className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                <span className="text-xs text-foreground truncate font-latin" dir="ltr">
+                  {profileEmail}
+                </span>
+              </div>
+            )}
+          </section>
+
           {/* Verification Status */}
           <div className="bg-primary-deep p-8 rounded-lg text-white space-y-6 shadow-xl relative overflow-hidden">
             <div
@@ -1183,7 +1252,7 @@ export default function OrgSettingsPage() {
               }}
             />
             <h3 className="text-sm font-bold uppercase tracking-widest text-secondary font-latin">
-              {lang === "ar" ? "حالة التوثيق" : "Verification Status"}
+              {t("حالة التوثيق", "Verification Status")}
             </h3>
             <div className="flex items-center gap-4 p-4 bg-card/5 rounded border border-white/10">
               <div className="h-10 w-10 rounded-full bg-secondary/20 flex items-center justify-center text-secondary">
@@ -1191,16 +1260,14 @@ export default function OrgSettingsPage() {
               </div>
               <div>
                 <p className="text-xs font-bold">
-                  {lang === "ar" ? "موثق لدى ميماريك" : "Verified by Mimaric"}
+                  {t("موثق لدى ميماريك", "Verified by Mimaric")}
                 </p>
                 <p className="text-[10px] text-white/50 font-latin">Active since 2024</p>
               </div>
             </div>
             <div className="space-y-4 pt-4 border-t border-white/10">
               <p className="text-xs leading-relaxed text-white/70">
-                {lang === "ar"
-                  ? "ملفك الموثق يمنحك صلاحية الوصول إلى الربط مع منصة إيجار ونظام الفوترة الإلكترونية فاتورة."
-                  : "Your verified profile grants access to Ejar integration and ZATCA e-Invoicing."}
+                {t("ملفك الموثق يمنحك صلاحية الوصول إلى الربط مع منصة إيجار ونظام الفوترة الإلكترونية فاتورة.", "Your verified profile grants access to Ejar integration and ZATCA e-Invoicing.")}
               </p>
             </div>
           </div>
@@ -1208,7 +1275,7 @@ export default function OrgSettingsPage() {
           {/* Settings Navigation */}
           <div className="rounded-lg border border-border bg-card p-6 shadow-sm space-y-3">
             <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-              {lang === "ar" ? "الإعدادات" : "Settings"}
+              {t("الإعدادات", "Settings")}
             </h3>
             <Link
               href="/dashboard/settings/team"
@@ -1219,10 +1286,10 @@ export default function OrgSettingsPage() {
               </div>
               <div>
                 <p className="text-sm font-bold text-foreground">
-                  {lang === "ar" ? "فريق العمل" : "Team"}
+                  {t("فريق العمل", "Team")}
                 </p>
                 <p className="text-[10px] text-muted-foreground">
-                  {lang === "ar" ? "إدارة الأعضاء والأدوار" : "Manage members & roles"}
+                  {t("إدارة الأعضاء والأدوار", "Manage members & roles")}
                 </p>
               </div>
             </Link>
@@ -1236,10 +1303,10 @@ export default function OrgSettingsPage() {
                 </div>
                 <div>
                   <p className="text-sm font-bold text-foreground">
-                    {lang === "ar" ? "سجل المراجعة" : "Audit Trail"}
+                    {t("سجل المراجعة", "Audit Trail")}
                   </p>
                   <p className="text-[10px] text-muted-foreground">
-                    {lang === "ar" ? "تتبع الوصول والتعديلات" : "Track access & changes"}
+                    {t("تتبع الوصول والتعديلات", "Track access & changes")}
                   </p>
                 </div>
               </Link>
@@ -1253,10 +1320,10 @@ export default function OrgSettingsPage() {
               </div>
               <div>
                 <p className="text-sm font-bold text-foreground">
-                  {lang === "ar" ? "الأمان" : "Security"}
+                  {t("الأمان", "Security")}
                 </p>
                 <p className="text-[10px] text-muted-foreground">
-                  {lang === "ar" ? "تغيير كلمة المرور" : "Change password"}
+                  {t("تغيير كلمة المرور", "Change password")}
                 </p>
               </div>
             </Link>
@@ -1267,19 +1334,18 @@ export default function OrgSettingsPage() {
             <div className="flex items-center gap-2">
               <Home className="h-[18px] w-[18px] text-primary" />
               <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                {lang === "ar" ? "الصفحة الرئيسية" : "Landing Page"}
+                {t("الصفحة الرئيسية", "Landing Page")}
               </h3>
             </div>
             <p className="text-[10px] text-muted-foreground">
-              {lang === "ar"
-                ? "اختر الصفحة التي تفتح بعد تسجيل الدخول."
-                : "Choose which page opens after login."}
+              {t("اختر الصفحة التي تفتح بعد تسجيل الدخول.", "Choose which page opens after login.")}
             </p>
             <label htmlFor="settings-landing-page" className="sr-only">
-              {lang === "ar" ? "الصفحة الرئيسية" : "Landing page"}
+              {t("الصفحة الرئيسية", "Landing page")}
             </label>
-            <select
+            <SelectField
               id="settings-landing-page"
+              aria-label={t("الصفحة الرئيسية", "Landing page")}
               value={landingPage}
               onChange={async (e) => {
                 const value = e.target.value;
@@ -1293,39 +1359,38 @@ export default function OrgSettingsPage() {
                   setSavingLanding(false);
                 }
               }}
-              className={selectClass}
             >
               <option value="/dashboard">
-                {lang === "ar" ? "نظرة عامة" : "Overview"}
+                {t("نظرة عامة", "Overview")}
               </option>
               <option value="/dashboard/units">
-                {lang === "ar" ? "الوحدات" : "Units"}
+                {t("الوحدات", "Units")}
               </option>
               <option value="/dashboard/crm">
-                {lang === "ar" ? "العملاء" : "Customers"}
+                {t("العملاء", "Customers")}
               </option>
               <option value="/dashboard/contracts">
-                {lang === "ar" ? "المبيعات" : "Sales"}
+                {t("المبيعات", "Sales")}
               </option>
               <option value="/dashboard/leases">
-                {lang === "ar" ? "الإيجارات" : "Leases"}
+                {t("الإيجارات", "Leases")}
               </option>
               <option value="/dashboard/finance">
-                {lang === "ar" ? "المالية" : "Finance"}
+                {t("المالية", "Finance")}
               </option>
               <option value="/dashboard/maintenance">
-                {lang === "ar" ? "الصيانة" : "Maintenance"}
+                {t("الصيانة", "Maintenance")}
               </option>
               <option value="/dashboard/reports">
-                {lang === "ar" ? "التقارير" : "Reports"}
+                {t("التقارير", "Reports")}
               </option>
               <option value="/dashboard/settings">
-                {lang === "ar" ? "الإعدادات" : "Settings"}
+                {t("الإعدادات", "Settings")}
               </option>
-            </select>
+            </SelectField>
             {savingLanding && (
               <p className="text-[10px] text-secondary">
-                {lang === "ar" ? "جاري الحفظ..." : "Saving..."}
+                {t("جاري الحفظ...", "Saving...")}
               </p>
             )}
           </div>
@@ -1333,12 +1398,10 @@ export default function OrgSettingsPage() {
           {/* Cache Clear */}
           <div className="rounded-lg border border-border bg-card p-6 shadow-sm space-y-3">
             <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-              {lang === "ar" ? "الذاكرة المؤقتة" : "Cache"}
+              {t("الذاكرة المؤقتة", "Cache")}
             </h3>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              {lang === "ar"
-                ? "امسح الذاكرة المؤقتة لإعادة تحميل البيانات من الخادم."
-                : "Clear server cache to force fresh data across all pages."}
+              {t("امسح الذاكرة المؤقتة لإعادة تحميل البيانات من الخادم.", "Clear server cache to force fresh data across all pages.")}
             </p>
             <Button
               variant="outline"
@@ -1361,7 +1424,7 @@ export default function OrgSettingsPage() {
               ) : (
                 <Trash2 className="h-4 w-4" />
               )}
-              {lang === "ar" ? "مسح الذاكرة المؤقتة" : "Clear Cache"}
+              {t("مسح الذاكرة المؤقتة", "Clear Cache")}
             </Button>
           </div>
 
@@ -1369,12 +1432,12 @@ export default function OrgSettingsPage() {
           {org && (
             <div className="rounded-lg border border-border bg-card p-6 shadow-sm space-y-4">
               <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                {lang === "ar" ? "معلومات سريعة" : "Quick Info"}
+                {t("معلومات سريعة", "Quick Info")}
               </h3>
               {form.crNumber && (
                 <div className="flex justify-between text-xs">
                   <span className="text-muted-foreground">
-                    {lang === "ar" ? "سجل تجاري" : "CR"}
+                    {t("سجل تجاري", "CR")}
                   </span>
                   <span className="font-bold text-foreground font-dm-sans">
                     {form.crNumber}
@@ -1384,7 +1447,7 @@ export default function OrgSettingsPage() {
               {form.vatNumber && (
                 <div className="flex justify-between text-xs">
                   <span className="text-muted-foreground">
-                    {lang === "ar" ? "رقم ضريبي" : "VAT"}
+                    {t("رقم ضريبي", "VAT")}
                   </span>
                   <span className="font-bold text-foreground font-dm-sans">
                     {form.vatNumber}
@@ -1394,7 +1457,7 @@ export default function OrgSettingsPage() {
               {form.entityType && (
                 <div className="flex justify-between text-xs">
                   <span className="text-muted-foreground">
-                    {lang === "ar" ? "نوع المنشأة" : "Entity"}
+                    {t("نوع المنشأة", "Entity")}
                   </span>
                   <span className="font-bold text-foreground">
                     {form.entityType.replace(/_/g, " ")}
@@ -1404,13 +1467,11 @@ export default function OrgSettingsPage() {
               {form.registrationStatus && (
                 <div className="flex justify-between text-xs">
                   <span className="text-muted-foreground">
-                    {lang === "ar" ? "حالة السجل" : "Status"}
+                    {t("حالة السجل", "Status")}
                   </span>
                   <span className="font-bold text-secondary">
                     {form.registrationStatus === "ACTIVE_REG"
-                      ? lang === "ar"
-                        ? "نشط"
-                        : "Active"
+                      ? t("نشط", "Active")
                       : form.registrationStatus.replace(/_/g, " ")}
                   </span>
                 </div>

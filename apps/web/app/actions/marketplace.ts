@@ -4,6 +4,7 @@ import { db } from "@repo/db";
 import { revalidatePath } from "next/cache";
 import { requirePermission } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
+import { ROUTES } from "../../lib/routes";
 import { serialize } from "../../lib/serialize";
 import {
   listPublishedListingsForBuyer,
@@ -17,6 +18,7 @@ import { normalizeSaudiPhoneE164 } from "../../lib/phone";
 import { checkRateLimit } from "../../lib/rate-limit";
 import { isSystemRole } from "../../lib/permissions";
 import { isConveyanceEnabled } from "../../lib/marketplace/conveyance";
+import { syncDealStageForUnit } from "../../lib/server/pipeline-sync";
 import {
   isValidListingTransition,
   transitionTransfer,
@@ -185,8 +187,8 @@ export async function createMarketplaceDraft(unitId: string) {
     resourceId: result.id,
     organizationId: session.organizationId,
   });
-  revalidatePath("/dashboard/marketplace/my-listings");
-  revalidatePath("/dashboard/units");
+  revalidatePath(ROUTES.marketplaceMyListings);
+  revalidatePath(ROUTES.units);
   return serialize(result);
 }
 
@@ -280,8 +282,8 @@ export async function publishMarketplaceListing(
     resourceId: listingId,
     organizationId: session.organizationId,
   });
-  revalidatePath("/dashboard/marketplace");
-  revalidatePath("/dashboard/marketplace/my-listings");
+  revalidatePath(ROUTES.marketplace);
+  revalidatePath(ROUTES.marketplaceMyListings);
   return serialize(updated);
 }
 
@@ -351,7 +353,7 @@ export async function updateMarketplaceListing(
     resourceId: listingId,
     organizationId: session.organizationId,
   });
-  revalidatePath("/dashboard/marketplace/my-listings");
+  revalidatePath(ROUTES.marketplaceMyListings);
   return serialize(updated);
 }
 
@@ -387,8 +389,8 @@ export async function unpublishMarketplaceListing(listingId: string, reason: str
     metadata: { reason },
     organizationId: session.organizationId,
   });
-  revalidatePath("/dashboard/marketplace/my-listings");
-  revalidatePath("/dashboard/marketplace");
+  revalidatePath(ROUTES.marketplaceMyListings);
+  revalidatePath(ROUTES.marketplace);
   return serialize(updated);
 }
 
@@ -575,7 +577,7 @@ export async function confirmMarketplaceInterest(
     resourceId: result.inquiry.id,
     organizationId: session.organizationId,
   });
-  revalidatePath("/dashboard/marketplace");
+  revalidatePath(ROUTES.marketplace);
   return serialize(result.inquiry);
 }
 
@@ -619,7 +621,7 @@ export async function withdrawMarketplaceInquiry(inquiryId: string) {
     resourceId: inquiryId,
     organizationId: session.organizationId,
   });
-  revalidatePath("/dashboard/marketplace");
+  revalidatePath(ROUTES.marketplace);
   return serialize(updated);
 }
 
@@ -634,6 +636,33 @@ export async function convertMarketplaceInquiryToDeal(inquiryId: string) {
       include: { listing: true },
     });
     if (!inquiry) throw new Error("Inquiry not found for your organization.");
+
+    // ── I5: explicit idempotency guard ───────────────────────────────────────
+    // If this inquiry has already been converted (terminal state for this op),
+    // a double-submit/retry must be a provable no-op — return the existing
+    // reservation + transfer instead of re-running the claim+create path (which
+    // would otherwise either throw a misleading "Unit no longer available" or, if
+    // a CAS slipped, materialize a second deal). This makes the convert step
+    // idempotent at the inquiry level, complementing the per-step CAS guards.
+    if (inquiry.status === "CONVERTED_TO_DEAL") {
+      const existingTransfer = await tx.unitTransferTransaction.findFirst({
+        where: { inquiryId: inquiry.id },
+        orderBy: { createdAt: "desc" },
+      });
+      const existingReservation = existingTransfer?.reservationId
+        ? await tx.reservation.findUnique({ where: { id: existingTransfer.reservationId } })
+        : null;
+      return {
+        reservation: existingReservation,
+        transfer: existingTransfer,
+        inquiry,
+        buyerOrgId: inquiry.buyerOrgId,
+        listingNumber: inquiry.listing.listingNumber,
+        alreadyConverted: true as const,
+        customerId: inquiry.sellerCrmCustomerId,
+        unitId: inquiry.listing.unitId,
+      };
+    }
     if (inquiry.status !== "OPEN") {
       throw new Error("Only open inquiries can be converted to a deal.");
     }
@@ -667,6 +696,11 @@ export async function convertMarketplaceInquiryToDeal(inquiryId: string) {
     // Cross-org-aware reservation (seller org owns it; buyer org tracked).
     const reservation = await tx.reservation.create({
       data: {
+        // Tenant owner of the reservation is the SELLER org (it owns the unit).
+        // The session user is the seller-org staff converting the inquiry, so
+        // session.organizationId === inquiry.sellerOrgId here; use sellerOrgId
+        // explicitly so the owning org is unambiguous and matches sellerOrgId below.
+        organizationId: inquiry.sellerOrgId,
         customerId: inquiry.sellerCrmCustomerId,
         unitId: unit.id,
         userId: session.userId,
@@ -679,10 +713,16 @@ export async function convertMarketplaceInquiryToDeal(inquiryId: string) {
       },
     });
 
-    await tx.customer.update({
-      where: { id: inquiry.sellerCrmCustomerId },
-      data: { status: "RESERVED" },
-    });
+    // I4: do NOT write Customer.status directly here. Pipeline state is owned by
+    // the Deal entity (R3 — Customer.status is a derived cache). The direct
+    // write bypassed the Deal-sync state machine, so any concurrent Deal-sync
+    // (which recomputes Customer.status from Deal rows, where this path created
+    // NO deal) would silently clobber the "RESERVED" status. Instead we advance
+    // the deal to RESERVED via syncDealStageForUnit AFTER the tx commits (that
+    // helper uses the global `db` client and must not run inside a tx — same
+    // pattern as reservations.ts / contracts.ts), and the customer status is
+    // derived from it. A concurrent Deal-sync then recomputes the SAME RESERVED
+    // value rather than overwriting an orphaned direct write.
     await tx.marketplaceListing.update({
       where: { id: inquiry.listingId },
       data: { status: "UNDER_CONTRACT" },
@@ -701,8 +741,38 @@ export async function convertMarketplaceInquiryToDeal(inquiryId: string) {
         status: "PENDING_SETTLEMENT",
       },
     });
-    return { reservation, transfer, inquiry: updatedInquiry, buyerOrgId: inquiry.buyerOrgId, listingNumber: inquiry.listing.listingNumber };
+    return {
+      reservation,
+      transfer,
+      inquiry: updatedInquiry,
+      buyerOrgId: inquiry.buyerOrgId,
+      listingNumber: inquiry.listing.listingNumber,
+      alreadyConverted: false as const,
+      // Carried out of the tx so the post-tx Deal-sync (R3) can advance the
+      // pipeline deal to RESERVED and let Customer.status derive from it.
+      customerId: inquiry.sellerCrmCustomerId,
+      unitId: unit.id,
+    };
   });
+
+  // ── I5: idempotent short-circuit ──────────────────────────────────────────
+  // A retry/double-submit landed on an already-converted inquiry; the tx did no
+  // writes. Skip the side effects (pipeline-sync / notify / audit / revalidate)
+  // and return the existing reservation+transfer so the call is a provable no-op.
+  if (result.alreadyConverted) {
+    return serialize(result);
+  }
+
+  // ── I4: route the pipeline status change through the Deal entity (R3). ─────
+  // Advance (or materialize) the customer's deal for this unit to RESERVED;
+  // Customer.status is then derived from it. Runs AFTER the tx commits because
+  // syncDealStageForUnit uses the global `db` client (running it inside the tx
+  // would create nested-transaction issues — the same constraint honored by
+  // reservations.ts:78 and contracts.ts:422). A sync failure must not undo the
+  // committed conversion, so it stays out of the tx like every other sync site.
+  if (result.customerId) {
+    await syncDealStageForUnit(result.customerId, result.unitId, "RESERVED");
+  }
 
   await notifyOrgAdmins(
     result.buyerOrgId,
@@ -723,8 +793,8 @@ export async function convertMarketplaceInquiryToDeal(inquiryId: string) {
     resourceId: inquiryId,
     organizationId: session.organizationId,
   });
-  revalidatePath("/dashboard/marketplace/my-listings");
-  revalidatePath("/dashboard/reservations");
+  revalidatePath(ROUTES.marketplaceMyListings);
+  revalidatePath(ROUTES.reservations);
   return serialize(result);
 }
 
@@ -963,8 +1033,8 @@ export async function settleMarketplaceTransfer(transferId: string) {
       `/dashboard/marketplace/my-listings`,
     );
 
-    revalidatePath("/dashboard/marketplace/my-listings");
-    revalidatePath("/dashboard/units");
+    revalidatePath(ROUTES.marketplaceMyListings);
+    revalidatePath(ROUTES.units);
     return serialize({ status: "COMPLETED", ...outcome });
   } catch (err) {
     const reason = err instanceof Error ? err.message : "Unknown transfer failure";
@@ -1051,8 +1121,8 @@ export async function moderateSuspendListing(listingId: string, reason: string) 
     metadata: { reason },
     organizationId: listing.sellerOrgId,
   });
-  revalidatePath("/dashboard/admin/marketplace");
-  revalidatePath("/dashboard/marketplace");
+  revalidatePath(ROUTES.adminMarketplace);
+  revalidatePath(ROUTES.marketplace);
   return serialize(updated);
 }
 
@@ -1107,9 +1177,9 @@ export async function moderateApproveListing(listingId: string) {
     `/dashboard/marketplace/my-listings`,
   );
 
-  revalidatePath("/dashboard/admin/marketplace");
-  revalidatePath("/dashboard/marketplace");
-  revalidatePath("/dashboard/marketplace/my-listings");
+  revalidatePath(ROUTES.adminMarketplace);
+  revalidatePath(ROUTES.marketplace);
+  revalidatePath(ROUTES.marketplaceMyListings);
   return serialize(updated);
 }
 
@@ -1162,8 +1232,8 @@ export async function moderateRejectListing(listingId: string, reason: string) {
     `/dashboard/marketplace/my-listings`,
   );
 
-  revalidatePath("/dashboard/admin/marketplace");
-  revalidatePath("/dashboard/marketplace/my-listings");
+  revalidatePath(ROUTES.adminMarketplace);
+  revalidatePath(ROUTES.marketplaceMyListings);
   return serialize(updated);
 }
 
@@ -1210,7 +1280,7 @@ export async function submitOrgRegaAuthorization(payload: OrgRegaSubmitPayload) 
     metadata: { isSeller: result.isSeller, isBuyer: result.isBuyer },
     organizationId: session.organizationId,
   });
-  revalidatePath("/dashboard/marketplace/my-listings");
+  revalidatePath(ROUTES.marketplaceMyListings);
   return serialize(result);
 }
 
@@ -1253,7 +1323,7 @@ export async function verifyOrgRegaAuthorization(
     return updated;
   });
 
-  revalidatePath("/dashboard/admin/marketplace");
+  revalidatePath(ROUTES.adminMarketplace);
   return serialize(result);
 }
 
@@ -1345,7 +1415,7 @@ export async function submitDeedTransferProof(
     metadata: { transferId, hasDeedDoc: !!result.deedDocUrl, hasRettCert: !!result.rettCertRef },
     organizationId: session.organizationId,
   });
-  revalidatePath("/dashboard/marketplace/my-listings");
+  revalidatePath(ROUTES.marketplaceMyListings);
   return serialize(result);
 }
 
@@ -1395,8 +1465,8 @@ export async function verifyDeedTransferProof(
     return updated;
   });
 
-  revalidatePath("/dashboard/admin/marketplace");
-  revalidatePath("/dashboard/marketplace/my-listings");
+  revalidatePath(ROUTES.adminMarketplace);
+  revalidatePath(ROUTES.marketplaceMyListings);
   return serialize(result);
 }
 
@@ -1529,7 +1599,7 @@ export async function setMarketplaceConveyanceEnabled(payload: {
     metadata: { enabled: payload.enabled, note: payload.note?.trim() || null },
     organizationId: null,
   });
-  revalidatePath("/dashboard/admin/marketplace");
+  revalidatePath(ROUTES.adminMarketplace);
   return serialize(result);
 }
 

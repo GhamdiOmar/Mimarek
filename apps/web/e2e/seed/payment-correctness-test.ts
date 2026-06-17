@@ -27,6 +27,7 @@
 import { PrismaClient, Prisma } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
+import { effectivePaid } from "../../lib/money";
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) throw new Error("DATABASE_URL is required");
@@ -61,13 +62,6 @@ function assertEq(actual: number, expected: number, label: string, epsilon = 0.0
   }
 }
 
-/** effectivePaid canonical formula (mirror of spec §4) */
-function effectivePaid(r: { status: string; amount: any; paidAmount: any }): number {
-  return r.status === "PAID"
-    ? Number(r.paidAmount ?? r.amount)
-    : Number(r.paidAmount ?? 0);
-}
-
 /** Create a minimal org → customer → unit → lease → installment chain, return installmentId */
 async function createInstallment(
   orgId: string,
@@ -93,6 +87,7 @@ async function createInstallment(
   });
   const lease = await prisma.lease.create({
     data: {
+      organizationId: orgId,
       unitId: unit.id,
       customerId: customer.id,
       startDate: new Date("2026-01-01"),
@@ -113,7 +108,12 @@ async function createInstallment(
   return { installmentId: installment.id, leaseId: lease.id };
 }
 
-/** Inline recordPayment logic — mirrors the server action exactly */
+/**
+ * Inline recordPayment logic — mirrors the ledger server-action path (I2):
+ * idempotency on the immutable RentPayment row keyed by (installmentId,
+ * idempotencyKey=paymentReference), append the ledger row, recompute the cache
+ * from SUM(RentPayment.amount), and persist paidAmount/status onto the installment.
+ */
 async function doRecordPayment(
   installmentId: string,
   payAmount: number,
@@ -122,6 +122,7 @@ async function doRecordPayment(
 ): Promise<{ row: any; replayed: boolean }> {
   type LockedRow = {
     id: string;
+    leaseId: string;
     amount: string;
     paidAmount: string | null;
     status: string;
@@ -129,18 +130,21 @@ async function doRecordPayment(
   };
 
   return prisma.$transaction(async (tx) => {
-    // Idempotency short-circuit
-    const prior = await tx.rentInstallment.findFirst({
-      where: { id: installmentId, paymentReference },
-      include: { lease: { include: { customer: true } } },
+    // Idempotency short-circuit — now on the RentPayment ledger row.
+    const priorPayment = await tx.rentPayment.findUnique({
+      where: {
+        installmentId_idempotencyKey: { installmentId, idempotencyKey: paymentReference },
+      },
+      include: { installment: true },
     });
-    if (prior) {
-      return { row: prior, replayed: true };
+    if (priorPayment) {
+      return { row: priorPayment.installment, replayed: true };
     }
 
-    // Lock
+    // Lock the installment row (now also selects leaseId for the ledger insert).
     const locked = await tx.$queryRaw<LockedRow[]>`
       SELECT ri.id,
+             ri."leaseId" AS "leaseId",
              ri.amount::text AS amount,
              ri."paidAmount"::text AS "paidAmount",
              ri.status::text AS status,
@@ -157,12 +161,30 @@ async function doRecordPayment(
 
     const installmentAmount = Number(row.amount);
     const priorPaid = Number(row.paidAmount ?? 0);
-    const newPaidAmount = priorPaid + payAmount;
+    const projected = priorPaid + payAmount;
 
-    if (newPaidAmount > installmentAmount + 0.005) {
+    if (projected > installmentAmount + 0.005) {
       throw new Error("OVERPAY");
     }
 
+    // Append the immutable ledger row.
+    await tx.rentPayment.create({
+      data: {
+        installmentId,
+        leaseId: row.leaseId,
+        amount: payAmount,
+        txType: "PAYMENT",
+        idempotencyKey: paymentReference,
+        channel: "BANK_TRANSFER",
+      },
+    });
+
+    // Recompute the cache from the ledger SUM.
+    const agg = await tx.rentPayment.aggregate({
+      where: { installmentId },
+      _sum: { amount: true },
+    });
+    const newPaidAmount = Number(agg._sum.amount ?? 0);
     const newStatus =
       newPaidAmount >= installmentAmount - 0.005 ? "PAID" : "PARTIALLY_PAID";
 
@@ -306,7 +328,7 @@ async function main() {
       data: { number: `ODU-${Math.random().toString(36).slice(2, 7)}`, organizationId: org.id, type: "APARTMENT", status: "RENTED", city: "Riyadh" },
     });
     const lease = await prisma.lease.create({
-      data: { unitId: unit.id, customerId: customer.id, startDate: new Date("2024-01-01"), endDate: new Date("2024-12-31"), totalAmount: 2000, status: "ACTIVE" },
+      data: { organizationId: org.id, unitId: unit.id, customerId: customer.id, startDate: new Date("2024-01-01"), endDate: new Date("2024-12-31"), totalAmount: 2000, status: "ACTIVE" },
     });
     const unpaidInst = await prisma.rentInstallment.create({
       data: { leaseId: lease.id, dueDate: pastDue, amount: 1000, status: "UNPAID" },
@@ -347,7 +369,7 @@ async function main() {
       data: { number: `MU-${Math.random().toString(36).slice(2, 7)}`, organizationId: org.id, type: "APARTMENT", status: "RENTED", city: "Riyadh" },
     });
     const lease = await prisma.lease.create({
-      data: { unitId: unit.id, customerId: customer.id, startDate: new Date("2026-01-01"), endDate: new Date("2026-12-31"), totalAmount: 3000, status: "ACTIVE" },
+      data: { organizationId: org.id, unitId: unit.id, customerId: customer.id, startDate: new Date("2026-01-01"), endDate: new Date("2026-12-31"), totalAmount: 3000, status: "ACTIVE" },
     });
 
     // Row A: PAID with paidAmount=null (legacy — was fully paid before paidAmount column)

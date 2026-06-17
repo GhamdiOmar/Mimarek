@@ -24,7 +24,7 @@ async function gateLoginRateLimit(
 ): Promise<{ blocked: boolean; retryAfterSeconds: number }> {
   const results = await Promise.all(
     LOGIN_TIERS.map((tier, i) =>
-      peekRateLimit(`login:t${i + 1}:${email}`, tier.limit),
+      peekRateLimit(`login:t${i + 1}:${email}`, tier.limit, { failClosed: true }),
     ),
   );
 
@@ -53,7 +53,7 @@ async function gateLoginRateLimit(
 async function recordLoginFailure(email: string): Promise<void> {
   await Promise.all(
     LOGIN_TIERS.map((tier, i) =>
-      checkRateLimit(`login:t${i + 1}:${email}`, tier.limit, tier.windowMs),
+      checkRateLimit(`login:t${i + 1}:${email}`, tier.limit, tier.windowMs, { failClosed: true }),
     ),
   );
 }
@@ -93,6 +93,7 @@ const result = NextAuth({
               role: true, organizationId: true,
               onboardingCompleted: true, accountType: true,
               emailVerified: true,
+              organization: { select: { appStatus: true } },
             },
           });
 
@@ -120,6 +121,14 @@ const result = NextAuth({
             throw new Error("EMAIL_NOT_VERIFIED");
           }
 
+          // E1: block login for orgs that expired before email verification.
+          // PENDING_VERIFICATION is already covered by the emailVerified gate
+          // above (a pending org's registering admin has emailVerified=null →
+          // EMAIL_NOT_VERIFIED). Only EXPIRED needs an explicit branch.
+          if (user.organization?.appStatus === "EXPIRED") {
+            throw new Error("ORG_EXPIRED");
+          }
+
           // Success — counters expire naturally; no active clear needed.
 
           // Log successful login
@@ -145,6 +154,7 @@ const result = NextAuth({
           if (
             error.message === "INVALID_CREDENTIALS" ||
             error.message === "EMAIL_NOT_VERIFIED" ||
+            error.message === "ORG_EXPIRED" ||
             error.message.startsWith("RATE_LIMITED")
           ) {
             throw error;

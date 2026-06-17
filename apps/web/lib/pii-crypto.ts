@@ -1,4 +1,5 @@
-import { encrypt, decrypt, hashForSearch } from "./encryption";
+import { encrypt, decrypt, hashForSearch, classifyCiphertext } from "./encryption";
+import { logSecurityEvent } from "./security-log";
 import { normalizeSaudiPhoneE164 } from "./phone";
 
 /**
@@ -11,8 +12,18 @@ import { normalizeSaudiPhoneE164 } from "./phone";
  * security event (no secrets), and return an empty string so the affected row
  * degrades to "unavailable" while the rest of the page renders. We do NOT return
  * the ciphertext — that would re-introduce the fail-open behaviour QA-SEC-06 fixed.
+ *
+ * A2 plaintext-passthrough telemetry: a truthy value that classifies as "plaintext"
+ * is PII that was never encrypted (pre-migration row, or a write that bypassed the
+ * canonical encrypt path). decrypt() would return it verbatim. We surface the real
+ * value so the row still renders, but flag it via logSecurityEvent so log alerting
+ * can catch the leak. This becomes impossible once the A1 DB CHECK constraint is live.
  */
 export function safeDecryptField(value: string, field: string): string {
+  if (value && classifyCiphertext(value) === "plaintext") {
+    logSecurityEvent("PII_PLAINTEXT_DETECTED", field);
+    return value;
+  }
   try {
     return decrypt(value);
   } catch {

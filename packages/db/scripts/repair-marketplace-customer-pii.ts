@@ -78,9 +78,12 @@ function hashForSearch(value: string): string {
   return "v1:" + createHmac("sha256", getPepper()).update(value.trim().toLowerCase()).digest("hex");
 }
 
+// NOTE: superseded by packages/db/scripts/envelope-backfill-pii.ts (A1 v1: envelope). Kept v1:-aware for safety.
+// v1:-aware: treats BOTH a 3-part bare value AND a 4-part v1:-prefixed value as already-encrypted,
+// so a re-run after the envelope backfill cannot double-encrypt versioned ciphertext.
 function isAlreadyEncrypted(value: string): boolean {
   if (!value || !value.includes(":")) return false;
-  return value.split(":").length === 3;
+  return value.startsWith("v1:") || value.split(":").length === 3;
 }
 
 // ─── Phone normalization (inlined from apps/web/lib/phone.ts) ─────────────────

@@ -9,6 +9,8 @@ import { encryptCustomerData, decryptCustomerData, decryptCustomerList, phoneSea
 import { maskCustomerPii } from "../../lib/pii-masking";
 import { hashForSearch } from "../../lib/encryption";
 import { normalizeSaudiPhoneE164 } from "../../lib/phone";
+import { ROUTES } from "../../lib/routes";
+import { serialize } from "../../lib/serialize";
 
 const UpdateCustomerStatusSchema = z.object({
   status: z.string().min(1),
@@ -86,8 +88,8 @@ export async function updateCustomerStatus(customerId: string, status: any, lost
     });
 
     logAuditEvent({ userId: session.userId, userEmail: session.email, userRole: session.role, action: "UPDATE", resource: "Customer", resourceId: customerId, metadata: { field: "status", newStatus: validatedStatus }, organizationId: session.organizationId });
-    revalidatePath("/dashboard/crm");
-    return JSON.parse(JSON.stringify({ ...existing, status: validatedStatus, lostReason: resolvedLostReason }));
+    revalidatePath(ROUTES.crm);
+    return serialize({ ...existing, status: validatedStatus, lostReason: resolvedLostReason });
   }
 
   // Only stamp stageEnteredAt when the status genuinely changes.
@@ -103,8 +105,8 @@ export async function updateCustomerStatus(customerId: string, status: any, lost
 
   logAuditEvent({ userId: session.userId, userEmail: session.email, userRole: session.role, action: "UPDATE", resource: "Customer", resourceId: customerId, metadata: { field: "status", newStatus: validatedStatus }, organizationId: session.organizationId });
 
-  revalidatePath("/dashboard/crm");
-  return JSON.parse(JSON.stringify(customer));
+  revalidatePath(ROUTES.crm);
+  return serialize(customer);
 }
 
 export async function createCustomer(data: {
@@ -173,8 +175,8 @@ export async function createCustomer(data: {
 
   logAuditEvent({ userId: session.userId, userEmail: session.email, userRole: session.role, action: "CREATE", resource: "Customer", resourceId: customer.id, organizationId: session.organizationId });
 
-  revalidatePath("/dashboard/crm");
-  return JSON.parse(JSON.stringify(customer));
+  revalidatePath(ROUTES.crm);
+  return serialize(customer);
 }
 
 export async function getCustomer(customerId: string) {
@@ -203,7 +205,7 @@ export async function getCustomer(customerId: string) {
 
   logAuditEvent({ userId: session.userId, userEmail: session.email, userRole: session.role, action: hasPiiAccess ? "READ_PII" : "READ", resource: "Customer", resourceId: customerId, organizationId: session.organizationId });
 
-  return JSON.parse(JSON.stringify({ ...masked, contactPhoneE164 }));
+  return serialize({ ...masked, contactPhoneE164 });
 }
 
 export async function updateCustomer(
@@ -261,8 +263,8 @@ export async function updateCustomer(
 
   logAuditEvent({ userId: session.userId, userEmail: session.email, userRole: session.role, action: "UPDATE", resource: "Customer", resourceId: customerId, metadata: { fields: Object.keys(data) }, organizationId: session.organizationId });
 
-  revalidatePath("/dashboard/crm");
-  return JSON.parse(JSON.stringify(customer));
+  revalidatePath(ROUTES.crm);
+  return serialize(customer);
 }
 
 export async function getCustomers(filters?: {
@@ -320,7 +322,7 @@ export async function getCustomers(filters?: {
 
   logAuditEvent({ userId: session.userId, userEmail: session.email, userRole: session.role, action: hasPiiAccess ? "READ_PII" : "READ", resource: "Customer", metadata: { filters, count: results.length }, organizationId: session.organizationId });
 
-  return JSON.parse(JSON.stringify(maskedList));
+  return serialize(maskedList);
 }
 
 export async function deleteCustomer(customerId: string) {
@@ -332,7 +334,7 @@ export async function deleteCustomer(customerId: string) {
 
   logAuditEvent({ userId: session.userId, userEmail: session.email, userRole: session.role, action: "DELETE", resource: "Customer", resourceId: customerId, organizationId: session.organizationId });
 
-  revalidatePath("/dashboard/crm");
+  revalidatePath(ROUTES.crm);
 }
 
 export async function getCustomerUnitAssignments(customerId: string) {
@@ -365,7 +367,7 @@ export async function getCustomerUnitAssignments(customerId: string) {
     ...customer.leases.map(l => ({ unitId: l.unit.id, unitNumber: l.unit.number, building: l.unit.buildingName ?? l.unit.city ?? "—", type: "lease" as const, status: l.status })),
   ];
 
-  return JSON.parse(JSON.stringify(units));
+  return serialize(units);
 }
 
 export async function addCustomerActivity(
@@ -391,8 +393,8 @@ export async function addCustomerActivity(
     },
   });
 
-  revalidatePath("/dashboard/crm");
-  return JSON.parse(JSON.stringify(activity));
+  revalidatePath(ROUTES.crm);
+  return serialize(activity);
 }
 
 export async function getCustomerActivities(customerId: string) {
@@ -411,7 +413,7 @@ export async function getCustomerActivities(customerId: string) {
     orderBy: { createdAt: "desc" },
   });
 
-  return JSON.parse(JSON.stringify(activities));
+  return serialize(activities);
 }
 
 export async function deleteCustomerActivity(activityId: string) {
@@ -427,5 +429,5 @@ export async function deleteCustomerActivity(activityId: string) {
   }
 
   await db.customerActivity.delete({ where: { id: activityId } });
-  revalidatePath("/dashboard/crm");
+  revalidatePath(ROUTES.crm);
 }

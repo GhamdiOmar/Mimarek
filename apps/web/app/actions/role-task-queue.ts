@@ -2,6 +2,7 @@
 
 import { db } from "@repo/db";
 import { requirePermission } from "../../lib/auth-helpers";
+import { serialize } from "../../lib/serialize";
 import { getLeasingStats } from "./dashboard-leasing";
 import { getFinanceStats } from "./dashboard-finance";
 import { getMaintenanceStats } from "./dashboard-maintenance";
@@ -32,7 +33,8 @@ import type { RoleTaskQueueItem } from "@repo/types";
  *    curated union of highest-severity items from the three roles above.
  *
  * Zero-count items are excluded (no noise). Decimal fields are serialized
- * via JSON.parse(JSON.stringify()) to strip Prisma Decimal objects.
+ * via the shared `serialize()` seam (lib/serialize.ts) to strip Prisma
+ * Decimal objects.
  */
 export type RoleTaskQueueResult = {
   leasing: RoleTaskQueueItem[];
@@ -186,7 +188,5 @@ export async function getRoleTaskQueue(): Promise<RoleTaskQueueResult> {
   }
 
   // Serialize to strip any Prisma Decimal objects that may have leaked through
-  return JSON.parse(
-    JSON.stringify({ leasing: leasingItems, finance: financeItems, maintenance: maintenanceItems, owner: ownerItems }),
-  );
+  return serialize({ leasing: leasingItems, finance: financeItems, maintenance: maintenanceItems, owner: ownerItems });
 }

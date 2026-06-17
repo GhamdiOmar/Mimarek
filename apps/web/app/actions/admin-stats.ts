@@ -2,6 +2,7 @@
 
 import { db } from "@repo/db";
 import { requirePermission } from "../../lib/auth-helpers";
+import { serialize } from "../../lib/serialize";
 
 export async function adminGetPlatformStats() {
   await requirePermission("billing:admin");
@@ -87,7 +88,7 @@ export async function adminGetAllTickets(filters?: {
   ]);
 
   return {
-    tickets: JSON.parse(JSON.stringify(tickets)),
+    tickets: serialize(tickets),
     total,
     page,
     pageSize,

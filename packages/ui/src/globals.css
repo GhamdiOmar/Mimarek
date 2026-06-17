@@ -3,7 +3,6 @@
 /* Content scanning — Tailwind v4 auto-detect doesn't traverse the monorepo */
 @source "./";
 @source "../../../apps/web";
-@source "../../../apps/portal";
 
 /* Tailwind v4 class-based dark mode */
 @custom-variant dark (&:where(.dark, .dark *));

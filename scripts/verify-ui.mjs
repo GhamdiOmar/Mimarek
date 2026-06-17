@@ -25,6 +25,7 @@ const SURFACES_SYSTEM = [
   { name: "admin-coupons", url: "/dashboard/admin/coupons", waitFor: "main" },
   { name: "admin-subscriptions", url: "/dashboard/admin/subscriptions", waitFor: "main" },
   { name: "admin-seo", url: "/dashboard/admin/seo", waitFor: "main" },
+  { name: "admin-data-retention", url: "/dashboard/admin/data-retention", waitFor: "main" },
   { name: "billing", url: "/dashboard/billing", waitFor: "main" },
   { name: "settings", url: "/dashboard/settings", waitFor: "main" },
   // Cross-tier block: system user hitting tenant route must 403/redirect
@@ -53,6 +54,23 @@ const SURFACES_TENANT = [
 
 const THEMES = ["light", "dark"];
 const LANGS = ["en", "ar"]; // ar flips dir=rtl via LanguageProvider
+
+// Seed a valid mimaric-consent cookie so the PDPL consent corner-card never
+// renders during the run — it is fixed bottom (z-1080) and at narrow (mobile)
+// widths overlays/intercepts the login button + other bottom-anchored controls.
+// Mirrors apps/web/e2e/consent-helper.ts (v must match CONSENT_VERSION).
+const CONSENT_VALUE = encodeURIComponent(
+  JSON.stringify({
+    v: 1,
+    ts: "2026-06-12T00:00:00.000Z",
+    method: "banner",
+    locale: "ar",
+    categories: { necessary: true, analytics: false },
+  }),
+);
+async function seedConsent(context) {
+  await context.addCookies([{ name: "mimaric-consent", value: CONSENT_VALUE, url: BASE }]);
+}
 
 async function attemptLogin(page, email, password) {
   await page.goto(`${BASE}/auth/login`, { waitUntil: "domcontentloaded" });
@@ -209,6 +227,7 @@ async function runUser({ user, email, password, surfaces }) {
         locale: "en-US",
         deviceScaleFactor: 1,
       });
+      await seedConsent(context);
       const page = await context.newPage();
       log(`== ${user} @ ${viewportName} ==`);
       await login(page, email, password);

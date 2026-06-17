@@ -2,6 +2,7 @@
 
 import { db } from "@repo/db";
 import { revalidatePath } from "next/cache";
+import { ROUTES } from "../../lib/routes";
 import { getTenantSessionOrThrow } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
 import { notifyAdmins } from "../../lib/create-notification";
@@ -138,7 +139,7 @@ export async function createJoinRequest(data: {
       organizationId: session.organizationId,
     });
 
-    revalidatePath("/dashboard");
+    revalidatePath(ROUTES.dashboard);
     return { success: true };
   } catch (error) {
     console.error("[Onboarding] Create join request failed:", error);
@@ -173,7 +174,7 @@ export async function convertPersonalOrg(crNumber: string) {
       organizationId: session.organizationId,
     });
 
-    revalidatePath("/dashboard");
+    revalidatePath(ROUTES.dashboard);
     return { success: true };
   } catch (error: any) {
     if (error.code === "P2002" && error.meta?.target?.includes("crNumber")) {
@@ -231,7 +232,7 @@ export async function updateOnboardingOrg(data: {
       organizationId: session.organizationId,
     });
 
-    revalidatePath("/dashboard");
+    revalidatePath(ROUTES.dashboard);
     return { success: true };
   } catch (error: any) {
     if (error.code === "P2002") {
@@ -292,7 +293,7 @@ export async function updateOnboardingContact(data: {
       organizationId: session.organizationId,
     });
 
-    revalidatePath("/dashboard");
+    revalidatePath(ROUTES.dashboard);
     return { success: true };
   } catch (error) {
     console.error("[Onboarding] Update contact failed:", error);
@@ -322,7 +323,7 @@ export async function completeOnboarding() {
       organizationId: session.organizationId,
     });
 
-    revalidatePath("/dashboard");
+    revalidatePath(ROUTES.dashboard);
     return { success: true };
   } catch (error) {
     console.error("[Onboarding] Complete onboarding failed:", error);

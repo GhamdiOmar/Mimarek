@@ -40,6 +40,7 @@ import {
   NextActionPanel,
   ProcessBlockerBanner,
   RelatedContextPanel,
+  SelectField,
 } from "@repo/ui";
 import {
   getMaintenanceRequest,
@@ -68,7 +69,7 @@ const VALID_TRANSITIONS: Record<string, string[]> = {
 export default function MaintenanceDetailPage() {
   const { id } = useParams();
   const router = useRouter();
-  const { lang } = useLanguage();
+  const { t, lang } = useLanguage();
   const [request, setRequest] = React.useState<any>(null);
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
@@ -142,10 +143,10 @@ export default function MaintenanceDetailPage() {
   async function handleSaveCost() {
     const errors: Record<string, string> = {};
     if (actualCost && (isNaN(parseFloat(actualCost)) || parseFloat(actualCost) < 0)) {
-      errors.actualCost = lang === "ar" ? "التكلفة يجب أن تكون رقمًا صحيحًا" : "Cost must be a valid positive number";
+      errors.actualCost = t("التكلفة يجب أن تكون رقمًا صحيحًا", "Cost must be a valid positive number");
     }
     if (laborHours && (isNaN(parseFloat(laborHours)) || parseFloat(laborHours) < 0)) {
-      errors.laborHours = lang === "ar" ? "ساعات العمل يجب أن تكون رقمًا صحيحًا" : "Hours must be a valid positive number";
+      errors.laborHours = t("ساعات العمل يجب أن تكون رقمًا صحيحًا", "Hours must be a valid positive number");
     }
     if (Object.keys(errors).length > 0) {
       setCostErrors(errors);
@@ -177,7 +178,7 @@ export default function MaintenanceDetailPage() {
   }
 
   if (!request) {
-    return <div className="text-center py-20 text-muted-foreground">{lang === "ar" ? "لم يتم العثور على الطلب" : "Request not found"}</div>;
+    return <div className="text-center py-20 text-muted-foreground">{t("لم يتم العثور على الطلب", "Request not found")}</div>;
   }
 
   const status = statusLabels[request.status] ?? { ar: request.status, en: request.status, variant: "draft" };
@@ -210,7 +211,7 @@ export default function MaintenanceDetailPage() {
       key: "created",
       icon: ClipboardList,
       tone: "info",
-      label: lang === "ar" ? "تم إنشاء الطلب" : "Ticket created",
+      label: t("تم إنشاء الطلب", "Ticket created"),
       at: fmtDT(request.createdAt),
       detail: request.title,
     });
@@ -220,7 +221,7 @@ export default function MaintenanceDetailPage() {
       key: "assigned",
       icon: UserPlus,
       tone: "primary",
-      label: lang === "ar" ? "تم التعيين" : "Assigned",
+      label: t("تم التعيين", "Assigned"),
       at: fmtDT(request.updatedAt ?? request.createdAt),
       detail: request.assignedTo.name,
     });
@@ -230,7 +231,7 @@ export default function MaintenanceDetailPage() {
       key: "scheduled",
       icon: CalendarClock,
       tone: "info",
-      label: lang === "ar" ? "مجدول" : "Scheduled",
+      label: t("مجدول", "Scheduled"),
       at: fmtDT(request.scheduledDate),
     });
   }
@@ -239,7 +240,7 @@ export default function MaintenanceDetailPage() {
       key: "in-progress",
       icon: PlayCircle,
       tone: "warning",
-      label: lang === "ar" ? "قيد التنفيذ" : "In progress",
+      label: t("قيد التنفيذ", "In progress"),
       at: fmtDT(request.updatedAt ?? request.createdAt),
     });
   }
@@ -248,7 +249,7 @@ export default function MaintenanceDetailPage() {
       key: "on-hold",
       icon: PauseCircle,
       tone: "warning",
-      label: lang === "ar" ? "معلّق" : "On hold",
+      label: t("معلّق", "On hold"),
       at: fmtDT(request.updatedAt ?? request.createdAt),
     });
   }
@@ -257,7 +258,7 @@ export default function MaintenanceDetailPage() {
       key: "completed",
       icon: CheckCircle2,
       tone: "success",
-      label: lang === "ar" ? "تم الإنجاز" : "Completed",
+      label: t("تم الإنجاز", "Completed"),
       at: fmtDT(request.completedAt),
     });
   }
@@ -266,7 +267,7 @@ export default function MaintenanceDetailPage() {
       key: "closed",
       icon: CheckCircle2,
       tone: "default",
-      label: lang === "ar" ? "مغلق" : "Closed",
+      label: t("مغلق", "Closed"),
       at: fmtDT(request.updatedAt ?? request.completedAt ?? request.createdAt),
     });
   }
@@ -276,14 +277,14 @@ export default function MaintenanceDetailPage() {
   const quickActions: any[] = [
     {
       key: "status",
-      label: lang === "ar" ? "الحالة" : "Status",
+      label: t("الحالة", "Status"),
       icon: RefreshCw,
       tone: "primary" as const,
       onClick: () => setMobileStatusSheet(true),
     },
     {
       key: "assign",
-      label: lang === "ar" ? "تعيين" : "Assign",
+      label: t("تعيين", "Assign"),
       icon: UserPlus,
       tone: "info" as const,
       onClick: () => setMobileAssignSheet(true),
@@ -292,7 +293,7 @@ export default function MaintenanceDetailPage() {
   if (assigneeEmail) {
     quickActions.push({
       key: "email",
-      label: lang === "ar" ? "بريد" : "Email",
+      label: t("بريد", "Email"),
       icon: Mail,
       tone: "default" as const,
       href: `mailto:${assigneeEmail}`,
@@ -302,7 +303,7 @@ export default function MaintenanceDetailPage() {
   const journeySection = journey && (
     <div className="bg-card rounded-md shadow-card border border-border p-5 space-y-4">
       <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-        {lang === "ar" ? "مسار طلب الصيانة" : "Maintenance request journey"}
+        {t("مسار طلب الصيانة", "Maintenance request journey")}
       </p>
 
       {journey.blockers.length > 0 && (
@@ -313,9 +314,7 @@ export default function MaintenanceDetailPage() {
         stages={journey.stages}
         lang={lang}
         ariaLabel={
-          lang === "ar"
-            ? "مراحل دورة حياة طلب الصيانة"
-            : "Maintenance request lifecycle stages"
+          t("مراحل دورة حياة طلب الصيانة", "Maintenance request lifecycle stages")
         }
       />
 
@@ -332,9 +331,7 @@ export default function MaintenanceDetailPage() {
             className="gap-2 text-xs"
             onClick={() => setRelatedOpen(true)}
           >
-            {lang === "ar"
-              ? `السجلات المرتبطة (${journey.related.length})`
-              : `Related records (${journey.related.length})`}
+            {t(`السجلات المرتبطة (${journey.related.length})`, `Related records (${journey.related.length})`)}
           </Button>
           <RelatedContextPanel
             open={relatedOpen}
@@ -365,7 +362,7 @@ export default function MaintenanceDetailPage() {
               {`#${String(request.id).slice(-6).toUpperCase()}`}
             </span>
             <span className="text-[11px] text-muted-foreground">
-              {lang === "ar" ? "طلب صيانة" : "Ticket"}
+              {t("طلب صيانة", "Ticket")}
             </span>
           </div>
         }
@@ -375,7 +372,7 @@ export default function MaintenanceDetailPage() {
         trailing={
           <IconButton
             icon={Pencil}
-            aria-label={lang === "ar" ? "تعديل" : "Edit"}
+            aria-label={t("تعديل", "Edit")}
             onClick={() => setEditingCost(true)}
             variant="ghost"
             className="h-10 w-10 rounded-full"
@@ -398,13 +395,13 @@ export default function MaintenanceDetailPage() {
             </span>
             {request.isPreventive && (
               <Badge variant="available" className="text-[10px]">
-                {lang === "ar" ? "وقائي" : "Preventive"}
+                {t("وقائي", "Preventive")}
               </Badge>
             )}
             {isOverdue && (
               <Badge variant="overdue" className="text-[10px] gap-1">
                 <AlertTriangle className="h-2.5 w-2.5" />
-                {lang === "ar" ? "متأخر" : "Overdue"}
+                {t("متأخر", "Overdue")}
               </Badge>
             )}
           </div>
@@ -416,13 +413,13 @@ export default function MaintenanceDetailPage() {
         {/* Timeline — top section */}
         <section className="space-y-2">
           <h2 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-            {lang === "ar" ? "سجل الحالة" : "Status timeline"}
+            {t("سجل الحالة", "Status timeline")}
           </h2>
           <div className="rounded-xl border border-border bg-card p-4">
             <ActivityTimeline
               events={timelineEvents}
               emptyState={
-                lang === "ar" ? "لا يوجد نشاط بعد." : "No activity yet."
+                t("لا يوجد نشاط بعد.", "No activity yet.")
               }
             />
           </div>
@@ -431,21 +428,21 @@ export default function MaintenanceDetailPage() {
         {/* Details card */}
         <section className="space-y-2">
           <h2 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-            {lang === "ar" ? "التفاصيل" : "Details"}
+            {t("التفاصيل", "Details")}
           </h2>
           <div className="bg-card rounded-xl border border-border p-4 space-y-3">
             <MobileRow
-              label={lang === "ar" ? "التصنيف" : "Category"}
+              label={t("التصنيف", "Category")}
               value={cat[lang]}
             />
             <MobileRow
-              label={lang === "ar" ? "الأولوية" : "Priority"}
+              label={t("الأولوية", "Priority")}
               value={
                 <span className={priority.color}>{priority[lang]}</span>
               }
             />
             <MobileRow
-              label={lang === "ar" ? "الوحدة" : "Unit"}
+              label={t("الوحدة", "Unit")}
               value={
                 request.unit
                   ? `${request.unit.number} — ${request.unit.building?.name ?? ""}`
@@ -453,11 +450,11 @@ export default function MaintenanceDetailPage() {
               }
             />
             <MobileRow
-              label={lang === "ar" ? "المسؤول" : "Assignee"}
+              label={t("المسؤول", "Assignee")}
               value={request.assignedTo?.name ?? "—"}
             />
             <MobileRow
-              label={lang === "ar" ? "تاريخ الإنشاء" : "Created"}
+              label={t("تاريخ الإنشاء", "Created")}
               value={
                 <span className="tabular-nums">
                   {new Date(request.createdAt).toLocaleDateString(
@@ -468,7 +465,7 @@ export default function MaintenanceDetailPage() {
             />
             {request.dueDate && (
               <MobileRow
-                label={lang === "ar" ? "الاستحقاق" : "Due"}
+                label={t("الاستحقاق", "Due")}
                 value={
                   <span
                     className={`tabular-nums ${isOverdue ? "text-destructive font-bold" : ""}`}
@@ -483,7 +480,7 @@ export default function MaintenanceDetailPage() {
             {request.description && (
               <div className="pt-3 border-t border-border">
                 <p className="text-[10px] font-bold uppercase text-muted-foreground mb-1">
-                  {lang === "ar" ? "الوصف" : "Description"}
+                  {t("الوصف", "Description")}
                 </p>
                 <p className="text-sm text-foreground whitespace-pre-wrap">
                   {request.description}
@@ -497,12 +494,12 @@ export default function MaintenanceDetailPage() {
         {(request.estimatedCost || request.actualCost || request.laborHours) && (
           <section className="space-y-2">
             <h2 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-              {lang === "ar" ? "التكاليف" : "Costs"}
+              {t("التكاليف", "Costs")}
             </h2>
             <div className="bg-card rounded-xl border border-border p-4 space-y-3">
               {request.estimatedCost && (
                 <MobileRow
-                  label={lang === "ar" ? "التكلفة التقديرية" : "Estimated"}
+                  label={t("التكلفة التقديرية", "Estimated")}
                   value={
                     <SARAmount
                       value={Number(request.estimatedCost)}
@@ -513,7 +510,7 @@ export default function MaintenanceDetailPage() {
               )}
               {request.actualCost && (
                 <MobileRow
-                  label={lang === "ar" ? "التكلفة الفعلية" : "Actual"}
+                  label={t("التكلفة الفعلية", "Actual")}
                   value={
                     <SARAmount
                       value={Number(request.actualCost)}
@@ -524,11 +521,11 @@ export default function MaintenanceDetailPage() {
               )}
               {request.laborHours && (
                 <MobileRow
-                  label={lang === "ar" ? "ساعات العمل" : "Labor hours"}
+                  label={t("ساعات العمل", "Labor hours")}
                   value={
                     <span className="tabular-nums">
                       {request.laborHours}{" "}
-                      {lang === "ar" ? "ساعة" : "hrs"}
+                      {t("ساعة", "hrs")}
                     </span>
                   }
                 />
@@ -541,7 +538,7 @@ export default function MaintenanceDetailPage() {
         {request.notes && (
           <section className="space-y-2">
             <h2 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-              {lang === "ar" ? "ملاحظات" : "Notes"}
+              {t("ملاحظات", "Notes")}
             </h2>
             <div className="bg-card rounded-xl border border-border p-4">
               <p className="text-sm text-foreground whitespace-pre-wrap">
@@ -561,21 +558,17 @@ export default function MaintenanceDetailPage() {
       <BottomSheet
         open={mobileStatusSheet}
         onOpenChange={setMobileStatusSheet}
-        title={lang === "ar" ? "تحديث الحالة" : "Update status"}
+        title={t("تحديث الحالة", "Update status")}
       >
         {validTransitions.length === 0 ? (
           <EmptyState
             compact
             icon={<CheckCircle2 className="h-10 w-10" />}
             title={
-              lang === "ar"
-                ? "لا توجد تحولات متاحة"
-                : "No transitions available"
+              t("لا توجد تحولات متاحة", "No transitions available")
             }
             description={
-              lang === "ar"
-                ? "لا يمكن تغيير حالة هذا الطلب من الوضع الحالي."
-                : "This request's status cannot be changed from here."
+              t("لا يمكن تغيير حالة هذا الطلب من الوضع الحالي.", "This request's status cannot be changed from here.")
             }
           />
         ) : (
@@ -624,7 +617,7 @@ export default function MaintenanceDetailPage() {
       <BottomSheet
         open={mobileAssignSheet}
         onOpenChange={setMobileAssignSheet}
-        title={lang === "ar" ? "تعيين المسؤول" : "Assign to"}
+        title={t("تعيين المسؤول", "Assign to")}
       >
         <div className="space-y-2">
           <Button
@@ -642,7 +635,7 @@ export default function MaintenanceDetailPage() {
               <X className="h-4 w-4" />
             </span>
             <span className="text-sm font-medium text-foreground">
-              {lang === "ar" ? "— بدون تعيين —" : "— Unassigned —"}
+              {t("— بدون تعيين —", "— Unassigned —")}
             </span>
           </Button>
           {users.map((u: any) => (
@@ -692,12 +685,12 @@ export default function MaintenanceDetailPage() {
             <Badge variant={status.variant as any} className="text-xs">{status[lang]}</Badge>
             <span className={`text-xs font-bold ${priority.color}`}>{priority[lang]}</span>
             {request.isPreventive && (
-              <Badge variant="available" className="text-[10px]">{lang === "ar" ? "وقائي" : "Preventive"}</Badge>
+              <Badge variant="available" className="text-[10px]">{t("وقائي", "Preventive")}</Badge>
             )}
             {isOverdue && (
               <Badge variant="overdue" className="text-[10px] gap-1">
                 <AlertTriangle className="h-2.5 w-2.5" />
-                {lang === "ar" ? "متأخر" : "Overdue"}
+                {t("متأخر", "Overdue")}
               </Badge>
             )}
           </div>
@@ -718,7 +711,7 @@ export default function MaintenanceDetailPage() {
         };
         return (
           <div className="bg-card rounded-md shadow-card border border-border p-4 flex items-center gap-3 flex-wrap">
-            <span className="text-xs text-muted-foreground font-bold">{lang === "ar" ? "تحويل الحالة:" : "Transition status:"}</span>
+            <span className="text-xs text-muted-foreground font-bold">{t("تحويل الحالة:", "Transition status:")}</span>
             {validTransitions.map((nextStatus: string) => {
               const nextLabel = statusLabels[nextStatus] ?? { ar: nextStatus, en: nextStatus };
               return (
@@ -749,16 +742,16 @@ export default function MaintenanceDetailPage() {
         {/* Details Card */}
         <div className="bg-card rounded-md shadow-card border border-border p-5 space-y-4">
           <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-            {lang === "ar" ? "تفاصيل الطلب" : "Request Details"}
+            {t("تفاصيل الطلب", "Request Details")}
           </h4>
           <div className="grid grid-cols-2 gap-4">
-            <InfoRow label={lang === "ar" ? "التصنيف" : "Category"} value={cat[lang]} />
-            <InfoRow label={lang === "ar" ? "الأولوية" : "Priority"} value={<span className={priority.color}>{priority[lang]}</span>} />
-            <InfoRow label={lang === "ar" ? "الوحدة" : "Unit"} value={`${request.unit?.number} — ${request.unit?.building?.name}`} />
-            <InfoRow label={lang === "ar" ? "المبنى" : "Building"} value={request.unit?.building?.name} />
-            <InfoRow label={lang === "ar" ? "تاريخ الإنشاء" : "Created"} value={formatDualDate(request.createdAt, lang)} />
+            <InfoRow label={t("التصنيف", "Category")} value={cat[lang]} />
+            <InfoRow label={t("الأولوية", "Priority")} value={<span className={priority.color}>{priority[lang]}</span>} />
+            <InfoRow label={t("الوحدة", "Unit")} value={`${request.unit?.number} — ${request.unit?.building?.name}`} />
+            <InfoRow label={t("المبنى", "Building")} value={request.unit?.building?.name} />
+            <InfoRow label={t("تاريخ الإنشاء", "Created")} value={formatDualDate(request.createdAt, lang)} />
             <InfoRow
-              label={lang === "ar" ? "تاريخ الاستحقاق" : "Due Date"}
+              label={t("تاريخ الاستحقاق", "Due Date")}
               value={
                 request.dueDate ? (
                   <span className={isOverdue ? "text-destructive font-bold" : ""}>
@@ -768,15 +761,15 @@ export default function MaintenanceDetailPage() {
               }
             />
             {request.scheduledDate && (
-              <InfoRow label={lang === "ar" ? "تاريخ مجدول" : "Scheduled"} value={formatDualDate(request.scheduledDate, lang)} />
+              <InfoRow label={t("تاريخ مجدول", "Scheduled")} value={formatDualDate(request.scheduledDate, lang)} />
             )}
             {request.completedAt && (
-              <InfoRow label={lang === "ar" ? "تاريخ الإنجاز" : "Completed"} value={formatDualDate(request.completedAt, lang)} />
+              <InfoRow label={t("تاريخ الإنجاز", "Completed")} value={formatDualDate(request.completedAt, lang)} />
             )}
           </div>
           {request.description && (
             <div className="pt-3 border-t border-border">
-              <p className="text-[10px] font-bold uppercase text-muted-foreground mb-1">{lang === "ar" ? "الوصف" : "Description"}</p>
+              <p className="text-[10px] font-bold uppercase text-muted-foreground mb-1">{t("الوصف", "Description")}</p>
               <p className="text-sm text-primary">{request.description}</p>
             </div>
           )}
@@ -789,9 +782,9 @@ export default function MaintenanceDetailPage() {
             <div className="flex items-center justify-between">
               <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
                 <CircleUser className="h-3.5 w-3.5" />
-                {lang === "ar" ? "المُعيَّن" : "Assigned To"}
+                {t("المُعيَّن", "Assigned To")}
               </h4>
-              <Button variant="ghost" size="sm" onClick={() => setShowAssign(!showAssign)} style={{ display: "inline-flex" }} aria-label={lang === "ar" ? "تعديل" : "Edit"}>
+              <Button variant="ghost" size="sm" onClick={() => setShowAssign(!showAssign)} style={{ display: "inline-flex" }} aria-label={t("تعديل", "Edit")}>
                 <Pencil className="h-3.5 w-3.5" />
               </Button>
             </div>
@@ -806,20 +799,21 @@ export default function MaintenanceDetailPage() {
                 </div>
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">{lang === "ar" ? "لم يتم التعيين بعد" : "Not assigned"}</p>
+              <p className="text-sm text-muted-foreground">{t("لم يتم التعيين بعد", "Not assigned")}</p>
             )}
             {showAssign && (
               <div className="pt-3 border-t border-border space-y-2">
-                <select
+                <SelectField
+                  aria-label={t("المُعيَّن", "Assigned To")}
                   onChange={(e) => handleAssign(e.target.value)}
                   className={inputClass}
                   defaultValue=""
                 >
-                  <option value="">{lang === "ar" ? "— بدون تعيين —" : "— Unassigned —"}</option>
+                  <option value="">{t("— بدون تعيين —", "— Unassigned —")}</option>
                   {users.map((u: any) => (
                     <option key={u.id} value={u.id}>{u.name} ({u.role})</option>
                   ))}
-                </select>
+                </SelectField>
               </div>
             )}
           </div>
@@ -829,15 +823,15 @@ export default function MaintenanceDetailPage() {
             <div className="flex items-center justify-between">
               <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
                 <CircleDollarSign className="h-3.5 w-3.5" />
-                {lang === "ar" ? "التكاليف" : "Costs"}
+                {t("التكاليف", "Costs")}
               </h4>
-              <Button variant="ghost" size="sm" onClick={() => setEditingCost(!editingCost)} style={{ display: "inline-flex" }} aria-label={lang === "ar" ? "تعديل" : "Edit"}>
+              <Button variant="ghost" size="sm" onClick={() => setEditingCost(!editingCost)} style={{ display: "inline-flex" }} aria-label={t("تعديل", "Edit")}>
                 <Pencil className="h-3.5 w-3.5" />
               </Button>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <InfoRow
-                label={lang === "ar" ? "التكلفة التقديرية" : "Estimated"}
+                label={t("التكلفة التقديرية", "Estimated")}
                 value={
                   request.estimatedCost ? (
                     <SARAmount value={Number(request.estimatedCost)} size={12} />
@@ -845,7 +839,7 @@ export default function MaintenanceDetailPage() {
                 }
               />
               <InfoRow
-                label={lang === "ar" ? "التكلفة الفعلية" : "Actual"}
+                label={t("التكلفة الفعلية", "Actual")}
                 value={
                   request.actualCost ? (
                     <SARAmount value={Number(request.actualCost)} size={12} />
@@ -853,15 +847,15 @@ export default function MaintenanceDetailPage() {
                 }
               />
               <InfoRow
-                label={lang === "ar" ? "ساعات العمل" : "Labor Hours"}
-                value={request.laborHours ? `${request.laborHours} ${lang === "ar" ? "ساعة" : "hrs"}` : "—"}
+                label={t("ساعات العمل", "Labor Hours")}
+                value={request.laborHours ? `${request.laborHours} ${t("ساعة", "hrs")}` : "—"}
               />
             </div>
             {editingCost && (
               <div className="pt-3 border-t border-border space-y-3">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-muted-foreground">{lang === "ar" ? "التكلفة الفعلية" : "Actual Cost"}</label>
+                    <label className="text-[10px] font-bold text-muted-foreground">{t("التكلفة الفعلية", "Actual Cost")}</label>
                     <input
                       type="number"
                       value={actualCost}
@@ -872,7 +866,7 @@ export default function MaintenanceDetailPage() {
                     {costErrors.actualCost && <p className="text-xs text-destructive">{costErrors.actualCost}</p>}
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-muted-foreground">{lang === "ar" ? "ساعات العمل" : "Labor Hours"}</label>
+                    <label className="text-[10px] font-bold text-muted-foreground">{t("ساعات العمل", "Labor Hours")}</label>
                     <input
                       type="number"
                       value={laborHours}
@@ -884,12 +878,12 @@ export default function MaintenanceDetailPage() {
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-muted-foreground">{lang === "ar" ? "ملاحظات" : "Notes"}</label>
+                  <label className="text-[10px] font-bold text-muted-foreground">{t("ملاحظات", "Notes")}</label>
                   <textarea value={notes} onChange={(e) => setNotes(e.target.value)} className={`${inputClass} h-16 py-2`} />
                 </div>
                 <Button size="sm" onClick={handleSaveCost} disabled={saving} className="gap-2" style={{ display: "inline-flex" }}>
                   {saving && <Loader2 className="h-3 w-3 animate-spin" />}
-                  {lang === "ar" ? "حفظ" : "Save"}
+                  {t("حفظ", "Save")}
                 </Button>
               </div>
             )}
@@ -901,7 +895,7 @@ export default function MaintenanceDetailPage() {
       {request.notes && !editingCost && (
         <div className="bg-card rounded-md shadow-card border border-border p-5">
           <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">
-            {lang === "ar" ? "ملاحظات" : "Notes"}
+            {t("ملاحظات", "Notes")}
           </h4>
           <p className="text-sm text-primary whitespace-pre-wrap">{request.notes}</p>
         </div>
@@ -913,7 +907,7 @@ export default function MaintenanceDetailPage() {
           <Calendar className="h-5 w-5 text-secondary" />
           <div className="flex-1">
             <p className="text-sm font-bold text-primary">{request.preventivePlan.title}</p>
-            <p className="text-[10px] text-muted-foreground">{lang === "ar" ? "هذا الطلب جزء من خطة صيانة وقائية" : "This request is part of a preventive plan"}</p>
+            <p className="text-[10px] text-muted-foreground">{t("هذا الطلب جزء من خطة صيانة وقائية", "This request is part of a preventive plan")}</p>
           </div>
         </div>
       )}

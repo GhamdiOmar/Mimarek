@@ -2,6 +2,7 @@
 
 import { db } from "@repo/db";
 import { requirePermission } from "../../lib/auth-helpers";
+import { serialize } from "../../lib/serialize";
 
 export async function getAuditLogs(filters?: {
   userId?: string;
@@ -42,7 +43,7 @@ export async function getAuditLogs(filters?: {
   ]);
 
   return {
-    logs: JSON.parse(JSON.stringify(logs)),
+    logs: serialize(logs),
     total,
     page,
     pageSize,

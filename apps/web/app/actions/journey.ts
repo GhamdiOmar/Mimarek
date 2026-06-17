@@ -5,8 +5,8 @@
  *
  * Exports a single Server Action: `getJourneySummary`.
  * Auth / org-resolution pattern mirrors `contracts.ts` (requirePermission +
- * org-filter on every Prisma query). Decimal serialization via
- * JSON.parse(JSON.stringify(…)) per project convention.
+ * org-filter on every Prisma query). Decimal serialization via the shared
+ * `serialize()` seam (lib/serialize.ts) per project convention.
  *
  * Stages, blocker ids, and next-action hrefs are grounded on the real state
  * machines in contracts.ts / maintenance.ts / customer-interests.ts /
@@ -15,6 +15,7 @@
 
 import { db } from "@repo/db";
 import { requirePermission } from "../../lib/auth-helpers";
+import { serialize } from "../../lib/serialize";
 import type {
   JourneySummary,
   ProcessStage,
@@ -246,7 +247,7 @@ async function buildContractJourney(id: string): Promise<JourneySummary | null> 
       take: 3,
     });
     for (const inst of installments) {
-      const serialized = JSON.parse(JSON.stringify(inst));
+      const serialized = serialize(inst);
       related.push({
         kind: "invoice",
         id: inst.id,
@@ -283,7 +284,7 @@ async function buildContractJourney(id: string): Promise<JourneySummary | null> 
     }
   }
 
-  return JSON.parse(JSON.stringify({ entity: id, stages, blockers, nextActions, related }));
+  return serialize({ entity: id, stages, blockers, nextActions, related });
 }
 
 // ─── Reservation Journey ──────────────────────────────────────────────────────
@@ -454,7 +455,7 @@ async function buildReservationJourney(id: string): Promise<JourneySummary | nul
     });
   }
 
-  return JSON.parse(JSON.stringify({ entity: id, stages, blockers, nextActions, related }));
+  return serialize({ entity: id, stages, blockers, nextActions, related });
 }
 
 // ─── Customer Journey ─────────────────────────────────────────────────────────
@@ -686,7 +687,7 @@ async function buildCustomerJourney(id: string): Promise<JourneySummary | null> 
     });
   }
 
-  return JSON.parse(JSON.stringify({ entity: id, stages, blockers, nextActions, related }));
+  return serialize({ entity: id, stages, blockers, nextActions, related });
 }
 
 // ─── Unit Journey ─────────────────────────────────────────────────────────────
@@ -926,7 +927,7 @@ async function buildUnitJourney(id: string): Promise<JourneySummary | null> {
     });
   }
 
-  return JSON.parse(JSON.stringify({ entity: id, stages, blockers, nextActions, related }));
+  return serialize({ entity: id, stages, blockers, nextActions, related });
 }
 
 // ─── Maintenance Journey ──────────────────────────────────────────────────────
@@ -1181,5 +1182,5 @@ async function buildMaintenanceJourney(id: string): Promise<JourneySummary | nul
     }
   }
 
-  return JSON.parse(JSON.stringify({ entity: id, stages, blockers, nextActions, related }));
+  return serialize({ entity: id, stages, blockers, nextActions, related });
 }

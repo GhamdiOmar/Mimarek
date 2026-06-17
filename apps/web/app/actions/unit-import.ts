@@ -4,6 +4,7 @@ import { randomUUID } from "crypto";
 import { db } from "@repo/db";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { ROUTES } from "../../lib/routes";
 import { requirePermission } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
 import { checkLimit, FEATURE_KEYS } from "../../lib/entitlements";
@@ -209,7 +210,7 @@ export async function commitUnitImport(
     organizationId: session.organizationId,
   });
 
-  revalidatePath("/dashboard/units");
+  revalidatePath(ROUTES.units);
 
   return { imported: result.count, skipped, importBatchId };
 }

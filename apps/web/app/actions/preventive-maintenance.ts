@@ -4,6 +4,8 @@ import { db } from "@repo/db";
 import { revalidatePath } from "next/cache";
 import { requirePermission } from "../../lib/auth-helpers";
 import { computeNextRunDate } from "../../lib/maintenance/recurrence";
+import { ROUTES } from "../../lib/routes";
+import { serialize } from "../../lib/serialize";
 
 // ─── Create Preventive Plan ──────────────────────────────────────────────────
 
@@ -46,8 +48,8 @@ export async function createPreventivePlan(data: {
     },
   });
 
-  revalidatePath("/dashboard/maintenance/preventive");
-  return JSON.parse(JSON.stringify(plan));
+  revalidatePath(ROUTES.maintenancePreventive);
+  return serialize(plan);
 }
 
 // ─── Get Preventive Plans ────────────────────────────────────────────────────
@@ -72,7 +74,7 @@ export async function getPreventivePlans(filters?: {
     },
     orderBy: { nextRunDate: "asc" },
   });
-  return JSON.parse(JSON.stringify(plans));
+  return serialize(plans);
 }
 
 // ─── Update Preventive Plan ─────────────────────────────────────────────────
@@ -127,8 +129,8 @@ export async function updatePreventivePlan(
     data: updateData,
   });
 
-  revalidatePath("/dashboard/maintenance/preventive");
-  return JSON.parse(JSON.stringify(updated));
+  revalidatePath(ROUTES.maintenancePreventive);
+  return serialize(updated);
 }
 
 // ─── Toggle Preventive Plan ─────────────────────────────────────────────────
@@ -146,8 +148,8 @@ export async function togglePreventivePlan(planId: string) {
     data: { isActive: !plan.isActive },
   });
 
-  revalidatePath("/dashboard/maintenance/preventive");
-  return JSON.parse(JSON.stringify(updated));
+  revalidatePath(ROUTES.maintenancePreventive);
+  return serialize(updated);
 }
 
 // ─── Delete Preventive Plan ─────────────────────────────────────────────────
@@ -165,7 +167,7 @@ export async function deletePreventivePlan(planId: string) {
     data: { isActive: false },
   });
 
-  revalidatePath("/dashboard/maintenance/preventive");
+  revalidatePath(ROUTES.maintenancePreventive);
 }
 
 // ─── Generate Work Orders from Plans ─────────────────────────────────────────
@@ -226,8 +228,8 @@ export async function generateWorkOrdersFromPlans() {
     created++;
   }
 
-  revalidatePath("/dashboard/maintenance/tickets");
-  revalidatePath("/dashboard/maintenance/preventive");
+  revalidatePath(ROUTES.maintenanceTickets);
+  revalidatePath(ROUTES.maintenancePreventive);
   return { created, total: duePlans.length };
 }
 

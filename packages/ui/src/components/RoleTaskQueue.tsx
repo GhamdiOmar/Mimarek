@@ -12,17 +12,14 @@ import {
   CardTitle,
   CardContent,
 } from "../primitives/card";
+import type { LocalizedText } from "../lib/localized-text";
 
 /**
- * Structurally identical to `@repo/types` `RoleTaskQueueItem` and
- * `LocalizedText` — re-declared locally to keep `@repo/ui` decoupled from
- * `@repo/types`. Producers type their data with `@repo/types`; the shapes are
- * assignable.
+ * `RoleTaskQueueItem` is structurally identical to `@repo/types`
+ * `RoleTaskQueueItem`; `LocalizedText` is `@repo/ui`'s own copy (see
+ * `../lib/localized-text`) so the package stays decoupled from `@repo/types`.
+ * Producers type their data with `@repo/types`; the shapes are assignable.
  */
-interface LocalizedText {
-  ar: string;
-  en: string;
-}
 
 type ItemSeverity = "info" | "warning" | "error";
 

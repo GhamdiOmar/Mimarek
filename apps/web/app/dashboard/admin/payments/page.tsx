@@ -105,7 +105,7 @@ const invoiceBadgeVariant = (
 };
 
 export default function AdminPaymentsPage() {
-  const { lang } = useLanguage();
+  const { t, lang } = useLanguage();
   const { data: session } = useSession();
   const userRole = session?.user?.role ?? "";
   const authorized = isSystemRole(userRole);
@@ -185,11 +185,11 @@ export default function AdminPaymentsPage() {
 
   // ── Mobile helpers ────────────────────────────────────────────────────
   const mobileTabItems = [
-    { key: "ALL", label: lang === "ar" ? "الكل" : "All" },
-    { key: "PAID", label: lang === "ar" ? "مدفوعة" : "Paid" },
-    { key: "ISSUED", label: lang === "ar" ? "صادرة" : "Issued" },
-    { key: "OVERDUE", label: lang === "ar" ? "متأخرة" : "Overdue" },
-    { key: "CANCELED", label: lang === "ar" ? "ملغاة" : "Canceled" },
+    { key: "ALL", label: t("الكل", "All") },
+    { key: "PAID", label: t("مدفوعة", "Paid") },
+    { key: "ISSUED", label: t("صادرة", "Issued") },
+    { key: "OVERDUE", label: t("متأخرة", "Overdue") },
+    { key: "CANCELED", label: t("ملغاة", "Canceled") },
   ];
 
   const mobileInvoices =
@@ -211,7 +211,7 @@ export default function AdminPaymentsPage() {
     () => [
       {
         accessorKey: "invoiceNumber",
-        header: lang === "ar" ? "رقم الفاتورة" : "Invoice #",
+        header: t("رقم الفاتورة", "Invoice #"),
         enableSorting: true,
         enableHiding: false,
         cell: ({ row }) => (
@@ -222,7 +222,7 @@ export default function AdminPaymentsPage() {
       },
       {
         id: "organization",
-        header: lang === "ar" ? "المنظمة" : "Organization",
+        header: t("المنظمة", "Organization"),
         enableSorting: true,
         cell: ({ row }) => (
           <span className="text-foreground">
@@ -238,7 +238,7 @@ export default function AdminPaymentsPage() {
       },
       {
         id: "plan",
-        header: lang === "ar" ? "الخطة" : "Plan",
+        header: t("الخطة", "Plan"),
         enableSorting: true,
         cell: ({ row }) => (
           <span className="text-foreground">
@@ -250,7 +250,7 @@ export default function AdminPaymentsPage() {
       },
       {
         accessorKey: "status",
-        header: lang === "ar" ? "الحالة" : "Status",
+        header: t("الحالة", "Status"),
         enableSorting: true,
         cell: ({ row }) => {
           const sc = statusConfig[row.original.status] ?? {
@@ -268,7 +268,7 @@ export default function AdminPaymentsPage() {
       },
       {
         accessorKey: "subtotal",
-        header: lang === "ar" ? "المبلغ" : "Subtotal",
+        header: t("المبلغ", "Subtotal"),
         enableSorting: true,
         meta: { numeric: true },
         cell: ({ row }) => (
@@ -279,7 +279,7 @@ export default function AdminPaymentsPage() {
       },
       {
         accessorKey: "vatAmount",
-        header: lang === "ar" ? "الضريبة" : "VAT",
+        header: t("الضريبة", "VAT"),
         enableSorting: true,
         meta: { numeric: true },
         cell: ({ row }) => (
@@ -290,7 +290,7 @@ export default function AdminPaymentsPage() {
       },
       {
         accessorKey: "total",
-        header: lang === "ar" ? "الإجمالي" : "Total",
+        header: t("الإجمالي", "Total"),
         enableSorting: true,
         meta: { numeric: true },
         cell: ({ row }) => (
@@ -301,7 +301,7 @@ export default function AdminPaymentsPage() {
       },
       {
         accessorKey: "issuedAt",
-        header: lang === "ar" ? "تاريخ الإصدار" : "Issued",
+        header: t("تاريخ الإصدار", "Issued"),
         enableSorting: true,
         cell: ({ row }) => (
           <span className="text-muted-foreground text-xs">
@@ -311,7 +311,7 @@ export default function AdminPaymentsPage() {
       },
       {
         accessorKey: "dueDate",
-        header: lang === "ar" ? "تاريخ الاستحقاق" : "Due Date",
+        header: t("تاريخ الاستحقاق", "Due Date"),
         enableSorting: true,
         cell: ({ row }) => (
           <span className="text-muted-foreground text-xs">
@@ -374,17 +374,15 @@ export default function AdminPaymentsPage() {
         className="md:hidden -m-4 sm:-m-6 min-h-dvh flex flex-col bg-background"
         dir={lang === "ar" ? "rtl" : "ltr"}
       >
-        <AppBar title={lang === "ar" ? "المدفوعات" : "Payments"} lang={lang} />
+        <AppBar title={t("المدفوعات", "Payments")} lang={lang} />
 
         {!authorized ? (
           <div className="flex-1 px-4 pt-10">
             <EmptyState
               icon={<ShieldAlert className="h-10 w-10" aria-hidden="true" />}
-              title={lang === "ar" ? "غير مصرح" : "Unauthorized"}
+              title={t("غير مصرح", "Unauthorized")}
               description={
-                lang === "ar"
-                  ? "هذه الصفحة متاحة لفريق المنصة فقط."
-                  : "This page is available to platform staff only."
+                t("هذه الصفحة متاحة لفريق المنصة فقط.", "This page is available to platform staff only.")
               }
             />
           </div>
@@ -392,7 +390,7 @@ export default function AdminPaymentsPage() {
           <>
             <div className="grid grid-cols-2 gap-3 px-4 pt-3">
               <MobileKPICard
-                label={lang === "ar" ? "الإيرادات" : "Revenue"}
+                label={t("الإيرادات", "Revenue")}
                 value={
                   <SARAmount
                     value={paidMtd}
@@ -404,17 +402,17 @@ export default function AdminPaymentsPage() {
                 tone="green"
               />
               <MobileKPICard
-                label={lang === "ar" ? "قيد الانتظار" : "Pending"}
+                label={t("قيد الانتظار", "Pending")}
                 value={<span className="tabular-nums">{issuedCount}</span>}
                 tone="amber"
               />
               <MobileKPICard
-                label={lang === "ar" ? "متأخرة" : "Overdue"}
+                label={t("متأخرة", "Overdue")}
                 value={<span className="tabular-nums">{overdueCount}</span>}
                 tone="red"
               />
               <MobileKPICard
-                label={lang === "ar" ? "معدل النجاح" : "Success rate"}
+                label={t("معدل النجاح", "Success rate")}
                 value={<span className="tabular-nums">{successRate}%</span>}
                 tone="primary"
               />
@@ -423,7 +421,7 @@ export default function AdminPaymentsPage() {
             <div className="px-4 pt-3">
               <MobileTabs
                 ariaLabel={
-                  lang === "ar" ? "تصفية المدفوعات" : "Filter payments"
+                  t("تصفية المدفوعات", "Filter payments")
                 }
                 active={mobileFilter}
                 onChange={(v) => setMobileFilter(v as typeof mobileFilter)}
@@ -444,12 +442,10 @@ export default function AdminPaymentsPage() {
                     variant="first-time"
                     icon={<Receipt className="h-12 w-12" aria-hidden="true" />}
                     title={
-                      lang === "ar" ? "لا توجد فواتير بعد" : "No invoices yet"
+                      t("لا توجد فواتير بعد", "No invoices yet")
                     }
                     description={
-                      lang === "ar"
-                        ? "ستظهر فواتير اشتراكات المستأجرين هنا فور إصدارها."
-                        : "Tenant subscription invoices appear here once issued."
+                      t("ستظهر فواتير اشتراكات المستأجرين هنا فور إصدارها.", "Tenant subscription invoices appear here once issued.")
                     }
                   />
                 ) : (
@@ -457,14 +453,10 @@ export default function AdminPaymentsPage() {
                     variant="filtered"
                     icon={<Receipt className="h-10 w-10" aria-hidden="true" />}
                     title={
-                      lang === "ar"
-                        ? "لا توجد نتائج مطابقة"
-                        : "No matching invoices"
+                      t("لا توجد نتائج مطابقة", "No matching invoices")
                     }
                     description={
-                      lang === "ar"
-                        ? "جرّب تعديل التصفية."
-                        : "Try adjusting the filter."
+                      t("جرّب تعديل التصفية.", "Try adjusting the filter.")
                     }
                     action={
                       <Button
@@ -473,7 +465,7 @@ export default function AdminPaymentsPage() {
                         onClick={() => setMobileFilter("ALL")}
                         style={{ display: "inline-flex" }}
                       >
-                        {lang === "ar" ? "مسح الفلاتر" : "Clear filters"}
+                        {t("مسح الفلاتر", "Clear filters")}
                       </Button>
                     }
                   />
@@ -540,7 +532,7 @@ export default function AdminPaymentsPage() {
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     style={{ display: "inline-flex", minHeight: "44px" }}
                   >
-                    {lang === "ar" ? "السابق" : "Previous"}
+                    {t("السابق", "Previous")}
                   </Button>
                   <span className="tabular-nums">
                     {page} / {totalPages}
@@ -552,7 +544,7 @@ export default function AdminPaymentsPage() {
                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                     style={{ display: "inline-flex", minHeight: "44px" }}
                   >
-                    {lang === "ar" ? "التالي" : "Next"}
+                    {t("التالي", "Next")}
                   </Button>
                 </div>
               )}
@@ -573,7 +565,7 @@ export default function AdminPaymentsPage() {
             className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
           >
             <DirectionalIcon icon={ArrowLeft} className="h-4 w-4" />
-            {lang === "ar" ? "إدارة المنصة" : "Platform Administration"}
+            {t("إدارة المنصة", "Platform Administration")}
           </Link>
 
           {/* Header */}
@@ -584,12 +576,10 @@ export default function AdminPaymentsPage() {
             <PageHeader
               className="flex-1"
               title={
-                lang === "ar" ? "الفواتير والمدفوعات" : "Invoices & Payments"
+                t("الفواتير والمدفوعات", "Invoices & Payments")
               }
               description={
-                lang === "ar"
-                  ? "عرض جميع الفواتير والمعاملات المالية عبر جميع المنظمات"
-                  : "View all invoices and payment transactions across all organizations"
+                t("عرض جميع الفواتير والمعاملات المالية عبر جميع المنظمات", "View all invoices and payment transactions across all organizations")
               }
             />
           </div>
@@ -627,12 +617,10 @@ export default function AdminPaymentsPage() {
               getRowId={(r) => r.id}
               mobileCard={mobileCard}
               emptyTitle={
-                lang === "ar" ? "لا توجد فواتير بعد" : "No invoices yet"
+                t("لا توجد فواتير بعد", "No invoices yet")
               }
               emptyDescription={
-                lang === "ar"
-                  ? "ستظهر فواتير اشتراكات المستأجرين هنا فور إصدارها."
-                  : "Tenant subscription invoices appear here once issued."
+                t("ستظهر فواتير اشتراكات المستأجرين هنا فور إصدارها.", "Tenant subscription invoices appear here once issued.")
               }
             />
           </Card>

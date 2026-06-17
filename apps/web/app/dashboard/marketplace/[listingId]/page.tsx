@@ -67,7 +67,7 @@ function formatSARLocal(amount: number | null, lang: "ar" | "en") {
 // ─── Page ────────────────────────────────────────────────────────────────────
 
 export default function ListingDetailPage() {
-  const { lang } = useLanguage();
+  const { t, lang } = useLanguage();
   const params = useParams<{ listingId: string }>();
   const listingId = params.listingId;
 
@@ -119,7 +119,7 @@ export default function ListingDetailPage() {
       });
       setSubmitSuccess(true);
     } catch (err: unknown) {
-      setSubmitError(err instanceof Error ? err.message : (lang === "ar" ? "فشل إرسال الاستفسار" : "Failed to submit inquiry"));
+      setSubmitError(err instanceof Error ? err.message : (t("فشل إرسال الاستفسار", "Failed to submit inquiry")));
     } finally {
       setSubmitting(false);
     }
@@ -172,7 +172,7 @@ export default function ListingDetailPage() {
         className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
       >
         <DirectionalIcon icon={ArrowLeft} className="h-4 w-4" aria-hidden="true" />
-        {lang === "ar" ? "العودة إلى السوق" : "Back to marketplace"}
+        {t("العودة إلى السوق", "Back to marketplace")}
       </Link>
 
       {/* Title row */}
@@ -200,7 +200,7 @@ export default function ListingDetailPage() {
           <div className="flex items-center gap-3 rounded-lg border border-border bg-card p-3">
             <MapPin className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
             <div>
-              <p className="text-xs text-muted-foreground">{lang === "ar" ? "الموقع" : "Location"}</p>
+              <p className="text-xs text-muted-foreground">{t("الموقع", "Location")}</p>
               <p className="text-sm font-medium text-foreground">
                 {[listing.city, listing.district].filter(Boolean).join("، ")}
               </p>
@@ -211,7 +211,7 @@ export default function ListingDetailPage() {
           <div className="flex items-center gap-3 rounded-lg border border-border bg-card p-3">
             <Building2 className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
             <div>
-              <p className="text-xs text-muted-foreground">{lang === "ar" ? "نوع العقار" : "Property Type"}</p>
+              <p className="text-xs text-muted-foreground">{t("نوع العقار", "Property Type")}</p>
               <p className="text-sm font-medium text-foreground">
                 {lang === "ar"
                   ? (PROPERTY_TYPE_LABELS[listing.propertyType]?.ar ?? listing.propertyType)
@@ -224,9 +224,9 @@ export default function ListingDetailPage() {
           <div className="flex items-center gap-3 rounded-lg border border-border bg-card p-3">
             <Maximize2 className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
             <div>
-              <p className="text-xs text-muted-foreground">{lang === "ar" ? "المساحة" : "Area"}</p>
+              <p className="text-xs text-muted-foreground">{t("المساحة", "Area")}</p>
               <p className="text-sm font-medium text-foreground">
-                <span className="number-ltr tabular-nums">{listing.area}</span> {lang === "ar" ? "م²" : "m²"}
+                <span className="number-ltr tabular-nums">{listing.area}</span> {t("م²", "m²")}
               </p>
             </div>
           </div>
@@ -235,7 +235,7 @@ export default function ListingDetailPage() {
           <div className="flex items-center gap-3 rounded-lg border border-border bg-card p-3">
             <BedDouble className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
             <div>
-              <p className="text-xs text-muted-foreground">{lang === "ar" ? "غرف النوم" : "Bedrooms"}</p>
+              <p className="text-xs text-muted-foreground">{t("غرف النوم", "Bedrooms")}</p>
               <p className="text-sm font-medium text-foreground"><span className="number-ltr tabular-nums">{listing.bedrooms}</span></p>
             </div>
           </div>
@@ -244,7 +244,7 @@ export default function ListingDetailPage() {
           <div className="flex items-center gap-3 rounded-lg border border-border bg-card p-3">
             <Bath className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
             <div>
-              <p className="text-xs text-muted-foreground">{lang === "ar" ? "الحمامات" : "Bathrooms"}</p>
+              <p className="text-xs text-muted-foreground">{t("الحمامات", "Bathrooms")}</p>
               <p className="text-sm font-medium text-foreground"><span className="number-ltr tabular-nums">{listing.bathrooms}</span></p>
             </div>
           </div>
@@ -253,9 +253,9 @@ export default function ListingDetailPage() {
           <div className="flex items-center gap-3 rounded-lg border border-border bg-card p-3">
             <Calendar className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
             <div>
-              <p className="text-xs text-muted-foreground">{lang === "ar" ? "عمر المبنى" : "Building Age"}</p>
+              <p className="text-xs text-muted-foreground">{t("عمر المبنى", "Building Age")}</p>
               <p className="text-sm font-medium text-foreground">
-                <span className="number-ltr tabular-nums">{listing.buildingAge}</span> {lang === "ar" ? "سنة" : "yrs"}
+                <span className="number-ltr tabular-nums">{listing.buildingAge}</span> {t("سنة", "yrs")}
               </p>
             </div>
           </div>
@@ -263,14 +263,14 @@ export default function ListingDetailPage() {
         <div className="flex items-center gap-3 rounded-lg border border-border bg-card p-3">
           <Eye className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden="true" />
           <div>
-            <p className="text-xs text-muted-foreground">{lang === "ar" ? "المشاهدات" : "Views"}</p>
+            <p className="text-xs text-muted-foreground">{t("المشاهدات", "Views")}</p>
             <p className="text-sm font-medium text-foreground"><span className="number-ltr tabular-nums">{listing.viewCount}</span></p>
           </div>
         </div>
         <div className="flex items-center gap-3 rounded-lg border border-border bg-card p-3">
           <Heart className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden="true" />
           <div>
-            <p className="text-xs text-muted-foreground">{lang === "ar" ? "المهتمون" : "Interested"}</p>
+            <p className="text-xs text-muted-foreground">{t("المهتمون", "Interested")}</p>
             <p className="text-sm font-medium text-foreground">{listing.interestCount}</p>
           </div>
         </div>
@@ -280,7 +280,7 @@ export default function ListingDetailPage() {
       {listing.description && (
         <Card className="p-4 space-y-2">
           <h2 className="text-sm font-semibold text-foreground">
-            {lang === "ar" ? "الوصف" : "Description"}
+            {t("الوصف", "Description")}
           </h2>
           <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
             {listing.description}
@@ -291,7 +291,7 @@ export default function ListingDetailPage() {
       {/* National Address + compliance */}
       <Card className="p-4 space-y-3">
         <h2 className="text-sm font-semibold text-foreground">
-          {lang === "ar" ? "العنوان الوطني والامتثال" : "National Address & Compliance"}
+          {t("العنوان الوطني والامتثال", "National Address & Compliance")}
         </h2>
         <div className="flex flex-wrap items-center gap-3">
           {listing.shortAddress && (
@@ -303,10 +303,10 @@ export default function ListingDetailPage() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 text-xs text-primary hover:underline min-h-[44px] px-1"
-                aria-label={lang === "ar" ? "فتح في خرائط جوجل" : "Open in Google Maps"}
+                aria-label={t("فتح في خرائط جوجل", "Open in Google Maps")}
               >
                 <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
-                {lang === "ar" ? "خرائط جوجل" : "Google Maps"}
+                {t("خرائط جوجل", "Google Maps")}
               </a>
             </div>
           )}
@@ -324,14 +324,14 @@ export default function ListingDetailPage() {
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <FileText className="h-4 w-4 shrink-0" aria-hidden="true" />
             <span>
-              {lang === "ar" ? "رقم ترخيص الإعلان (فال):" : "REGA Ad License:"}{" "}
+              {t("رقم ترخيص الإعلان (فال):", "REGA Ad License:")}{" "}
               <span className="font-mono text-foreground" dir="ltr">{listing.adLicenseNumber}</span>
             </span>
           </div>
         )}
         {listing.publishedAt && (
           <p className="text-xs text-muted-foreground">
-            {lang === "ar" ? "تاريخ النشر:" : "Published:"}{" "}
+            {t("تاريخ النشر:", "Published:")}{" "}
             {new Date(listing.publishedAt).toLocaleDateString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-GB")}
           </p>
         )}
@@ -346,11 +346,11 @@ export default function ListingDetailPage() {
           onClick={openInterestDialog}
         >
           <Heart className="h-5 w-5 me-2" aria-hidden="true" />
-          {lang === "ar" ? "إبداء الاهتمام" : "Express Interest"}
+          {t("إبداء الاهتمام", "Express Interest")}
         </Button>
         <Button asChild variant="outline" size="lg" className="min-h-[44px]">
           <Link href="/dashboard/marketplace">
-            {lang === "ar" ? "العودة" : "Back"}
+            {t("العودة", "Back")}
           </Link>
         </Button>
       </div>
@@ -359,16 +359,14 @@ export default function ListingDetailPage() {
       <ResponsiveDialog
         open={interestOpen}
         onOpenChange={(open) => { if (!open && !submitting) setInterestOpen(false); }}
-        title={lang === "ar" ? "إبداء الاهتمام بهذا الإعلان" : "Express Interest in This Listing"}
+        title={t("إبداء الاهتمام بهذا الإعلان", "Express Interest in This Listing")}
         description={
-          lang === "ar"
-            ? "سيتم إشعار البائع باهتمامك. يمكنك إضافة رسالة واختيارية ومعلومات التواصل."
-            : "The seller will be notified of your interest. You may add an optional message and contact details."
+          t("سيتم إشعار البائع باهتمامك. يمكنك إضافة رسالة واختيارية ومعلومات التواصل.", "The seller will be notified of your interest. You may add an optional message and contact details.")
         }
         footer={
           submitSuccess ? (
             <Button variant="primary" onClick={() => setInterestOpen(false)}>
-              {lang === "ar" ? "إغلاق" : "Close"}
+              {t("إغلاق", "Close")}
             </Button>
           ) : (
             <div className="flex justify-end gap-2">
@@ -377,7 +375,7 @@ export default function ListingDetailPage() {
                 onClick={() => setInterestOpen(false)}
                 disabled={submitting}
               >
-                {lang === "ar" ? "إلغاء" : "Cancel"}
+                {t("إلغاء", "Cancel")}
               </Button>
               <Button
                 variant="primary"
@@ -389,7 +387,7 @@ export default function ListingDetailPage() {
                 ) : (
                   <Heart className="h-4 w-4 me-1.5" aria-hidden="true" />
                 )}
-                {lang === "ar" ? "تأكيد الاهتمام" : "Confirm Interest"}
+                {t("تأكيد الاهتمام", "Confirm Interest")}
               </Button>
             </div>
           )
@@ -399,12 +397,10 @@ export default function ListingDetailPage() {
           <div className="flex flex-col items-center gap-3 py-4 text-center">
             <CheckCircle2 className="h-10 w-10 text-success" aria-hidden="true" />
             <p className="text-sm font-medium text-foreground">
-              {lang === "ar" ? "تم إرسال استفسارك بنجاح!" : "Your inquiry was sent successfully!"}
+              {t("تم إرسال استفسارك بنجاح!", "Your inquiry was sent successfully!")}
             </p>
             <p className="text-xs text-muted-foreground">
-              {lang === "ar"
-                ? "سيتم التواصل معك من قِبل البائع قريباً."
-                : "The seller will contact you soon."}
+              {t("سيتم التواصل معك من قِبل البائع قريباً.", "The seller will contact you soon.")}
             </p>
           </div>
         ) : (
@@ -417,48 +413,46 @@ export default function ListingDetailPage() {
             )}
             <div className="space-y-1">
               <label className="text-xs font-medium text-muted-foreground">
-                {lang === "ar" ? "رسالة (اختياري)" : "Message (optional)"}
+                {t("رسالة (اختياري)", "Message (optional)")}
               </label>
               <textarea
-                aria-label={lang === "ar" ? "رسالة للبائع" : "Message to seller"}
+                aria-label={t("رسالة للبائع", "Message to seller")}
                 value={interestMsg}
                 onChange={(e) => setInterestMsg(e.target.value)}
                 rows={3}
-                placeholder={lang === "ar" ? "أضف أي تفاصيل إضافية..." : "Add any additional details…"}
+                placeholder={t("أضف أي تفاصيل إضافية...", "Add any additional details…")}
                 className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
               />
             </div>
             <div className="space-y-1">
               <label className="text-xs font-medium text-muted-foreground">
-                {lang === "ar" ? "اسم جهة التواصل (اختياري)" : "Contact name (optional)"}
+                {t("اسم جهة التواصل (اختياري)", "Contact name (optional)")}
               </label>
               <input
                 type="text"
-                aria-label={lang === "ar" ? "اسم جهة التواصل" : "Contact name"}
+                aria-label={t("اسم جهة التواصل", "Contact name")}
                 value={contactName}
                 onChange={(e) => setContactName(e.target.value)}
-                placeholder={lang === "ar" ? "الاسم..." : "Name…"}
+                placeholder={t("الاسم...", "Name…")}
                 className="flex h-9 w-full rounded-md border border-border bg-background px-3 py-1 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
               />
             </div>
             <div className="space-y-1">
               <label className="text-xs font-medium text-muted-foreground">
-                {lang === "ar" ? "رقم الهاتف *" : "Phone number *"}
+                {t("رقم الهاتف *", "Phone number *")}
               </label>
               <input
                 type="tel"
-                aria-label={lang === "ar" ? "رقم الهاتف" : "Phone number"}
+                aria-label={t("رقم الهاتف", "Phone number")}
                 value={contactPhone}
                 onChange={(e) => setContactPhone(e.target.value)}
-                placeholder={lang === "ar" ? "05xxxxxxxx" : "05xxxxxxxx"}
+                placeholder={t("05xxxxxxxx", "05xxxxxxxx")}
                 required
                 className="flex h-9 w-full rounded-md border border-border bg-background px-3 py-1 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                 dir="ltr"
               />
               <p className="text-xs text-muted-foreground">
-                {lang === "ar"
-                  ? "مطلوب — رقم جوال سعودي للتواصل"
-                  : "Required — Saudi mobile number for callback"}
+                {t("مطلوب — رقم جوال سعودي للتواصل", "Required — Saudi mobile number for callback")}
               </p>
             </div>
           </div>

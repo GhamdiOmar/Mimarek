@@ -174,6 +174,7 @@ async function main() {
   if (mohammed && unitA201) {
     await prisma.reservation.create({
       data: {
+        organizationId: org.id,
         customerId: mohammed.id,
         unitId: unitA201.id,
         userId: adminUser?.id,
@@ -189,6 +190,7 @@ async function main() {
   if (reem && unitB201) {
     await prisma.reservation.create({
       data: {
+        organizationId: org.id,
         customerId: reem.id,
         unitId: unitB201.id,
         userId: adminUser?.id,
@@ -201,6 +203,7 @@ async function main() {
   if (khalid && unitC102) {
     await prisma.reservation.create({
       data: {
+        organizationId: org.id,
         customerId: khalid.id,
         unitId: unitC102.id,
         userId: adminUser?.id,
@@ -254,6 +257,7 @@ async function main() {
     for (const ins of installments) {
       await prisma.paymentPlanInstallment.create({
         data: {
+          organizationId: org.id,
           paymentPlanId: plan.id,
           installmentNumber: ins.num,
           amount: ins.amount,

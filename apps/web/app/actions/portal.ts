@@ -2,6 +2,8 @@
 
 import { db, MaintenanceCategory, MaintenancePriority } from "@repo/db";
 import { revalidatePath } from "next/cache";
+import { ROUTES } from "../../lib/routes";
+import { serialize } from "../../lib/serialize";
 import { auth } from "../../auth";
 import { hashForSearch } from "../../lib/encryption";
 
@@ -70,7 +72,7 @@ export async function getTenantPortalSummary() {
       })
     : [];
 
-  return JSON.parse(JSON.stringify({ customer, activeLease, documents, maintenance }));
+  return serialize({ customer, activeLease, documents, maintenance });
 }
 
 export async function createTenantMaintenanceRequest(data: {
@@ -104,6 +106,6 @@ export async function createTenantMaintenanceRequest(data: {
     },
   });
 
-  revalidatePath("/portal");
+  revalidatePath(ROUTES.portal);
   return { success: true };
 }
