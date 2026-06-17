@@ -1,5 +1,19 @@
 # Changelog — Mimaric PropTech
 
+## [4.31.0] — 2026-06-17 — PII ciphertext envelope (`v1:`) + write-time DB CHECK + plaintext read-path telemetry
+
+Sprint 1 of the backlog-closure program (one branch, one push). Closes **A1** (ciphertext envelope + DB CHECK — the §3.3 write-time PII integrity guard) and **A2** (plaintext-passthrough read-path telemetry).
+
+### Security
+- **Versioned ciphertext envelope (A1).** `encrypt()` now emits `v1:iv:tag:ct`; a pure `classifyCiphertext()` distinguishes versioned / legacy / plaintext, and `decrypt()` reads BOTH the new `v1:` form and the legacy `iv:tag:ct` form (zero-downtime). A new idempotent, classification-driven backfill (`packages/db/scripts/envelope-backfill-pii.ts` — legacy→prefix, plaintext→encrypt, versioned→skip; `--dry-run`) brought every encrypted column onto the envelope, then `packages/db/sql/2026-07-ciphertext-envelope.sql` added Postgres `CHECK (col LIKE 'v1:%' OR col IS NULL)` constraints — **the write-time guard that makes a plaintext-PII write (the P1-1 class) impossible at the DB layer**. Coverage is global, not Customer-only: `Customer.{phone,email,nationalId}`, `MarketplaceDeedProof.{deedNumberEnc,ownerNationalIdEnc}`, `SystemConfig.smtpPasswordEncrypted` (the JSON `Organization.managerInfo.managerId` is enforced at the write path + A2 telemetry — a column CHECK can't reach a JSON sub-field). Live DB: 20 customers backfilled (legacy→`v1:`) and 1 org `managerId` found **plaintext** and now encrypted; constraints applied + self-validated.
+- **Plaintext read-path telemetry (A2).** `safeDecryptField` now classifies before decrypt: a should-be-encrypted field holding plaintext emits a structured, no-PII `[security] PII_PLAINTEXT_DETECTED field="…"` signal (field NAME only, never the value) via the new `apps/web/lib/security-log.ts`, then degrades by surfacing the real value. Until A1's CHECK is live this is the read-side leak detector; after it, plaintext is impossible.
+- **Disarmed 3 legacy one-time PII scripts.** `encrypt-existing-pii.ts`, `rehash-customer-phones.ts`, `repair-marketplace-customer-pii.ts` detected "already encrypted" by counting colon-parts (`=== 3`), which the 4-part `v1:` format would have broken — a re-run could have double-encrypted PII or hashed ciphertext into the blind index. All three are now `v1:`-aware (and noted superseded by `envelope-backfill-pii.ts`).
+
+### Tests
+- `encryption.test.ts` updated for the `v1:` shape + a full `classifyCiphertext` matrix; new `pii-crypto.test.ts` covers the A2 branch (plaintext flags + returns the value; versioned/legacy do not flag). Crypto suite green; full production build green.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimaric/compare/v4.30.1...v4.31.0
+
 ## [4.30.1] — 2026-06-16 — Security patch: password-reset token hash-at-rest + completeness-audit follow-ups
 
 A focused patch after an exhaustive multi-agent re-verification of every audit/backlog source against the shipped v4.30.0 code.
