@@ -75,6 +75,7 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.11.3",
+    "@next/env": "16.1.5",
     "@playwright/test": "^1.58.2",
     "@repo/eslint-config": "*",
     "@repo/typescript-config": "*",

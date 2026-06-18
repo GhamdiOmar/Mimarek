@@ -1,4 +1,12 @@
 import { defineConfig, devices } from '@playwright/test';
+import { createRequire } from 'node:module';
+
+// Load .env.local (DATABASE_URL etc.) into the test-runner process so specs that
+// talk to the DB directly (e.g. marketplace.cross-org) work on a local run. In CI
+// there is no .env.local, so the job-level env vars are used unchanged (no-op here).
+// @next/env is CommonJS — require() it to avoid ESM named-export interop issues.
+const { loadEnvConfig } = createRequire(import.meta.url)('@next/env');
+loadEnvConfig(process.cwd());
 
 /**
  * See https://playwright.dev/docs/test-configuration.
