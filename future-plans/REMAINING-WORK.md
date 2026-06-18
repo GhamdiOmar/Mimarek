@@ -8,7 +8,7 @@
 
 ## ✅ Closed in v4.33.0 (for reference — not outstanding)
 - **C: I2** payment reversal UI · **I1** payment-correctness-test imports the real ledger helpers · **H8** per-tenant blind index (HKDF v2 + dual-read + live backfill applied & verified) · **eslint-gap** `no-non-async-export-in-use-server` now flags re-exports.
-- **B: H7** lint genuinely gates now (removed `only-warn`; rules→error; backlog snapshotted into the committed `apps/web/eslint-suppressions.json`) · **C3-tail** exhaustive-deps folded into H7's gate · **H9** my-listings inquiries grid (`Promise.allSettled`) fixed + spec un-`fixme`'d · **A4-runbook** Step 5 recorded · **B2-proof** CustomerDrawer mobile bottom-sheet interaction screenshot captured · **F1-tail** the two reversed `t(en,ar)` facades fixed/documented.
+- **B: H7** lint genuinely gates now (removed `only-warn`; rules→error; backlog snapshotted into the committed `apps/web/eslint-suppressions.json`) · **C3-tail** exhaustive-deps folded into H7's gate · **A4-runbook** Step 5 recorded · **B2-proof** CustomerDrawer mobile bottom-sheet interaction screenshot captured · **F1-tail** the two reversed `t(en,ar)` facades fixed/documented.
 
 ---
 
@@ -26,6 +26,7 @@
 |---|---|---|---|
 | **lint-backlog** | ~159 suppressed lint findings in `apps/web/eslint-suppressions.json` — dominated by ~129 `@typescript-eslint/no-explicit-any` + ~22 `no-unused-vars` + 7 `exhaustive-deps`. The gate now BLOCKS new violations; the backlog is paid down incrementally. | Highest-churn / lowest-value; proper per-call-site typing (not blanket `unknown`). Fix opportunistically on touch, then `npm run lint:prune`. The file deletes itself when empty. | M (multi-PR) |
 | **F1-tail** | ~650 inline `lang==="ar"?` ternaries remain — correctly NOT converted by the F1 codemod (plumbing / control-values `dir`/`locale`/`className`, non-literal branches, files with no `t` facade incl. the deliberately-documented English-first `admin/marketplace` facade). | P3 cosmetic; convert only true string-literal copy pairs on touch. | L (multi-PR) |
+| **H9** | `e2e/marketplace.cross-org.spec.ts` seller-convert walk is `test.fixme`. v4.33.0 added the `Promise.allSettled` robustness fix to my-listings `loadAll()` (verified live, 0 console errors) but it did NOT make the spec pass in CI — the seller's incoming-inquiries grid arrives EMPTY in the CI fixture even though the OPEN inquiry exists. Convert is covered at the action/DB-gate layer. | Needs a focused repro that creates the inquiry + opens the seller grid (local seed has no marketplace inquiry, so it can't be reproduced against a prod build). Do NOT un-`fixme` again without a GREEN local run of this exact spec. | M |
 
 ### Minor known debt (pre-existing, surfaced by the v4.33.0 QA gate — fix on touch)
 - `app/actions/contracts.ts` `updateContractStatus` re-fetches without `include:{customer:true}` then casts `as typeof contract` — a shape lie that is harmless today (the return is discarded by the only caller) but would hand a future caller `customer: undefined`. Pre-existing, not a v4.33.0 regression.
