@@ -55,11 +55,7 @@ export class PlanningPage {
   }
 
   async fillWorkspaceName(name: string) {
-    const input = this.page
-      .locator('input')
-      .filter({ has: this.page.locator('[placeholder*="اسم مساحة العمل"], [placeholder*="Workspace name"]') })
-      .first();
-    // Fallback: find input after the English name label
+    // Find the first input inside the create-workspace modal and fill it.
     const inputs = this.page.locator('.fixed.inset-0 input');
     await inputs.first().fill(name);
   }

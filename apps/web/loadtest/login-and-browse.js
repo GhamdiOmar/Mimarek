@@ -52,6 +52,7 @@
  * ───────────────────────────────────────────────────────────────────────────
  */
 
+/* global __ENV, __VU -- k6 runtime injects these globals (https://k6.io/docs) */
 import http from "k6/http";
 import { check, group, sleep } from "k6";
 import { Trend, Rate, Counter } from "k6/metrics";
@@ -302,7 +303,7 @@ export function setup() {
 }
 
 // ─── Default function: runs repeatedly for each VU ───────────────────────────
-export default function (data) {
+export default function () {
   const { email, password } = pickAccount();
 
   // ── Login phase ─────────────────────────────────────────────────────────────
@@ -360,7 +361,7 @@ export default function (data) {
 }
 
 // ─── Teardown: called once after all VUs finish ───────────────────────────────
-export function teardown(data) {
+export function teardown() {
   // No server-side cleanup needed for JWT sessions (NextAuth JWT strategy — no
   // server-side session table). If you switch to DB sessions, add a DELETE here.
 }

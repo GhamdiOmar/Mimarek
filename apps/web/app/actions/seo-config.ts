@@ -18,6 +18,7 @@ export async function upsertSeoConfig(data: Record<string, string | null | undef
 }
 
 // Public read — no auth required (used by layout.tsx and robots.ts)
+// eslint-disable-next-line mimaric/require-action-guard -- public marketing-site SEO config (no tenant data or PII); intentionally unauthenticated.
 export async function getSeoConfigPublic() {
   try {
     return db.systemConfig.findUnique({ where: { id: "system" } });

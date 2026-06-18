@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { ROUTES } from "../../lib/routes";
 import { serialize } from "../../lib/serialize";
 import { auth } from "../../auth";
-import { hashForSearch } from "../../lib/encryption";
+import { searchHashCandidates } from "../../lib/pii-crypto";
 
 const MAINTENANCE_CATEGORIES = new Set([
   "HVAC",
@@ -35,7 +35,10 @@ async function getPortalIdentity() {
   const customer = await db.customer.findFirst({
     where: {
       organizationId: user.organizationId,
-      OR: [{ emailHash: hashForSearch(user.email) }, { email: user.email }],
+      OR: [
+        { emailHash: { in: searchHashCandidates(user.email, user.organizationId) } },
+        { email: user.email },
+      ],
     },
     select: { id: true, name: true, organizationId: true },
   });
@@ -44,6 +47,7 @@ async function getPortalIdentity() {
   return { user, customer };
 }
 
+// eslint-disable-next-line mimaric/require-action-guard -- guarded via getPortalIdentity() (auth() + role==="USER" check + org-scoped customer resolution) above.
 export async function getTenantPortalSummary() {
   const { customer } = await getPortalIdentity();
   const activeLease = await db.lease.findFirst({
@@ -75,6 +79,7 @@ export async function getTenantPortalSummary() {
   return serialize({ customer, activeLease, documents, maintenance });
 }
 
+// eslint-disable-next-line mimaric/require-action-guard -- guarded via getPortalIdentity() (auth() + role==="USER" + org-scoped customer/lease) before any write.
 export async function createTenantMaintenanceRequest(data: {
   title: string;
   description?: string;

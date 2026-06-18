@@ -502,9 +502,6 @@ export async function confirmMarketplaceInterest(
     );
   }
 
-  // Encrypt the normalized phone before writing to the Customer table.
-  const encryptedPhone = encryptCustomerData({ phone: normalizedPhone });
-
   const result = await db.$transaction(async (tx) => {
     const listing = await tx.marketplaceListing.findFirst({
       where: { id: listingId, status: "PUBLISHED" },
@@ -513,6 +510,10 @@ export async function confirmMarketplaceInterest(
     if (listing.sellerOrgId === session.organizationId) {
       throw new Error("You cannot express interest in your own organization's listing.");
     }
+
+    // Encrypt the normalized phone for the seller-side CRM customer. The blind-index
+    // hash is keyed to the SELLER org (the customer's owning org) — H8 per-tenant.
+    const encryptedPhone = encryptCustomerData({ phone: normalizedPhone }, listing.sellerOrgId);
 
     const duplicate = await tx.marketplaceInquiry.findUnique({
       where: { listingId_buyerOrgId: { listingId, buyerOrgId: session.organizationId } },

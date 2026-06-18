@@ -21,11 +21,34 @@ import type {
   WebhookVerificationResult,
   NormalizedPaymentStatus,
   PaymentBrand,
+  PaymentCurrency,
 } from "./types";
 
 // ─── Moyasar API Config ─────────────────────────────────────────────────────
 
 const MOYASAR_API_BASE = "https://api.moyasar.com/v1";
+
+/**
+ * Minimal shape of a Moyasar payment object — only the fields this adapter
+ * reads. Core fields (`id`, `status`, `amount`, `currency`) are always present
+ * on a successful response (`moyasarFetch` throws on non-2xx); the optional
+ * `source` fields are narrowed with `?.` and fall through to normalized
+ * defaults. See https://docs.moyasar.com/payment-object.
+ */
+interface MoyasarPayment {
+  id: string;
+  status: string;
+  amount: number;
+  currency: PaymentCurrency;
+  refunded?: number;
+  updated_at?: string;
+  source?: {
+    transaction_url?: string;
+    company?: string;
+    number?: string;
+    message?: string;
+  };
+}
 
 function getApiKey(): string {
   const key = process.env.MOYASAR_API_KEY;
@@ -122,7 +145,7 @@ export const moyasarAdapter: PaymentProvider = {
       },
     };
 
-    const data = await moyasarFetch<any>("/payments", {
+    const data = await moyasarFetch<MoyasarPayment>("/payments", {
       method: "POST",
       body: JSON.stringify(body),
     });
@@ -137,7 +160,7 @@ export const moyasarAdapter: PaymentProvider = {
   },
 
   async verifyPayment(gatewayRef: string): Promise<VerifyPaymentResponse> {
-    const data = await moyasarFetch<any>(`/payments/${gatewayRef}`);
+    const data = await moyasarFetch<MoyasarPayment>(`/payments/${gatewayRef}`);
 
     return {
       gatewayRef: data.id,
@@ -158,7 +181,7 @@ export const moyasarAdapter: PaymentProvider = {
       body.amount = toMinorUnits(request.amount);
     }
 
-    const data = await moyasarFetch<any>(`/payments/${request.gatewayRef}/refund`, {
+    const data = await moyasarFetch<MoyasarPayment>(`/payments/${request.gatewayRef}/refund`, {
       method: "POST",
       body: JSON.stringify(body),
     });
@@ -183,7 +206,7 @@ export const moyasarAdapter: PaymentProvider = {
       },
     };
 
-    const data = await moyasarFetch<any>("/payments", {
+    const data = await moyasarFetch<MoyasarPayment>("/payments", {
       method: "POST",
       body: JSON.stringify(body),
     });

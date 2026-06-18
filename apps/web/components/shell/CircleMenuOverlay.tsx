@@ -47,7 +47,7 @@ interface OverlayProps {
 }
 
 export default function CircleMenuOverlay({ onClose, userRole }: OverlayProps) {
-  const { lang } = useLanguage();
+  const { lang, t } = useLanguage();
   const rtl = lang === "ar";
   const pathname = usePathname();
   const reduce = useReducedMotion() ?? false;
@@ -178,10 +178,9 @@ export default function CircleMenuOverlay({ onClose, userRole }: OverlayProps) {
     pathname === href || (href !== "/dashboard" && pathname.startsWith(href + "/"));
   const isGroupActive = (g: ResolvedRadialGroup) => g.children.some((c) => isChildActive(c.href));
 
-  const t = (en: string, ar: string) => (lang === "ar" ? ar : en);
-  const dialogLabel = t("Main navigation", "التنقل الرئيسي");
+  const dialogLabel = t("التنقل الرئيسي", "Main navigation");
   const centerLabel =
-    level === 1 && !singleGroup ? t("Back", "رجوع") : t("Close menu", "إغلاق القائمة");
+    level === 1 && !singleGroup ? t("رجوع", "Back") : t("إغلاق القائمة", "Close menu");
 
   // Anchor: viewport center (full) or bottom-center thumb zone (half).
   const anchorStyle: React.CSSProperties = isMobile
@@ -216,7 +215,7 @@ export default function CircleMenuOverlay({ onClose, userRole }: OverlayProps) {
           <span className="rounded-full border border-border bg-card/80 px-3 py-1.5 text-xs text-muted-foreground shadow-sm backdrop-blur">
             {level === 1 && activeGroup
               ? activeGroup.label[lang]
-              : t("Press ⌘K to search anywhere", "اضغط ⌘K للبحث في أي مكان")}
+              : t("اضغط ⌘K للبحث في أي مكان", "Press ⌘K to search anywhere")}
           </span>
         </div>
 
@@ -336,16 +335,16 @@ export default function CircleMenuOverlay({ onClose, userRole }: OverlayProps) {
           <div className="absolute inset-x-0 bottom-8 flex justify-center px-4 md:bottom-12">
             <div className="pointer-events-auto max-w-sm rounded-xl border border-border bg-card p-4 text-center shadow-modal">
               <p className="text-sm font-semibold text-foreground">
-                {t("New: radial navigation", "جديد: التنقل الدائري")}
+                {t("جديد: التنقل الدائري", "New: radial navigation")}
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
                 {t(
-                  "Pick a section, then choose a page. Press Esc to go back, or ⌘K to search.",
                   "اختر قسمًا ثم صفحة. اضغط Esc للرجوع أو ⌘K للبحث.",
+                  "Pick a section, then choose a page. Press Esc to go back, or ⌘K to search.",
                 )}
               </p>
               <Button type="button" size="sm" onClick={dismissCoach} className="mt-3">
-                {t("Got it", "فهمت")}
+                {t("فهمت", "Got it")}
               </Button>
             </div>
           </div>

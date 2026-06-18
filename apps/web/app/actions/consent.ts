@@ -24,6 +24,7 @@ function truncateIp(forwarded: string | null): string | null {
  * trail). Append-only; fire-and-forget from the client — it must NEVER block or
  * break the consent UX, so every failure is swallowed (fail-open).
  */
+// eslint-disable-next-line mimaric/require-action-guard -- records an anonymous visitor's cookie-consent pre-auth (fail-open, no session by design).
 export async function recordConsent(input: {
   version: number;
   analytics: boolean;

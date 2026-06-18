@@ -19,7 +19,13 @@ afterAll(() => {
 
 // Imported after the env vars above are declared; encryption.ts reads the key
 // lazily inside encrypt()/decrypt(), so beforeAll() still wins.
-import { encrypt, decrypt, hashForSearch, classifyCiphertext } from "./encryption";
+import {
+  encrypt,
+  decrypt,
+  hashForSearch,
+  legacyHashForSearch,
+  classifyCiphertext,
+} from "./encryption";
 
 describe("encryption — AES-256-GCM round-trip", () => {
   it("decrypt(encrypt(x)) === x for ASCII, Arabic, and Saudi phone formats", () => {
@@ -106,15 +112,31 @@ describe("classifyCiphertext — envelope classifier (A1)", () => {
   });
 });
 
-describe("hashForSearch — deterministic blind index", () => {
-  it("is stable for the same input and v1-prefixed", () => {
-    const h1 = hashForSearch("0551234567");
-    const h2 = hashForSearch("0551234567");
+describe("hashForSearch — per-tenant (v2) deterministic blind index", () => {
+  const ORG = "org-test-1";
+
+  it("is stable for the same input + org and v2-prefixed", () => {
+    const h1 = hashForSearch("0551234567", ORG);
+    const h2 = hashForSearch("0551234567", ORG);
     expect(h1).toBe(h2);
-    expect(h1.startsWith("v1:")).toBe(true);
+    expect(h1.startsWith("v2:")).toBe(true);
   });
 
   it("normalizes case + whitespace before hashing", () => {
-    expect(hashForSearch("  Test@Example.com  ")).toBe(hashForSearch("test@example.com"));
+    expect(hashForSearch("  Test@Example.com  ", ORG)).toBe(
+      hashForSearch("test@example.com", ORG),
+    );
+  });
+
+  it("is cross-tenant unlinkable — same value, different org → different hash", () => {
+    expect(hashForSearch("0551234567", "org-A")).not.toBe(
+      hashForSearch("0551234567", "org-B"),
+    );
+  });
+
+  it("legacyHashForSearch is the v1 global-pepper form (dual-read / backfill only)", () => {
+    const l = legacyHashForSearch("0551234567");
+    expect(l.startsWith("v1:")).toBe(true);
+    expect(legacyHashForSearch("0551234567")).toBe(l); // deterministic
   });
 });

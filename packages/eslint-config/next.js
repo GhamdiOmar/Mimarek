@@ -33,6 +33,11 @@ const noNonAsyncExportInUseServer = {
       nonAsync:
         'A "use server" file may only export async functions. Move this value to a ' +
         "server-only module (e.g. lib/server/*) and import it where needed — see AGENTS.md §4.",
+      reexport:
+        'A "use server" file may not re-export from another module (`export { … } from`, ' +
+        "`export type { … } from`, or `export * from`). Turbopack mis-lowers the re-export into a " +
+        "runtime binding and collapses the Server Action bundle (the D1 RetentionTable 500). " +
+        "Import the symbol where it is consumed instead — see AGENTS.md §4.",
     },
     schema: [],
   },
@@ -49,8 +54,17 @@ const noNonAsyncExportInUseServer = {
       },
       ExportNamedDeclaration(node) {
         if (!isUseServer) return;
+        // Re-exports (`export { x } from "…"`, `export type { x } from "…"`) carry a
+        // `source`. Turbopack lowers them into a runtime binding inside a "use server"
+        // file, collapsing the whole Server Action bundle. Ban them regardless of
+        // exportKind (value OR type). A local specifier list (`export { f }`, no
+        // `source`) stays out of scope — `f` is a local async fn declared above.
+        if (node.source) {
+          context.report({ node, messageId: "reexport" });
+          return;
+        }
         const d = node.declaration;
-        if (!d) return; // `export { ... }` specifier lists are out of scope
+        if (!d) return; // local `export { ... }` specifier lists are out of scope
         if (d.type === "FunctionDeclaration") {
           if (!d.async) context.report({ node: d, messageId: "nonAsync" });
         } else if (d.type === "VariableDeclaration") {
@@ -61,6 +75,11 @@ const noNonAsyncExportInUseServer = {
           }
         }
         // TS type/interface declarations are erased at build — allowed.
+      },
+      ExportAllDeclaration(node) {
+        // `export * from "…"` (and `export * as ns from "…"`) — same Turbopack hazard.
+        if (!isUseServer) return;
+        context.report({ node, messageId: "reexport" });
       },
       ExportDefaultDeclaration(node) {
         if (!isUseServer) return;
@@ -369,10 +388,11 @@ export const nextJsConfig = [
   // Mimaric governed-clickable guardrails (AGENTS.md §6.6)
   // Prevents reintroducing banned clickable anti-patterns.
   //
-  // NOTE ON SEVERITY: eslint-plugin-only-warn (included in base.js) downgrades
-  // all "error" severity violations to "warn" at the Linter level, so these
-  // rules show as warnings in CLI output but remain "error" in config intent.
-  // CI stays green (0 errors); violations are visible and tracked as warnings.
+  // NOTE ON SEVERITY (v4.33.0 — H7 ratchet): eslint-plugin-only-warn was REMOVED.
+  // These rules are real "error"s now — a NEW violation fails CI. The pre-existing
+  // backlog is carried in the committed apps/web/eslint-suppressions.json
+  // (`eslint --suppress-all`); shrink it with `npm run lint:prune`. A clean CI run
+  // therefore means every governed rule passed (no silent warn-downgrade).
   //
   // NOTE ON jsx-a11y: eslint-plugin-jsx-a11y is not installed in this package.
   // Per project instructions, jsx-a11y rules are not added here. Install
@@ -503,5 +523,17 @@ export const nextJsConfig = [
       "**/seed.ts",
     ],
     rules: { "no-restricted-syntax": "off" },
+  },
+  {
+    // H7 ratchet (v4.33.0): eslint-plugin-only-warn was removed so lint genuinely
+    // gates. These two rules were "warn" in the recommended presets; bump to "error"
+    // so any NEW violation fails CI. The existing backlog is carried by the committed
+    // `eslint-suppressions.json` (generated via `eslint --suppress-all`); prune it with
+    // `eslint --prune-suppressions` as the backlog shrinks, then delete it when empty.
+    files: ["**/*.ts", "**/*.tsx"],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "error",
+      "react-hooks/exhaustive-deps": "error",
+    },
   },
 ];

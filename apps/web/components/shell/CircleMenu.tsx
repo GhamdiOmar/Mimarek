@@ -31,7 +31,7 @@ interface CircleMenuProps {
 }
 
 export function CircleMenu({ open, onOpenChange, userRole }: CircleMenuProps) {
-  const { t, lang } = useLanguage();
+  const { t } = useLanguage();
 
   return (
     <>

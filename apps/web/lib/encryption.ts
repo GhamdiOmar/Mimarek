@@ -1,4 +1,4 @@
-import { createCipheriv, createDecipheriv, randomBytes, createHmac } from "crypto";
+import { createCipheriv, createDecipheriv, randomBytes, createHmac, hkdfSync } from "crypto";
 
 const ALGORITHM = "aes-256-gcm";
 const IV_LENGTH = 12;
@@ -107,11 +107,48 @@ function getPepper(): string {
   return pepper;
 }
 
+/** Canonical blind-index normalization — applied identically on write and search. */
+function normalizeForHash(value: string): string {
+  return value.trim().toLowerCase();
+}
+
 /**
- * Keyed HMAC-SHA256 blind index for exact-match search on encrypted fields.
- * Output is prefixed with "v1:" to allow future key rotation.
+ * Per-tenant blind-index subkey (H8). Derived from the master pepper via
+ * HKDF-SHA256 (RFC 5869) with a per-org domain-separation `info` label — so two
+ * organizations produce DIFFERENT keys (hence different hashes) for the SAME
+ * value. This makes the stored blind indexes cross-tenant UNLINKABLE: an attacker
+ * with read access to the hash columns (but not the pepper) cannot correlate that
+ * the same phone/email exists across orgs, and cannot brute-force without the
+ * pepper. No per-org secret is stored — the key is a deterministic function of
+ * pepper + orgId. (A full pepper compromise still derives every key; storing
+ * independent per-org keys in a KMS is the deferred DB-governance program's scope.)
+ */
+function tenantBlindKey(orgId: string): Buffer {
+  // HKDF extract+expand: ikm=pepper, salt empty, info = domain-separated per-org label, 32-byte key.
+  return Buffer.from(hkdfSync("sha256", getPepper(), "", "mimaric/blind-index/v2/" + orgId, 32));
+}
+
+/**
+ * Per-tenant keyed HMAC-SHA256 blind index for exact-match search on encrypted
+ * fields (v2). Prefixed "v2:". The search path MUST hash the query with the same
+ * orgId, and — during the v1→v2 migration window — also probe the legacy hash via
+ * `legacyHashForSearch` (dual-read), see pii-crypto's *Candidates helpers.
  * Fails closed if PII_HASH_PEPPER is unset.
  */
-export function hashForSearch(value: string): string {
-  return "v1:" + createHmac("sha256", getPepper()).update(value.trim().toLowerCase()).digest("hex");
+export function hashForSearch(value: string, orgId: string): string {
+  return (
+    "v2:" +
+    createHmac("sha256", tenantBlindKey(orgId)).update(normalizeForHash(value)).digest("hex")
+  );
+}
+
+/**
+ * Legacy global-pepper blind index (v1). Retained ONLY for the dual-read window
+ * during the per-tenant (v2) migration and for the one-time re-hash backfill
+ * (`scripts/rehash-blind-index-v2.ts`). New writes use the per-tenant
+ * `hashForSearch(value, orgId)`. Remove once every long-lived environment is
+ * fully backfilled to v2 and no v1-prefixed hash remains.
+ */
+export function legacyHashForSearch(value: string): string {
+  return "v1:" + createHmac("sha256", getPepper()).update(normalizeForHash(value)).digest("hex");
 }

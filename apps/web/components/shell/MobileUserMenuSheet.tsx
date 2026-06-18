@@ -37,7 +37,7 @@ export function MobileUserMenuSheet({ open, onOpenChange, orgName }: MobileUserM
   React.useEffect(() => setMounted(true), []);
 
   const userName = session?.user?.name ?? (t("مستخدم", "User"));
-  const userRole = (session?.user as any)?.role ?? "USER";
+  const userRole = session?.user?.role ?? "USER";
   const roleLabel = roleLabels[userRole] ?? { ar: "مستخدم", en: "User" };
   const userEmail = session?.user?.email;
 

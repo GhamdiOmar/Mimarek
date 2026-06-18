@@ -57,6 +57,7 @@ export async function changePassword(data: {
   return { success: true };
 }
 
+// eslint-disable-next-line mimaric/require-action-guard -- public pre-auth: a locked-out user requests a reset; responds uniformly to avoid account enumeration.
 export async function requestPasswordReset(email: string) {
   const normalizedEmail = email.toLowerCase().trim();
 
@@ -109,6 +110,7 @@ export async function requestPasswordReset(email: string) {
   return { success: true };
 }
 
+// eslint-disable-next-line mimaric/require-action-guard -- token-gated pre-auth: the hashed reset token IS the credential (user is locked out, has no session).
 export async function resetPassword(token: string, newPassword: string) {
   // Look up by HASH of the incoming token — only the hash is stored at rest.
   const tokenHash = sha256Hex(token);

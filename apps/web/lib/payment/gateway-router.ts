@@ -11,11 +11,11 @@ import { db } from "@repo/db";
 
 // ─── Gateway Registry ───────────────────────────────────────────────────────
 
-const GATEWAY_ADAPTERS: Record<GatewayName, PaymentProvider> = {
+const GATEWAY_ADAPTERS: Record<GatewayName, PaymentProvider | null> = {
   moyasar: moyasarAdapter,
   // Future: hyperpayAdapter, paytabsAdapter
-  hyperpay: null as any, // Placeholder — not yet implemented
-  paytabs: null as any,  // Placeholder — not yet implemented
+  hyperpay: null, // Placeholder — not yet implemented
+  paytabs: null,  // Placeholder — not yet implemented
 };
 
 // ─── Router ─────────────────────────────────────────────────────────────────

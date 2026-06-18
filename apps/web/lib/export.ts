@@ -20,6 +20,25 @@ function neutralizeFormula(v: unknown): unknown {
   return v;
 }
 
+/** One exported row: an opaque record keyed by column key. */
+type ExportRow = Record<string, unknown>;
+
+/**
+ * A column descriptor. `render`'s parameter is typed `never` so that callers
+ * may supply a narrowly-typed renderer per column — `(v: string) => ...`,
+ * `(v: number) => ...`, `(v: unknown) => ...` — without a shared value type.
+ * A single value type can't express a heterogeneous columns array (different
+ * keys carry different value types); `never` accepts every renderer signature
+ * contravariantly. The value is opaque at the call boundary, so internally the
+ * renderer is invoked through an `(val: unknown) => string` view.
+ */
+type ExportColumn = {
+  header: string;
+  key: string;
+  width?: number;
+  render?: (val: never) => string;
+};
+
 export async function exportToExcel({
   data,
   columns,
@@ -27,8 +46,8 @@ export async function exportToExcel({
   lang = 'ar',
   title = 'تقرير ميماريك',
 }: {
-  data: any[];
-  columns: { header: string; key: string; width?: number; render?: (val: any) => string }[];
+  data: ExportRow[];
+  columns: ExportColumn[];
   filename?: string;
   lang?: 'ar' | 'en';
   title?: string;
@@ -78,7 +97,7 @@ export async function exportToExcel({
   data.forEach((item) => {
     const rowValues = columns.map((c) => {
       const val = item[c.key];
-      const render = c.render;
+      const render = c.render as ((value: unknown) => string) | undefined;
       return neutralizeFormula(render ? render(val) : val ?? '');
     });
     
@@ -166,7 +185,6 @@ export async function exportToPDF({
     const pdf = new jsPDF('l', 'mm', 'a4');
     
     const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
     // A4 Landscape dimensions: 297 x 210 mm
     // Margin of 10mm

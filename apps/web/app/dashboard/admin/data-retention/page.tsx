@@ -461,7 +461,7 @@ export default function DataRetentionPage() {
         },
       },
     ],
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
     [lang, labels],
   );
 

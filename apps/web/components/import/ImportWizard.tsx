@@ -20,6 +20,7 @@ import {
   DataTable,
   EmptyState,
   Switch,
+  SelectField,
   DirectionalIcon,
   type ColumnDef,
 } from "@repo/ui";
@@ -72,6 +73,19 @@ type Step = 0 | 1 | 2 | 3 | 4;
 type MappedRow = {
   rowNumber: number;
   [key: string]: string | number;
+};
+
+/**
+ * A mapped row decorated with its per-row validation verdict for the preview grid.
+ * Not a `MappedRow &` intersection: `MappedRow`'s `[key: string]: string | number`
+ * index signature would force `__messages: string[]` to also be `string | number`.
+ * The index signature here admits every value actually stored in a preview row.
+ */
+type PreviewRow = {
+  rowNumber: number;
+  __status: "ok" | "error" | "duplicate";
+  __messages: string[];
+  [key: string]: string | number | string[];
 };
 
 const NUMBER_FMT_DIR = "ltr"; // phone/id/number cells flow LTR even in RTL.
@@ -262,7 +276,7 @@ export function ImportWizard({
   }
 
   // ── Preview grid (Step 3) ──
-  const previewRows = React.useMemo(() => {
+  const previewRows = React.useMemo<PreviewRow[]>(() => {
     if (!sheet || !verdict) return [];
     const errorMap = new Map<number, string[]>();
     for (const e of verdict.errors) errorMap.set(e.rowNumber, e.messages);
@@ -279,14 +293,14 @@ export function ImportWizard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sheet, verdict, mapping, config]);
 
-  const previewColumns = React.useMemo<ColumnDef<any, any>[]>(() => {
-    const fieldCols: ColumnDef<any, any>[] = config.fields
+  const previewColumns = React.useMemo<ColumnDef<PreviewRow>[]>(() => {
+    const fieldCols: ColumnDef<PreviewRow>[] = config.fields
       .filter((f) => mapping[f.key])
       .map((f) => ({
         accessorKey: f.key,
         header: tt(f.label, lang),
         enableSorting: false,
-        cell: ({ row }: any) => {
+        cell: ({ row }) => {
           const numericish = ["phone", "nationalId", "number", "price", "markupPrice", "rentalPrice", "area"].includes(f.key);
           return (
             <span
@@ -299,13 +313,13 @@ export function ImportWizard({
         },
       }));
 
-    const statusCol: ColumnDef<any, any> = {
+    const statusCol: ColumnDef<PreviewRow> = {
       id: "__status",
       header: T("الحالة", "Status"),
       enableSorting: false,
-      cell: ({ row }: any) => {
-        const s = row.original.__status as "ok" | "error" | "duplicate";
-        const msgs = row.original.__messages as string[];
+      cell: ({ row }) => {
+        const s = row.original.__status;
+        const msgs = row.original.__messages;
         if (s === "ok") {
           return (
             <Badge variant="success" className="gap-1">
@@ -567,16 +581,13 @@ export function ImportWizard({
                       className="hidden h-4 w-4 text-muted-foreground sm:block justify-self-center"
                       aria-hidden="true"
                     />
-                    <select
+                    <SelectField
                       value={mapping[f.key] ?? ""}
                       onChange={(e) =>
                         setMapping((prev) => ({ ...prev, [f.key]: e.target.value || undefined }))
                       }
                       aria-label={T(`ربط عمود ${tt(f.label, "ar")}`, `Map column for ${tt(f.label, "en")}`)}
-                      className={cn(
-                        "h-10 w-full rounded-md border bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                        missing ? "border-destructive/60" : "border-input",
-                      )}
+                      className={missing ? "border-destructive/60" : undefined}
                     >
                       <option value="">{T("— غير مربوط —", "— Not mapped —")}</option>
                       {sheet.headers.map((h) => (
@@ -584,7 +595,7 @@ export function ImportWizard({
                           {h}
                         </option>
                       ))}
-                    </select>
+                    </SelectField>
                   </div>
                 );
               })}
@@ -654,8 +665,8 @@ export function ImportWizard({
                 locale={lang}
                 pagination
                 pageSize={10}
-                getRowId={(r: any) => String(r.rowNumber)}
-                rowClassName={(r: any) =>
+                getRowId={(r) => String(r.rowNumber)}
+                rowClassName={(r) =>
                   r.__status === "error"
                     ? "bg-destructive/5"
                     : r.__status === "duplicate"

@@ -24,10 +24,12 @@
  *   - Main seed + billing seed already run (org + user exist)
  */
 
-import { PrismaClient, Prisma } from "@prisma/client";
+import { PrismaClient, type RentInstallment } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
 import { effectivePaid } from "../../lib/money";
+import { decidePaymentApplication } from "../../lib/payments/recording";
+import { appendRentPayment } from "../../lib/payments/ledger";
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) throw new Error("DATABASE_URL is required");
@@ -109,28 +111,31 @@ async function createInstallment(
 }
 
 /**
- * Inline recordPayment logic — mirrors the ledger server-action path (I2):
- * idempotency on the immutable RentPayment row keyed by (installmentId,
- * idempotencyKey=paymentReference), append the ledger row, recompute the cache
- * from SUM(RentPayment.amount), and persist paidAmount/status onto the installment.
+ * recordPayment path under test — exercises the REAL shared ledger code rather
+ * than a re-implementation: the guard/status decision comes from
+ * `decidePaymentApplication` (lib/payments/recording.ts) and the immutable
+ * append + cache-recompute + denorm comes from `appendRentPayment`
+ * (lib/payments/ledger.ts) — the exact functions the `recordPayment` server
+ * action delegates to. Only the action-only wrapper (idempotency short-circuit
+ * + the `FOR UPDATE` row lock) is replicated here, because the real action is a
+ * `"use server"` module that can't be imported into a plain Node test runtime.
  */
 async function doRecordPayment(
   installmentId: string,
   payAmount: number,
   paymentReference: string,
   paidAtDate = new Date(),
-): Promise<{ row: any; replayed: boolean }> {
+): Promise<{ row: RentInstallment; replayed: boolean }> {
   type LockedRow = {
     id: string;
     leaseId: string;
     amount: string;
     paidAmount: string | null;
     status: string;
-    organizationId: string;
   };
 
   return prisma.$transaction(async (tx) => {
-    // Idempotency short-circuit — now on the RentPayment ledger row.
+    // Idempotency short-circuit — on the immutable RentPayment ledger row.
     const priorPayment = await tx.rentPayment.findUnique({
       where: {
         installmentId_idempotencyKey: { installmentId, idempotencyKey: paymentReference },
@@ -141,64 +146,50 @@ async function doRecordPayment(
       return { row: priorPayment.installment, replayed: true };
     }
 
-    // Lock the installment row (now also selects leaseId for the ledger insert).
+    // Lock the installment row FOR UPDATE (the action-only concurrency wrapper).
     const locked = await tx.$queryRaw<LockedRow[]>`
       SELECT ri.id,
              ri."leaseId" AS "leaseId",
              ri.amount::text AS amount,
              ri."paidAmount"::text AS "paidAmount",
-             ri.status::text AS status,
-             c."organizationId" AS "organizationId"
+             ri.status::text AS status
       FROM "RentInstallment" ri
-      JOIN "Lease" l ON l.id = ri."leaseId"
-      JOIN "Customer" c ON c.id = l."customerId"
       WHERE ri.id = ${installmentId}
       FOR UPDATE OF ri
     `;
     const row = locked[0];
     if (!row) throw new Error("Installment not found");
-    if (row.status === "PAID") throw new Error("ALREADY_PAID");
 
-    const installmentAmount = Number(row.amount);
-    const priorPaid = Number(row.paidAmount ?? 0);
-    const projected = priorPaid + payAmount;
-
-    if (projected > installmentAmount + 0.005) {
-      throw new Error("OVERPAY");
-    }
-
-    // Append the immutable ledger row.
-    await tx.rentPayment.create({
-      data: {
-        installmentId,
-        leaseId: row.leaseId,
-        amount: payAmount,
-        txType: "PAYMENT",
-        idempotencyKey: paymentReference,
-        channel: "BANK_TRANSFER",
+    // Guards + status decision via the REAL pure decision helper.
+    const decision = decidePaymentApplication(
+      {
+        status: row.status,
+        amount: Number(row.amount),
+        paidAmount: Number(row.paidAmount ?? 0),
       },
-    });
+      payAmount,
+    );
+    if (decision.kind === "reject") throw new Error(decision.reason);
 
-    // Recompute the cache from the ledger SUM.
-    const agg = await tx.rentPayment.aggregate({
-      where: { installmentId },
-      _sum: { amount: true },
-    });
-    const newPaidAmount = Number(agg._sum.amount ?? 0);
-    const newStatus =
-      newPaidAmount >= installmentAmount - 0.005 ? "PAID" : "PARTIALLY_PAID";
-
-    const updated = await tx.rentInstallment.update({
-      where: { id: installmentId },
-      data: {
-        status: newStatus as any,
-        paidAmount: newPaidAmount,
+    // Append the immutable ledger row + recompute cache via the REAL writer.
+    await appendRentPayment(tx, {
+      installmentId,
+      leaseId: row.leaseId,
+      installmentAmount: Number(row.amount),
+      amount: payAmount,
+      txType: "PAYMENT",
+      idempotencyKey: paymentReference,
+      channel: "BANK_TRANSFER",
+      lastPaymentMeta: {
         paidAt: paidAtDate,
         paymentMethod: "BANK_TRANSFER",
         paymentReference,
       },
     });
 
+    const updated = await tx.rentInstallment.findUniqueOrThrow({
+      where: { id: installmentId },
+    });
     return { row: updated, replayed: false };
   });
 }
@@ -256,8 +247,8 @@ async function main() {
     let threw = false;
     try {
       await doRecordPayment(installmentId, 500, `ref-overpay-${Date.now()}`);
-    } catch (e: any) {
-      threw = e.message === "OVERPAY";
+    } catch (e) {
+      threw = e instanceof Error && e.message === "OVERPAY";
     }
     assert(threw, "overpay throws OVERPAY");
     // Row must be unchanged
@@ -274,8 +265,8 @@ async function main() {
     let threw = false;
     try {
       await doRecordPayment(installmentId, 400, `ref-op-b-${Date.now()}`); // 700+400 > 1000+0.005
-    } catch (e: any) {
-      threw = e.message === "OVERPAY";
+    } catch (e) {
+      threw = e instanceof Error && e.message === "OVERPAY";
     }
     assert(threw, "overpay throws after partial");
     const ri = await prisma.rentInstallment.findUnique({ where: { id: installmentId } });
@@ -306,8 +297,8 @@ async function main() {
     let threw = false;
     try {
       await doRecordPayment(installmentId, 100, `ref-paid-b-${Date.now()}`);
-    } catch (e: any) {
-      threw = e.message === "ALREADY_PAID";
+    } catch (e) {
+      threw = e instanceof Error && e.message === "ALREADY_PAID";
     }
     assert(threw, "second payment on PAID installment throws ALREADY_PAID");
   }
@@ -426,8 +417,8 @@ async function main() {
         where: { id: inst2 },
         data: { paymentReference: ref },
       });
-    } catch (e: any) {
-      constraintHit = e?.code === "P2002";
+    } catch (e) {
+      constraintHit = (e as { code?: string })?.code === "P2002";
     }
     assert(constraintHit, "@@unique([leaseId, paymentReference]) blocks duplicate key (P2002)");
   }

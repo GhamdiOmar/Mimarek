@@ -6,8 +6,6 @@ import { Button, ResponsiveDialog, Switch, cn } from "@repo/ui";
 
 type Lang = "ar" | "en";
 
-const t = (lang: Lang, ar: string, en: string) => (lang === "ar" ? ar : en);
-
 const COPY = {
   title: { ar: "نحترم خصوصيتك", en: "We respect your privacy" },
   body: {

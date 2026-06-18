@@ -37,7 +37,7 @@ export default async function CRMPage() {
 
   // Same client-side filter the previous mount-time loadData() applied to the
   // team list before seeding the agent dropdowns.
-  const initialTeamMembers = members.filter((m: any) =>
+  const initialTeamMembers = members.filter((m) =>
     ["ADMIN", "MANAGER", "AGENT"].includes(m.role),
   );
 

@@ -36,7 +36,6 @@ import {
   SelectField,
   type ColumnDef,
 } from "@repo/ui";
-import { cn } from "@repo/ui/lib/utils";
 import { useLanguage } from "../../../components/LanguageProvider";
 import { usePermissions } from "../../../hooks/usePermissions";
 import {
@@ -377,6 +376,7 @@ function MarketplacePage({ initialListings, initialSellerOrgs }: MarketplaceView
           ) : null,
       },
     ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `t` is derived from `lang`, which is already a dep; listing `lang` covers every translation read here.
     [lang, setWithdrawTarget, setWithdrawError]
   );
 

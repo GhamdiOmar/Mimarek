@@ -1,6 +1,6 @@
 import "server-only";
 
-import { db } from "@repo/db";
+import { db, Prisma } from "@repo/db";
 import { randomBytes } from "crypto";
 import { getAppUrl } from "./app-url";
 import { sha256Hex } from "./token-hash";
@@ -38,7 +38,7 @@ export async function issueEmailVerificationToken(userId: string, email: string)
   const tokenHash = sha256Hex(rawToken);
   const expiresAt = new Date(Date.now() + TOKEN_TTL_MS);
 
-  await db.$transaction(async (tx: any) => {
+  await db.$transaction(async (tx: Prisma.TransactionClient) => {
     // Invalidate any previous still-pending links for this user.
     await tx.emailVerificationToken.deleteMany({
       where: { userId, usedAt: null },
@@ -78,7 +78,7 @@ export async function consumeEmailVerificationToken(rawToken: string): Promise<C
   const now = new Date();
 
   try {
-    return await db.$transaction(async (tx: any): Promise<ConsumeResult> => {
+    return await db.$transaction(async (tx: Prisma.TransactionClient): Promise<ConsumeResult> => {
       const claimed = await tx.emailVerificationToken.updateMany({
         where: { tokenHash, usedAt: null, expiresAt: { gt: now } },
         data: { usedAt: now },

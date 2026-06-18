@@ -11,7 +11,7 @@
  */
 
 import { db } from "@repo/db";
-import type { SubscriptionStatus } from "@prisma/client";
+import type { Prisma, SubscriptionStatus } from "@prisma/client";
 import { invalidateEntitlements } from "../entitlements";
 import { isValidSubscriptionTransition } from "./subscription-transitions";
 
@@ -90,7 +90,7 @@ export async function transitionSubscription(
         toStatus,
         triggeredBy,
         reason,
-        metadata: metadata as any,
+        metadata: metadata as Prisma.InputJsonValue | undefined,
       },
     }),
   ]);

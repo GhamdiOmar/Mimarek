@@ -23,7 +23,6 @@ import {
   Badge,
   Skeleton,
   EmptyState,
-  DirectionalIcon,
   IconButton,
   ActionLink,
 } from "@repo/ui";
@@ -36,16 +35,44 @@ import {
   getPaymentMethods,
 } from "../../actions/billing";
 
+// ─── Serialized DTOs (Decimal → string|number, Date → string over the RSC boundary) ──
+
+type SubscriptionDTO = {
+  status: string;
+  billingCycle: string;
+  priceAtRenewal: number | string | null;
+  nextBillingDate: string | null;
+  trialEndsAt: string | null;
+  plan: { nameAr: string; nameEn: string };
+};
+
+type InvoiceDTO = {
+  id: string;
+  invoiceNumber: string;
+  issuedAt: string | null;
+  total: number | string;
+  status: string;
+};
+
+type PaymentMethodDTO = {
+  id: string;
+  brand: string | null;
+  lastFourDigits: string | null;
+  expiryMonth: number | null;
+  expiryYear: number | null;
+  isDefault: boolean;
+};
+
 export default function BillingDashboardPage() {
   const { can } = usePermissions();
   const { lang } = useLanguage();
-  const [subscription, setSubscription] = React.useState<any>(null);
-  const [invoices, setInvoices] = React.useState<any[]>([]);
-  const [paymentMethods, setPaymentMethods] = React.useState<any[]>([]);
+  const [subscription, setSubscription] = React.useState<SubscriptionDTO | null>(null);
+  const [invoices, setInvoices] = React.useState<InvoiceDTO[]>([]);
+  const [paymentMethods, setPaymentMethods] = React.useState<PaymentMethodDTO[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
-  const [changingPlan, setChangingPlan] = React.useState(false);
-  const [updatingPayment, setUpdatingPayment] = React.useState(false);
+  const [changingPlan] = React.useState(false);
+  const [updatingPayment] = React.useState(false);
 
   React.useEffect(() => {
     async function load() {
@@ -58,13 +85,14 @@ export default function BillingDashboardPage() {
         setSubscription(sub);
         setInvoices(inv.invoices);
         setPaymentMethods(pm);
-      } catch (err) {
+      } catch {
         setError(lang === "ar" ? "فشل تحميل بيانات الفوترة" : "Failed to load billing data");
       } finally {
         setLoading(false);
       }
     }
     load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- load once on mount; `lang` only affects the error-string branch and re-fetching on language toggle would discard loaded billing data
   }, []);
 
   const t = translations[lang];
@@ -312,7 +340,7 @@ export default function BillingDashboardPage() {
               />
             ) : (
               <div className="rounded-xl border border-border bg-card px-4">
-                {invoices.slice(0, 3).map((inv: any, idx: number) => (
+                {invoices.slice(0, 3).map((inv, idx) => (
                   <DataCard
                     key={inv.id}
                     icon={Receipt}
@@ -498,7 +526,7 @@ export default function BillingDashboardPage() {
               <CardContent className="pt-6">
                 {paymentMethods.length > 0 ? (
                   <div className="space-y-3">
-                    {paymentMethods.map((pm: any) => (
+                    {paymentMethods.map((pm) => (
                       <div key={pm.id} className="flex items-center justify-between p-3 rounded-lg border">
                         <div className="flex items-center gap-3">
                           <CreditCard className="w-5 h-5 text-muted-foreground" />
@@ -544,7 +572,7 @@ export default function BillingDashboardPage() {
               <CardContent className="pt-6">
                 {invoices.length > 0 ? (
                   <div className="space-y-3">
-                    {invoices.map((inv: any) => (
+                    {invoices.map((inv) => (
                       <div key={inv.id} className="flex items-center justify-between p-3 rounded-lg border">
                         <div>
                           <p className="text-sm font-medium text-foreground">{inv.invoiceNumber}</p>

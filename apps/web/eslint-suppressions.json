@@ -1,0 +1,288 @@
+{
+  "__tests__/coupon-redemption-race.test.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 3
+    },
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "__tests__/guard-coverage.test.ts": {
+    "no-irregular-whitespace": {
+      "count": 1
+    }
+  },
+  "__tests__/helpers/prisma-stub.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 10
+    }
+  },
+  "__tests__/tenant-isolation.test.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 3
+    }
+  },
+  "app/actions/audit.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "app/actions/auth.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 5
+    },
+    "no-empty": {
+      "count": 1
+    }
+  },
+  "app/actions/billing.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    },
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "app/actions/contract-templates.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 2
+    },
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "app/actions/contracts.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 4
+    }
+  },
+  "app/actions/coupons.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "app/actions/customer-interests.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "app/actions/customers.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 13
+    }
+  },
+  "app/actions/dashboard-finance.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 2
+    }
+  },
+  "app/actions/documents.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 2
+    }
+  },
+  "app/actions/maintenance.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 8
+    }
+  },
+  "app/actions/onboarding.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 6
+    }
+  },
+  "app/actions/organization.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 7
+    }
+  },
+  "app/actions/password.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "app/actions/payment-plans.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 3
+    }
+  },
+  "app/actions/permission-requests.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 2
+    },
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "app/actions/preventive-maintenance.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 8
+    }
+  },
+  "app/actions/support-tickets.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 7
+    }
+  },
+  "app/actions/units.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "app/api/cron/clean-expired-email-tokens/route.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "app/api/cron/expire-reservations/route.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "app/api/cron/expire-unverified-orgs/route.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "app/api/cron/run-data-retention/route.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "app/api/uploadthing/core.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 3
+    },
+    "@typescript-eslint/no-unused-vars": {
+      "count": 2
+    }
+  },
+  "app/auth/forgot-password/page.tsx": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 2
+    }
+  },
+  "app/auth/invite/[token]/page.tsx": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "app/auth/login/LoginClient.tsx": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "app/auth/register/page.tsx": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 3
+    }
+  },
+  "app/auth/reset-password/page.tsx": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "app/auth/verify-email/page.tsx": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "app/auth/verify-email/sent/page.tsx": {
+    "react/no-unescaped-entities": {
+      "count": 1
+    }
+  },
+  "app/dashboard/DashboardClientLayout.tsx": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 3
+    }
+  },
+  "app/dashboard/DashboardView.tsx": {
+    "react-hooks/exhaustive-deps": {
+      "count": 1
+    }
+  },
+  "app/dashboard/_components/AccessDenied.tsx": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "app/dashboard/_components/RouteError.tsx": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "app/dashboard/_components/RouteNotFound.tsx": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "app/dashboard/admin/AdminView.tsx": {
+    "react-hooks/exhaustive-deps": {
+      "count": 1
+    }
+  },
+  "app/dashboard/admin/email/page.tsx": {
+    "no-empty": {
+      "count": 1
+    }
+  },
+  "app/dashboard/admin/payments/page.tsx": {
+    "react-hooks/exhaustive-deps": {
+      "count": 1
+    }
+  },
+  "app/dashboard/admin/plans/page.tsx": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "app/dashboard/admin/seo/page.tsx": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 3
+    }
+  },
+  "app/dashboard/admin/tickets/page.tsx": {
+    "react-hooks/exhaustive-deps": {
+      "count": 1
+    }
+  },
+  "app/dashboard/billing/invoices/page.tsx": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 16
+    }
+  },
+  "app/dashboard/reports/ReportsView.tsx": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 2
+    }
+  },
+  "app/dashboard/reservations/ReservationsView.tsx": {
+    "react-hooks/exhaustive-deps": {
+      "count": 3
+    }
+  },
+  "app/dashboard/settings/audit/page.tsx": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "app/dashboard/settings/page.tsx": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 2
+    }
+  },
+  "app/dashboard/settings/security/page.tsx": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    },
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "auth.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 3
+    }
+  }
+}

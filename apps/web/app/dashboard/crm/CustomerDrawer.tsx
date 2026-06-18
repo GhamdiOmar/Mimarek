@@ -63,6 +63,89 @@ import {
 
 // ─── Customer Profile Drawer ──────────────────────────────────────────────────
 
+// These mirror the masked-row shapes the caller (CrmView) already declares. Each
+// carries a `[key: string]: unknown` index signature so the typed props accept
+// CrmView's index-signature'd rows; the declared keys still take precedence over
+// the index signature for known field accesses.
+
+/** Agent / team-member relation as selected by the server actions. */
+type CrmAgent = {
+  id: string;
+  name?: string | null;
+  email?: string | null;
+  role?: string | null;
+  [key: string]: unknown;
+};
+
+/**
+ * Masked + serialized customer payload as it reaches the client from
+ * `getCustomers()` / `updateCustomer()` — PII fields are masked strings (or the
+ * raw value when `showPii`), Decimals/dates are serialized, and the server adds
+ * `contactPhoneE164`. Typed to the fields this drawer reads.
+ */
+type CrmCustomer = {
+  id: string;
+  name: string;
+  nameArabic?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  source?: string | null;
+  status: string;
+  lostReason?: string | null;
+  agentId?: string | null;
+  agent?: { id?: string; name?: string | null; email?: string | null } | null;
+  budget?: number | string | null;
+  propertyTypeInterest?: string | null;
+  nationality?: string | null;
+  gender?: string | null;
+  maritalStatus?: string | null;
+  dateOfBirth?: string | Date | null;
+  contactPhoneE164?: string | null;
+  [key: string]: unknown;
+};
+
+/** Customer interest row (with its unit) as serialized by `getCustomerInterests`. */
+type CrmInterestUnit = {
+  id: string;
+  number?: string | null;
+  city?: string | null;
+  type?: string | null;
+  buildingName?: string | null;
+  rentalPrice?: number | string | null;
+  markupPrice?: number | string | null;
+  [key: string]: unknown;
+};
+type CrmInterest = {
+  id: string;
+  intent?: string | null;
+  stage?: string | null;
+  status?: string | null;
+  unit?: CrmInterestUnit | null;
+  [key: string]: unknown;
+};
+
+/** Available unit option for the link-property flow. */
+type CrmAvailableUnit = {
+  id: string;
+  number?: string | null;
+  city?: string | null;
+  type?: string | null;
+  buildingName?: string | null;
+  rentalPrice?: number | string | null;
+  markupPrice?: number | string | null;
+  [key: string]: unknown;
+};
+
+/** Reservation/contract assignment row for the "active records" list. */
+type CrmAssignment = {
+  type?: string;
+  unitNumber?: string | null;
+  unitId?: string | null;
+  building?: string | null;
+  status?: string | null;
+  [key: string]: unknown;
+};
+
 export function CustomerDrawer({
   customer,
   onClose,
@@ -72,15 +155,14 @@ export function CustomerDrawer({
   teamMembers,
   assignments,
   showPii,
-  hasPiiAccess,
 }: {
-  customer: any;
+  customer: CrmCustomer;
   onClose: () => void;
-  onCustomerUpdated: (updated: any) => void;
+  onCustomerUpdated: (updated: CrmCustomer) => void;
   onMarkLost?: (customerId: string, customerName: string) => void;
   lang: "ar" | "en";
-  teamMembers: any[];
-  assignments: any[];
+  teamMembers: CrmAgent[];
+  assignments: CrmAssignment[];
   showPii: boolean;
   hasPiiAccess: boolean;
 }) {
@@ -103,23 +185,23 @@ export function CustomerDrawer({
   const [editSuccess, setEditSuccess] = React.useState(false);
 
   // ── Feature B: Interests state ──
-  const [interests, setInterests] = React.useState<any[]>([]);
+  const [interests, setInterests] = React.useState<CrmInterest[]>([]);
   const [loadingInterests, setLoadingInterests] = React.useState(false);
   const [showLinkModal, setShowLinkModal] = React.useState(false);
-  const [availableUnits, setAvailableUnits] = React.useState<any[]>([]);
+  const [availableUnits, setAvailableUnits] = React.useState<CrmAvailableUnit[]>([]);
   const [loadingUnits, setLoadingUnits] = React.useState(false);
   const [linkUnitSearch, setLinkUnitSearch] = React.useState("");
-  const [linkSelectedUnit, setLinkSelectedUnit] = React.useState<any | null>(null);
+  const [linkSelectedUnit, setLinkSelectedUnit] = React.useState<CrmAvailableUnit | null>(null);
   const [linkIntent, setLinkIntent] = React.useState<"BUY" | "RENT" | "">("");
   const [savingLink, setSavingLink] = React.useState(false);
   const [linkError, setLinkError] = React.useState<string | null>(null);
 
   const [showDropConfirm, setShowDropConfirm] = React.useState(false);
-  const [droppingInterest, setDroppingInterest] = React.useState<any | null>(null);
+  const [droppingInterest, setDroppingInterest] = React.useState<CrmInterest | null>(null);
   const [droppingLoading, setDroppingLoading] = React.useState(false);
 
   const [showConvertDealModal, setShowConvertDealModal] = React.useState(false);
-  const [convertingInterest, setConvertingInterest] = React.useState<any | null>(null);
+  const [convertingInterest, setConvertingInterest] = React.useState<CrmInterest | null>(null);
   const [convertAmount, setConvertAmount] = React.useState("");
   const [convertExpiry, setConvertExpiry] = React.useState("");
   const [savingConvert, setSavingConvert] = React.useState(false);
@@ -205,8 +287,8 @@ export function CustomerDrawer({
         setShowEditModal(false);
         setEditSuccess(false);
       }, 800);
-    } catch (err: any) {
-      const msg = err?.message ?? "";
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "";
       const isFriendly = msg.length < 200 && !msg.includes("Prisma") && !msg.includes("Invalid `") && !msg.includes("invocation");
       setEditError(
         isFriendly && msg
@@ -263,8 +345,8 @@ export function CustomerDrawer({
       await loadInterests(customer.id);
       setShowLinkModal(false);
       showToast(lang === "ar" ? "تم ربط العقار بنجاح" : "Property linked successfully");
-    } catch (err: any) {
-      const msg = err?.message ?? "";
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "";
       const isFriendly = msg.length < 200 && !msg.includes("Prisma") && !msg.includes("Invalid `");
       setLinkError(
         isFriendly && msg
@@ -287,8 +369,8 @@ export function CustomerDrawer({
       setShowDropConfirm(false);
       setDroppingInterest(null);
       showToast(lang === "ar" ? "تم إسقاط الاهتمام" : "Interest dropped");
-    } catch (err: any) {
-      const msg = err?.message ?? "";
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "";
       const isFriendly = msg.length < 200 && !msg.includes("Prisma");
       showToast(
         isFriendly && msg
@@ -302,7 +384,7 @@ export function CustomerDrawer({
     }
   }
 
-  function openConvertModal(interest: any) {
+  function openConvertModal(interest: CrmInterest) {
     setConvertingInterest(interest);
     const defaultAmount =
       interest.intent === "RENT"
@@ -335,8 +417,8 @@ export function CustomerDrawer({
       setTimeout(() => {
         window.location.href = "/dashboard/reservations";
       }, 1200);
-    } catch (err: any) {
-      const msg = err?.message ?? "";
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "";
       const isFriendly = msg.length < 200 && !msg.includes("Prisma") && !msg.includes("Invalid `");
       setConvertError(
         isFriendly && msg
@@ -830,7 +912,7 @@ export function CustomerDrawer({
               />
             ) : (
               <div className="space-y-2">
-                {assignments.map((item: any, idx: number) => {
+                {assignments.map((item: CrmAssignment, idx: number) => {
                   const isReservation = item.type === "reservation";
                   const isLease = item.type === "lease";
                   const href = isReservation ? "/dashboard/reservations" : "/dashboard/contracts";
@@ -1073,7 +1155,7 @@ export function CustomerDrawer({
                 wrapperClassName="col-span-2"
               >
                 <option value="">{lang === "ar" ? "غير معين" : "Unassigned"}</option>
-                {teamMembers.map((m: any) => (
+                {teamMembers.map((m) => (
                   <option key={m.id} value={m.id}>{m.name ?? m.email}</option>
                 ))}
               </SelectField>

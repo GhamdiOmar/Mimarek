@@ -22,6 +22,7 @@ import { ThemeToggle } from "../ThemeToggle";
 import { useSession } from "../SimpleSessionProvider";
 import { useLanguage } from "../LanguageProvider";
 import { getUnreadCount, getMyNotifications, markAsRead, markAllAsRead } from "../../app/actions/notifications";
+import type { TopbarNotification } from "./notification-types";
 import { getOrgName } from "../../app/actions/organization";
 import { isSystemRole } from "../../lib/permissions";
 import { useFederatedSearch } from "../../hooks/useFederatedSearch";
@@ -42,7 +43,7 @@ export function AppTopbar() {
   const { t, lang, setLang } = useLanguage();
 
   const [unreadCount, setUnreadCount] = React.useState(0);
-  const [notifications, setNotifications] = React.useState<any[]>([]);
+  const [notifications, setNotifications] = React.useState<TopbarNotification[]>([]);
   const [showNotifs, setShowNotifs] = React.useState(false);
   const [notifCategory, setNotifCategory] = React.useState<NotifCategory>("all");
   const [searchQuery, setSearchQuery] = React.useState("");
@@ -57,7 +58,7 @@ export function AppTopbar() {
   const hasResults = groups.length > 0;
 
   const userName = session?.user?.name ?? (t("مستخدم", "User"));
-  const userRole = (session?.user as any)?.role ?? "USER";
+  const userRole = session?.user?.role ?? "USER";
   const roleLabel = roleLabels[userRole] ?? { ar: "مستخدم", en: "User" };
 
   React.useEffect(() => {
@@ -94,7 +95,7 @@ export function AppTopbar() {
     setNotifications((n) => n.map((x) => ({ ...x, read: true })));
   }
 
-  async function handleNotifClick(notif: any) {
+  async function handleNotifClick(notif: TopbarNotification) {
     if (!notif.read) {
       await markAsRead(notif.id);
       setUnreadCount((c) => Math.max(0, c - 1));

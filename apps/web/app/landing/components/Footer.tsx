@@ -131,13 +131,14 @@ export default function Footer({
                 : (lang === "ar" ? "رخصة فال: قيد الإصدار" : "REGA FAL License: pending issuance")}
             </p>
           </div>
-          <button
+          <Button
             type="button"
+            variant="link"
             onClick={openCookiePreferences}
-            className="text-xs text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
+            className="h-auto p-0 text-xs text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
           >
             {lang === "ar" ? "إعدادات ملفات تعريف الارتباط" : "Cookie settings"}
-          </button>
+          </Button>
         </div>
       </div>
     </footer>

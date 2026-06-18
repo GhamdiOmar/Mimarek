@@ -51,6 +51,7 @@ function isoDate(date: Date): string {
  * codebase. The permission chosen is the most narrow read scope that still
  * covers all data assembled for that entity type.
  */
+// eslint-disable-next-line mimaric/require-action-guard -- the guard lives in each delegated build*Journey() (e.g. requirePermission("contracts:read") + org-scoping); this dispatcher has no direct DB access.
 export async function getJourneySummary(
   entityType: "contract" | "reservation" | "customer" | "unit" | "maintenance",
   id: string,
@@ -136,7 +137,6 @@ async function buildContractJourney(id: string): Promise<JourneySummary | null> 
 
   // Blockers
   const blockers: ProcessBlocker[] = [];
-  const now = new Date();
 
   // SENT but unsigned for > 7 days → warning; > 14 days → error
   if (status === "SENT") {
@@ -247,7 +247,6 @@ async function buildContractJourney(id: string): Promise<JourneySummary | null> 
       take: 3,
     });
     for (const inst of installments) {
-      const serialized = serialize(inst);
       related.push({
         kind: "invoice",
         id: inst.id,
@@ -697,8 +696,6 @@ async function buildCustomerJourney(id: string): Promise<JourneySummary | null> 
 // Rail order: AVAILABLE → RESERVED → RENTED/SOLD
 // MAINTENANCE is surfaced as a blocker rather than a stage (it's an
 // operational state overlay, not a sequential lifecycle step).
-
-const UNIT_RAIL_ORDER = ["AVAILABLE", "RESERVED", "SOLD"] as const;
 
 const UNIT_STAGE_LABEL: Record<string, LocalizedText> = {
   AVAILABLE: loc("Available", "متاح"),

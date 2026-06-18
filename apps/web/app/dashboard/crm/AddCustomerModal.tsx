@@ -29,9 +29,55 @@ import { trackEvent, AnalyticsEvent } from "../../../lib/analytics";
 import { useUnsavedChanges } from "../../../hooks/useUnsavedChanges";
 import { PIPELINE_STAGES, SOURCE_LABELS } from "./crm-config";
 
+// ─── Shared CRM DTOs (serialized + masked payloads as they reach the modal) ──
+
+type AvailableUnit = {
+  id: string;
+  number?: string | null;
+  type?: string | null;
+  city?: string | null;
+  buildingName?: string | null;
+  rentalPrice?: number | string | null;
+  markupPrice?: number | string | null;
+  price?: number | string | null;
+  [key: string]: unknown;
+};
+
+type TeamMember = {
+  id: string;
+  name?: string | null;
+  email?: string | null;
+  role?: string | null;
+  [key: string]: unknown;
+};
+
+// Masked + serialized customer row as returned by getCustomers / createCustomer.
+// Structurally matches CrmView's CrmCustomer so the created record flows back
+// into CrmView's customers state without a cross-module type clash.
+type CrmCustomer = {
+  id: string;
+  name: string;
+  nameArabic?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  source?: string | null;
+  status: string;
+  lostReason?: string | null;
+  agentId?: string | null;
+  budget?: number | string | null;
+  propertyTypeInterest?: string | null;
+  nationality?: string | null;
+  gender?: string | null;
+  maritalStatus?: string | null;
+  dateOfBirth?: string | Date | null;
+  agent?: { id?: string; name?: string | null; email?: string | null } | null;
+  contactPhoneE164?: string | null;
+  [key: string]: unknown;
+};
+
 // ─── Property-linking helpers (moved with the modal — close over `lang`) ─────
 
-function getUnitPrice(unit: any, intent: "BUY" | "RENT" | null) {
+function getUnitPrice(unit: AvailableUnit, intent: "BUY" | "RENT" | null) {
   if (intent === "RENT") return unit.rentalPrice ?? null;
   return unit.markupPrice ?? unit.price ?? null;
 }
@@ -47,19 +93,19 @@ export function AddCustomerModal({
 }: {
   open: boolean;
   onClose: () => void;
-  pageAvailableUnits: any[];
-  teamMembers: any[];
+  pageAvailableUnits: AvailableUnit[];
+  teamMembers: TeamMember[];
   lang: "ar" | "en";
   /** Preselects the pipeline stage (Kanban per-column "Add" passes the column key). */
   initialStatus?: string;
-  onCreated: (created: any) => void;
+  onCreated: (created: CrmCustomer) => void;
 }) {
   // budget → bilingual budget-comparison tag (depends on `lang`)
   const getBudgetTag = React.useCallback(
-    (unitPrice: number | null | undefined, budget: string) => {
+    (unitPrice: number | string | null | undefined, budget: string) => {
       const b = Number(budget);
       if (!unitPrice || !b || b <= 0) return null;
-      const ratio = unitPrice / b;
+      const ratio = Number(unitPrice) / b;
       if (ratio > 1.05)
         return {
           label: lang === "ar" ? "فوق الميزانية" : "Over Budget",
@@ -137,7 +183,7 @@ export function AddCustomerModal({
 
   // ── Property-linking aux state (local — not RHF fields) ───────────────
   const [unitSearch, setUnitSearch] = React.useState("");
-  const [selectedUnit, setSelectedUnit] = React.useState<any | null>(null);
+  const [selectedUnit, setSelectedUnit] = React.useState<AvailableUnit | null>(null);
   const [intent, setIntent] = React.useState<"BUY" | "RENT" | null>(null);
 
   const [submitting, setSubmitting] = React.useState(false);
@@ -200,8 +246,8 @@ export function AddCustomerModal({
         nameArabic: values.nameArabic || undefined,
         source: values.source || undefined,
         status: values.status || undefined,
-        personType: (values.personType as any) || undefined,
-        gender: (values.gender as any) || undefined,
+        personType: values.personType || undefined,
+        gender: values.gender || undefined,
         dateOfBirth: values.dateOfBirth || undefined,
         nationality: values.nationality || undefined,
         maritalStatus: values.maritalStatus || undefined,
@@ -217,9 +263,9 @@ export function AddCustomerModal({
       trackEvent(AnalyticsEvent.CustomerCreated, { source: values.source || "manual" });
       onCreated(created);
       onClose();
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Only surface friendly messages — never raw Prisma/technical errors
-      const msg = err?.message ?? "";
+      const msg = err instanceof Error ? err.message : "";
       const isFriendly =
         msg.length < 200 &&
         !msg.includes("Prisma") &&
@@ -621,7 +667,7 @@ export function AddCustomerModal({
                       wrapperClassName="col-span-2"
                     >
                       <option value="">{lang === "ar" ? "غير معين" : "Unassigned"}</option>
-                      {teamMembers.map((m: any) => (
+                      {teamMembers.map((m) => (
                         <option key={m.id} value={m.id}>
                           {m.name ?? m.email}
                         </option>

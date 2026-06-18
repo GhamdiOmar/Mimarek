@@ -5,9 +5,14 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requirePermission, getSessionWithPermissions } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
-import { encryptCustomerData, decryptCustomerData, decryptCustomerList, phoneSearchHash } from "../../lib/pii-crypto";
+import {
+  encryptCustomerData,
+  decryptCustomerData,
+  decryptCustomerList,
+  searchHashCandidates,
+  phoneSearchHashCandidates,
+} from "../../lib/pii-crypto";
 import { maskCustomerPii } from "../../lib/pii-masking";
-import { hashForSearch } from "../../lib/encryption";
 import { normalizeSaudiPhoneE164 } from "../../lib/phone";
 import { ROUTES } from "../../lib/routes";
 import { serialize } from "../../lib/serialize";
@@ -138,12 +143,15 @@ export async function createCustomer(data: {
 
   const session = await requirePermission("customers:write");
 
-  // Encrypt PII fields before saving
-  const encryptedData = encryptCustomerData({
-    nationalId: data.nationalId,
-    phone: data.phone,
-    email: data.email,
-  });
+  // Encrypt PII fields before saving (per-tenant blind-index hashes, keyed by org)
+  const encryptedData = encryptCustomerData(
+    {
+      nationalId: data.nationalId,
+      phone: data.phone,
+      email: data.email,
+    },
+    session.organizationId,
+  );
 
   const customer = await db.customer.create({
     data: {
@@ -241,17 +249,17 @@ export async function updateCustomer(
 
   // Encrypt PII fields if being updated
   if (data.nationalId) {
-    const enc = encryptCustomerData({ nationalId: data.nationalId });
+    const enc = encryptCustomerData({ nationalId: data.nationalId }, session.organizationId);
     updateData.nationalId = enc.nationalId;
     updateData.nationalIdHash = enc.nationalIdHash;
   }
   if (data.phone) {
-    const enc = encryptCustomerData({ phone: data.phone });
+    const enc = encryptCustomerData({ phone: data.phone }, session.organizationId);
     updateData.phone = enc.phone;
     updateData.phoneHash = enc.phoneHash;
   }
   if (data.email) {
-    const enc = encryptCustomerData({ email: data.email });
+    const enc = encryptCustomerData({ email: data.email }, session.organizationId);
     updateData.email = enc.email;
     updateData.emailHash = enc.emailHash;
   }
@@ -283,17 +291,18 @@ export async function getCustomers(filters?: {
   }
 
   if (filters?.search) {
-    const searchHash = hashForSearch(filters.search);
-    // Phone uses the SAME normalize-then-hash rule as the write path
-    // (phoneSearchHash) so "0551234567" and "+966551234567" both match.
-    const phoneHash = phoneSearchHash(filters.search);
+    // Per-tenant blind index (v2) + legacy (v1) dual-read so both backfilled and
+    // not-yet-migrated rows match. Phone uses the SAME normalize-then-hash rule as
+    // the write path so "0551234567" and "+966551234567" both match.
+    const textHashes = searchHashCandidates(filters.search, session.organizationId);
+    const phoneHashes = phoneSearchHashCandidates(filters.search, session.organizationId);
     where.OR = [
       { name: { contains: filters.search, mode: "insensitive" } },
       { nameArabic: { contains: filters.search, mode: "insensitive" } },
       // Exact match via blind index for encrypted fields
-      { phoneHash },
-      { emailHash: searchHash },
-      { nationalIdHash: searchHash },
+      { phoneHash: { in: phoneHashes } },
+      { emailHash: { in: textHashes } },
+      { nationalIdHash: { in: textHashes } },
     ];
   }
 

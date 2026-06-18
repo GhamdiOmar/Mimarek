@@ -85,6 +85,7 @@ export default function TeamManagementPage() {
     } finally {
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `t` is derived from `lang`; depending on `lang` keeps the callback stable while refreshing translations
   }, [lang]);
 
   React.useEffect(() => {

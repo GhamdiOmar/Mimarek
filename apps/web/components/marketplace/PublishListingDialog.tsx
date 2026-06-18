@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Loader2, AlertCircle, CheckCircle2, Store } from "lucide-react";
-import { Button, ResponsiveDialog } from "@repo/ui";
+import { Button, ResponsiveDialog, SelectField } from "@repo/ui";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "../LanguageProvider";
 import {
@@ -235,7 +235,7 @@ export function PublishListingDialog({
             <label htmlFor="mkt-exp" className="text-xs font-medium text-muted-foreground">
               {ar ? "تنتهي الصلاحية بعد (اختياري)" : "Expires after (optional)"}
             </label>
-            <select
+            <SelectField
               id="mkt-exp"
               className={inputCls}
               value={expiresInDays}
@@ -246,7 +246,7 @@ export function PublishListingDialog({
               <option value="30">{ar ? "30 يومًا" : "30 days"}</option>
               <option value="60">{ar ? "60 يومًا" : "60 days"}</option>
               <option value="90">{ar ? "90 يومًا" : "90 days"}</option>
-            </select>
+            </SelectField>
           </div>
         </div>
       )}

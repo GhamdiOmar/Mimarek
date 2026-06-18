@@ -14,7 +14,6 @@ import {
   Trash2,
   Zap,
   Search,
-  AlertTriangle,
 } from "lucide-react";
 import {
   Button,
@@ -32,8 +31,6 @@ import {
   Switch,
   SelectField,
   HijriDatePicker,
-  Alert,
-  AlertDescription,
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -60,6 +57,38 @@ import {
   MAINTENANCE_PRIORITY_LABEL as priorityLabels,
 } from "../../../../lib/domain-labels";
 
+// ─── Serialized view-model types ──────────────────────────────────────────────
+// `getPreventivePlans` / `getUnitsForMaintenance` run through `serialize()`
+// (Decimal → string, Date → string), so these mirror the runtime JSON shape, not
+// the raw Prisma types. `assignTo` is kept optional to match the existing render
+// access even though the current query doesn't select it.
+type PreventivePlanVM = {
+  id: string;
+  title: string;
+  description: string | null;
+  category: string;
+  priority: string;
+  recurrenceType: string;
+  recurrenceInterval: number;
+  startDate: string | null;
+  endDate: string | null;
+  nextRunDate: string | null;
+  unitId: string | null;
+  unit: { id: string; number: string } | null;
+  assignToId: string | null;
+  assignTo?: { name: string | null } | null;
+  estimatedCost: string | null;
+  estimatedHours: number | null;
+  isActive: boolean;
+  _count?: { workOrders: number } | null;
+};
+type PreventiveUnitVM = {
+  id: string;
+  number: string;
+  buildingName: string | null;
+};
+type AssignableUser = Awaited<ReturnType<typeof getAssignableUsers>>[number];
+
 
 const recurrenceLabels: Record<string, { ar: string; en: string }> = {
   DAILY: { ar: "يومي", en: "Daily" },
@@ -74,11 +103,11 @@ const recurrenceLabels: Record<string, { ar: string; en: string }> = {
 export default function PreventiveMaintenancePage() {
   const router = useRouter();
   const { t, lang } = useLanguage();
-  const [plans, setPlans] = React.useState<any[]>([]);
+  const [plans, setPlans] = React.useState<PreventivePlanVM[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [generating, setGenerating] = React.useState(false);
-  const [users, setUsers] = React.useState<any[]>([]);
-  const [units, setUnits] = React.useState<any[]>([]);
+  const [users, setUsers] = React.useState<AssignableUser[]>([]);
+  const [units, setUnits] = React.useState<PreventiveUnitVM[]>([]);
   // Modal
   const [showModal, setShowModal] = React.useState(false);
   const [editingId, setEditingId] = React.useState<string | null>(null);
@@ -152,7 +181,7 @@ export default function PreventiveMaintenancePage() {
     setShowModal(true);
   }
 
-  function openEdit(plan: any) {
+  function openEdit(plan: PreventivePlanVM) {
     setEditingId(plan.id);
     setForm({
       title: plan.title,
@@ -193,7 +222,7 @@ export default function PreventiveMaintenancePage() {
       if (editingId) {
         await updatePreventivePlan(editingId, payload);
       } else {
-        await createPreventivePlan(payload as any);
+        await createPreventivePlan(payload);
       }
       setShowModal(false);
       await load();
@@ -221,7 +250,7 @@ export default function PreventiveMaintenancePage() {
       await load();
       toast.success(t("تم حذف الخطة", "Plan deleted"));
       setDeleteTargetId(null);
-    } catch (e) {
+    } catch {
       toast.error(
         t("تعذّر حذف الخطة. يرجى المحاولة مجدداً.", "Could not delete plan. Please try again.")
       );
@@ -239,7 +268,7 @@ export default function PreventiveMaintenancePage() {
         t(`تم إنشاء ${result.created} طلب صيانة من ${result.total} خطة مستحقة.`, `Created ${result.created} work orders from ${result.total} due plans.`)
       );
       await load();
-    } catch (e) {
+    } catch {
       toast.error(
         t("تعذّر إنشاء طلبات الصيانة. يرجى المحاولة مجدداً.", "Could not generate work orders. Please try again.")
       );
@@ -254,7 +283,7 @@ export default function PreventiveMaintenancePage() {
   const filteredPlans = React.useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return plans;
-    return plans.filter((p: any) =>
+    return plans.filter((p) =>
       (p.title ?? "").toLowerCase().includes(q) ||
       (p.description ?? "").toLowerCase().includes(q)
     );
@@ -264,13 +293,13 @@ export default function PreventiveMaintenancePage() {
     const oneWeek = 7 * 24 * 60 * 60 * 1000;
     const now = Date.now();
     return {
-      active: plans.filter((p: any) => p.isActive).length,
+      active: plans.filter((p) => p.isActive).length,
       dueWeek: plans.filter(
-        (p: any) =>
+        (p) =>
           p.isActive && p.nextRunDate && new Date(p.nextRunDate).getTime() - now <= oneWeek
       ).length,
       total: plans.length,
-      disabled: plans.filter((p: any) => !p.isActive).length,
+      disabled: plans.filter((p) => !p.isActive).length,
     };
   }, [plans]);
 
@@ -392,7 +421,7 @@ export default function PreventiveMaintenancePage() {
           )
         ) : (
           <div className="space-y-1">
-            {filteredPlans.map((plan: any) => {
+            {filteredPlans.map((plan) => {
               const rec = recurrenceLabels[plan.recurrenceType] ?? {
                 ar: plan.recurrenceType,
                 en: plan.recurrenceType,
@@ -524,7 +553,7 @@ export default function PreventiveMaintenancePage() {
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {plans.map((plan: any) => {
+          {plans.map((plan) => {
             const cat = categoryLabels[plan.category] ?? { ar: plan.category, en: plan.category };
             const rec = recurrenceLabels[plan.recurrenceType] ?? { ar: plan.recurrenceType, en: plan.recurrenceType };
             const pri = priorityLabels[plan.priority] ?? { ar: plan.priority, en: plan.priority };
@@ -590,7 +619,7 @@ export default function PreventiveMaintenancePage() {
                   {plan.estimatedCost != null && (
                     <div>
                       <span className="text-[10px] text-muted-foreground uppercase font-bold">{t("التكلفة", "Est. Cost")}</span>
-                      <p className="font-medium text-primary"><SARAmount value={plan.estimatedCost} size={10} /></p>
+                      <p className="font-medium text-primary"><SARAmount value={plan.estimatedCost == null ? null : Number(plan.estimatedCost)} size={10} /></p>
                     </div>
                   )}
                 </div>
@@ -707,7 +736,7 @@ export default function PreventiveMaintenancePage() {
             <label className="text-xs font-bold text-muted-foreground">{t("الوحدة", "Unit")}</label>
             <SelectField aria-label={t("الوحدة", "Unit")} value={form.unitId} onChange={(e) => setForm({ ...form, unitId: e.target.value })} className={inputClass}>
               <option value="">{t("— الكل —", "— All —")}</option>
-              {units.map((u: any) => (
+              {units.map((u) => (
                 <option key={u.id} value={u.id}>{u.number}{u.buildingName ? ` — ${u.buildingName}` : ""}</option>
               ))}
             </SelectField>
@@ -717,7 +746,7 @@ export default function PreventiveMaintenancePage() {
             <label className="text-xs font-bold text-muted-foreground">{t("تعيين إلى", "Default Assignee")}</label>
             <SelectField aria-label={t("تعيين إلى", "Default Assignee")} value={form.assignToId} onChange={(e) => setForm({ ...form, assignToId: e.target.value })} className={inputClass}>
               <option value="">{t("— بدون —", "— None —")}</option>
-              {users.map((u: any) => (
+              {users.map((u) => (
                 <option key={u.id} value={u.id}>{u.name} ({u.role})</option>
               ))}
             </SelectField>

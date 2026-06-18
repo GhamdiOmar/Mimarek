@@ -156,7 +156,6 @@ async function deleteInBatches(
 ): Promise<number> {
   let totalDeleted = 0;
   // Loop until a batch deletes < BATCH rows (the tail).
-  // eslint-disable-next-line no-constant-condition
   while (true) {
     let affected = 0;
     switch (table) {

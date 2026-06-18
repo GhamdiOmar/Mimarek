@@ -1,4 +1,4 @@
-import { db } from "@repo/db";
+import { db, Prisma } from "@repo/db";
 import { headers } from "next/headers";
 
 export type AuditAction =
@@ -125,9 +125,9 @@ export function logAuditEvent(params: AuditEventParams): void {
           action: params.action,
           resource: params.resource,
           resourceId: params.resourceId,
-          metadata: params.metadata as any,
-          changeSnapshot: changeSnapshot as any,
-          fieldChanges: fieldChanges as any,
+          metadata: params.metadata as Prisma.InputJsonValue,
+          changeSnapshot: changeSnapshot as Prisma.InputJsonValue,
+          fieldChanges: fieldChanges as Prisma.InputJsonValue,
           ipAddress,
           organizationId: params.organizationId,
         },

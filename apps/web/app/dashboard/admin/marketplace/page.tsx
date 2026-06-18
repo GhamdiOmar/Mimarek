@@ -155,6 +155,11 @@ export default function AdminMarketplacePage() {
   const { lang } = useLanguage();
   const { role } = usePermissions();
   const isSystemAdmin = role === "SYSTEM_ADMIN";
+  // NOTE — local English-first facade: this file's `t(en, ar)` is the REVERSE of the
+  // canonical `useLanguage().t(ar, en)`. All call sites below are written English-first
+  // to match. Do NOT swap to `useLanguage().t` or run the F1 `t(ar,en)` codemod over this
+  // file without swapping every call site, or every label flips language silently. Kept
+  // English-first deliberately (self-consistent, zero-risk).
   const t = (en: string, ar: string) => (lang === "ar" ? ar : en);
 
   const [tab, setTab] = React.useState("listings");

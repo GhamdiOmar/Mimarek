@@ -7,6 +7,15 @@
  * imports so it can be imported by both server actions and plain test scripts.
  */
 
+import type { Prisma } from "@repo/db";
+
+/**
+ * Money-like input accepted by these helpers. Callers pass a Prisma `Decimal`,
+ * a stringified Decimal, or a plain number (and `null`/`undefined` for unset
+ * amounts) — `Number(...)` normalizes all of them.
+ */
+type MoneyLike = Prisma.Decimal | number | string | null | undefined;
+
 /**
  * effectivePaid — canonical "how much of this installment has actually been
  * collected" rule (spec §4).
@@ -17,14 +26,14 @@
  * - Non-PAID rows (UNPAID / PARTIALLY_PAID / OVERDUE): count only what was
  *   recorded in `paidAmount`, defaulting to 0.
  *
- * `amount` / `paidAmount` are accepted as `any` because callers pass Prisma
- * `Decimal`, stringified Decimals, or plain numbers — `Number(...)` normalizes
- * all three.
+ * `amount` / `paidAmount` are accepted as `MoneyLike` because callers pass
+ * Prisma `Decimal`, stringified Decimals, or plain numbers — `Number(...)`
+ * normalizes all three.
  */
 export function effectivePaid(r: {
   status: string;
-  amount: any;
-  paidAmount: any;
+  amount: MoneyLike;
+  paidAmount: MoneyLike;
 }): number {
   return r.status === "PAID"
     ? Number(r.paidAmount ?? r.amount)

@@ -1,5 +1,36 @@
-import type { NextAuthConfig } from "next-auth";
+import type { NextAuthConfig, Session, User } from "next-auth";
+import type { JWT } from "next-auth/jwt";
 import { audienceForPath } from "./lib/route-guards";
+
+/**
+ * Fields the app stores on the session user / JWT beyond what `types/next-auth.d.ts`
+ * augments (`role`, `organizationId`). Declared here locally — `onboardingCompleted`,
+ * `accountType`, and `subscriptionStatus` flow user → token → session through the
+ * callbacks below, so they are read as optional, possibly-null values.
+ */
+type SessionUserExtras = {
+  role?: string | null;
+  onboardingCompleted?: boolean;
+  accountType?: string | null;
+  subscriptionStatus?: string | null;
+};
+
+/** The `user` object passed to the `jwt` callback, including the app's extra fields. */
+type AuthorizeUser = User & SessionUserExtras;
+
+/** The JWT plus the app's extra claims (the augmentation only declares role/organizationId). */
+type ExtendedJWT = JWT & SessionUserExtras;
+
+/** Shape of the `session` patch passed to `jwt` on a `trigger === "update"`. */
+type SessionUpdatePatch = { onboardingCompleted?: unknown } | null | undefined;
+
+/** Params for the `jwt` callback — typed locally to drop the `any`. */
+type JwtCallbackParams = {
+  token: ExtendedJWT;
+  user?: AuthorizeUser | null;
+  trigger?: "signIn" | "signUp" | "update";
+  session?: SessionUpdatePatch;
+};
 
 /**
  * Edge-compatible auth config — no Node.js-only imports (bcrypt, prisma adapter).
@@ -20,7 +51,8 @@ export const authConfig = {
       if (isOnDashboard) {
         if (!isLoggedIn) return false; // Redirect to login
 
-        const role = (auth?.user as any)?.role;
+        const sessionUser = auth?.user as SessionUserExtras | undefined;
+        const role = sessionUser?.role;
 
         // CX-018 — Tenants (USER role) live in the self-service portal, never the
         // tenant dashboard. The role holds `dashboard:read`, so without this edge
@@ -34,7 +66,7 @@ export const authConfig = {
         }
 
         // Redirect un-onboarded users to onboarding wizard
-        const onboardingDone = (auth?.user as any)?.onboardingCompleted !== false;
+        const onboardingDone = sessionUser?.onboardingCompleted !== false;
         if (!onboardingDone && !isOnboarding) {
           return Response.redirect(new URL("/dashboard/onboarding", nextUrl));
         }
@@ -65,7 +97,7 @@ export const authConfig = {
         }
 
         // Subscription enforcement — redirect expired/unpaid to billing page
-        const subscriptionStatus = (auth?.user as any)?.subscriptionStatus;
+        const subscriptionStatus = sessionUser?.subscriptionStatus;
 
         // System roles bypass subscription checks (Mimaric platform staff)
         if (!isSystemRole && subscriptionStatus) {
@@ -80,13 +112,13 @@ export const authConfig = {
 
       return true;
     },
-    async jwt({ token, user, trigger, session }: any) {
+    async jwt({ token, user, trigger, session }: JwtCallbackParams) {
       if (user) {
-        token.role = (user as any).role;
-        token.organizationId = (user as any).organizationId;
-        token.onboardingCompleted = (user as any).onboardingCompleted ?? true;
-        token.accountType = (user as any).accountType ?? null;
-        token.subscriptionStatus = (user as any).subscriptionStatus ?? null;
+        token.role = user.role;
+        token.organizationId = user.organizationId;
+        token.onboardingCompleted = user.onboardingCompleted ?? true;
+        token.accountType = user.accountType ?? null;
+        token.subscriptionStatus = user.subscriptionStatus ?? null;
       }
       // Backward compatibility — map deprecated roles (remove after full migration)
       if (token.role === "SUPER_ADMIN") token.role = "COMPANY_ADMIN";
@@ -102,14 +134,15 @@ export const authConfig = {
       }
       return token;
     },
-    async session({ session, token }) {
+    async session({ session, token }: { session: Session; token: ExtendedJWT }) {
       if (token.sub && session.user) {
-        session.user.id = token.sub;
-        (session.user as any).role = (token.role as string) ?? "USER";
-        (session.user as any).organizationId = (token.organizationId as string | null) ?? null;
-        (session.user as any).onboardingCompleted = token.onboardingCompleted ?? true;
-        (session.user as any).accountType = token.accountType ?? null;
-        (session.user as any).subscriptionStatus = token.subscriptionStatus ?? null;
+        const sessionUser = session.user as Session["user"] & SessionUserExtras;
+        sessionUser.id = token.sub;
+        sessionUser.role = token.role ?? "USER";
+        sessionUser.organizationId = token.organizationId ?? null;
+        sessionUser.onboardingCompleted = token.onboardingCompleted ?? true;
+        sessionUser.accountType = token.accountType ?? null;
+        sessionUser.subscriptionStatus = token.subscriptionStatus ?? null;
       }
       return session;
     },

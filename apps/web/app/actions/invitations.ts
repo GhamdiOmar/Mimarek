@@ -1,6 +1,6 @@
 "use server";
 
-import { db } from "@repo/db";
+import { db, Prisma, type User, type UserRole } from "@repo/db";
 import crypto from "crypto";
 import { hash as bcryptHash } from "@node-rs/bcrypt";
 import { revalidatePath } from "next/cache";
@@ -16,6 +16,24 @@ import { sendTransactionalEmail } from "../../lib/email";
 import { invitationEmail } from "../../lib/email-templates";
 import { checkLimit, FEATURE_KEYS } from "../../lib/entitlements";
 import { checkRateLimit, peekRateLimit } from "../../lib/rate-limit";
+
+// ─── Error helper ─────────────────────────────────────────────────────────────
+
+/** Extract a human-readable message from an unknown thrown value (module-private). */
+function errorMessage(err: unknown): string | undefined {
+  return err instanceof Error ? err.message : undefined;
+}
+
+/**
+ * Mirror the original `meta.target?.includes(field)` check. Prisma types
+ * `meta.target` as `unknown`; at runtime a P2002 carries either a `string[]`
+ * (column list) or a single `string` — both expose `.includes`.
+ */
+function targetIncludes(target: unknown, field: string): boolean {
+  if (Array.isArray(target)) return target.includes(field);
+  if (typeof target === "string") return target.includes(field);
+  return false;
+}
 
 // ─── Invitation Rate Limiter ─────────────────────────────────────────────────
 
@@ -93,7 +111,7 @@ export async function createInvitation(data: { email: string; role?: string }) {
       data: {
         email,
         token,
-        role: (data.role || "USER") as any,
+        role: (data.role || "USER") as UserRole,
         organizationId: session.organizationId,
         invitedById: session.userId,
         status: "PENDING_INVITE",
@@ -139,14 +157,15 @@ export async function createInvitation(data: { email: string; role?: string }) {
       emailSent: emailResult.ok,
       emailMessage: emailResult.message,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[Invitations] createInvitation error:", error);
-    return { success: false, error: error.message || "Failed to create invitation" };
+    return { success: false, error: errorMessage(error) || "Failed to create invitation" };
   }
 }
 
 // ─── Accept Invitation ────────────────────────────────────────────────────────
 
+// eslint-disable-next-line mimaric/require-action-guard -- token-gated pre-auth: the invite token IS the credential (the invitee has no session yet).
 export async function acceptInvitation(data: {
   token: string;
   name: string;
@@ -191,9 +210,9 @@ export async function acceptInvitation(data: {
     const hashedPassword = await bcryptHash(data.password, 12);
 
     // Atomic: create user + update invitation status
-    let user: any;
+    let user: User;
     try {
-      user = await db.$transaction(async (tx: any) => {
+      user = await db.$transaction(async (tx: Prisma.TransactionClient) => {
         // Re-check invitation status inside tx to prevent double-use
         const freshInvite = await tx.invitation.findUnique({
           where: { id: invitation.id },
@@ -231,11 +250,15 @@ export async function acceptInvitation(data: {
 
         return newUser;
       });
-    } catch (error: any) {
-      if (error.message === "INVITATION_ALREADY_USED") {
+    } catch (error: unknown) {
+      if (error instanceof Error && error.message === "INVITATION_ALREADY_USED") {
         return { success: false, error: "Invitation has already been used" };
       }
-      if (error.code === "P2002" && error.meta?.target?.includes("email")) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2002" &&
+        targetIncludes(error.meta?.target, "email")
+      ) {
         return { success: false, error: "An account with this email already exists" };
       }
       throw error;
@@ -272,14 +295,15 @@ export async function acceptInvitation(data: {
     });
 
     return { success: true, redirect: "/dashboard" };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[Invitations] acceptInvitation error:", error);
-    return { success: false, error: error.message || "Failed to accept invitation" };
+    return { success: false, error: errorMessage(error) || "Failed to accept invitation" };
   }
 }
 
 // ─── Get Invitation By Token ──────────────────────────────────────────────────
 
+// eslint-disable-next-line mimaric/require-action-guard -- token-gated pre-auth read: the invite token IS the credential (invitee has no session yet).
 export async function getInvitationByToken(token: string) {
   try {
     const invitation = await db.invitation.findFirst({
@@ -309,7 +333,7 @@ export async function getInvitationByToken(token: string) {
       orgName: invitation.organization.name,
       inviterName: invitation.invitedBy.name,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[Invitations] getInvitationByToken error:", error);
     return { valid: false, error: "Failed to validate invitation" };
   }
@@ -329,7 +353,7 @@ export async function getOrgInvitations() {
       },
       orderBy: { createdAt: "desc" },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[Invitations] getOrgInvitations error:", error);
     throw new Error("Unable to load invitations. Please refresh and try again.");
   }
@@ -372,9 +396,9 @@ export async function revokeInvitation(invitationId: string) {
     revalidatePath(ROUTES.settingsTeam);
 
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[Invitations] revokeInvitation error:", error);
-    return { success: false, error: error.message || "Failed to revoke invitation" };
+    return { success: false, error: errorMessage(error) || "Failed to revoke invitation" };
   }
 }
 
@@ -451,8 +475,8 @@ export async function resendInvitation(invitationId: string) {
       emailSent: emailResult.ok,
       emailMessage: emailResult.message,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[Invitations] resendInvitation error:", error);
-    return { success: false, error: error.message || "Failed to resend invitation" };
+    return { success: false, error: errorMessage(error) || "Failed to resend invitation" };
   }
 }

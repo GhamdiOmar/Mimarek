@@ -4,9 +4,12 @@ import { db } from "@repo/db";
 import { getSessionOrThrow } from "../../lib/auth-helpers";
 import { hasPermission, isSystemRole } from "../../lib/permissions";
 import { logAuditEvent } from "../../lib/audit";
-import { decryptCustomerList, phoneSearchHash } from "../../lib/pii-crypto";
+import {
+  decryptCustomerList,
+  searchHashCandidates,
+  phoneSearchHashCandidates,
+} from "../../lib/pii-crypto";
 import { maskCustomerPii, maskPhone } from "../../lib/pii-masking";
-import { hashForSearch } from "../../lib/encryption";
 import {
   CONTRACT_STATUS_LABEL,
   RESERVATION_STATUS_LABEL,
@@ -61,8 +64,9 @@ export async function globalSearch(
 
   // Blind-index keys (mirror customers.getCustomers exactly so encrypted
   // phone/email/nationalId match whether typed as 05… or +966… etc.).
-  const searchHash = hashForSearch(q);
-  const phoneHash = phoneSearchHash(q);
+  // Per-tenant (v2) + legacy (v1) dual-read so both backfilled and not-yet-migrated rows match.
+  const searchHashes = searchHashCandidates(q, orgId);
+  const phoneHashes = phoneSearchHashCandidates(q, orgId);
 
   const groups: SearchGroup[] = [];
   let totalCount = 0;
@@ -84,9 +88,9 @@ export async function globalSearch(
             OR: [
               { name: { contains: q, mode: "insensitive" } },
               { nameArabic: { contains: q, mode: "insensitive" } },
-              { phoneHash },
-              { emailHash: searchHash },
-              { nationalIdHash: searchHash },
+              { phoneHash: { in: phoneHashes } },
+              { emailHash: { in: searchHashes } },
+              { nationalIdHash: { in: searchHashes } },
             ],
           },
           orderBy: { updatedAt: "desc" },

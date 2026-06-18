@@ -147,15 +147,16 @@ const result = NextAuth({
             email: user.email,
             role: user.role,
             organizationId: user.organizationId,
-            onboardingCompleted: (user as any).onboardingCompleted ?? true,
-            accountType: (user as any).accountType ?? null,
+            onboardingCompleted: user.onboardingCompleted ?? true,
+            accountType: user.accountType ?? null,
           };
-        } catch (error: any) {
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "";
           if (
-            error.message === "INVALID_CREDENTIALS" ||
-            error.message === "EMAIL_NOT_VERIFIED" ||
-            error.message === "ORG_EXPIRED" ||
-            error.message.startsWith("RATE_LIMITED")
+            message === "INVALID_CREDENTIALS" ||
+            message === "EMAIL_NOT_VERIFIED" ||
+            message === "ORG_EXPIRED" ||
+            message.startsWith("RATE_LIMITED")
           ) {
             throw error;
           }

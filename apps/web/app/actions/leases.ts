@@ -1,6 +1,6 @@
 "use server";
 
-import { db } from "@repo/db";
+import { db, Prisma, LeaseStatus } from "@repo/db";
 import { revalidatePath } from "next/cache";
 import { ROUTES } from "../../lib/routes";
 import { serialize } from "../../lib/serialize";
@@ -10,12 +10,12 @@ import { logAuditEvent } from "../../lib/audit";
 export async function getLeases(filters?: { status?: string }) {
   const session = await requirePermission("leases:read");
 
-  const where: any = {
+  const where: Prisma.LeaseWhereInput = {
     customer: { organizationId: session.organizationId },
   };
 
   if (filters?.status) {
-    where.status = filters.status;
+    where.status = filters.status as LeaseStatus;
   }
 
   const results = await db.lease.findMany({
@@ -43,7 +43,7 @@ export async function terminateLease(leaseId: string) {
     throw new Error("Lease not found or you don't have access. Please verify the lease exists in your organization.");
   }
 
-  await db.$transaction(async (tx: any) => {
+  await db.$transaction(async (tx: Prisma.TransactionClient) => {
     await tx.lease.update({
       where: { id: leaseId },
       data: { status: "TERMINATED" },

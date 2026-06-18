@@ -11,6 +11,7 @@ import {
   AlertTriangle,
   Plus,
   CheckCircle,
+  Undo2,
 } from "lucide-react";
 import {
   Button,
@@ -18,7 +19,6 @@ import {
   Input,
   Card,
   PageIntro,
-  KPICard,
   ResponsiveDialog,
   AppBar,
   MobileKPICard,
@@ -40,8 +40,12 @@ import {
 } from "@repo/ui";
 import { useLanguage } from "../../../components/LanguageProvider";
 import { usePermissions } from "../../../hooks/usePermissions";
-import { getInstallments, recordPayment, bulkMarkInstallmentsPaid } from "../../actions/installments";
-import { getPaymentPlan, recordInstallmentPayment } from "../../actions/payment-plans";
+import {
+  getInstallments,
+  recordPayment,
+  bulkMarkInstallmentsPaid,
+  reverseRentPayment,
+} from "../../actions/installments";
 import {
   getSavedViews,
   createSavedView,
@@ -66,6 +70,7 @@ type RentInstallment = {
   id: string;
   dueDate: string;
   amount: number;
+  paidAmount: number | null;
   status: "PAID" | "UNPAID" | "OVERDUE" | "PARTIALLY_PAID";
   paidAt: string | null;
   paymentMethod: string | null;
@@ -203,6 +208,13 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
   // replays safely on the server (same key → server short-circuits, no double-write).
   const paymentReferenceRef = React.useRef<string>("");
 
+  // Reverse-payment modal (I2 — append-only ledger reversal). Writes a negative
+  // ledger entry via reverseRentPayment; idempotency keyed like record-payment.
+  const [reverseTarget, setReverseTarget] = React.useState<PaymentEntry | null>(null);
+  const [reverseForm, setReverseForm] = React.useState({ amount: "", reason: "" });
+  const [reverseSubmitting, setReverseSubmitting] = React.useState(false);
+  const reverseReferenceRef = React.useRef<string>("");
+
   // Bulk mark-paid state
   const [bulkMarkPaidOpen, setBulkMarkPaidOpen] = React.useState(false);
   const [bulkSelected, setBulkSelected] = React.useState<PaymentEntry[]>([]);
@@ -255,6 +267,7 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
       status: inst.status,
       raw: inst,
     }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `t` is derived from `lang`, which is already a dep; listing `lang` covers every translation read here.
   }, [rentInstallments, lang]);
 
   const filtered = React.useMemo(() => {
@@ -330,6 +343,44 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
       toast.error(sanitizeError(err, lang));
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  function openReverseModal(entry: PaymentEntry) {
+    // Fresh idempotency key per open (double-submit → server replay, no double-write).
+    reverseReferenceRef.current = crypto.randomUUID();
+    setReverseTarget(entry);
+    // Default to the amount currently collected on this installment.
+    const collected = Number(entry.raw.paidAmount ?? entry.amount);
+    setReverseForm({ amount: String(collected), reason: "" });
+  }
+
+  async function handleReversePayment() {
+    if (!reverseTarget) return;
+    const amount = parseFloat(reverseForm.amount);
+    if (!amount || amount <= 0) {
+      toast.error(t("أدخل مبلغًا صالحًا للعكس", "Enter a valid amount to reverse"));
+      return;
+    }
+    if (!reverseForm.reason.trim()) {
+      toast.error(t("سبب العكس مطلوب", "A reason for the reversal is required"));
+      return;
+    }
+    setReverseSubmitting(true);
+    try {
+      await reverseRentPayment(reverseTarget.id, {
+        amount,
+        reason: reverseForm.reason.trim(),
+        idempotencyKey: reverseReferenceRef.current,
+        txType: "REVERSAL",
+      });
+      toast.success(t("تم عكس الدفعة", "Payment reversed"));
+      setReverseTarget(null);
+      loadData();
+    } catch (err: unknown) {
+      toast.error(sanitizeError(err, lang));
+    } finally {
+      setReverseSubmitting(false);
     }
   }
 
@@ -489,9 +540,19 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
         enableHiding: false,
         cell: ({ row }) => {
           const entry = row.original;
-          if (canWritePayments && entry.status !== "PAID") {
-            return (
-              <div className="flex items-center justify-end gap-1">
+          if (!canWritePayments) {
+            return entry.status === "PAID" ? (
+              <span className="text-xs text-muted-foreground">{t("مُسدَّد", "Settled")}</span>
+            ) : null;
+          }
+          // record-payment when anything is still owed; reverse when money has been
+          // collected (PAID or PARTIALLY_PAID). Forward action first, destructive last (§6.6.7).
+          const canRecord = entry.status !== "PAID";
+          const canReverse = entry.status === "PAID" || entry.status === "PARTIALLY_PAID";
+          if (!canRecord && !canReverse) return null;
+          return (
+            <div className="flex items-center justify-end gap-1">
+              {canRecord && (
                 <IconButton
                   icon={CreditCard}
                   aria-label={t("تسجيل دفعة", "Record payment")}
@@ -499,20 +560,22 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
                   onClick={() => openPayModal(entry)}
                   className="text-primary"
                 />
-              </div>
-            );
-          }
-          if (entry.status === "PAID") {
-            return (
-              <span className="text-xs text-muted-foreground">
-                {t("مُسدَّد", "Settled")}
-              </span>
-            );
-          }
-          return null;
+              )}
+              {canReverse && (
+                <IconButton
+                  icon={Undo2}
+                  aria-label={t("عكس الدفعة", "Reverse payment")}
+                  variant="ghost"
+                  onClick={() => openReverseModal(entry)}
+                  className="text-destructive"
+                />
+              )}
+            </div>
+          );
         },
       },
     ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `t` is derived from `lang`, which is already a dep; listing `lang` covers every translation read here.
     [lang, canWritePayments],
   );
 
@@ -1042,6 +1105,104 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
                 onChange={(e) => setPayForm((f) => ({ ...f, notes: e.target.value }))}
                 rows={2}
                 placeholder={t("ملاحظات اختيارية...", "Optional notes...")}
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]"
+              />
+            </div>
+          </form>
+        )}
+      </ResponsiveDialog>
+
+      {/* Reverse Payment Modal (I2 — writes a negative ledger entry, no record deleted) */}
+      <ResponsiveDialog
+        open={!!reverseTarget}
+        onOpenChange={(open) => !open && setReverseTarget(null)}
+        title={t("عكس دفعة", "Reverse Payment")}
+        contentClassName="sm:max-w-[560px]"
+        footer={
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button
+              variant="outline"
+              onClick={() => setReverseTarget(null)}
+              style={{ display: "inline-flex" }}
+            >
+              {t("إلغاء", "Cancel")}
+            </Button>
+            <Button
+              type="submit"
+              form="reverse-payment-form"
+              variant="destructive"
+              disabled={reverseSubmitting}
+              style={{ display: "inline-flex" }}
+              className="gap-2"
+            >
+              {reverseSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
+              {t("عكس الدفعة", "Reverse Payment")}
+            </Button>
+          </div>
+        }
+      >
+        {reverseTarget && (
+          <form
+            id="reverse-payment-form"
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleReversePayment();
+            }}
+            className="space-y-4 py-2"
+          >
+            <Alert variant="warning">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                {t(
+                  "يسجّل العكس قيدًا عكسيًا في سجل المدفوعات ويُحدّث حالة القسط. لا يُحذف أي سجل.",
+                  "Reversing writes a negative entry to the payment ledger and updates the installment status. No record is deleted.",
+                )}
+              </AlertDescription>
+            </Alert>
+
+            {/* Summary */}
+            <div className="bg-muted rounded-lg px-4 py-3 text-sm space-y-1">
+              <p className="text-muted-foreground">
+                {t("العميل", "Client")}:{" "}
+                <span className="text-foreground font-medium">{reverseTarget.clientName}</span>
+              </p>
+              <p className="text-muted-foreground">
+                {t("العقار", "Property")}:{" "}
+                <span className="text-foreground font-medium">{reverseTarget.propertyLabel}</span>
+              </p>
+              <p className="text-muted-foreground">
+                {t("المبلغ المُحصّل", "Collected")}:{" "}
+                <span className="text-foreground font-medium">
+                  {SAR(Number(reverseTarget.raw.paidAmount ?? reverseTarget.amount))}
+                </span>
+              </p>
+            </div>
+
+            {/* Reversal amount */}
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-foreground">
+                {t("مبلغ العكس (ريال)", "Reversal Amount (SAR)")} *
+              </label>
+              <SARAmountInput
+                value={reverseForm.amount === "" ? null : Number(reverseForm.amount)}
+                onChange={(n) =>
+                  setReverseForm((f) => ({ ...f, amount: n == null ? "" : String(n) }))
+                }
+                placeholder="0.00"
+              />
+            </div>
+
+            {/* Reason (required) */}
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-foreground">
+                {t("سبب العكس", "Reason for reversal")} *
+              </label>
+              <textarea
+                value={reverseForm.reason}
+                onChange={(e) => setReverseForm((f) => ({ ...f, reason: e.target.value }))}
+                rows={2}
+                required
+                placeholder={t("مثال: دفعة مُسجّلة بالخطأ", "e.g. payment recorded by mistake")}
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]"
               />
             </div>

@@ -10,8 +10,6 @@ import {
   Search,
   X,
   FileText,
-  Calendar,
-  Handshake,
   AlertTriangle,
   Home,
   Key,
@@ -87,7 +85,6 @@ import {
   RelatedContextPanel,
 } from "@repo/ui";
 import { toast } from "sonner";
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
 const SAR = (amount: number) =>
@@ -101,8 +98,10 @@ type Contract = {
   amount: number;
   signedAt: string | null;
   createdAt: string;
+  notes?: string | null;
+  paymentFrequency?: string | null;
   customer: { id: string; name: string };
-  unit: { id: string; number: string; buildingName: string | null };
+  unit: { id: string; number: string; buildingName: string | null; city?: string | null };
   lease?: { id: string; startDate: string; endDate: string; status: string } | null;
 };
 
@@ -167,6 +166,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
           .positive(t("المبلغ يجب أن يكون أكبر من صفر", "Amount must be greater than zero")),
         notes: z.string().optional(),
       }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `t` is derived purely from `lang`; depending on `lang` alone rebuilds the schema on language change without churning on `t`'s unstable identity
     [lang],
   );
 
@@ -191,6 +191,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
             path: ["endDate"],
           },
         ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `t` is derived purely from `lang`; depending on `lang` alone rebuilds the schema on language change without churning on `t`'s unstable identity
     [lang],
   );
 
@@ -265,6 +266,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
     getMissingRequiredDocs(detailContract.id)
       .then((cats) => setMissingDocs(cats))
       .catch(() => setMissingDocs([]));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally keyed on the contract id only; re-running on the full `detailContract` object would re-fetch journey/docs on every unrelated list refresh that re-creates the object
   }, [detailContract?.id]);
 
   function loadContracts() {
@@ -520,7 +522,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
         customerId: c.customer.id,
         unitId: c.unit.id,
         amount: Number(c.amount),
-        notes: (c as any).notes ?? "",
+        notes: c.notes ?? "",
       });
       setSaleCustomerName(c.customer.name);
       setSaleCustomerSearch(c.customer.name);
@@ -534,8 +536,8 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
         startDate: c.lease?.startDate ? c.lease.startDate.slice(0, 10) : "",
         endDate: c.lease?.endDate ? c.lease.endDate.slice(0, 10) : "",
         amount: Number(c.amount),
-        paymentFrequency: (c as any).paymentFrequency ?? "MONTHLY",
-        notes: (c as any).notes ?? "",
+        paymentFrequency: c.paymentFrequency ?? "MONTHLY",
+        notes: c.notes ?? "",
       });
       setLeaseCustomerName(c.customer.name);
       setLeaseCustomerSearch(c.customer.name);
@@ -668,7 +670,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
             {t("وحدة", "Unit")} {row.original.unit.number}
           </p>
           <p className="text-muted-foreground text-xs">
-            {(row.original.unit as any).buildingName ?? (row.original.unit as any).city ?? "—"}
+            {row.original.unit.buildingName ?? row.original.unit.city ?? "—"}
           </p>
         </div>
       ),
@@ -763,7 +765,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
             {t("وحدة", "Unit")} {row.original.unit.number}
           </p>
           <p className="text-muted-foreground text-xs">
-            {(row.original.unit as any).buildingName ?? (row.original.unit as any).city ?? "—"}
+            {row.original.unit.buildingName ?? row.original.unit.city ?? "—"}
           </p>
         </div>
       ),

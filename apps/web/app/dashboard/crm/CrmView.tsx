@@ -67,6 +67,61 @@ import { KanbanCard } from "./KanbanCard";
 import { CustomerDrawer } from "./CustomerDrawer";
 import { AddCustomerModal } from "./AddCustomerModal";
 
+// ─── Shared CRM DTOs (serialized + masked payloads from the server actions) ──
+
+// Masked + serialized customer row from getCustomers(). PII fields are masked
+// strings (or raw when showPii), Decimals/Dates are serialized, and the server
+// adds contactPhoneE164. Index signature keeps it assignable to KanbanCustomer
+// and forward-compatible with the fields the drawer/table read.
+type CrmCustomer = {
+  id: string;
+  name: string;
+  nameArabic?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  source?: string | null;
+  status: string;
+  lostReason?: string | null;
+  agentId?: string | null;
+  budget?: number | string | null;
+  propertyTypeInterest?: string | null;
+  nationality?: string | null;
+  gender?: string | null;
+  maritalStatus?: string | null;
+  dateOfBirth?: string | Date | null;
+  agent?: { id?: string; name?: string | null; email?: string | null } | null;
+  contactPhoneE164?: string | null;
+  [key: string]: unknown;
+};
+
+type TeamMember = {
+  id: string;
+  name?: string | null;
+  email?: string | null;
+  role?: string | null;
+  [key: string]: unknown;
+};
+
+type AvailableUnit = {
+  id: string;
+  number?: string | null;
+  type?: string | null;
+  city?: string | null;
+  buildingName?: string | null;
+  rentalPrice?: number | string | null;
+  markupPrice?: number | string | null;
+  price?: number | string | null;
+  [key: string]: unknown;
+};
+
+type UnitAssignment = {
+  unitId: string;
+  unitNumber: string;
+  building: string;
+  type: "reservation" | "contract" | "lease";
+  status: string;
+};
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function CrmView({
@@ -74,9 +129,9 @@ export default function CrmView({
   initialTeamMembers,
   initialAvailableUnits,
 }: {
-  initialCustomers: any[];
-  initialTeamMembers: any[];
-  initialAvailableUnits: any[];
+  initialCustomers: CrmCustomer[];
+  initialTeamMembers: TeamMember[];
+  initialAvailableUnits: AvailableUnit[];
 }) {
   const { t, lang } = useLanguage();
   const { can } = usePermissions();
@@ -84,8 +139,8 @@ export default function CrmView({
   // Seeded from the Server Component's masked getCustomers() result — no
   // client mount-time fetch for the initial paint. `loadData()` below stays as
   // a callable refetch used after mutations to re-sync from the server.
-  const [customers, setCustomers] = React.useState<any[]>(initialCustomers);
-  const [teamMembers, setTeamMembers] = React.useState<any[]>(initialTeamMembers);
+  const [customers, setCustomers] = React.useState<CrmCustomer[]>(initialCustomers);
+  const [teamMembers, setTeamMembers] = React.useState<TeamMember[]>(initialTeamMembers);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [viewMode, setViewMode] = React.useState<"kanban" | "list">("kanban");
@@ -104,17 +159,17 @@ export default function CrmView({
 
   // Available units seeded server-side (refreshed by loadData()); passed to the
   // add-customer modal for its property-linking search.
-  const [pageAvailableUnits, setPageAvailableUnits] = React.useState<any[]>(initialAvailableUnits);
+  const [pageAvailableUnits, setPageAvailableUnits] = React.useState<AvailableUnit[]>(initialAvailableUnits);
 
   // Delete dialog
   const [showDeleteDialog, setShowDeleteDialog] = React.useState(false);
-  const [deleteTarget, setDeleteTarget] = React.useState<any>(null);
+  const [deleteTarget, setDeleteTarget] = React.useState<CrmCustomer | null>(null);
   const [deleting, setDeleting] = React.useState(false);
 
   // Profile drawer
-  const [drawerCustomer, setDrawerCustomer] = React.useState<any>(null);
-  const [drawerAssignments, setDrawerAssignments] = React.useState<any[]>([]);
-  const [loadingAssignments, setLoadingAssignments] = React.useState(false);
+  const [drawerCustomer, setDrawerCustomer] = React.useState<CrmCustomer | null>(null);
+  const [drawerAssignments, setDrawerAssignments] = React.useState<UnitAssignment[]>([]);
+  const [, setLoadingAssignments] = React.useState(false);
 
   // Lost reason modal (triggered when dropping into LOST)
   const [showLostModal, setShowLostModal] = React.useState(false);
@@ -150,6 +205,7 @@ export default function CrmView({
     } else {
       setDrawerAssignments([]);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on the drawer customer id only; the stable loadAssignments closure refetches whenever a different customer opens, and re-running on the full object would refetch on every unrelated re-render
   }, [drawerCustomer?.id]);
 
   async function loadAssignments(customerId: string) {
@@ -169,7 +225,7 @@ export default function CrmView({
       setLoading(true);
       const [data, members, units] = await Promise.all([getCustomers(), getTeamMembers(), getAvailableUnitsForInterest()]);
       setCustomers(data);
-      setTeamMembers(members.filter((m: any) => ["ADMIN", "MANAGER", "AGENT"].includes(m.role)));
+      setTeamMembers(members.filter((m: TeamMember) => ["ADMIN", "MANAGER", "AGENT"].includes(m.role ?? "")));
       setPageAvailableUnits(units);
     } catch {
       setError(
@@ -230,7 +286,7 @@ export default function CrmView({
 
   // ─── List-view columns (TanStack DataTable) ────────────────────────────────
 
-  const listColumns = React.useMemo<ColumnDef<any, unknown>[]>(
+  const listColumns = React.useMemo<ColumnDef<CrmCustomer, unknown>[]>(
     () => [
       {
         id: "name",
@@ -471,7 +527,7 @@ export default function CrmView({
 
   // ─── Delete ──────────────────────────────────────────────────────────────────
 
-  function openDelete(customer: any) {
+  function openDelete(customer: CrmCustomer) {
     setDeleteTarget(customer);
     setShowDeleteDialog(true);
   }
@@ -485,9 +541,9 @@ export default function CrmView({
       setCustomers((prev) => prev.filter((c) => c.id !== deleteTarget.id));
       setShowDeleteDialog(false);
       setDeleteTarget(null);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(
-        err?.message ||
+        (err instanceof Error ? err.message : "") ||
           (t("فشل حذف العميل. يرجى المحاولة مجدداً.", "Failed to delete contact. Please try again."))
       );
     } finally {
@@ -543,29 +599,6 @@ export default function CrmView({
       ]
     : PIPELINE_STAGES;
 
-  function toneForStatus(status: string): "default" | "blue" | "green" | "amber" | "red" | "purple" {
-    switch (status) {
-      case "NEW":
-        return "blue";
-      case "CONTACTED":
-      case "INTERESTED":
-        return "purple";
-      case "QUALIFIED":
-      case "VIEWING":
-        return "amber";
-      case "NEGOTIATION":
-      case "CONVERTED":
-      case "ACTIVE_TENANT":
-      case "RESERVED":
-        return "green";
-      case "LOST":
-      case "PAST_TENANT":
-        return "red";
-      default:
-        return "default";
-    }
-  }
-
   function customerCardStatus(
     status: string,
   ): "hot" | "warm" | "cold" | "converted" | "churned" | "neutral" {
@@ -590,7 +623,7 @@ export default function CrmView({
     }
   }
 
-  function renderMobileCardList(rows: any[], emptyLabel: { ar: string; en: string }) {
+  function renderMobileCardList(rows: CrmCustomer[], emptyLabel: { ar: string; en: string }) {
     if (rows.length === 0) {
       // No filters active AND no customers at all → first-time empty. Otherwise filter-empty.
       const isFirstTime = customers.length === 0;
@@ -1231,8 +1264,14 @@ export default function CrmView({
                     lang={lang}
                     showPii={showPii}
                     onDragStart={handleDragStart}
-                    onViewProfile={setDrawerCustomer}
-                    onDelete={openDelete}
+                    onViewProfile={(kc) => {
+                      const full = filteredCustomers.find((x) => x.id === kc.id);
+                      if (full) setDrawerCustomer(full);
+                    }}
+                    onDelete={(kc) => {
+                      const full = filteredCustomers.find((x) => x.id === kc.id);
+                      if (full) openDelete(full);
+                    }}
                     canDelete={canDelete}
                     onMoveToStage={handleMoveToStage}
                     currentStage={status.key}

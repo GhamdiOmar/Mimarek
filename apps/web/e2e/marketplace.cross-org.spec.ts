@@ -619,15 +619,18 @@ test("mobile viewport: marketplace browse has no horizontal overflow at 375×812
 // The happy-path SETTLE leg remains covered by the §3.9 manual walk once the
 // conveyance flag is intentionally enabled (settle is conveyance-gated by design).
 //
-// H9 — STILL test.fixme (re-confirmed in CI 2026-06-17). Un-fixme'ing this with a
-// robust 30s visibility-wait still fails: the "Convert to Deal" button never renders
-// for the OPEN inquiry on the my-listings incoming-inquiries grid. The DB OPEN
-// inquiry exists (the assertion below passes), so this is a real, pre-existing
-// my-listings grid render issue — NOT the test flakiness initially assumed. The
-// convert path stays covered at the action/DB-gate layer (the passing tests above).
-// Re-enable after a focused my-listings grid debug; tracked in REMAINING-WORK.md.
+// H9 — FIXED + re-enabled (v4.33.0). Root cause: my-listings `loadAll()` used
+// `Promise.all([listings, inquiries, regaAuth])` whose catch swallowed any single
+// rejection and left `inquiries` empty — so if the REGA-auth or listings fetch
+// rejected (variable in the remote-DB test env), the inquiries grid blanked and the
+// "Convert to Deal" button never rendered for the OPEN inquiry, despite the DB row
+// existing. Fix: `loadAll()` now uses `Promise.allSettled` and applies each result
+// independently (one failure can't blank the others). Verified live: the my-listings
+// grid renders with zero console errors, and the convert button is gated only on
+// `inquiry.status === "OPEN"`. (Verified against a running prod build; the full
+// cross-org fixture flow is exercised here in CI.)
 // ════════════════════════════════════════════════════════════════════════════
-test.fixme("seller convert UI walk: OPEN inquiry converts to a deal from the incoming-inquiries grid", async ({
+test("seller convert UI walk: OPEN inquiry converts to a deal from the incoming-inquiries grid", async ({
   browser,
 }) => {
   expect(createdListingId, "depends on the prior approval + inquiry tests").not.toEqual("");

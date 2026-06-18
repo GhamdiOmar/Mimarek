@@ -53,13 +53,6 @@ const CATEGORY_LABELS: Record<string, { ar: string; en: string }> = {
   OTHER:      { ar: "أخرى",      en: "Other" },
 };
 
-const PRIORITY_COLORS: Record<string, string> = {
-  URGENT: "hsl(var(--destructive))",
-  HIGH:   "hsl(var(--warning))",
-  MEDIUM: "hsl(var(--chart-1))",
-  LOW:    "hsl(var(--muted-foreground))",
-};
-
 export default function MaintenanceView({
   stats,
   ticketsTrend,

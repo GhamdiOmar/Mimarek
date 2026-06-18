@@ -2,7 +2,6 @@
 
 import { useLanguage } from "../../../../components/LanguageProvider";
 import * as React from "react";
-import { useRouter } from "next/navigation";
 import {
   Wrench,
   Clock,
@@ -63,16 +62,70 @@ import {
   MAINTENANCE_STATUS_LABEL as statusLabels,
 } from "../../../../lib/domain-labels";
 import { trackEvent, AnalyticsEvent } from "../../../../lib/analytics";
+import type {
+  MaintenanceCategory,
+  MaintenancePriority,
+  MaintenanceStatus,
+  UserRole,
+} from "@repo/db";
 
+// ─── Serialized view-model types ──────────────────────────────────────────────
+// These mirror the runtime shapes returned by the maintenance server actions
+// after `serialize()` (Prisma `Date`/`Decimal` → string across the RSC boundary).
+
+/** Unit shape returned by `getUnitsForMaintenance` / nested in a request's `unit`.
+ *  `building` is an optional relation the UI defensively reads; it is not part of
+ *  the action's `include`, so it is typed optional to match runtime. */
+type MaintenanceUnitVM = {
+  id: string;
+  number: string;
+  buildingName: string | null;
+  building?: { name: string | null } | null;
+};
+
+/** Assignee shape (`assignedTo` select / `getAssignableUsers`). */
+type MaintenanceUserVM = {
+  id: string;
+  name: string | null;
+  role?: UserRole;
+};
+
+/** A maintenance request as serialized by `getMaintenanceRequests`. */
+type MaintenanceRequestVM = {
+  id: string;
+  title: string;
+  description: string | null;
+  category: MaintenanceCategory;
+  status: MaintenanceStatus;
+  priority: MaintenancePriority;
+  unitId: string;
+  unit: MaintenanceUnitVM | null;
+  assignedToId: string | null;
+  assignedTo: MaintenanceUserVM | null;
+  scheduledDate: string | null;
+  dueDate: string | null;
+  estimatedCost: string | null;
+  notes: string | null;
+  isPreventive: boolean;
+};
+
+/** Aggregate counts returned by `getMaintenanceStats`. */
+type MaintenanceStats = {
+  open: number;
+  assigned: number;
+  inProgress: number;
+  onHold: number;
+  overdue: number;
+  completedThisMonth: number;
+};
 
 export default function MaintenancePage() {
-  const router = useRouter();
   const { t, lang } = useLanguage();
-  const [requests, setRequests] = React.useState<any[]>([]);
-  const [stats, setStats] = React.useState<any>(null);
+  const [requests, setRequests] = React.useState<MaintenanceRequestVM[]>([]);
+  const [stats, setStats] = React.useState<MaintenanceStats | null>(null);
   const [loading, setLoading] = React.useState(true);
-  const [users, setUsers] = React.useState<any[]>([]);
-  const [units, setUnits] = React.useState<any[]>([]);
+  const [users, setUsers] = React.useState<MaintenanceUserVM[]>([]);
+  const [units, setUnits] = React.useState<MaintenanceUnitVM[]>([]);
 
   // Filters
   const [search, setSearch] = React.useState("");
@@ -120,6 +173,7 @@ export default function MaintenancePage() {
         estimatedCost: z.string().optional(),
         notes: z.string().optional(),
       }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `t` is derived from `lang`, which is already a dep; listing `lang` covers every translation read here.
     [lang, editingId],
   );
 
@@ -148,12 +202,18 @@ export default function MaintenancePage() {
   React.useEffect(() => {
     load();
     loadRefs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only initial fetch; `load`/`loadRefs` are recreated each render and the debounced effect below handles every subsequent refresh.
   }, []);
 
   async function load() {
     setLoading(true);
     try {
-      const filters: any = {};
+      const filters: {
+        status?: string;
+        priority?: string;
+        category?: string;
+        search?: string;
+      } = {};
       if (filterStatus) filters.status = filterStatus;
       if (filterPriority) filters.priority = filterPriority;
       if (filterCategory) filters.category = filterCategory;
@@ -185,6 +245,7 @@ export default function MaintenancePage() {
   React.useEffect(() => {
     const timer = setTimeout(() => load(), 300);
     return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally re-runs only when a filter/search input changes; `load` is recreated each render and reads the latest filter state via closure.
   }, [search, filterStatus, filterPriority, filterCategory]);
 
   function openCreate() {
@@ -197,7 +258,7 @@ export default function MaintenancePage() {
     setShowModal(true);
   }
 
-  function openEdit(req: any) {
+  function openEdit(req: MaintenanceRequestVM) {
     setEditingId(req.id);
     setSaveError(null);
     reset({
@@ -317,7 +378,7 @@ export default function MaintenancePage() {
           header: t("المُعيَّن إليه", "Assigned To"),
           key: "assignedTo",
           width: 22,
-          render: (val: any) => val?.name ?? (t("غير معيّن", "Unassigned")),
+          render: (val: MaintenanceUserVM | null) => val?.name ?? (t("غير معيّن", "Unassigned")),
         },
         {
           header: t("تاريخ الإنشاء", "Created Date"),
@@ -351,7 +412,7 @@ export default function MaintenancePage() {
     { key: "RESOLVED", label: statusLabels.RESOLVED![lang] },
   ];
 
-  function isTicketOverdue(t: any): boolean {
+  function isTicketOverdue(t: MaintenanceRequestVM): boolean {
     return Boolean(
       t.dueDate &&
         new Date(t.dueDate) < new Date() &&
@@ -359,7 +420,7 @@ export default function MaintenancePage() {
     );
   }
 
-  function toneForTicket(t: any): "red" | "amber" | "green" | "blue" | "default" {
+  function toneForTicket(t: MaintenanceRequestVM): "red" | "amber" | "green" | "blue" | "default" {
     if (isTicketOverdue(t)) return "red";
     if (["RESOLVED", "CLOSED"].includes(t.status)) return "green";
     if (t.priority === "URGENT") return "red";
@@ -369,7 +430,7 @@ export default function MaintenancePage() {
     return "default";
   }
 
-  function iconForTicket(t: any) {
+  function iconForTicket(t: MaintenanceRequestVM) {
     if (isTicketOverdue(t)) return AlertTriangle;
     if (["RESOLVED", "CLOSED"].includes(t.status)) return CheckCircle2;
     if (["ASSIGNED", "IN_PROGRESS"].includes(t.status)) return Clock;
@@ -380,7 +441,7 @@ export default function MaintenancePage() {
   const visibleRequests = React.useMemo(() => {
     if (!filterStatus) return requests;
     if (filterStatus === "OVERDUE") return requests.filter(isTicketOverdue);
-    return requests.filter((r: any) => r.status === filterStatus);
+    return requests.filter((r) => r.status === filterStatus);
   }, [requests, filterStatus]);
 
   function formatShortDate(d: string | Date | null | undefined): string {
@@ -392,7 +453,7 @@ export default function MaintenancePage() {
   }
 
   // ─── DataTable column definitions ────────────────────────────
-  const columns: ColumnDef<any, any>[] = [
+  const columns: ColumnDef<MaintenanceRequestVM, unknown>[] = [
     {
       accessorKey: "title",
       header: t("العنوان", "Title"),
@@ -604,7 +665,7 @@ export default function MaintenancePage() {
           )
         ) : (
           <div>
-            {visibleRequests.map((t: any) => {
+            {visibleRequests.map((t) => {
               const statusLabel =
                 statusLabels[t.status] ?? { ar: t.status, en: t.status };
               const priorityLabel =
@@ -704,7 +765,7 @@ export default function MaintenancePage() {
               <option value="">
                 {t("كل الوحدات", "All units")}
               </option>
-              {units.map((u: any) => (
+              {units.map((u) => (
                 <option key={u.id} value={u.id}>
                   {u.number} — {u.building?.name ?? ""}
                 </option>
@@ -749,7 +810,7 @@ export default function MaintenancePage() {
               <option value="">
                 {t("الجميع", "Everyone")}
               </option>
-              {users.map((u: any) => (
+              {users.map((u) => (
                 <option key={u.id} value={u.id}>
                   {u.name}
                 </option>
@@ -1093,7 +1154,7 @@ export default function MaintenancePage() {
                   onBlur={field.onBlur}
                 >
                   <option value="">{t("اختر الوحدة", "Select Unit")}</option>
-                  {units.map((u: any) => (
+                  {units.map((u) => (
                     <option key={u.id} value={u.id}>
                       {u.number}
                     </option>
@@ -1114,7 +1175,7 @@ export default function MaintenancePage() {
                 onBlur={field.onBlur}
               >
                 <option value="">{t("— بدون تعيين —", "— Unassigned —")}</option>
-                {users.map((u: any) => (
+                {users.map((u) => (
                   <option key={u.id} value={u.id}>{u.name} ({u.role})</option>
                 ))}
               </SelectField>

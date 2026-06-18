@@ -23,6 +23,7 @@ import { getPublicPlans } from "../../lib/server/plans";
  * landmine was the old `export const getPlans = unstable_cache(...)` — a
  * non-async-function export — which is now gone).
  */
+// eslint-disable-next-line mimaric/require-action-guard -- public plan catalogue (pricing page); no tenant data or PII, read-only.
 export async function getPlans() {
   return getPublicPlans();
 }
@@ -30,6 +31,7 @@ export async function getPlans() {
 /**
  * Get a single plan by slug.
  */
+// eslint-disable-next-line mimaric/require-action-guard -- public plan lookup by slug (pricing page); no tenant data or PII, read-only.
 export async function getPlanBySlug(slug: string) {
   const plan = await db.plan.findUnique({
     where: { slug },

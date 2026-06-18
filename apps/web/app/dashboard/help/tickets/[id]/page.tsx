@@ -3,7 +3,6 @@
 import { useLanguage } from "../../../../../components/LanguageProvider";
 import * as React from "react";
 import {
-  ArrowRight,
   Send,
   Clock,
   User,
@@ -11,7 +10,6 @@ import {
   ChevronLeft,
   MoreHorizontal,
   CheckCircle2,
-  XCircle,
   Loader2,
   MessageSquare,
 } from "lucide-react";
@@ -27,6 +25,11 @@ import {
   updateTicketStatus,
 } from "../../../../actions/support-tickets";
 import { toast } from "sonner";
+
+// Derived from the server action so the held ticket + its message rows stay in
+// sync with the Prisma `include` selection without re-declaring the shape.
+type TicketWithMessages = Awaited<ReturnType<typeof getTicketWithMessages>>;
+type TicketMessage = TicketWithMessages["messages"][number];
 
 const STATUS_OPTIONS = [
   { value: "OPEN", label: { ar: "مفتوحة", en: "Open" } },
@@ -57,12 +60,12 @@ export default function TicketDetailPage() {
   const router = useRouter();
   const ticketId = params.id as string;
   const { data: session } = useSession();
-  const userRole = (session?.user as any)?.role ?? "USER";
-  const userId = (session?.user as any)?.id;
+  const userRole = session?.user?.role ?? "USER";
+  const userId = session?.user?.id;
   const isAdmin = hasPermission(userRole, "help:manage_tickets");
   const { t, lang } = useLanguage();
 
-  const [ticket, setTicket] = React.useState<any>(null);
+  const [ticket, setTicket] = React.useState<TicketWithMessages | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState("");
   const [replyText, setReplyText] = React.useState("");
@@ -77,14 +80,15 @@ export default function TicketDetailPage() {
       const t = await getTicketWithMessages(ticketId);
       setTicket(t);
       setError("");
-    } catch (e: any) {
-      setError(e.message || "Failed to load ticket");
+    } catch (e: unknown) {
+      setError((e instanceof Error && e.message) || "Failed to load ticket");
     }
     setLoading(false);
   }
 
   React.useEffect(() => {
     loadTicket();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch only when the ticket route param changes; loadTicket is recreated each render and including it would refetch on every render
   }, [ticketId]);
 
   React.useEffect(() => {
@@ -98,7 +102,7 @@ export default function TicketDetailPage() {
       await addTicketMessage(ticketId, replyText.trim());
       setReplyText("");
       await loadTicket();
-    } catch (e: any) {
+    } catch (e: unknown) {
       toast.error(
         t("تعذّر إرسال الرد. يُرجى المحاولة مرة أخرى.", "We couldn't send your reply. Please try again."),
       );
@@ -112,7 +116,7 @@ export default function TicketDetailPage() {
     try {
       await updateTicketStatus(ticketId, status);
       await loadTicket();
-    } catch (e: any) {
+    } catch (e: unknown) {
       toast.error(
         t("تعذّر تحديث حالة التذكرة. يُرجى المحاولة مرة أخرى.", "We couldn't update the ticket status. Please try again."),
       );
@@ -159,7 +163,7 @@ export default function TicketDetailPage() {
     );
   }
 
-  function formatDate(d: string) {
+  function formatDate(d: string | Date) {
     return new Date(d).toLocaleDateString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-US", {
       year: "numeric",
       month: "short",
@@ -193,7 +197,7 @@ export default function TicketDetailPage() {
   }
 
   const isClosed = ticket.status === "CLOSED" || ticket.status === "RESOLVED";
-  const ticketRef = ticket.ticketNumber ?? ticket.ref ?? (ticketId ? ticketId.slice(0, 8) : "");
+  const ticketRef = ticket.ticketNumber ?? (ticketId ? ticketId.slice(0, 8) : "");
 
   async function handleSendMobileMessage(e?: React.FormEvent) {
     if (e) e.preventDefault();
@@ -286,7 +290,7 @@ export default function TicketDetailPage() {
             />
           )}
 
-          {ticket.messages?.map((msg: any) => {
+          {ticket.messages?.map((msg: TicketMessage) => {
             const isOwn = msg.userId === userId;
             const isStaff = msg.isStaffReply;
             return (
@@ -530,7 +534,7 @@ export default function TicketDetailPage() {
             />
           )}
 
-          {ticket.messages?.map((msg: any) => {
+          {ticket.messages?.map((msg: TicketMessage) => {
             const isOwn = msg.userId === userId;
             const isStaff = msg.isStaffReply;
 

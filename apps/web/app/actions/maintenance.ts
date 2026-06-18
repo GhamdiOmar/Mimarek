@@ -44,6 +44,7 @@ const VALID_TRANSITIONS: Record<string, string[]> = {
   CLOSED: ["OPEN"],
 };
 
+// eslint-disable-next-line mimaric/require-action-guard -- pure state-machine metadata (returns the allowed next statuses); no DB, no PII, no tenant data.
 export async function getValidTransitions(from: string): Promise<string[]> {
   return VALID_TRANSITIONS[from] ?? [];
 }

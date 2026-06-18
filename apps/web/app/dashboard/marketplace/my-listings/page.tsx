@@ -215,22 +215,24 @@ export default function MyListingsPage() {
   const [proofError, setProofError] = React.useState<string | null>(null);
 
   async function loadAll() {
-    try {
-      const [l, i, r] = await Promise.all([
-        listMyMarketplaceListings(),
-        listIncomingMarketplaceInquiries(),
-        getMyOrgRegaAuthorization(),
-      ]);
-      setListings(l as unknown as MyListing[]);
-      setInquiries(i as unknown as IncomingInquiry[]);
-      setRega(r as unknown as OrgRega);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoadingListings(false);
-      setLoadingInquiries(false);
-      setLoadingRega(false);
-    }
+    // allSettled, NOT all (H9): these three independent loads must not short-circuit
+    // each other. With Promise.all, a single rejection (e.g. the REGA-auth or listings
+    // fetch) blanks the inquiries grid too — which is exactly why the "Convert to Deal"
+    // button could fail to render for an OPEN inquiry. Each result is applied on its own.
+    const [l, i, r] = await Promise.allSettled([
+      listMyMarketplaceListings(),
+      listIncomingMarketplaceInquiries(),
+      getMyOrgRegaAuthorization(),
+    ]);
+    if (l.status === "fulfilled") setListings(l.value as unknown as MyListing[]);
+    else console.error("[my-listings] listings load failed:", l.reason);
+    if (i.status === "fulfilled") setInquiries(i.value as unknown as IncomingInquiry[]);
+    else console.error("[my-listings] inquiries load failed:", i.reason);
+    if (r.status === "fulfilled") setRega(r.value as unknown as OrgRega);
+    else console.error("[my-listings] REGA-auth load failed:", r.reason);
+    setLoadingListings(false);
+    setLoadingInquiries(false);
+    setLoadingRega(false);
   }
 
   React.useEffect(() => {

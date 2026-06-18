@@ -12,7 +12,7 @@ import {
   Mail,
   X,
 } from "lucide-react";
-import { Button, Input, AppBar, DirectionalIcon, PageIntro, CRInput, SaudiPhoneInput, SelectField } from "@repo/ui";
+import { Button, IconButton, Input, AppBar, DirectionalIcon, PageIntro, CRInput, SaudiPhoneInput, SelectField } from "@repo/ui";
 import { cn } from "@repo/ui/lib/utils";
 import { useRouter } from "next/navigation";
 import {
@@ -289,7 +289,6 @@ export default function OnboardingPage() {
   const currentStepId  = steps[currentStep]?.id ?? "join";
   const currentStepObj = steps[currentStep];
   const isDoneStep     = currentStepId === "done";
-  const isJoinStep     = currentStepId === "join";
 
   // Progress excludes the "done" step from the count so bar fills to 100% on the last setup step.
   const setupStepCount = steps.length - 1; // 4
@@ -306,6 +305,7 @@ export default function OnboardingPage() {
     if (currentStepId === "contact") return t("حفظ ومتابعة", "Save & Continue");
     if (currentStepId === "team")    return t("إنهاء الإعداد", "Finish Setup");
     return t("الذهاب إلى لوحة التحكم", "Go to Dashboard");
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `t` is derived from `lang`, which is already a dep; listing `lang` covers every translation read here.
   }, [currentStepId, joinChoice, crSearchResult, lang]);
 
   const handleMobilePrimary = () => {
@@ -389,11 +389,13 @@ export default function OnboardingPage() {
 
             {/* Choice cards */}
             <div className="space-y-3">
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                style={{ display: "block" }}
                 onClick={() => { setJoinChoice("join"); setCrSearchResult(null); setCrSearch(""); }}
                 className={cn(
-                  "w-full text-start rounded-xl border-2 p-4 transition-all",
+                  "w-full text-start rounded-xl border-2 p-4 h-auto transition-all",
                   joinChoice === "join"
                     ? "border-primary bg-primary/5"
                     : "border-border bg-card hover:border-primary/50"
@@ -412,13 +414,15 @@ export default function OnboardingPage() {
                     </p>
                   </div>
                 </div>
-              </button>
+              </Button>
 
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                style={{ display: "block" }}
                 onClick={() => { setJoinChoice("independent"); setCrSearchResult(null); }}
                 className={cn(
-                  "w-full text-start rounded-xl border-2 p-4 transition-all",
+                  "w-full text-start rounded-xl border-2 p-4 h-auto transition-all",
                   joinChoice === "independent"
                     ? "border-primary bg-primary/5"
                     : "border-border bg-card hover:border-primary/50"
@@ -437,7 +441,7 @@ export default function OnboardingPage() {
                     </p>
                   </div>
                 </div>
-              </button>
+              </Button>
             </div>
 
             {/* Join sub-flow */}
@@ -631,9 +635,14 @@ export default function OnboardingPage() {
                       {lang === "ar" ? `دعوة ${i + 1}` : `Invite ${i + 1}`}
                     </span>
                     {inviteRows.length > 1 && (
-                      <button type="button" onClick={() => removeInviteRow(i)} className="text-muted-foreground hover:text-destructive transition-colors" aria-label={t("إزالة", "Remove")}>
-                        <X className="h-4 w-4" />
-                      </button>
+                      <IconButton
+                        icon={X}
+                        type="button"
+                        onClick={() => removeInviteRow(i)}
+                        variant="ghost"
+                        className="text-muted-foreground hover:text-destructive"
+                        aria-label={t("إزالة", "Remove")}
+                      />
                     )}
                   </div>
                   <Input
@@ -821,11 +830,13 @@ export default function OnboardingPage() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    style={{ display: "block" }}
                     onClick={() => { setJoinChoice("join"); setCrSearchResult(null); setCrSearch(""); }}
                     className={cn(
-                      "text-start rounded-xl border-2 p-5 transition-all",
+                      "text-start rounded-xl border-2 p-5 h-auto transition-all",
                       joinChoice === "join"
                         ? "border-primary bg-primary/5"
                         : "border-border bg-card hover:border-primary/50"
@@ -840,13 +851,15 @@ export default function OnboardingPage() {
                     <p className="text-xs text-muted-foreground mt-1">
                       {t("ابحث عبر رقم السجل التجاري.", "Search by commercial registration number.")}
                     </p>
-                  </button>
+                  </Button>
 
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    style={{ display: "block" }}
                     onClick={() => { setJoinChoice("independent"); setCrSearchResult(null); }}
                     className={cn(
-                      "text-start rounded-xl border-2 p-5 transition-all",
+                      "text-start rounded-xl border-2 p-5 h-auto transition-all",
                       joinChoice === "independent"
                         ? "border-primary bg-primary/5"
                         : "border-border bg-card hover:border-primary/50"
@@ -861,7 +874,7 @@ export default function OnboardingPage() {
                     <p className="text-xs text-muted-foreground mt-1">
                       {t("أنشئ مساحة عمل خاصة بمنشأتك.", "Create your own workspace.")}
                     </p>
-                  </button>
+                  </Button>
                 </div>
 
                 {/* Join sub-flow — desktop */}
@@ -1150,15 +1163,15 @@ export default function OnboardingPage() {
                           <option key={opt.value} value={opt.value}>{opt.label[lang]}</option>
                         ))}
                       </SelectField>
-                      <button
+                      <IconButton
+                        icon={X}
                         type="button"
                         onClick={() => removeInviteRow(i)}
                         disabled={inviteRows.length === 1}
-                        className="h-10 w-10 rounded-md flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors disabled:opacity-30"
+                        variant="ghost"
+                        className="h-10 w-10 rounded-md text-muted-foreground hover:text-destructive disabled:opacity-30"
                         aria-label={t("إزالة", "Remove")}
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
+                      />
                     </div>
                   ))}
                   <Button

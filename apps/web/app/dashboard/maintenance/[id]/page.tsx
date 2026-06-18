@@ -7,11 +7,9 @@ import {
   ArrowLeft,
   Loader2,
   CheckCircle2,
-  Clock,
   AlertTriangle,
   Pencil,
   CircleUser,
-  Building2,
   Calendar,
   CircleDollarSign,
   X,
@@ -22,19 +20,20 @@ import {
   PlayCircle,
   PauseCircle,
   ClipboardList,
-  FileText,
 } from "lucide-react";
 import {
   Button,
   IconButton,
   Badge,
+  type BadgeProps,
   SARAmount,
   AppBar,
   QuickActionRail,
+  type QuickAction,
   ActivityTimeline,
+  type ActivityTimelineEvent,
   BottomSheet,
   EmptyState,
-  Skeleton,
   DirectionalIcon,
   LifecycleRail,
   NextActionPanel,
@@ -55,6 +54,53 @@ import {
   MAINTENANCE_STATUS_LABEL as statusLabels,
   MAINTENANCE_PRIORITY_LABEL as priorityLabels,
 } from "../../../../lib/domain-labels";
+import type {
+  MaintenanceCategory,
+  MaintenancePriority,
+  MaintenanceStatus,
+  UserRole,
+} from "@repo/db";
+
+// ─── Serialized view-model types ──────────────────────────────────────────────
+// `getMaintenanceRequest` runs its result through `serialize()` (Decimal → string,
+// Date → string), so these mirror the runtime JSON shape rather than the raw
+// Prisma types — same VM pattern used by maintenance/tickets/page.tsx. `unit`
+// carries the optional `building` accessor the detail view already reads.
+type MaintenanceUnitVM = {
+  id: string;
+  number: string;
+  buildingName: string | null;
+  building?: { name: string | null } | null;
+};
+type MaintenanceUserVM = {
+  id: string;
+  name: string | null;
+  email?: string | null;
+  role?: UserRole;
+};
+type MaintenanceRequestVM = {
+  id: string;
+  title: string;
+  description: string | null;
+  category: MaintenanceCategory;
+  status: MaintenanceStatus;
+  priority: MaintenancePriority;
+  unitId: string;
+  unit: MaintenanceUnitVM | null;
+  assignedToId: string | null;
+  assignedTo: MaintenanceUserVM | null;
+  scheduledDate: string | null;
+  dueDate: string | null;
+  completedAt: string | null;
+  createdAt: string;
+  updatedAt: string | null;
+  estimatedCost: string | null;
+  actualCost: string | null;
+  laborHours: number | string | null;
+  notes: string | null;
+  isPreventive: boolean;
+  preventivePlan: { title: string } | null;
+};
 
 
 const VALID_TRANSITIONS: Record<string, string[]> = {
@@ -66,15 +112,19 @@ const VALID_TRANSITIONS: Record<string, string[]> = {
   CLOSED: ["OPEN"],
 };
 
+// Assignable-user rows come straight from the action (not serialized), so the
+// precise Prisma select shape applies.
+type AssignableUser = Awaited<ReturnType<typeof getAssignableUsers>>[number];
+
 export default function MaintenanceDetailPage() {
   const { id } = useParams();
   const router = useRouter();
   const { t, lang } = useLanguage();
-  const [request, setRequest] = React.useState<any>(null);
+  const [request, setRequest] = React.useState<MaintenanceRequestVM | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
   const [transitioningTo, setTransitioningTo] = React.useState<string | null>(null);
-  const [users, setUsers] = React.useState<any[]>([]);
+  const [users, setUsers] = React.useState<AssignableUser[]>([]);
 
   // Inline edit states
   const [editingCost, setEditingCost] = React.useState(false);
@@ -90,6 +140,7 @@ export default function MaintenanceDetailPage() {
 
   React.useEffect(() => {
     load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch only when the route param id changes; load is recreated each render and including it would refetch on every render
   }, [id]);
 
   async function load() {
@@ -189,22 +240,8 @@ export default function MaintenanceDetailPage() {
   const inputClass = "w-full h-9 px-3 bg-card border border-border rounded-md text-sm outline-none focus:border-secondary transition-all";
 
   // ─── Mobile timeline events ────────────────────────────────────────────────
-  type TLTone =
-    | "default"
-    | "primary"
-    | "success"
-    | "info"
-    | "warning"
-    | "destructive";
-  const timelineEvents: Array<{
-    key: string;
-    label: React.ReactNode;
-    at: React.ReactNode;
-    detail?: React.ReactNode;
-    icon?: any;
-    tone?: TLTone;
-  }> = [];
-  const fmtDT = (d: any) =>
+  const timelineEvents: ActivityTimelineEvent[] = [];
+  const fmtDT = (d: string | Date | null | undefined) =>
     d ? new Date(d).toLocaleString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-US") : "";
   if (request.createdAt) {
     timelineEvents.push({
@@ -274,7 +311,7 @@ export default function MaintenanceDetailPage() {
 
   const assigneeEmail = request.assignedTo?.email;
 
-  const quickActions: any[] = [
+  const quickActions: QuickAction[] = [
     {
       key: "status",
       label: t("الحالة", "Status"),
@@ -387,7 +424,7 @@ export default function MaintenanceDetailPage() {
             {request.title}
           </h1>
           <div className="flex items-center gap-2 flex-wrap">
-            <Badge variant={status.variant as any} className="text-[10px]">
+            <Badge variant={status.variant as BadgeProps["variant"]} className="text-[10px]">
               {status[lang]}
             </Badge>
             <span className={`text-[11px] font-semibold ${priority.color}`}>
@@ -601,7 +638,7 @@ export default function MaintenanceDetailPage() {
                     {nextLabel[lang]}
                   </span>
                   <Badge
-                    variant={nextLabel.variant as any}
+                    variant={nextLabel.variant as BadgeProps["variant"]}
                     className="text-[10px]"
                   >
                     {nextLabel[lang]}
@@ -638,7 +675,7 @@ export default function MaintenanceDetailPage() {
               {t("— بدون تعيين —", "— Unassigned —")}
             </span>
           </Button>
-          {users.map((u: any) => (
+          {users.map((u) => (
             <Button
               key={u.id}
               type="button"
@@ -682,7 +719,7 @@ export default function MaintenanceDetailPage() {
         <div className="flex-1">
           <div className="flex items-center gap-3 flex-wrap">
             <h1 className="text-xl font-bold text-primary">{request.title}</h1>
-            <Badge variant={status.variant as any} className="text-xs">{status[lang]}</Badge>
+            <Badge variant={status.variant as BadgeProps["variant"]} className="text-xs">{status[lang]}</Badge>
             <span className={`text-xs font-bold ${priority.color}`}>{priority[lang]}</span>
             {request.isPreventive && (
               <Badge variant="available" className="text-[10px]">{t("وقائي", "Preventive")}</Badge>
@@ -810,7 +847,7 @@ export default function MaintenanceDetailPage() {
                   defaultValue=""
                 >
                   <option value="">{t("— بدون تعيين —", "— Unassigned —")}</option>
-                  {users.map((u: any) => (
+                  {users.map((u) => (
                     <option key={u.id} value={u.id}>{u.name} ({u.role})</option>
                   ))}
                 </SelectField>
@@ -917,7 +954,7 @@ export default function MaintenanceDetailPage() {
   );
 }
 
-function InfoRow({ label, value }: { label: string; value: any }) {
+function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div>
       <p className="text-[10px] text-muted-foreground uppercase font-bold">{label}</p>

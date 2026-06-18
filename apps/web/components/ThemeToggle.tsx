@@ -21,7 +21,7 @@ import { useLanguage } from "./LanguageProvider";
  */
 export function ThemeToggle({ className }: { className?: string }) {
   const { resolvedTheme, setTheme } = useTheme();
-  const { t, lang } = useLanguage();
+  const { t } = useLanguage();
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => setMounted(true), []);
 

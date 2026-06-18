@@ -24,6 +24,7 @@ const ALLOWED_LANDING_PAGES = [
   "/dashboard/settings",
 ];
 
+// eslint-disable-next-line mimaric/require-action-guard -- public pre-auth entry point (login); no session exists yet, credentials are the auth.
 export async function loginAction(formData: FormData) {
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
@@ -104,6 +105,7 @@ export async function loginAction(formData: FormData) {
   return { success: true, redirectTo };
 }
 
+// eslint-disable-next-line mimaric/require-action-guard -- public pre-auth signup; creates the first account/org, so no prior session can gate it.
 export async function registerUser(data: {
   name: string;
   email: string;

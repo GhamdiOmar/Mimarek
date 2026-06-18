@@ -20,14 +20,14 @@ interface MobileTopbarProps {
 
 export function MobileTopbar({ onMenuClick }: MobileTopbarProps) {
   const { data: session } = useSession();
-  const { t, lang } = useLanguage();
+  const { t } = useLanguage();
 
   const [unreadCount, setUnreadCount] = React.useState(0);
   const [orgName, setOrgName] = React.useState<string | undefined>(undefined);
   const [showSearch, setShowSearch] = React.useState(false);
   const [showNotifs, setShowNotifs] = React.useState(false);
   const [showMenu, setShowMenu] = React.useState(false);
-  const userRole = (session?.user as any)?.role ?? "";
+  const userRole = session?.user?.role ?? "";
 
   React.useEffect(() => {
     getUnreadCount().then(setUnreadCount).catch(() => {});

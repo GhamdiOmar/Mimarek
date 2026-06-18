@@ -47,9 +47,24 @@ export function maskEmail(value: string | null | undefined): string {
 }
 
 /**
+ * The fields {@link maskCustomerPii} reads + rewrites. The three string PII
+ * columns plus the four sensitive blobs/dates it nulls or stubs. Any
+ * Customer-shaped row satisfies this; extra fields pass through untouched.
+ */
+interface MaskableCustomer {
+  nationalId?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  address?: unknown;
+  documentInfo?: unknown;
+  dateOfBirth?: unknown;
+  dateOfBirthHijri?: unknown;
+}
+
+/**
  * Apply PII masking to a customer object based on whether the user has PII access.
  */
-export function maskCustomerPii<T extends Record<string, any>>(
+export function maskCustomerPii<T extends MaskableCustomer>(
   customer: T,
   hasPiiAccess: boolean
 ): T {
@@ -64,5 +79,5 @@ export function maskCustomerPii<T extends Record<string, any>>(
     documentInfo: customer.documentInfo ? { masked: true } : customer.documentInfo,
     dateOfBirth: customer.dateOfBirth ? null : customer.dateOfBirth,
     dateOfBirthHijri: customer.dateOfBirthHijri ? "***" : customer.dateOfBirthHijri,
-  };
+  } as T;
 }

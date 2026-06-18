@@ -5,11 +5,11 @@ import { useLanguage } from "./LanguageProvider";
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 
-interface AutoSaveIndicatorProps {
+interface AutoSaveIndicatorProps<T> {
   /** Async function to persist the data */
-  onSave: (data: any) => Promise<void>;
+  onSave: (data: T) => Promise<void>;
   /** The data to auto-save (triggers save on change) */
-  data: any;
+  data: T;
   /** Enable/disable auto-save (e.g., only for DRAFT records) */
   enabled?: boolean;
   /** Debounce interval in ms (default: 2000) */
@@ -49,12 +49,12 @@ const STATUS_ICONS: Record<SaveStatus, string> = {
  * Auto-save indicator that debounces saves for DRAFT records.
  * Shows Saving/Saved/Error status badge.
  */
-export function AutoSaveIndicator({
+export function AutoSaveIndicator<T>({
   onSave,
   data,
   enabled = true,
   debounceMs = 2000,
-}: AutoSaveIndicatorProps) {
+}: AutoSaveIndicatorProps<T>) {
   const { lang } = useLanguage();
   const t = LABELS[lang];
   const [status, setStatus] = React.useState<SaveStatus>("idle");

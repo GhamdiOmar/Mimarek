@@ -181,19 +181,20 @@ export default function CustomerActivityTimeline({ customerId }: CustomerActivit
       {/* Log Activity Form */}
       {showForm && (
         <div className="rounded-lg border border-gray-200 bg-gray-50/60 p-4 space-y-3 animate-in slide-in-from-top-2 duration-200">
-          {/* Type selector */}
-          {/* eslint-disable-next-line -- raw <button> intentional: these are toggle-selector pills with bespoke
-              rounded-full + active/inactive bg classes that Button variants cannot reproduce without
-              overriding the entire variant styling. Migrating to Button here would require className
-              overrides that defeat the governance. Revisit if a Chip/TogglePill primitive ships. */}
+          {/* Type selector — toggle-selector pills (§6.6.8). Keeps the bespoke
+              green-secondary active styling via className; variant="ghost" is a
+              transparent base the custom classes override (tailwind-merge, last-wins). */}
           <div className="flex flex-wrap gap-2">
             {ALL_TYPES.map((type) => {
               const Icon = ACTIVITY_ICONS[type];
               const isActive = selectedType === type;
               return (
-                <button
+                <Button
                   key={type}
                   type="button"
+                  variant="ghost"
+                  size="sm"
+                  aria-pressed={isActive}
                   onClick={() => setSelectedType(type)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
                     isActive
@@ -203,7 +204,7 @@ export default function CustomerActivityTimeline({ customerId }: CustomerActivit
                 >
                   <Icon className="h-3.5 w-3.5" />
                   {ACTIVITY_LABELS[type][lang]}
-                </button>
+                </Button>
               );
             })}
           </div>

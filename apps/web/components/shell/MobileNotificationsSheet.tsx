@@ -25,6 +25,7 @@ interface MobileNotificationsSheetProps {
 
 type Notif = {
   id: string;
+  type: string;
   title: string;
   titleEn?: string | null;
   message: string;
@@ -59,7 +60,7 @@ export function MobileNotificationsSheet({
   const visibleNotifs =
     notifCategory === "all"
       ? notifs
-      : notifs.filter((n) => categorizeNotification((n as any).type) === notifCategory);
+      : notifs.filter((n) => categorizeNotification(n.type) === notifCategory);
 
   // Reset category filter when sheet is closed
   React.useEffect(() => {

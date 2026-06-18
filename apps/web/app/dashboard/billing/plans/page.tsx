@@ -14,18 +14,44 @@ import {
   X,
   Loader2,
 } from "lucide-react";
-import { Button, AppBar, SARAmount, Skeleton, DirectionalIcon, IconButton, ActionLink } from "@repo/ui";
+import { Button, AppBar, SARAmount, Skeleton, IconButton, ActionLink } from "@repo/ui";
 import { PageHeader } from "@repo/ui/components/PageHeader";
 import Link from "next/link";
 import { subscribeToPlan, getCurrentSubscription, getPlans } from "../../../actions/billing";
 import { validateCoupon } from "../../../actions/coupons";
 import { toast } from "sonner";
 
+// ─── Serialized DTOs (Decimal → string, Date → string over the RSC boundary) ──
+
+type EntitlementDTO = {
+  featureKey: string;
+  type: "BOOLEAN" | "LIMIT" | "METERED";
+  value: string;
+};
+
+type PlanDTO = {
+  id: string;
+  nameAr: string;
+  nameEn: string;
+  descriptionAr: string | null;
+  descriptionEn: string | null;
+  priceMonthly: number | string;
+  priceAnnual: number | string;
+  entitlements?: EntitlementDTO[];
+};
+
+type CurrentSubscriptionDTO = { planId: string } | null;
+
+// The `coupon` object returned by validateCoupon on a successful validation.
+type AppliedCoupon = NonNullable<
+  Awaited<ReturnType<typeof validateCoupon>>["coupon"]
+>;
+
 export default function PlansPage() {
   const { lang } = useLanguage();
   const router = useRouter();
-  const [plans, setPlans] = React.useState<any[]>([]);
-  const [currentSub, setCurrentSub] = React.useState<any>(null);
+  const [plans, setPlans] = React.useState<PlanDTO[]>([]);
+  const [currentSub, setCurrentSub] = React.useState<CurrentSubscriptionDTO>(null);
   const [loading, setLoading] = React.useState(true);
   const [subscribing, setSubscribing] = React.useState<string | null>(null);
   const [billingCycle, setBillingCycle] = React.useState<"MONTHLY" | "ANNUAL">("ANNUAL");
@@ -33,7 +59,7 @@ export default function PlansPage() {
   // Coupon state
   const [couponCode, setCouponCode] = React.useState("");
   const [couponLoading, setCouponLoading] = React.useState(false);
-  const [appliedCoupon, setAppliedCoupon] = React.useState<any>(null);
+  const [appliedCoupon, setAppliedCoupon] = React.useState<AppliedCoupon | null>(null);
   const [couponError, setCouponError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
@@ -66,8 +92,8 @@ export default function PlansPage() {
         setAppliedCoupon(null);
         setCouponError(result.reason ?? t.couponInvalid);
       }
-    } catch (error: any) {
-      setCouponError(error.message ?? t.couponInvalid);
+    } catch (error: unknown) {
+      setCouponError(error instanceof Error ? error.message : t.couponInvalid);
       setAppliedCoupon(null);
     } finally {
       setCouponLoading(false);
@@ -98,7 +124,7 @@ export default function PlansPage() {
       // Reload data
       const sub = await getCurrentSubscription();
       setCurrentSub(sub);
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error(
         lang === "ar"
           ? "تعذّر الاشتراك في الخطة. يُرجى المحاولة مرة أخرى."
@@ -234,7 +260,7 @@ export default function PlansPage() {
         )}
 
         {/* Plan tiers stacked */}
-        {plans.map((plan: any, index: number) => {
+        {plans.map((plan, index) => {
           const Icon = planIcons[index] ?? Crown;
           const isCurrentPlan = currentSub?.planId === plan.id;
           const price = billingCycle === "ANNUAL" ? Number(plan.priceAnnual) : Number(plan.priceMonthly);
@@ -318,7 +344,7 @@ export default function PlansPage() {
               {/* Features */}
               {entitlements.length > 0 && (
                 <ul className="space-y-2 pt-2 border-t border-border">
-                  {entitlements.map((ent: any) => {
+                  {entitlements.map((ent) => {
                     const granted =
                       ent.type === "BOOLEAN"
                         ? ent.value === "true"
@@ -489,7 +515,7 @@ export default function PlansPage() {
 
       {/* Plans Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-        {plans.map((plan: any, index: number) => {
+        {plans.map((plan, index) => {
           const Icon = planIcons[index] ?? Crown;
           const isCurrentPlan = currentSub?.planId === plan.id;
           const price = billingCycle === "ANNUAL" ? Number(plan.priceAnnual) : Number(plan.priceMonthly);
@@ -585,7 +611,7 @@ export default function PlansPage() {
 
               {/* Feature List */}
               <div className="border-t p-6 space-y-3">
-                {plan.entitlements?.map((ent: any) => {
+                {plan.entitlements?.map((ent) => {
                   const granted = ent.type === "BOOLEAN" ? ent.value === "true" :
                     ent.type === "LIMIT" ? ent.value !== "0" : true;
 
@@ -615,7 +641,7 @@ export default function PlansPage() {
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
-function formatEntitlement(ent: any, lang: "ar" | "en"): string {
+function formatEntitlement(ent: EntitlementDTO, lang: "ar" | "en"): string {
   const labels: Record<string, { ar: string; en: string }> = {
     "users.max": { ar: "مستخدمين", en: "Users" },
     "units.max": { ar: "وحدات", en: "Units" },

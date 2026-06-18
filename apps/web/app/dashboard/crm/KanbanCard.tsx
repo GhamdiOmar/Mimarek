@@ -10,6 +10,7 @@ import {
   ArrowRightLeft,
 } from "lucide-react";
 import {
+  Button,
   IconButton,
   DropdownMenu,
   DropdownMenuContent,
@@ -23,6 +24,29 @@ import { PIPELINE_STAGES, SOURCE_LABELS } from "./crm-config";
 
 // ─── Kanban Card ──────────────────────────────────────────────────────────────
 
+/**
+ * Masked + serialized customer payload as it reaches the Kanban from
+ * `getCustomers()` — PII fields are masked strings (or raw when `showPii`),
+ * Decimals/dates are serialized, and the server adds `contactPhoneE164`.
+ * Typed to exactly the fields this card reads.
+ */
+type KanbanCustomer = {
+  id: string;
+  name: string;
+  nameArabic?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  source?: string | null;
+  budget?: number | string | null;
+  agent?: { id?: string; name?: string | null; email?: string | null } | null;
+  contactPhoneE164?: string | null;
+  stageEnteredAt?: string | Date | null;
+  createdAt?: string | Date | null;
+  // Index signature mirrors the caller's (CrmView) masked-row type so the
+  // typed props accept its rows; declared keys above still take precedence.
+  [key: string]: unknown;
+};
+
 export function KanbanCard({
   customer,
   lang,
@@ -34,12 +58,12 @@ export function KanbanCard({
   onMoveToStage,
   currentStage,
 }: {
-  customer: any;
+  customer: KanbanCustomer;
   lang: "ar" | "en";
   showPii: boolean;
   onDragStart: (e: React.DragEvent, customerId: string) => void;
-  onViewProfile: (customer: any) => void;
-  onDelete: (customer: any) => void;
+  onViewProfile: (customer: KanbanCustomer) => void;
+  onDelete: (customer: KanbanCustomer) => void;
   canDelete: boolean;
   onMoveToStage: (customerId: string, stage: string) => void;
   currentStage: string;
@@ -63,7 +87,7 @@ export function KanbanCard({
 
   // Owner avatar — agent initials using the same helper pattern
   const agentInitials = customer.agent?.name
-    ? (customer.agent.name as string)
+    ? (customer.agent?.name as string)
         .trim()
         .split(/\s+/)
         .map((w: string) => w.charAt(0))
@@ -132,19 +156,23 @@ export function KanbanCard({
           {initials}
         </span>
         <div className="min-w-0 flex-1">
-          {/* Card title IS the single accessible open-profile control — §6.6.0 Scenario 1 */}
-          <button
+          {/* Card title IS the single accessible open-profile control — §6.6.0 Scenario 1.
+              variant="link" with explicit overrides so the title renders as an unpadded,
+              auto-height, full-width, start-aligned, truncating control (tailwind-merge
+              resolves the conflicting Button base utilities, last-wins). */}
+          <Button
             type="button"
+            variant="link"
             onClick={(e) => {
               e.stopPropagation();
               openProfile();
             }}
-            className="block w-full text-start font-semibold text-sm text-foreground truncate hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 rounded-sm"
+            className="block h-auto w-full p-0 text-start font-semibold text-sm text-foreground no-underline truncate hover:text-primary hover:no-underline focus-visible:ring-ring/50 focus-visible:ring-offset-0 rounded-sm"
             aria-label={viewLabel}
             title={customer.name}
           >
             {customer.name}
-          </button>
+          </Button>
           {customer.nameArabic && customer.nameArabic !== customer.name && (
             <p className="text-[11px] text-muted-foreground truncate" aria-hidden="true">
               {customer.nameArabic}
@@ -260,13 +288,13 @@ export function KanbanCard({
             <span
               aria-label={
                 lang === "ar"
-                  ? `المسؤول: ${customer.agent.name}`
-                  : `Owner: ${customer.agent.name}`
+                  ? `المسؤول: ${customer.agent?.name}`
+                  : `Owner: ${customer.agent?.name}`
               }
               title={
                 lang === "ar"
-                  ? `المسؤول: ${customer.agent.name}`
-                  : `Owner: ${customer.agent.name}`
+                  ? `المسؤول: ${customer.agent?.name}`
+                  : `Owner: ${customer.agent?.name}`
               }
               className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-secondary/20 text-success-strong text-[9px] font-semibold"
             >

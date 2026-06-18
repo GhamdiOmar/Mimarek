@@ -40,6 +40,16 @@ import { useDateRangeQuery } from "../../../lib/use-date-range-query";
 import type { FinanceStats } from "../../actions/dashboard-finance";
 import type { RoleTaskQueueResult } from "../../actions/role-task-queue";
 
+// § 6.2 Finance semantic-color hierarchy — buckets go green → amber → orange → red.
+// Module-scoped so it is a stable reference (not recreated per render) and need not
+// be a dependency of the agingData memo.
+const AGING_COLORS = [
+  "hsl(var(--success))",
+  "hsl(var(--warning))",
+  "hsl(28 72% 42%)",
+  "hsl(var(--destructive))",
+];
+
 export default function FinanceView({
   stats,
   collectionsTrend,
@@ -90,14 +100,6 @@ export default function FinanceView({
   }, [router]);
 
   const lastLoaded = React.useMemo(() => new Date(loadedAt), [loadedAt]);
-
-  // § 6.2 Finance semantic-color hierarchy — buckets go green → amber → orange → red
-  const AGING_COLORS = [
-    "hsl(var(--success))",
-    "hsl(var(--warning))",
-    "hsl(28 72% 42%)",
-    "hsl(var(--destructive))",
-  ];
 
   const agingData = React.useMemo(
     () =>

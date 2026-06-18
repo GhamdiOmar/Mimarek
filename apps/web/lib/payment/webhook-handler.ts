@@ -7,11 +7,34 @@
  * - Event routing to subscription state machine
  */
 
-import { db } from "@repo/db";
+import { db, Prisma } from "@repo/db";
 import { getGateway } from "./gateway-router";
 import { transitionSubscription } from "./subscription-machine";
 import { invalidateEntitlements } from "../entitlements";
 import type { GatewayName } from "./types";
+
+/**
+ * Minimal shape of a gateway payment object as it appears inside a webhook
+ * payload (Moyasar et al). Every field is optional — webhooks are external,
+ * attacker-influenced input, so each access is defensive (optional chaining +
+ * runtime guards below). The object is JSON-serializable and is also persisted
+ * verbatim into the `metadata` Json column.
+ */
+interface WebhookPaymentData {
+  id?: string;
+  status?: string;
+  amount?: number;
+  currency?: string;
+  refunded?: number;
+  metadata?: { invoiceId?: string } & Record<string, unknown>;
+  source?: { message?: string } & Record<string, unknown>;
+  [key: string]: unknown;
+}
+
+/** Envelope wrapper some gateways use: `{ id, type, data: { …payment } }`. */
+interface WebhookEnvelope extends WebhookPaymentData {
+  data?: WebhookPaymentData;
+}
 
 // ─── Webhook Processing ─────────────────────────────────────────────────────
 
@@ -69,11 +92,11 @@ export async function processWebhook(
       gateway,
       eventId,
       eventType,
-      payload: payload as any,
+      payload: payload as Prisma.InputJsonValue,
     },
     update: {
       eventType,
-      payload: payload as any,
+      payload: payload as Prisma.InputJsonValue,
     },
   });
 
@@ -117,12 +140,12 @@ async function routeWebhookEvent(
   eventType: string,
   payload: unknown
 ): Promise<void> {
-  const data = payload as any;
+  const data = (payload ?? {}) as WebhookEnvelope;
 
   // Moyasar event structure: { id, type, data: { id, status, amount, metadata, ... } }
-  const paymentData = data?.data ?? data;
-  const metadata = paymentData?.metadata ?? {};
-  const invoiceId = metadata?.invoiceId;
+  const paymentData: WebhookPaymentData = data.data ?? data;
+  const metadata = paymentData.metadata ?? {};
+  const invoiceId = metadata.invoiceId;
 
   if (!invoiceId) {
     console.warn(`[Webhook] No invoiceId in metadata for ${eventType}`);
@@ -168,7 +191,7 @@ async function routeWebhookEvent(
       }
 
       // ── Guard 3: amount check (halalas → SAR, ±0.01 tolerance) ───────────
-      const receivedSAR = paymentData.amount / 100;
+      const receivedSAR = Number(paymentData.amount) / 100;
       const invoiceSAR = Number(invoice.total);
       if (Math.abs(receivedSAR - invoiceSAR) > 0.01) {
         console.warn(
@@ -187,7 +210,7 @@ async function routeWebhookEvent(
         data: {
           status: "CAPTURED",
           completedAt: new Date(),
-          metadata: paymentData,
+          metadata: paymentData as Prisma.InputJsonValue,
         },
       });
 
@@ -236,7 +259,7 @@ async function routeWebhookEvent(
           status: "FAILED",
           failureReason: paymentData?.source?.message ?? "Payment failed",
           completedAt: new Date(),
-          metadata: paymentData,
+          metadata: paymentData as Prisma.InputJsonValue,
         },
       });
 
@@ -276,7 +299,7 @@ async function routeWebhookEvent(
           status: "REFUNDED",
           refundedAmount: paymentData.refunded ? paymentData.refunded / 100 : undefined,
           completedAt: new Date(),
-          metadata: paymentData,
+          metadata: paymentData as Prisma.InputJsonValue,
         },
       });
 

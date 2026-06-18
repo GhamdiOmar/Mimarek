@@ -10,7 +10,6 @@ import {
   FileSpreadsheet,
   CloudUpload,
   Download,
-  Trash2,
   MoreVertical,
   SquareDashedMousePointer,
   Search,
@@ -38,13 +37,32 @@ import { getDocuments, registerFileInDb } from "../../actions/documents";
 import { UploadButton } from "../../../lib/uploadthing";
 import { exportToExcel } from "../../../lib/export";
 
-type DocumentsViewProps = { initialDocs: any[] };
+/**
+ * Document row as serialized by `getDocuments()` — the Prisma `Document` model
+ * with Dates serialized to strings. `uploadedBy` is read defensively by the UI
+ * (the model has no such relation; the chain falls back to "Unknown"), so it is
+ * typed optional rather than required.
+ */
+type DocumentRow = {
+  id: string;
+  name: string;
+  url: string;
+  type?: string | null;
+  category?: string | null;
+  size?: number | null;
+  createdAt?: string | Date | null;
+  /** Vestigial defensive read — the Document model has no uploader relation, so
+   *  this is `undefined` at runtime and the UI falls back to "Unknown". */
+  uploadedBy?: { name?: string | null } | null;
+};
+
+type DocumentsViewProps = { initialDocs: DocumentRow[] };
 
 export default function DocumentsView({ initialDocs }: DocumentsViewProps) {
   const { t, lang } = useLanguage();
   const { can } = usePermissions();
   const canWrite = can("documents:write");
-  const [docs, setDocs] = React.useState<any[]>(initialDocs);
+  const [docs, setDocs] = React.useState<DocumentRow[]>(initialDocs);
   const [loading, setLoading] = React.useState(false);
   const [loadError, setLoadError] = React.useState<string | null>(null);
   const [uploadError, setUploadError] = React.useState<string | null>(null);
@@ -122,7 +140,7 @@ export default function DocumentsView({ initialDocs }: DocumentsViewProps) {
     }
   }
 
-  const handleUploadComplete = async (res: any) => {
+  const handleUploadComplete = async (res: { name: string; url: string }[]) => {
     setUploadError(null);
     try {
       // res is an array of uploaded files
@@ -136,7 +154,7 @@ export default function DocumentsView({ initialDocs }: DocumentsViewProps) {
       }
       // Refresh list
       await loadDocs();
-    } catch (err) {
+    } catch {
       setUploadError(t("فشل تسجيل الوثيقة", "Failed to register document"));
     }
   };
@@ -150,8 +168,8 @@ export default function DocumentsView({ initialDocs }: DocumentsViewProps) {
         { header: t("اسم الوثيقة", "Document Name"), key: "name", width: 35 },
         { header: t("التصنيف", "Category"), key: "category", width: 20 },
         { header: t("النوع", "Type"), key: "type", width: 15 },
-        { header: t("تاريخ الرفع", "Uploaded Date"), key: "createdAt", width: 20, render: (val: any) => val ? new Date(val).toLocaleDateString("en-CA") : "" },
-        { header: t("رفع بواسطة", "Uploaded By"), key: "uploadedBy", width: 25, render: (val: any) => val?.name ?? val ?? "" },
+        { header: t("تاريخ الرفع", "Uploaded Date"), key: "createdAt", width: 20, render: (val: unknown) => (typeof val === "string" || typeof val === "number" || val instanceof Date) ? new Date(val).toLocaleDateString("en-CA") : "" },
+        { header: t("رفع بواسطة", "Uploaded By"), key: "uploadedBy", width: 25, render: (val: unknown) => String((typeof val === "object" && val !== null ? (val as { name?: unknown }).name : undefined) ?? val ?? "") },
       ],
       filename: t("سجل_الوثائق", "documents_list"),
       lang,
@@ -292,8 +310,9 @@ export default function DocumentsView({ initialDocs }: DocumentsViewProps) {
           <div className="rounded-2xl border border-border bg-card px-4">
             {mobileFiltered.map((doc, idx) => {
               const Icon = pickFileIcon(doc.type);
-              const uploader =
-                doc.uploadedBy?.name ?? doc.uploadedBy ?? (t("غير معروف", "Unknown"));
+              // `uploadedBy` is vestigial (the Document model has no uploader
+              // relation, so it is undefined at runtime) → falls back to "Unknown".
+              const uploader = doc.uploadedBy?.name ?? (t("غير معروف", "Unknown"));
               const date = doc.createdAt
                 ? new Date(doc.createdAt).toLocaleDateString(
                     lang === "ar" ? "ar-SA-u-nu-latn" : "en-SA"
@@ -528,9 +547,9 @@ export default function DocumentsView({ initialDocs }: DocumentsViewProps) {
                    <div className="flex items-start justify-between mb-4">
                       <div className={cn(
                         "h-12 w-12 rounded flex items-center justify-center",
-                        ['pdf'].includes(doc.type?.toLowerCase()) ? "bg-destructive/10 text-destructive" : ['jpg', 'png', 'jpeg'].includes(doc.type?.toLowerCase()) ? "bg-info/10 text-info" : "bg-success/10 text-success-strong"
+                        ['pdf'].includes((doc.type ?? "").toLowerCase()) ? "bg-destructive/10 text-destructive" : ['jpg', 'png', 'jpeg'].includes((doc.type ?? "").toLowerCase()) ? "bg-info/10 text-info" : "bg-success/10 text-success-strong"
                       )}>
-                         {['pdf'].includes(doc.type?.toLowerCase()) ? <FilePdf className="h-7 w-7" /> : ['jpg', 'png', 'jpeg'].includes(doc.type?.toLowerCase()) ? <FileImage className="h-7 w-7" /> : <FileText className="h-7 w-7" />}
+                         {['pdf'].includes((doc.type ?? "").toLowerCase()) ? <FilePdf className="h-7 w-7" /> : ['jpg', 'png', 'jpeg'].includes((doc.type ?? "").toLowerCase()) ? <FileImage className="h-7 w-7" /> : <FileText className="h-7 w-7" />}
                       </div>
                       <IconButton
                         icon={MoreVertical}
@@ -542,7 +561,7 @@ export default function DocumentsView({ initialDocs }: DocumentsViewProps) {
                    
                    <div className="space-y-1">
                       <h3 className="text-sm font-bold text-primary truncate">{doc.name}</h3>
-                      <p className="text-[10px] text-muted-foreground font-latin">{new Date(doc.createdAt).toLocaleDateString()}</p>
+                      <p className="text-[10px] text-muted-foreground font-latin">{doc.createdAt ? new Date(doc.createdAt).toLocaleDateString() : ""}</p>
                    </div>
 
                    <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">

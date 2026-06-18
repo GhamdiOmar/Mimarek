@@ -8,16 +8,16 @@ type SessionData = {
     email?: string | null;
     image?: string | null;
     role?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
   expires?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 } | null;
 
 type SessionContextValue = {
   data: SessionData;
   status: "authenticated" | "unauthenticated" | "loading";
-  update: (data?: any) => Promise<SessionData>;
+  update: (data?: unknown) => Promise<SessionData>;
 };
 
 const SessionContext = React.createContext<SessionContextValue>({
@@ -48,7 +48,7 @@ export function SimpleSessionProvider({
     setCurrentSession(session);
   }, [session]);
 
-  const update = React.useCallback(async (data?: any) => {
+  const update = React.useCallback(async (data?: unknown) => {
     try {
       const res = await fetch("/api/auth/session", {
         method: data ? "POST" : "GET",

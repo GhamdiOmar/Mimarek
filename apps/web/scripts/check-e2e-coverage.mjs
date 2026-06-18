@@ -9,11 +9,12 @@
  *
  * This script makes that failure LOUD: it asks Playwright which spec files are
  * actually selected by some project (`--list --reporter=json`), globs every
- * `e2e/**​/*.spec.ts` on disk, and exits non-zero if any spec file is never run.
+ * `e2e/** /*.spec.ts` on disk, and exits non-zero if any spec file is never run.
  * Wire it as a CI step (same philosophy as the F7 RLS drift check).
  *
  * Usage:  node scripts/check-e2e-coverage.mjs   (run from apps/web)
  */
+/* global process -- Node.js script run via `node scripts/check-e2e-coverage.mjs`; the shared flat config declares no Node globals. */
 import { execSync } from "node:child_process";
 import { readdirSync, statSync } from "node:fs";
 import { basename, join } from "node:path";

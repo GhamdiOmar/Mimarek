@@ -88,11 +88,54 @@ const unitTypeLabels: Record<string, { ar: string; en: string }> = {
   PARKING: { ar: "موقف", en: "Parking" },
 };
 
+// Serialized (RSC-boundary-safe) shapes the view consumes. The server actions
+// return `serialize(...)` (Prisma `Decimal` → number, `Date` → string), so these
+// describe the post-serialization runtime values — not the raw Prisma payloads.
+type UnitRow = {
+  id: string;
+  number: string;
+  type: string;
+  status: string;
+  area?: number | null;
+  price?: number | null;
+  markupPrice?: number | null;
+  rentalPrice?: number | null;
+  floor?: number | null;
+  buildingName?: string | null;
+  city?: string | null;
+  bedrooms?: number | null;
+  bathrooms?: number | null;
+};
 
-export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
+type MaintenanceRow = {
+  id: string;
+  title: string;
+  status: string;
+  createdAt: string;
+  assignedTo?: { id: string; name: string | null } | null;
+};
+
+type UnitFinancialSummary = {
+  totalRentCollected: number;
+  saleRevenue: number;
+  totalMaintenanceCost: number;
+  netIncome: number;
+};
+
+type ActiveContract = {
+  id: string;
+  type: string;
+  status: string;
+  contractNumber?: string | null;
+  customer?: { id: string; name: string | null } | null;
+};
+
+type BadgeVariant = React.ComponentProps<typeof Badge>["variant"];
+
+export default function UnitsView({ initialUnits }: { initialUnits: UnitRow[] }) {
   const { t, lang } = useLanguage();
   const [selectedUnits, setSelectedUnits] = React.useState<string[]>([]);
-  const [units, setUnits] = React.useState<any[]>(initialUnits);
+  const [units, setUnits] = React.useState<UnitRow[]>(initialUnits);
   const [updating, setUpdating] = React.useState(false);
   const [showAddModal, setShowAddModal] = React.useState(false);
   const [showPriceModal, setShowPriceModal] = React.useState(false);
@@ -139,6 +182,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
           .positive(t("يجب أن تكون القيمة أكبر من صفر", "Amount must be greater than zero"))
           .optional(),
       }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `t` is derived from `lang`; re-deriving the schema on `lang` change refreshes all validation messages
     [lang],
   );
 
@@ -172,18 +216,18 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
   const [deleting, setDeleting] = React.useState(false);
 
   // Unit detail modal
-  const [detailUnit, setDetailUnit] = React.useState<any>(null);
-  const [detailMaintenance, setDetailMaintenance] = React.useState<any[]>([]);
-  const [detailFinancials, setDetailFinancials] = React.useState<any>(null);
-  const [detailContract, setDetailContract] = React.useState<any>(null);
+  const [detailUnit, setDetailUnit] = React.useState<UnitRow | null>(null);
+  const [detailMaintenance, setDetailMaintenance] = React.useState<MaintenanceRow[]>([]);
+  const [detailFinancials, setDetailFinancials] = React.useState<UnitFinancialSummary | null>(null);
+  const [detailContract, setDetailContract] = React.useState<ActiveContract | null>(null);
   const [loadingDetail, setLoadingDetail] = React.useState(false);
-  const [publishUnit, setPublishUnit] = React.useState<any>(null);
+  const [publishUnit, setPublishUnit] = React.useState<UnitRow | null>(null);
   const [unitJourney, setUnitJourney] = React.useState<JourneySummary | null>(null);
   const [relatedOpen, setRelatedOpen] = React.useState(false);
 
   const maintenanceStatusLabels: Record<
     string,
-    { ar: string; en: string; variant: string }
+    { ar: string; en: string; variant: BadgeVariant }
   > = {
     OPEN: { ar: "بانتظار المراجعة", en: "Waiting Review", variant: "draft" },
     ASSIGNED: { ar: "معيّن", en: "Assigned", variant: "reserved" },
@@ -193,7 +237,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
     CLOSED: { ar: "مغلق", en: "Closed", variant: "sold" },
   };
 
-  async function openUnitDetail(unit: any) {
+  async function openUnitDetail(unit: UnitRow) {
     setDetailUnit(unit);
     setDetailFinancials(null);
     setDetailContract(null);
@@ -241,7 +285,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
         )
       );
       setSelectedUnits([]);
-    } catch (err) {
+    } catch {
       setError(t("فشل تحديث حالة الوحدات", "Failed to update units"));
     } finally {
       setUpdating(false);
@@ -266,7 +310,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
       setUnits((prev) => [...prev, unit]);
       setShowAddModal(false);
       reset();
-    } catch (err) {
+    } catch {
       setError(t("فشل إنشاء الوحدة", "Failed to create unit"));
     } finally {
       setUpdating(false);
@@ -294,7 +338,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
       setSelectedUnits([]);
       setShowPriceModal(false);
       setBulkPrice("");
-    } catch (err) {
+    } catch {
       setError(t("فشل تحديث السعر", "Failed to update price"));
     } finally {
       setUpdating(false);
@@ -312,7 +356,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
       setUnits(units.filter((u) => !targetIds.includes(u.id)));
       setSelectedUnits([]);
       setShowDeleteConfirm(false);
-    } catch (err) {
+    } catch {
       setError(t("فشل حذف بعض الوحدات", "Failed to delete some units"));
     } finally {
       setDeleting(false);
@@ -321,7 +365,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
 
   // Filtered units based on search and status
   const filteredUnits = React.useMemo(() => {
-    return units.filter((u: any) => {
+    return units.filter((u) => {
       const q = unitSearch.trim().toLowerCase();
       const matchesSearch = !q || u.number?.toLowerCase().includes(q) || u.buildingName?.toLowerCase().includes(q) || u.city?.toLowerCase().includes(q);
       const matchesStatus = !statusFilter || u.status === statusFilter;
@@ -332,16 +376,16 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
   // Status counts for pills
   const statusCounts = React.useMemo(() => ({
     total: units.length,
-    available: units.filter((u: any) => u.status === "AVAILABLE").length,
-    reserved: units.filter((u: any) => u.status === "RESERVED").length,
-    sold: units.filter((u: any) => u.status === "SOLD").length,
-    rented: units.filter((u: any) => u.status === "RENTED").length,
-    maintenance: units.filter((u: any) => u.status === "MAINTENANCE").length,
+    available: units.filter((u) => u.status === "AVAILABLE").length,
+    reserved: units.filter((u) => u.status === "RESERVED").length,
+    sold: units.filter((u) => u.status === "SOLD").length,
+    rented: units.filter((u) => u.status === "RENTED").length,
+    maintenance: units.filter((u) => u.status === "MAINTENANCE").length,
   }), [units]);
 
   // ─── Mobile view derived memo (must run every render, before any early return) ──
   const mobileFilteredUnits = React.useMemo(() => {
-    return filteredUnits.filter((u: any) => {
+    return filteredUnits.filter((u) => {
       if (mobileTypeFilter && u.type !== mobileTypeFilter) return false;
       const priceNum = u.price != null ? Number(u.price) : null;
       const min = mobileMinPrice ? parseFloat(mobileMinPrice) : null;
@@ -353,7 +397,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
   }, [filteredUnits, mobileTypeFilter, mobileMinPrice, mobileMaxPrice]);
 
   // ─── Table columns (used by DataTable in table-view) ──────────────────────
-  const unitColumns = React.useMemo<ColumnDef<any, any>[]>(() => [
+  const unitColumns = React.useMemo<ColumnDef<UnitRow, unknown>[]>(() => [
     {
       accessorKey: "number",
       header: t("رقم الوحدة", "Unit #"),
@@ -568,7 +612,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
             )
           ) : (
             <div className="space-y-2">
-              {mobileFilteredUnits.map((u: any) => {
+              {mobileFilteredUnits.map((u) => {
                 const Icon = unitTypeIcons[u.type] ?? Building2;
                 const buildingOrCity = u.buildingName || u.city || null;
                 const typeKey: "apartment" | "villa" | "warehouse" | "retail" | "office" | "other" =
@@ -833,21 +877,21 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
         />
         <KPICard
           label={t("متاح", "Available")}
-          value={units.filter((u: any) => u.status === "AVAILABLE").length}
+          value={units.filter((u) => u.status === "AVAILABLE").length}
           subtitle={t("وحدات جاهزة للبيع أو التأجير فوراً", "Units ready for immediate sale or lease")}
           icon={<CheckCircle2 className="h-[18px] w-[18px]" />}
           accentColor="secondary"
         />
         <KPICard
           label={t("مؤجرة / مباعة", "Occupied / Leased")}
-          value={units.filter((u: any) => u.status === "RENTED" || u.status === "SOLD").length}
+          value={units.filter((u) => u.status === "RENTED" || u.status === "SOLD").length}
           subtitle={t("وحدات مشغولة بعقود بيع أو إيجار نشطة", "Units with active sale or rental contracts")}
           icon={<KeyRound className="h-[18px] w-[18px]" />}
           accentColor="info"
         />
         <KPICard
           label={t("تحت الصيانة", "Under Maintenance")}
-          value={units.filter((u: any) => u.status === "MAINTENANCE").length}
+          value={units.filter((u) => u.status === "MAINTENANCE").length}
           subtitle={t("وحدات قيد الإصلاح أو التجديد حالياً", "Units currently under repair or renovation")}
           icon={<Wrench className="h-[18px] w-[18px]" />}
           accentColor="warning"
@@ -855,8 +899,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
       </div>
 
       {/* ═══ PHYSICAL UNITS ═══ */}
-      {true && (
-        <>
+      <>
           {/* Bulk actions are now handled inside DataTable (table view only) */}
 
           {/* Consolidated Toolbar */}
@@ -875,7 +918,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
                   {t("الكل", "All")} {statusCounts.total}
                 </Button>
                 {Object.entries(unitStatusLabels).map(([key, label]) => {
-                  const count = units.filter((u: any) => u.status === key).length;
+                  const count = units.filter((u) => u.status === key).length;
                   const active = statusFilter === key;
                   return (
                     <Button
@@ -973,7 +1016,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
           {/* Card View */}
           {viewMode === "cards" ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {filteredUnits.map((unit: any) => {
+              {filteredUnits.map((unit) => {
                 const statusChipClasses: Record<string, string> = {
                   AVAILABLE: "bg-success/10 text-success-strong border border-success/20",
                   RESERVED: "bg-info/10 text-info-strong border border-info/20",
@@ -1127,7 +1170,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
                   <SelectField
                     aria-label={t("تحديث حالة الوحدات المحددة", "Update status of selected units")}
                     onChange={(e) => {
-                      const ids = selected.map((r: any) => r.id);
+                      const ids = selected.map((r) => r.id);
                       setSelectedUnits(ids);
                       handleBulkStatusUpdate(e.target.value, ids);
                     }}
@@ -1149,7 +1192,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
                     style={{ display: "inline-flex" }}
                     className="gap-1"
                     onClick={() => {
-                      setSelectedUnits(selected.map((r: any) => r.id));
+                      setSelectedUnits(selected.map((r) => r.id));
                       setShowPriceModal(true);
                     }}
                     disabled={updating}
@@ -1163,7 +1206,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
                     style={{ display: "inline-flex" }}
                     className="gap-1"
                     onClick={() => {
-                      setSelectedUnits(selected.map((r: any) => r.id));
+                      setSelectedUnits(selected.map((r) => r.id));
                       setShowDeleteConfirm(true);
                     }}
                     disabled={updating || deleting}
@@ -1224,7 +1267,6 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
             />
           )}
         </>
-      )}
 
       {/* OFF-PLAN INVENTORY TAB REMOVED in v3.0 */}
 
@@ -1624,13 +1666,13 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
                     <Wrench className="h-3.5 w-3.5" />
                     {t("طلبات الصيانة", "Maintenance Requests")}
                     {detailMaintenance.filter(
-                      (m: any) =>
+                      (m) =>
                         !["RESOLVED", "CLOSED"].includes(m.status)
                     ).length > 0 && (
                       <Badge variant="overdue" className="text-[9px]">
                         {
                           detailMaintenance.filter(
-                            (m: any) =>
+                            (m) =>
                               !["RESOLVED", "CLOSED"].includes(m.status)
                           ).length
                         }
@@ -1660,11 +1702,11 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
                   </p>
                 ) : (
                   <div className="space-y-2 max-h-[250px] overflow-y-auto">
-                    {detailMaintenance.map((m: any) => {
+                    {detailMaintenance.map((m) => {
                       const mStatus = maintenanceStatusLabels[m.status] ?? {
                         ar: m.status,
                         en: m.status,
-                        variant: "draft",
+                        variant: "draft" as BadgeVariant,
                       };
                       return (
                         <div
@@ -1685,7 +1727,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: any[] }) {
                           </div>
                           <div className="flex items-center gap-2">
                             <Badge
-                              variant={mStatus.variant as any}
+                              variant={mStatus.variant}
                               className="text-[9px]"
                             >
                               {mStatus[lang]}

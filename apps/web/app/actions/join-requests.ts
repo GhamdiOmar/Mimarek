@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { ROUTES } from "../../lib/routes";
 import { requirePermission, getSessionOrThrow } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
-import { createNotification, notifyAdmins } from "../../lib/create-notification";
+import { createNotification } from "../../lib/create-notification";
 
 export async function getPendingJoinRequests() {
   const session = await requirePermission("help:manage_permissions");
@@ -56,7 +56,7 @@ export async function reviewJoinRequest(
   });
 
   const orgNameAr = request.targetOrg.name ?? "المنظمة";
-  const orgNameEn = (request.targetOrg as any).nameEnglish ?? "the organization";
+  const orgNameEn = request.targetOrg.nameEnglish ?? "the organization";
 
   if (decision === "APPROVED_JOIN") {
     // Add user to the organization

@@ -14,7 +14,6 @@ import {
   Send,
   CheckCircle2,
   XCircle,
-  Clock,
   MessageSquare,
   Download,
   Loader2,
@@ -24,7 +23,6 @@ import {
 } from "lucide-react";
 import {
   Button,
-  IconButton,
   PageHeader,
   AppBar,
   FAB,
@@ -80,6 +78,14 @@ const PRIORITY_OPTIONS = [
 
 type Tab = "overview" | "faq" | "tickets" | "permissions" | "join-requests" | "org-admin";
 
+// Row types derived directly from the server actions' return shapes so the
+// UI stays in sync with the Prisma `include` selections without re-declaring them.
+type SupportTicketRow = Awaited<ReturnType<typeof getMySupportTickets>>[number];
+type PermissionRequestRow = Awaited<ReturnType<typeof getMyPermissionRequests>>[number];
+type PendingPermissionRequestRow = Awaited<ReturnType<typeof getPendingPermissionRequests>>[number];
+type PendingJoinRequestRow = Awaited<ReturnType<typeof getPendingJoinRequests>>[number];
+type MyJoinRequestRow = Awaited<ReturnType<typeof getMyJoinRequests>>[number];
+
 // A short, hand-picked set of high-traffic FAQs surfaced on the Overview landing.
 const POPULAR_FAQ_IDS = ["gs-1", "sc-1", "sc-8", "fi-7", "mk-1", "sp-5"];
 
@@ -104,7 +110,7 @@ const HASH_TO_CATEGORY: Record<string, FAQCategory> = {
 
 export default function HelpPage() {
   const { data: session } = useSession();
-  const userRole = (session?.user as any)?.role ?? "USER";
+  const userRole = session?.user?.role ?? "USER";
   const isOrgAdmin = hasPermission(userRole, "help:manage_permissions");
   const { t, lang } = useLanguage();
   const [activeTab, setActiveTab] = React.useState<Tab>("overview");
@@ -117,20 +123,20 @@ export default function HelpPage() {
   const [overviewSearch, setOverviewSearch] = React.useState("");
 
   // Ticket state
-  const [myTickets, setMyTickets] = React.useState<any[]>([]);
+  const [myTickets, setMyTickets] = React.useState<SupportTicketRow[]>([]);
   const [showNewTicket, setShowNewTicket] = React.useState(false);
   const [ticketForm, setTicketForm] = React.useState({ subject: "", description: "", category: "GENERAL_INQUIRY", priority: "MEDIUM" });
   const [ticketLoading, setTicketLoading] = React.useState(false);
   const [ticketErrors, setTicketErrors] = React.useState<Record<string, boolean>>({});
 
   // Permission request state
-  const [myRequests, setMyRequests] = React.useState<any[]>([]);
+  const [myRequests, setMyRequests] = React.useState<PermissionRequestRow[]>([]);
   const [permForm, setPermForm] = React.useState({ requestedRole: "", reason: "" });
   const [permLoading, setPermLoading] = React.useState(false);
 
   // Admin state
-  const [pendingRequests, setPendingRequests] = React.useState<any[]>([]);
-  const [pendingJoinRequests, setPendingJoinRequests] = React.useState<any[]>([]);
+  const [pendingRequests, setPendingRequests] = React.useState<PendingPermissionRequestRow[]>([]);
+  const [pendingJoinRequests, setPendingJoinRequests] = React.useState<PendingJoinRequestRow[]>([]);
   const [reviewNote, setReviewNote] = React.useState("");
   const [reviewingId, setReviewingId] = React.useState<string | null>(null);
   const [reviewActionLoading, setReviewActionLoading] = React.useState(false);
@@ -139,7 +145,7 @@ export default function HelpPage() {
   const [joinReviewActionLoading, setJoinReviewActionLoading] = React.useState(false);
 
   // My join requests state
-  const [myJoinRequests, setMyJoinRequests] = React.useState<any[]>([]);
+  const [myJoinRequests, setMyJoinRequests] = React.useState<MyJoinRequestRow[]>([]);
   const [cancellingJoinId, setCancellingJoinId] = React.useState<string | null>(null);
 
   // Load data based on tab
@@ -252,7 +258,7 @@ export default function HelpPage() {
       setShowNewTicket(false);
       const tickets = await getMySupportTickets();
       setMyTickets(tickets);
-    } catch (e: any) {
+    } catch (e: unknown) {
       toast.error(
         t("تعذّر إرسال التذكرة. يُرجى المحاولة مرة أخرى.", "We couldn't submit your ticket. Please try again."),
       );
@@ -269,7 +275,7 @@ export default function HelpPage() {
       setPermForm({ requestedRole: "", reason: "" });
       const reqs = await getMyPermissionRequests();
       setMyRequests(reqs);
-    } catch (e: any) {
+    } catch (e: unknown) {
       toast.error(
         t("تعذّر إرسال طلب الصلاحيات. يُرجى المحاولة مرة أخرى.", "We couldn't submit your permission request. Please try again."),
       );
@@ -286,7 +292,7 @@ export default function HelpPage() {
       setJoinReviewNote("");
       const reqs = await getPendingJoinRequests();
       setPendingJoinRequests(reqs);
-    } catch (e: any) {
+    } catch (e: unknown) {
       toast.error(
         t("تعذّر حفظ المراجعة. يُرجى المحاولة مرة أخرى.", "We couldn't save your review. Please try again."),
       );
@@ -305,7 +311,7 @@ export default function HelpPage() {
       );
       const updated = await getMyJoinRequests();
       setMyJoinRequests(updated);
-    } catch (e: any) {
+    } catch (e: unknown) {
       toast.error(
         t("تعذّر إلغاء الطلب. يُرجى المحاولة مرة أخرى.", "We couldn't cancel this request. Please try again."),
       );
@@ -323,7 +329,7 @@ export default function HelpPage() {
       setReviewNote("");
       const reqs = await getPendingPermissionRequests();
       setPendingRequests(reqs);
-    } catch (e: any) {
+    } catch (e: unknown) {
       toast.error(
         t("تعذّر حفظ المراجعة. يُرجى المحاولة مرة أخرى.", "We couldn't save your review. Please try again."),
       );
@@ -398,8 +404,8 @@ export default function HelpPage() {
         { header: t("الموضوع", "Subject"), key: "subject", width: 35 },
         { header: t("الحالة", "Status"), key: "status", width: 18 },
         { header: t("الأولوية", "Priority"), key: "priority", width: 15 },
-        { header: t("الفئة", "Category"), key: "category", width: 20, render: (val: any) => { const c = CATEGORY_OPTIONS.find((o) => o.value === val); return c ? c.label[lang] : val ?? ""; } },
-        { header: t("تاريخ الإنشاء", "Created Date"), key: "createdAt", width: 18, render: (val: any) => val ? new Date(val).toLocaleDateString("en-CA") : "" },
+        { header: t("الفئة", "Category"), key: "category", width: 20, render: (val: string) => { const c = CATEGORY_OPTIONS.find((o) => o.value === val); return c ? c.label[lang] : val ?? ""; } },
+        { header: t("تاريخ الإنشاء", "Created Date"), key: "createdAt", width: 18, render: (val: Date) => val ? new Date(val).toLocaleDateString("en-CA") : "" },
       ],
       filename: t("سجل_التذاكر", "tickets_list"),
       lang,
@@ -441,8 +447,8 @@ export default function HelpPage() {
   }, [isOrgAdmin]);
 
   const mobileTicketStats = React.useMemo(() => {
-    const open = myTickets.filter((t: any) => t.status === "OPEN" || t.status === "IN_PROGRESS").length;
-    const resolved = myTickets.filter((t: any) => t.status === "RESOLVED" || t.status === "CLOSED").length;
+    const open = myTickets.filter((t) => t.status === "OPEN" || t.status === "IN_PROGRESS").length;
+    const resolved = myTickets.filter((t) => t.status === "RESOLVED" || t.status === "CLOSED").length;
     return { open, resolved, total: myTickets.length };
   }, [myTickets]);
 
@@ -454,7 +460,7 @@ export default function HelpPage() {
   // comes from the DataTable primitive's `mobileCard` prop (per
   // CLAUDE.md § 6.10 / § 6.14.3).
 
-  const ticketColumns: ColumnDef<any, unknown>[] = [
+  const ticketColumns: ColumnDef<SupportTicketRow, unknown>[] = [
     {
       id: "ticketNumber",
       accessorKey: "ticketNumber",
@@ -523,7 +529,7 @@ export default function HelpPage() {
     },
   ];
 
-  const permHistoryColumns: ColumnDef<any, unknown>[] = [
+  const permHistoryColumns: ColumnDef<PermissionRequestRow, unknown>[] = [
     {
       id: "requestedRole",
       accessorKey: "requestedRole",
@@ -571,7 +577,7 @@ export default function HelpPage() {
     },
   ];
 
-  const pendingPermRequestColumns: ColumnDef<any, unknown>[] = [
+  const pendingPermRequestColumns: ColumnDef<PendingPermissionRequestRow, unknown>[] = [
     {
       id: "user",
       header: t("المستخدم", "User"),
@@ -651,7 +657,7 @@ export default function HelpPage() {
     },
   ];
 
-  const pendingJoinRequestColumns: ColumnDef<any, unknown>[] = [
+  const pendingJoinRequestColumns: ColumnDef<PendingJoinRequestRow, unknown>[] = [
     {
       id: "user",
       header: t("المستخدم", "User"),
@@ -1321,7 +1327,7 @@ export default function HelpPage() {
             getRowId={(t) => t.id}
             emptyTitle={t("لا توجد تذاكر", "No tickets yet")}
             emptyDescription={t("ستظهر تذاكرك هنا عند إنشائها.", "Your support tickets will appear here once you create them.")}
-            mobileCard={(ticket: any) => (
+            mobileCard={(ticket: SupportTicketRow) => (
               <div className="space-y-2">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
@@ -1385,7 +1391,7 @@ export default function HelpPage() {
               getRowId={(r) => r.id}
               emptyTitle={t("لا توجد طلبات", "No requests yet")}
               emptyDescription={t("ستظهر طلبات الصلاحيات هنا.", "Your permission requests will appear here.")}
-              mobileCard={(req: any) => (
+              mobileCard={(req: PermissionRequestRow) => (
                 <div className="space-y-2">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
@@ -1431,7 +1437,7 @@ export default function HelpPage() {
             </div>
           ) : (
             <div className="space-y-3">
-              {myJoinRequests.map((req: any) => {
+              {myJoinRequests.map((req) => {
                 const orgName = lang === "ar"
                   ? (req.targetOrg?.nameArabic || req.targetOrg?.name || "—")
                   : (req.targetOrg?.nameEnglish || req.targetOrg?.name || "—");
@@ -1526,7 +1532,7 @@ export default function HelpPage() {
               getRowId={(r) => r.id}
               emptyTitle={t("لا توجد طلبات معلقة", "No pending requests")}
               emptyDescription={t("ستظهر هنا طلبات ترقية الصلاحيات التي تنتظر المراجعة.", "Permission-upgrade requests awaiting review will appear here.")}
-              mobileCard={(req: any) => (
+              mobileCard={(req: PendingPermissionRequestRow) => (
                 <div className="space-y-2">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
@@ -1586,7 +1592,7 @@ export default function HelpPage() {
               getRowId={(r) => r.id}
               emptyTitle={t("لا توجد طلبات انضمام", "No pending join requests")}
               emptyDescription={t("ستظهر هنا طلبات الانضمام للمنظمة التي تنتظر المراجعة.", "Organization join requests awaiting review will appear here.")}
-              mobileCard={(req: any) => (
+              mobileCard={(req: PendingJoinRequestRow) => (
                 <div className="space-y-2">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">

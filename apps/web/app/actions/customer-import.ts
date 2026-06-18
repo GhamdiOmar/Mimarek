@@ -7,7 +7,11 @@ import { z } from "zod";
 import { ROUTES } from "../../lib/routes";
 import { requirePermission } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
-import { encryptCustomerData, phoneSearchHash } from "../../lib/pii-crypto";
+import {
+  encryptCustomerData,
+  phoneSearchHash,
+  legacyPhoneSearchHash,
+} from "../../lib/pii-crypto";
 import { normalizeSaudiPhoneE164 } from "../../lib/phone";
 
 /* ────────────────────────────────────────────────────────────────────────────
@@ -111,9 +115,12 @@ export async function validateCustomerImport(
   const readyRowNumbers: number[] = [];
 
   // Pass 1 — field validation + collect blind-index hashes for valid rows.
-  type ValidRow = { rowNumber: number; phoneHash: string };
+  // We carry BOTH the per-tenant v2 hash and the legacy v1 hash so DB dedupe still
+  // catches a duplicate against a row that hasn't been re-hashed to v2 yet (H8
+  // migration window). In-file dedupe keys on the v2 hash (self-consistent).
+  type ValidRow = { rowNumber: number; phoneHash: string; phoneHashLegacy: string };
   const validRows: ValidRow[] = [];
-  const seenInFile = new Map<string, number>(); // phoneHash → first rowNumber
+  const seenInFile = new Map<string, number>(); // phoneHash (v2) → first rowNumber
 
   for (const row of rows) {
     const parsed = ImportCustomerRowSchema.safeParse(pick(row));
@@ -125,7 +132,8 @@ export async function validateCustomerImport(
       continue;
     }
     // phoneSearchHash mirrors the write path exactly (P1-1 bug class).
-    const phoneHash = phoneSearchHash(parsed.data.phone);
+    const phoneHash = phoneSearchHash(parsed.data.phone, session.organizationId);
+    const phoneHashLegacy = legacyPhoneSearchHash(parsed.data.phone);
     const firstSeen = seenInFile.get(phoneHash);
     if (firstSeen !== undefined) {
       // In-file duplicate phone → soft skip (not a blocking error).
@@ -133,21 +141,21 @@ export async function validateCustomerImport(
       continue;
     }
     seenInFile.set(phoneHash, row.rowNumber);
-    validRows.push({ rowNumber: row.rowNumber, phoneHash });
+    validRows.push({ rowNumber: row.rowNumber, phoneHash, phoneHashLegacy });
   }
 
-  // Pass 2 — DB dedupe in ONE batched query (never per-row).
+  // Pass 2 — DB dedupe in ONE batched query (never per-row). Probe both v2 + v1.
   if (validRows.length > 0) {
     const existing = await db.customer.findMany({
       where: {
         organizationId: session.organizationId,
-        phoneHash: { in: validRows.map((r) => r.phoneHash) },
+        phoneHash: { in: validRows.flatMap((r) => [r.phoneHash, r.phoneHashLegacy]) },
       },
       select: { phoneHash: true },
     });
     const existingHashes = new Set(existing.map((e) => e.phoneHash));
     for (const r of validRows) {
-      if (r.phoneHash && existingHashes.has(r.phoneHash)) {
+      if (existingHashes.has(r.phoneHash) || existingHashes.has(r.phoneHashLegacy)) {
         duplicateRowNumbers.push(r.rowNumber);
       } else {
         readyRowNumbers.push(r.rowNumber);
@@ -215,11 +223,14 @@ export async function commitCustomerImport(
   // AES-256-GCM-encrypted with their blind-index hashes BEFORE the insert.
   const data = toImport.map((row) => {
     const clean = pick(row);
-    const enc = encryptCustomerData({
-      phone: clean.phone,
-      email: clean.email || undefined,
-      nationalId: clean.nationalId || undefined,
-    });
+    const enc = encryptCustomerData(
+      {
+        phone: clean.phone,
+        email: clean.email || undefined,
+        nationalId: clean.nationalId || undefined,
+      },
+      session.organizationId,
+    );
     return {
       name: clean.name,
       phone: enc.phone,

@@ -22,7 +22,7 @@ export function formatHijri(date: Date | string, lang: "ar" | "en" = "ar"): stri
   }
 }
 
-export function formatGregorian(date: Date | string, lang: "ar" | "en" = "ar"): string {
+export function formatGregorian(date: Date | string, _lang: "ar" | "en" = "ar"): string {
   const d = typeof date === "string" ? new Date(date) : date;
   if (isNaN(d.getTime())) return "";
   return d.toLocaleDateString("en-CA"); // YYYY-MM-DD

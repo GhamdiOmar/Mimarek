@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@repo/db";
-import { Prisma } from "@repo/db";
+import { Prisma, PaymentStatus, type RentInstallment } from "@repo/db";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requirePermission } from "../../lib/auth-helpers";
@@ -33,12 +33,12 @@ export async function getInstallments(filters?: {
 }) {
   const session = await requirePermission("finance:read");
 
-  const where: any = {
+  const where: Prisma.RentInstallmentWhereInput = {
     lease: { customer: { organizationId: session.organizationId } },
   };
 
   if (filters?.status) {
-    where.status = filters.status;
+    where.status = filters.status as PaymentStatus;
   }
   if (filters?.leaseId) {
     where.leaseId = filters.leaseId;
@@ -105,7 +105,7 @@ export async function recordPayment(
   };
 
   let txResult: {
-    row: any;
+    row: RentInstallment;
     replayed: boolean;
     before: { status: string; paidAmount: number } | null;
     after: { status: string; paidAmount: number } | null;
@@ -223,11 +223,11 @@ export async function recordPayment(
         after: { status: decision.newStatus, paidAmount: decision.newPaidAmount },
       };
     });
-  } catch (e: any) {
+  } catch (e: unknown) {
     // P2002 race: two concurrent appends with the same [installmentId,
     // idempotencyKey] — the loser re-fetches the installment (org-scoped) and
     // returns it as a replay.
-    if (e?.code === "P2002") {
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
       const existing = await db.rentInstallment.findFirst({
         where: {
           id: installmentId,
@@ -360,11 +360,12 @@ export async function bulkMarkInstallmentsPaid(ids: string[]) {
           lastPaymentMeta: { paidAt: now },
         });
         done.push(row.id);
-      } catch (e: any) {
+      } catch (e: unknown) {
         // Duplicate append for the same [installmentId, idempotencyKey] (a rapid
         // double-submit of the same batch in the same state) — treat as a no-op
         // replay: do NOT count it as a fresh collection.
-        if (e?.code === "P2002") continue;
+        if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002")
+          continue;
         throw e;
       }
     }
@@ -410,6 +411,10 @@ export async function reverseRentPayment(
     txType?: "REVERSAL" | "REFUND";
   }
 ) {
+  // Permission gate FIRST (codebase convention) — an unauthorized caller is
+  // rejected before any input validation runs.
+  const session = await requirePermission("finance:write");
+
   const parsed = ReversePaymentSchema.safeParse(data);
   if (!parsed.success) {
     throw new Error(
@@ -417,8 +422,6 @@ export async function reverseRentPayment(
     );
   }
   const safeData = parsed.data;
-
-  const session = await requirePermission("finance:write");
 
   type LockedRow = {
     id: string;
@@ -430,7 +433,7 @@ export async function reverseRentPayment(
   };
 
   let txResult: {
-    row: any;
+    row: RentInstallment;
     replayed: boolean;
     before: { status: string; paidAmount: number } | null;
     after: { status: string; paidAmount: number } | null;
@@ -526,9 +529,9 @@ export async function reverseRentPayment(
         after: { status: newStatus, paidAmount: newPaidAmount },
       };
     });
-  } catch (e: any) {
+  } catch (e: unknown) {
     // P2002 race: concurrent reversal with the same [installmentId, idempotencyKey].
-    if (e?.code === "P2002") {
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
       const existing = await db.rentInstallment.findFirst({
         where: {
           id: installmentId,

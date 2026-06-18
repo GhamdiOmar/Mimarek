@@ -20,7 +20,7 @@ export function RouteError({ error, reset }: RouteErrorProps) {
   const { t, lang } = useLanguage();
 
   React.useEffect(() => {
-    // eslint-disable-next-line no-console
+     
     console.error(error);
   }, [error]);
 
