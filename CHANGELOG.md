@@ -1,5 +1,16 @@
 # Changelog — Mimaric PropTech
 
+## [4.33.1] — 2026-06-18 — Findings cleanup: doc accuracy, only-warn dead-dep removal, contract return-shape honesty
+
+A small post-v4.33.0 cleanup patch — three verified doc/config findings + one minor type-debt fix. No behavior change, no schema, no UI. tsc green · `turbo run lint` 4/4 · vitest 160/160 · `next build` green · `/mimaric-qa` verdict GO (zero code findings). §3.9 preview walk N/A (nothing renders differently).
+
+### Fixes
+- **`contracts.ts` return-shape honesty.** `updateContractStatus` re-fetched/updated the contract inside its transaction WITHOUT `include:{ customer:true }` then cast `as typeof contract` — a shape-lie that would hand a future caller `customer: undefined` behind a type that claims otherwise. Both transaction branches (the SIGNED re-fetch + the non-SIGNED update) now fetch WITH the customer relation and drop the cast. The sole caller (`ContractsView.tsx`) discards the return, so this is type-honesty / future-proofing only — zero runtime change.
+- **Removed the dead `eslint-plugin-only-warn` devDependency.** It was dropped from the active ESLint config in v4.33.0 (the H7 ratchet) but the `packages/eslint-config` devDependency plus two stale code comments lingered. Removed the dependency (lockfile regenerated) and corrected the two comments (`packages/eslint-config/next.js`) to describe the post-v4.33.0 reality: the governed rules surface as real errors; the pre-existing backlog lives in `eslint-suppressions.json`. The lockfile regeneration also clears the stale `apps/portal` workspace stub left behind by v4.32.0's C2 app deletion.
+- **`future-plans/REMAINING-WORK.md` accuracy.** Corrected "two"→"three" tracked tails; fixed the lint-backlog suppression counts to 160 (129 `no-explicit-any` + 20 `no-unused-vars` + 7 `react-hooks/exhaustive-deps` + 4 misc); reframed H9 from "low-value / incremental" to **test-coverage debt on a working path (Medium)** — the seller-convert feature works and is covered at the action/DB-gate layer; only the automated E2E regression is `test.fixme`.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimaric/compare/v4.33.0...v4.33.1
+
 ## [4.33.0] — 2026-06-18 — Close the tracked tails: per-tenant blind index, payment reversal UI, lint ratchet, i18n + test/quality cleanup
 
 Closes Sections B + C of `future-plans/REMAINING-WORK.md` — every non-deferred tail from the post-v4.32.0 backlog. The only items left are the three indefinitely-deferred ones (DB region migration / DB-evolution governance, ZATCA Phase-2, Ejar/Nafath SSO). Delivered under manager-mode delegation, the `/mimaric-qa` gate (verdict SHIP, 2 Low findings fixed), and the §3.9 4-theme preview walk. tsc green · `turbo run lint` 2/2 · vitest 160/160 · `next build` green · 0 console errors.

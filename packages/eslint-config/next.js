@@ -109,8 +109,8 @@ const noNonAsyncExportInUseServer = {
  * inquiry): an inline `// eslint-disable-next-line mimaric/require-action-guard`
  * on the function — document why it is intentionally unguarded.
  *
- * Surfaces as a WARNING because eslint-plugin-only-warn downgrades errors —
- * that is fine/intended; the value is catching a NEW unguarded action.
+ * Surfaces as an "error" (v4.33.0 H7 ratchet removed eslint-plugin-only-warn) —
+ * a NEW unguarded action fails lint/CI; pre-existing ones live in eslint-suppressions.json.
  */
 const GUARD_HELPERS = new Set([
   "requirePermission",
@@ -459,7 +459,8 @@ export const nextJsConfig = [
   //     update sites write only status, never PII.
   // (b) no-non-async-export-in-use-server: mechanizes the §4 v4.7.0 landmine.
   //
-  // Both are "error" intent but surface as warnings (only-warn, see above).
+  // Both are real "error"s now (v4.33.0 H7 ratchet removed eslint-plugin-only-warn) —
+  // a NEW violation fails CI; the pre-existing backlog lives in eslint-suppressions.json.
   // ─────────────────────────────────────────────────────────────────────────
   {
     files: ["**/*.ts", "**/*.tsx"],

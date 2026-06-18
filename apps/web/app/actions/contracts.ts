@@ -365,9 +365,14 @@ export async function updateContractStatus(
       }
 
       // Return the freshly updated contract (re-fetch inside tx so the
-      // returned shape includes signedAt and is consistent with the tx state)
-      const c = await tx.contract.findUniqueOrThrow({ where: { id: contractId } });
-      return c as typeof contract;
+      // returned shape includes signedAt and is consistent with the tx state).
+      // Re-fetch WITH the customer relation so the returned shape honestly
+      // matches `typeof contract` (which includes customer) — no cast/shape-lie.
+      const c = await tx.contract.findUniqueOrThrow({
+        where: { id: contractId },
+        include: { customer: true },
+      });
+      return c;
     });
 
     // syncDealStageForUnit uses the global db client — must be called after tx commits
@@ -381,9 +386,12 @@ export async function updateContractStatus(
     // NON-SIGNED path (SENT / CANCELLED / VOID) — all writes in one tx.
     updated = await db.$transaction(async (tx) => {
       const updateData: any = { status };
+      // Include the customer relation so the returned shape honestly matches
+      // `typeof contract` (no cast/shape-lie — see the SIGNED branch above).
       const c = await tx.contract.update({
         where: { id: contractId },
         data: updateData,
+        include: { customer: true },
       });
 
       // CANCELLED or VOID → free unit, terminate lease
@@ -417,7 +425,7 @@ export async function updateContractStatus(
         }
       }
 
-      return c as typeof contract;
+      return c;
     });
   }
 
