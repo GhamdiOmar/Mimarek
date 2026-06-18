@@ -1,5 +1,18 @@
 # Changelog — Mimaric PropTech
 
+## [4.33.2] — 2026-06-19 — H9 resolved: seller-convert E2E un-fixme'd (test-only root cause)
+
+Batch 2 of the post-v4.33.0 remaining-work plan. Closes the last tracked test-coverage gap (H9): the marketplace seller-convert E2E now runs and passes, after a focused diagnostic pinned the long-standing "empty grid / Convert button never renders" timeout to two TEST-only defects — no product bug. `turbo run lint check-types` 4/4 · `next build` green · cspell clean · the full `marketplace.cross-org` spec **8/8 green** locally (`next build && next start` + real DB), including H9 + the 0-console-error gate · `/mimaric-qa` verdict GO. §3.9 preview walk N/A (test-only; no app/UI code changed).
+
+### Fixes (test-only — no product change)
+- **H9 — seller-convert E2E un-`fixme`'d and passing.** The grid, the OPEN inquiry row, and the "Convert to Deal" button were always present; two bugs in the *test* made it time out:
+  1. **English-only matcher vs an Arabic-rendered page.** `setLangTheme("en")` pins the language via `localStorage`, but the UI language is driven by the server-readable `mimaric-lang` cookie (v4.16.0), so my-listings renders Arabic-first and the affordance reads `تحويل لصفقة`. The test matched the English `/Convert to Deal/` only → 30s timeout. It now matches **bilingually** (`/Convert to Deal|تحويل لصفقة/`, `/Confirm Convert|تأكيد التحويل/`), the convention the rest of the suite already uses.
+  2. **Convert collision.** The settlement-refusal test attaches a reservation keyed to the same inquiry; `convertMarketplaceInquiryToDeal` creates a reservation with a UNIQUE `marketplaceInquiryId`, so convert threw `Unique constraint failed (marketplaceInquiryId)` and the inquiry stayed OPEN. The test now strips that test-arranged scaffolding (transfer + deed proof + reservation) before converting, so convert sees a clean pre-convert state.
+- **Local-runnable marketplace E2E.** `playwright.config.ts` now loads `.env.local` (`DATABASE_URL`) into the test runner via `@next/env` `loadEnvConfig` — a no-op in CI (no `.env.local`; job env unchanged). `@next/env` is declared as a direct devDependency.
+- **Doc accuracy.** `future-plans/REMAINING-WORK.md` marks H9 closed and drops the now-fixed contracts.ts note; stale "DataTable hang / test.fixme" comments in the spec corrected to the real root cause.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimaric/compare/v4.33.1...v4.33.2
+
 ## [4.33.1] — 2026-06-18 — Findings cleanup: doc accuracy, only-warn dead-dep removal, contract return-shape honesty
 
 A small post-v4.33.0 cleanup patch — three verified doc/config findings + one minor type-debt fix. No behavior change, no schema, no UI. tsc green · `turbo run lint` 4/4 · vitest 160/160 · `next build` green · `/mimaric-qa` verdict GO (zero code findings). §3.9 preview walk N/A (nothing renders differently).

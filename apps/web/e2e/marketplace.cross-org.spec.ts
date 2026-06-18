@@ -23,12 +23,11 @@ test.describe.configure({ mode: "serial" });
  * a SECOND tenant org — required for the cross-org visibility assertions).
  * System = system@mimaric.sa (SYSTEM_ADMIN — platform moderation).
  *
- * This spec asserts the NEW P3 dark-launch + moderation behavior and RUNS the
- * reliable legs (publish → moderation gate → admin approval → buyer browse →
- * inquiry → kill-switch). The only leg still skipped is the seller convert→settle
- * UI walk, which hangs on a pre-existing DataTable interaction issue (NOT a P3
- * bug). Settlement refusal is instead asserted at the action/DB gate layer, which
- * is both more robust and the authoritative source of truth.
+ * This spec asserts the NEW P3 dark-launch + moderation behavior and RUNS every leg
+ * (publish → moderation gate → admin approval → buyer browse → inquiry → kill-switch
+ * → seller convert). Only the happy-path SETTLE leg stays out of the automated walk —
+ * it is conveyance-flag-gated by design and asserted at the action/DB gate layer
+ * (settlement refusal), which is the authoritative source of truth.
  *
  * Captures light/dark × AR/EN screenshots for the key routes (AGENTS §3.9).
  */
@@ -419,12 +418,12 @@ test("P3 dark-launch: conveyance flag is OFF by default (DB) and admin Conveyanc
 // ════════════════════════════════════════════════════════════════════════════
 // P3 GATE 4 — Settlement refusal with the flag OFF, asserted at the GATE/DB layer.
 //
-// We bypass the hang-prone convert→settle UI (a pre-existing DataTable issue, NOT
-// a P3 defect — see the test.fixme below). Instead we ARRANGE a transfer that
-// satisfies EVERY non-flag settlement gate, then prove that the conveyance flag
-// being OFF is the single binding blocker (settleMarketplaceTransfer Gate 1 —
-// the UNCACHED, fail-closed kill-switch). The full UI settle is covered by the
-// §3.9 manual walk once the flag is intentionally enabled.
+// We assert settlement refusal at the GATE/DB layer — more robust than driving the
+// UI settle, which is conveyance-flag-gated by design (the seller-convert leg below
+// DOES run the convert UI). We ARRANGE a transfer that satisfies EVERY non-flag
+// settlement gate, then prove that the conveyance flag being OFF is the single binding
+// blocker (settleMarketplaceTransfer Gate 1 — the UNCACHED, fail-closed kill-switch).
+// The full UI settle is covered by the §3.9 manual walk once the flag is enabled.
 // ════════════════════════════════════════════════════════════════════════════
 test("P3 settlement refusal: a fully-READY transfer is blocked solely by the OFF conveyance flag", async () => {
   expect(createdListingId, "depends on the prior approval test").not.toEqual("");
@@ -588,51 +587,36 @@ test("mobile viewport: marketplace browse has no horizontal overflow at 375×812
 });
 
 // ════════════════════════════════════════════════════════════════════════════
-// Seller convert UI walk — re-enabled (H9).
+// Seller convert UI walk (H9) — RESOLVED + re-enabled (was test.fixme through v4.33.0).
 //
-// History: this leg was test.fixme'd as a "DataTable convert-button hang". Root
-// cause was NOT a product bug and NOT a DataTable rendering bug — the convert
-// affordance is a plain inline <Button> rendered whenever the inquiry row is
-// OPEN (my-listings/page.tsx, inquiryColumns "actions" cell). The original test
-// hung because:
-//   1. It waited a FIXED 2000ms after domcontentloaded, but my-listings runs a
-//      3-call `loadAll()` Promise.all against the (remote) Supabase DB on mount.
-//      That regularly takes >2s, so the grid was still showing skeletons — the
-//      convert button was simply not in the DOM yet — and clickVisible then
-//      polled a non-existent button to its 30s ceiling (the "hang").
-//   2. It never pinned the UI language, so the button label ("Convert to Deal"
-//      vs "تحويل لصفقة") was non-deterministic across runs.
-// convertMarketplaceInquiryToDeal does NOT require the conveyance flag (verified:
-// it only needs an OPEN inquiry + linked CRM customer + AVAILABLE unit), so this
-// leg is runnable with the flag OFF, exactly as the rest of the suite runs.
+// The long-standing "empty grid / Convert-to-Deal button never renders" timeout was
+// NOT a product bug and NOT a DataTable rendering bug — it was two TEST-only defects,
+// pinned by a focused diagnostic run (grid rows=2, empty=false, no load failure,
+// button text Arabic; then a Prisma unique-constraint error on convert):
 //
-// Robust rewrite: wait for the inquiries grid to finish loading (a real row
-// attached, not a fixed sleep), pin lang=en for stable button matching, gate on
-// the button being visible before clicking, then confirm in the dialog and
-// assert the inquiry flipped to CONVERTED_TO_DEAL in the DB.
+//   1. LANGUAGE-MATCHER BUG (the "empty grid" mystery). `setLangTheme(seller,"en")`
+//      pins the language via localStorage, but the UI language is driven by the
+//      server-readable `mimaric-lang` cookie (v4.16.0), so my-listings renders
+//      Arabic-first regardless. The grid, the OPEN inquiry row, and the convert
+//      button were ALL present — the affordance just read "تحويل لصفقة", while the
+//      test matched the English-only /Convert to Deal/ and found nothing → 30s
+//      timeout. Fix: match the label BILINGUALLY, exactly as the rest of this suite
+//      already does (e.g. /Express Interest|إبداء الاهتمام/).
 //
-// Ordering: relies on the prior buyer-inquiry test having created the OPEN
-// inquiry on the fixture listing (serial chain). The settlement-refusal test
-// arranges a transfer directly in the DB but leaves that inquiry's status OPEN
-// and the unit AVAILABLE, so the convert path is still valid here.
+//   2. CONVERT COLLISION. The settlement-refusal test attaches a reservation + READY
+//      transfer to THIS OPEN inquiry. convertMarketplaceInquiryToDeal creates a
+//      reservation keyed by a UNIQUE `marketplaceInquiryId`, so converting an inquiry
+//      that already has one throws "Unique constraint failed (marketplaceInquiryId)"
+//      and the inquiry stays OPEN. Fix: strip that test-arranged conveyance
+//      scaffolding (below) so convert sees the seller's real clean pre-convert state.
 //
-// The happy-path SETTLE leg remains covered by the §3.9 manual walk once the
-// conveyance flag is intentionally enabled (settle is conveyance-gated by design).
-//
-// H9 — still test.fixme (v4.33.0). A robustness fix landed (`loadAll()` now uses
-// `Promise.allSettled` so a single failing sibling fetch — listings/REGA-auth — can no
-// longer blank the inquiries grid) and the my-listings grid is verified rendering live
-// with 0 console errors. BUT this was NOT sufficient: with allSettled in place, CI
-// (run 27760183191) still times out waiting for the "Convert to Deal" button — so the
-// inquiries grid is arriving EMPTY for the seller in the CI fixture even though the DB
-// OPEN inquiry exists (the assertion below passes). I could not reproduce the empty grid
-// against a running prod build (local seed has no marketplace inquiry), so the remaining
-// cause is fixture/data-shape specific and needs a focused repro that creates the
-// inquiry + opens the seller grid. Convert stays covered at the action/DB-gate layer
-// (the passing tests above). Tracked in REMAINING-WORK.md. Do NOT un-fixme again without
-// a GREEN local run of this exact spec.
+// convertMarketplaceInquiryToDeal does NOT require the conveyance flag (it only needs
+// an OPEN inquiry + linked CRM customer + AVAILABLE unit), so this leg runs with the
+// flag OFF like the rest of the suite. The happy-path SETTLE leg stays covered by the
+// §3.9 manual walk once conveyance is intentionally enabled (settle is flag-gated by
+// design). Proven GREEN locally (next build && next start + real DB) before un-fixme.
 // ════════════════════════════════════════════════════════════════════════════
-test.fixme("seller convert UI walk: OPEN inquiry converts to a deal from the incoming-inquiries grid", async ({
+test("seller convert UI walk: OPEN inquiry converts to a deal from the incoming-inquiries grid", async ({
   browser,
 }) => {
   expect(createdListingId, "depends on the prior approval + inquiry tests").not.toEqual("");
@@ -642,6 +626,23 @@ test.fixme("seller convert UI walk: OPEN inquiry converts to a deal from the inc
     where: { listingId: createdListingId, sellerOrgId, status: "OPEN" },
   });
   expect(openInquiry?.id, "an OPEN inquiry on the fixture listing must exist to convert").toBeTruthy();
+
+  // Decouple from the settlement-refusal test: it attached a reservation + a READY
+  // transfer (+ VERIFIED deed proof) to THIS OPEN inquiry to exercise the settlement
+  // gate. convertMarketplaceInquiryToDeal creates a reservation keyed by a UNIQUE
+  // `marketplaceInquiryId`, so converting an inquiry that already has one fails with
+  // "Unique constraint failed on the fields: (marketplaceInquiryId)" and the inquiry
+  // stays OPEN. Strip that test-arranged conveyance scaffolding so convert sees the
+  // seller's real, clean pre-convert state (the settlement test asserted its own gate
+  // independently, before this).
+  const priorTransfer = await db.unitTransferTransaction.findFirst({
+    where: { inquiryId: openInquiry!.id },
+  });
+  if (priorTransfer) {
+    await db.marketplaceDeedProof.deleteMany({ where: { transferId: priorTransfer.id } });
+    await db.unitTransferTransaction.deleteMany({ where: { inquiryId: openInquiry!.id } });
+  }
+  await db.reservation.deleteMany({ where: { marketplaceInquiryId: openInquiry!.id } });
 
   const sellerCtx = await browser.newContext();
   attachConsole(sellerCtx, "seller-convert");
@@ -653,22 +654,31 @@ test.fixme("seller convert UI walk: OPEN inquiry converts to a deal from the inc
   // and our waits below ride out the post-reload data refetch).
   await setLangTheme(seller, "en", "light");
 
-  // Wait for the incoming-inquiries grid to FINISH loading by gating on the
-  // convert button itself being VISIBLE — not a fixed sleep. This is the fix for
-  // the original hang: the convert button only exists once `loadAll()` resolves
-  // and the OPEN inquiry row renders, so waiting for it directly rides out the
-  // (variable, remote-DB-bound) data-load latency instead of racing a 2s timer.
+  // Wait for the incoming-inquiries grid to FINISH loading by gating on the convert
+  // button itself being VISIBLE — not a fixed sleep. The button only exists once
+  // `loadAll()` resolves and the OPEN inquiry row renders, so waiting for it directly
+  // rides out the (variable, remote-DB-bound) data-load latency.
+  //
+  // Match the label in BOTH languages. `setLangTheme` pins the language via
+  // localStorage, but the UI language is driven by the server-readable `mimaric-lang`
+  // cookie (v4.16.0), so the page renders Arabic-first regardless — the convert
+  // affordance reads "تحويل لصفقة", not "Convert to Deal". The rest of this suite
+  // already matches bilingually for exactly this reason; H9's prior English-only
+  // matcher was the sole cause of the long-standing "empty grid / button never renders"
+  // timeout — the grid, the OPEN row, and the button were all present, just in Arabic.
+  const convertLabel = /Convert to Deal|تحويل لصفقة/i;
+  const confirmConvertLabel = /Confirm Convert|تأكيد التحويل/i;
   await expect(
-    seller.getByRole("button", { name: /Convert to Deal/i }).first(),
-    "the Convert to Deal button must render for the OPEN inquiry once the grid loads",
+    seller.getByRole("button", { name: convertLabel }).first(),
+    "the Convert-to-Deal button must render for the OPEN inquiry once the grid loads",
   ).toBeVisible({ timeout: 30000 });
 
-  // Open the convert confirm dialog, then confirm.
-  await clickVisible(seller, /Convert to Deal/i);
+  // Open the convert confirm dialog, then confirm (bilingual labels — see above).
+  await clickVisible(seller, convertLabel);
   await expect(
-    seller.getByRole("button", { name: /Confirm Convert/i }).first(),
+    seller.getByRole("button", { name: confirmConvertLabel }).first(),
   ).toBeVisible({ timeout: 10000 });
-  await clickVisible(seller, /Confirm Convert/i);
+  await clickVisible(seller, confirmConvertLabel);
 
   // ── ASSERT (DB): the inquiry flipped OPEN → CONVERTED_TO_DEAL and a reservation
   //     + transfer now exist for it (convertMarketplaceInquiryToDeal's output). ──
