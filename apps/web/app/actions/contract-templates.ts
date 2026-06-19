@@ -1,6 +1,6 @@
 "use server";
 
-import { db } from "@repo/db";
+import { db, Prisma, ContractType } from "@repo/db";
 import { requirePermission } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
 import { serialize } from "../../lib/serialize";
@@ -20,7 +20,9 @@ export async function createContractTemplate(data: {
     data: {
       name: data.name,
       nameArabic: data.nameArabic,
-      type: data.type as any,
+      // `type` stays a `string` param (callers pass plain strings); cast to the
+      // enum only at the Prisma write site — value is unchanged at runtime.
+      type: data.type as ContractType,
       content: data.content,
       organizationId: session.organizationId,
     },
@@ -67,8 +69,9 @@ export async function updateContractTemplate(
 export async function getContractTemplates(type?: string) {
   const session = await requirePermission("contracts:read");
 
-  const where: any = { organizationId: session.organizationId };
-  if (type) where.type = type;
+  const where: Prisma.ContractTemplateWhereInput = { organizationId: session.organizationId };
+  // `type` stays a `string` param; cast only at the WhereInput field (value unchanged).
+  if (type) where.type = type as ContractType;
 
   const templates = await db.contractTemplate.findMany({
     where,

@@ -1,6 +1,6 @@
 ﻿"use server";
 
-import { db } from "@repo/db";
+import { db, Prisma } from "@repo/db";
 import { hash as bcryptHash, compare as bcryptCompare } from "@node-rs/bcrypt";
 import { randomBytes } from "crypto";
 import { getSessionOrThrow } from "../../lib/auth-helpers";
@@ -146,7 +146,7 @@ export async function resetPassword(token: string, newPassword: string) {
   // (d) Atomic single-use claim + password update in ONE transaction. The
   // updateMany(usedAt: null, expiresAt > now) lets exactly one caller win the
   // race; count !== 1 means it was already consumed (double-spend closed).
-  const result = await db.$transaction(async (tx: any) => {
+  const result = await db.$transaction(async (tx: Prisma.TransactionClient) => {
     const claimed = await tx.passwordResetToken.updateMany({
       where: { tokenHash, usedAt: null, expiresAt: { gt: now } },
       data: { usedAt: now },

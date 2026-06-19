@@ -496,7 +496,7 @@ export async function adminUpsertPlan(data: {
     isPublic: data.isPublic ?? true,
     isDefault: data.isDefault ?? false,
     sortOrder: data.sortOrder ?? 0,
-    features: data.features as any,
+    features: data.features as Prisma.InputJsonValue,
   };
 
   let plan;

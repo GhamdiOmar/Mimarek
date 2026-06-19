@@ -13,8 +13,8 @@ async function authMiddleware() {
   const session = await auth();
   if (!session?.user) throw new Error("Unauthorized");
 
-  const role = (session.user as any).role ?? "USER";
-  const organizationId = (session.user as any).organizationId;
+  const role = session.user.role ?? "USER";
+  const organizationId = session.user.organizationId;
 
   if (!hasPermission(role, "documents:write")) {
     throw new Error("Insufficient permissions");
@@ -36,7 +36,7 @@ async function authMiddleware() {
 async function seoAuthMiddleware() {
   const session = await auth();
   if (!session?.user) throw new Error("Unauthorized");
-  const role = (session.user as any).role ?? "USER";
+  const role = session.user.role ?? "USER";
   if (!hasPermission(role, "billing:admin")) throw new Error("Insufficient permissions");
   return { userId: session.user.id };
 }

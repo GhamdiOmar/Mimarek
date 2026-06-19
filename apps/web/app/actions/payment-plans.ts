@@ -1,6 +1,6 @@
 "use server";
 
-import { db } from "@repo/db";
+import { db, Prisma, type InstallmentStatus } from "@repo/db";
 import { z } from "zod";
 import { requirePermission } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
@@ -136,7 +136,12 @@ export async function recordInstallmentPayment(
   };
 
   let txResult: {
-    row: any;
+    // `row` is either the prior installment (with its paymentPlan included) on a
+    // replay, or the freshly-updated installment — both are passed only to
+    // serialize(), so the payload union exactly mirrors the two return branches.
+    row:
+      | Prisma.PaymentPlanInstallmentGetPayload<{ include: { paymentPlan: true } }>
+      | Prisma.PaymentPlanInstallmentGetPayload<object>;
     replayed: boolean;
     before: { status: string; paidAmount: number } | null;
     after: { status: string; paidAmount: number } | null;
@@ -217,7 +222,7 @@ export async function recordInstallmentPayment(
         data: {
           paidAmount: newPaidAmount,
           paidAt: paidAtDate,
-          status: newStatus as any,
+          status: newStatus as InstallmentStatus,
           paymentMethod: safeData.paymentMethod,
           referenceNumber: safeData.referenceNumber,
           paymentReference: safeData.paymentReference,
@@ -249,9 +254,12 @@ export async function recordInstallmentPayment(
         planId: row.paymentPlanId,
       };
     });
-  } catch (e: any) {
+  } catch (e) {
     // P2002 race: two concurrent writes with the same paymentReference
-    if (e?.code === "P2002") {
+    if (
+      e instanceof Prisma.PrismaClientKnownRequestError &&
+      e.code === "P2002"
+    ) {
       const existing = await db.paymentPlanInstallment.findFirst({
         where: {
           id: installmentId,

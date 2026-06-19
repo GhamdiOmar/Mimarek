@@ -18,8 +18,9 @@ export async function GET(request: Request) {
   try {
     const result = await autoExpireReservations();
     return NextResponse.json({ success: true, ...result });
-  } catch (error: any) {
+  } catch (error) {
     console.error("[Cron] expire-reservations failed:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

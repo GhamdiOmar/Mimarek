@@ -1,6 +1,6 @@
 "use server";
 
-import { db } from "@repo/db";
+import { db, type Prisma } from "@repo/db";
 import { startOfMonth, endOfMonth } from "date-fns";
 import { requirePermission } from "../../lib/auth-helpers";
 
@@ -15,7 +15,11 @@ export type FinanceStats = {
 };
 
 /** effectivePaid — canonical formula per spec §4 */
-function effectivePaid(r: { status: string; amount: any; paidAmount: any }): number {
+function effectivePaid(r: {
+  status: string;
+  amount: Prisma.Decimal;
+  paidAmount: Prisma.Decimal | null;
+}): number {
   return r.status === "PAID"
     ? Number(r.paidAmount ?? r.amount)
     : Number(r.paidAmount ?? 0);

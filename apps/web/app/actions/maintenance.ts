@@ -1,6 +1,13 @@
 "use server";
 
-import { db } from "@repo/db";
+import {
+  db,
+  Prisma,
+  MaintenanceCategory,
+  MaintenanceStatus,
+  MaintenancePriority,
+  type UserRole,
+} from "@repo/db";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requirePermission } from "../../lib/auth-helpers";
@@ -111,11 +118,11 @@ export async function createMaintenanceRequest(data: {
     data: {
       title: parsed.data.title,
       description: parsed.data.description,
-      category: (parsed.data.category as any) ?? "GENERAL",
-      priority: priority as any,
+      category: (parsed.data.category as MaintenanceCategory | undefined) ?? "GENERAL",
+      priority: priority as MaintenancePriority,
       unitId: parsed.data.unitId,
       assignedToId: parsed.data.assignedToId || undefined,
-      status: parsed.data.assignedToId ? ("ASSIGNED" as any) : "OPEN",
+      status: parsed.data.assignedToId ? MaintenanceStatus.ASSIGNED : MaintenanceStatus.OPEN,
       scheduledDate: parsed.data.scheduledDate ? new Date(parsed.data.scheduledDate) : undefined,
       dueDate: computeDueDate(priority),
       estimatedCost: parsed.data.estimatedCost,
@@ -142,10 +149,10 @@ export async function getMaintenanceRequests(filters?: {
 }) {
   const session = await requirePermission("maintenance:read");
 
-  const where: any = { organizationId: session.organizationId };
-  if (filters?.status) where.status = filters.status;
-  if (filters?.priority) where.priority = filters.priority;
-  if (filters?.category) where.category = filters.category;
+  const where: Prisma.MaintenanceRequestWhereInput = { organizationId: session.organizationId };
+  if (filters?.status) where.status = filters.status as MaintenanceStatus;
+  if (filters?.priority) where.priority = filters.priority as MaintenancePriority;
+  if (filters?.category) where.category = filters.category as MaintenanceCategory;
   if (filters?.unitId) where.unitId = filters.unitId;
   if (filters?.search) {
     where.title = { contains: filters.search, mode: "insensitive" };
@@ -234,18 +241,18 @@ export async function updateMaintenanceRequest(
     }
   }
 
-  const updateData: any = {};
+  const updateData: Prisma.MaintenanceRequestUncheckedUpdateInput = {};
   if (data.title !== undefined) updateData.title = data.title;
   if (data.description !== undefined) updateData.description = data.description;
-  if (data.category !== undefined) updateData.category = data.category;
+  if (data.category !== undefined) updateData.category = data.category as MaintenanceCategory;
   if (data.priority !== undefined) {
-    updateData.priority = data.priority;
+    updateData.priority = data.priority as MaintenancePriority;
     if (!["RESOLVED", "CLOSED"].includes(request.status)) {
       updateData.dueDate = computeDueDate(data.priority, request.createdAt);
     }
   }
   if (data.status !== undefined) {
-    updateData.status = data.status;
+    updateData.status = data.status as MaintenanceStatus;
     if (data.status === "RESOLVED") {
       updateData.completedAt = new Date();
       updateData.resolvedAt = new Date();
@@ -254,7 +261,7 @@ export async function updateMaintenanceRequest(
   if (data.assignedToId !== undefined) {
     updateData.assignedToId = data.assignedToId || null;
     if (data.assignedToId && request.status === "OPEN" && !data.status) {
-      updateData.status = "ASSIGNED";
+      updateData.status = MaintenanceStatus.ASSIGNED;
     }
   }
   if (data.scheduledDate !== undefined) {
@@ -308,7 +315,7 @@ export async function getAssignableUsers() {
   const users = await db.user.findMany({
     where: {
       organizationId: session.organizationId,
-      role: { in: ["TECHNICIAN", "MANAGER", "ADMIN"] as any },
+      role: { in: ["TECHNICIAN", "MANAGER", "ADMIN"] as UserRole[] },
     },
     select: { id: true, name: true, role: true },
     orderBy: { name: "asc" },
@@ -327,9 +334,9 @@ export async function getMaintenanceStats() {
 
   const [open, assigned, inProgress, onHold, overdue, completedThisMonth] = await Promise.all([
     db.maintenanceRequest.count({ where: { organizationId: orgId, status: "OPEN" } }),
-    db.maintenanceRequest.count({ where: { organizationId: orgId, status: "ASSIGNED" as any } }),
+    db.maintenanceRequest.count({ where: { organizationId: orgId, status: MaintenanceStatus.ASSIGNED } }),
     db.maintenanceRequest.count({ where: { organizationId: orgId, status: "IN_PROGRESS" } }),
-    db.maintenanceRequest.count({ where: { organizationId: orgId, status: "ON_HOLD" as any } }),
+    db.maintenanceRequest.count({ where: { organizationId: orgId, status: MaintenanceStatus.ON_HOLD } }),
     db.maintenanceRequest.count({
       where: {
         organizationId: orgId,
