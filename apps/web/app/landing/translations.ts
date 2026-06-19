@@ -13,18 +13,15 @@ export const t = {
     heroTitle: "المنصة السعودية لإدارة العقارات والمرافق",
     heroSubtitle:
       "أدِر عقاراتك، مبيعاتك، إيجاراتك، وصيانتك — في منصة واحدة مبنية لبيانات السوق السعودي",
-    watchDemo: "شاهد العرض",
+    seeFeatures: "استكشف المزايا",
 
     // Trust badges
     vision2030Aligned: "متوافق مع رؤية 2030",
     baladyCompliant: "حقول بلدي جاهزة",
     zatcaInvoicing: "بيانات فواتير جاهزة لـ ZATCA",
 
-    // Logo bar
-    trustedBy: "موثوق من قبل شركات التطوير العقاري في المملكة",
-    propertiesManaged: "عقار مُدار",
-    unitsTracked: "وحدة مُتابَعة",
-    sarProcessed: "ر.س مُعالَجة",
+    // Compliance strip (replaces logo bar)
+    complianceStrip: "مُصمَّم وفق متطلبات الأنظمة السعودية",
 
     // Features
     featuresTitle: "كل ما تحتاجه لإدارة عقاراتك",
@@ -97,20 +94,6 @@ export const t = {
     statTrialLabel: "يوم تجربة مجانية",
     statPlans: "3",
     statPlansLabel: "خطط أسعار مرنة",
-
-    // Testimonials
-    testimonial1:
-      "معمارك غيّر طريقة إدارتنا للعقارات. كل شيء في مكان واحد.",
-    testimonial1Author: "م. خالد العتيبي",
-    testimonial1Role: "مدير التطوير — شركة الأفق العقارية",
-    testimonial2:
-      "تجهيز بيانات الفواتير لضريبة القيمة المضافة وفّر علينا ساعات عمل أسبوعياً.",
-    testimonial2Author: "أ. نورة الشمري",
-    testimonial2Role: "المدير المالي — مجموعة البناء الحديث",
-    testimonial3:
-      "نظام الصيانة ساعدنا في تقليل وقت الاستجابة لطلبات المستأجرين بنسبة 60%.",
-    testimonial3Author: "م. فهد الدوسري",
-    testimonial3Role: "مدير المرافق — واحة الرياض",
 
     // Pricing
     pricingTitle: "خطط أسعار تناسب احتياجاتك",
@@ -209,18 +192,15 @@ export const t = {
     heroTitle: "The Saudi Platform for Property & Facility Management",
     heroSubtitle:
       "Manage sales, rentals, and maintenance — all in one platform structured for Saudi real estate data",
-    watchDemo: "Watch Demo",
+    seeFeatures: "See features",
 
     // Trust badges
     vision2030Aligned: "Vision 2030 Aligned",
     baladyCompliant: "Balady-ready fields",
     zatcaInvoicing: "ZATCA-ready invoice data",
 
-    // Logo bar
-    trustedBy: "Trusted by real estate developers across Saudi Arabia",
-    propertiesManaged: "Properties Managed",
-    unitsTracked: "Units Tracked",
-    sarProcessed: "SAR Processed",
+    // Compliance strip (replaces logo bar)
+    complianceStrip: "Built for Saudi regulatory requirements",
 
     // Features
     featuresTitle: "Everything you need to manage your properties",
@@ -296,20 +276,6 @@ export const t = {
     statTrialLabel: "Day free trial",
     statPlans: "3",
     statPlansLabel: "Flexible pricing plans",
-
-    // Testimonials
-    testimonial1:
-      "Mimarek transformed how we manage properties. Everything in one place.",
-    testimonial1Author: "Eng. Khaled Al-Otaibi",
-    testimonial1Role: "Development Director — Al-Ofoq Real Estate",
-    testimonial2:
-      "VAT-ready invoice data saves us hours of work every week.",
-    testimonial2Author: "Noura Al-Shammari",
-    testimonial2Role: "CFO — Modern Construction Group",
-    testimonial3:
-      "The maintenance system helped us reduce tenant response time by 60%.",
-    testimonial3Author: "Eng. Fahad Al-Dosari",
-    testimonial3Role: "Facilities Manager — Riyadh Oasis",
 
     // Pricing
     pricingTitle: "Plans that fit your needs",

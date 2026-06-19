@@ -30,27 +30,15 @@ export default function Footer({
       ],
     },
     {
-      title: t.company,
-      links: [
-        { label: t.aboutUs, href: "#" },
-        { label: t.careers, href: "#" },
-        { label: t.blog, href: "#" },
-      ],
-    },
-    {
       title: t.legal,
       links: [
-        { label: t.termsOfService, href: "#" },
-        { label: t.privacyPolicy, href: "#" },
         { label: lang === "ar" ? "سياسة ملفات تعريف الارتباط" : "Cookie Policy", href: "/cookie-policy" },
       ],
     },
     {
       title: t.support,
       links: [
-        { label: t.helpCenter, href: "#" },
-        { label: t.documentation, href: "#" },
-        { label: t.status, href: "#" },
+        { label: t.helpCenter, href: "/dashboard/help" },
       ],
     },
   ];

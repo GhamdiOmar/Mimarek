@@ -75,7 +75,7 @@ export default function Hero({ lang }: { lang: "ar" | "en" }) {
               href="#features"
               className="text-sm font-medium text-white/85 underline underline-offset-4 decoration-white/40 transition-colors hover:text-white hover:decoration-white/60"
             >
-              {t.watchDemo}
+              {t.seeFeatures}
             </a>
           </div>
 

@@ -2,7 +2,7 @@
 # https://docs.gitguardian.com/ggshield-docs/reference/config
 #
 # The repo's seed/test fixtures intentionally contain well-known, non-production
-# credentials (CLAUDE.md §9 — e.g. "mimaric2026"). They are NOT real secrets and
+# credentials (AGENTS.md §9 — e.g. "mimaric2026"). They are NOT real secrets and
 # never reach production; users authenticate against hashed DB records. We exclude
 # the fixture paths so GitGuardian PR checks stop flagging them. Real secrets live
 # only in gitignored .env.local files and CI job env — never committed.
@@ -15,9 +15,9 @@ secret:
     - "**/*.spec.ts"        # Playwright e2e use the same documented test logins
     - "**/*.e2e.ts"
   ignored-matches:
-    - name: Mimaric documented seed/test password (mimaric2026)
+    - name: Mimarek documented seed/test password (mimaric2026)
       match: mimaric2026
-    - name: Mimaric documented seed/test password (sales2026)
+    - name: Mimarek documented seed/test password (sales2026)
       match: sales2026
-    - name: Mimaric documented seed/test password (finance2026)
+    - name: Mimarek documented seed/test password (finance2026)
       match: finance2026
