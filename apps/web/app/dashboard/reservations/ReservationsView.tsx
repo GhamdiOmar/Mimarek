@@ -132,6 +132,7 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
           .min(1, t("تاريخ الانتهاء مطلوب", "Expiry date is required")),
         notes: z.string().optional(),
       }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `t` is derived from `lang`; re-deriving the schema on `lang` change refreshes all validation messages without churning on `t`'s unstable identity.
     [lang],
   );
 
@@ -272,6 +273,7 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
       .then((data) => setJourney(data))
       .catch(() => setJourney(null))
       .finally(() => setJourneyLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally keyed on the reservation id only; re-running on the full `detailDeal` object would re-fetch the journey on every unrelated list refresh that re-creates the object.
   }, [detailDeal?.id]);
 
   // Filtered deals
@@ -347,7 +349,7 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
     if (prefillCustomerId || prefillUnitId) {
       openCreate();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once when the URL prefill params land; `openCreate` is recreated each render and including it would re-open the modal on every render.
   }, [prefillCustomerId, prefillUnitId]);
 
   const onCreateSubmit = handleSubmit(async (values) => {
@@ -597,6 +599,7 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
         },
       },
     ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `t` is derived from `lang`, which is already a dep; listing `lang` covers every translation read here. (`handleConfirmDeal` is already listed so the row-action stays current.)
     [lang, canWriteDeals, handleConfirmDeal],
   );
 

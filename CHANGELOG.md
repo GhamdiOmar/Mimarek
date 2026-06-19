@@ -1,5 +1,19 @@
 # Changelog — Mimaric PropTech
 
+## [4.33.6] — 2026-06-19 — Lint sweep PR 4/4: suppressions backlog → ZERO (file deleted)
+
+**Batch 3 complete.** PR 4 of 4 clears the final **47** `eslint-suppressions.json` entries and **deletes the file** — `eslint . --pass-on-unpruned-suppressions` now passes clean with no suppressions backstop, so every ESLint rule genuinely gates the whole app. The full backlog went **160 → 0** across the four PRs. No behavior change. `turbo run check-types` 2/2 · `next build` green · vitest **160/160** · `/mimaric-qa` **GO** (all 6 verification points confirmed) · §3.9 render-loop check passed (no loop; the exhaustive-deps fixes are comment-only).
+
+### Cleared (no runtime change)
+- **16 test-stub `@typescript-eslint/no-explicit-any`** (`prisma-stub.ts` ×10, `tenant-isolation` ×3, `coupon-redemption-race` ×3) → documented inline `eslint-disable` (legitimate Prisma-mock duck-typing).
+- **20 `no-unused-vars`** → genuinely-dead imports/vars **removed** (grep-confirmed: `getSessionOrThrow`, `revalidatePath`, `syncDealStageForUnit`, `logAuditEvent`, several lucide icons, `PageHeader`, dead `lang` destructures, a `beforeEach` test import), or intentionally-unused destructures/params **`_`-prefixed** (uploadthing `_file` callback args; an i18n `_l`).
+- **7 `react-hooks/exhaustive-deps`** (DashboardView, AdminView, admin/payments, admin/tickets, ReservationsView) → **comment-only** documented inline disables (the omitted dep was the unstable `t` derived from `lang`, already a dep, or an intentional id-keyed/mount-once effect). No dependency array changed → no render-loop risk.
+- **4 misc** — 2 `no-empty` (best-effort `catch` blocks in `auth.ts` + `admin/email` → commented), 1 `no-irregular-whitespace` (an **intentional U+FEFF BOM inside a regex** that strips BOMs before `"use server"` directive detection — byte-verified load-bearing, inline-disabled not removed), 1 `react/no-unescaped-entities` (`We've` → `We&apos;ve`).
+
+The native ESLint suppressions ratchet (`--pass-on-unpruned-suppressions` / `lint:prune`) has done its job and retired itself.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimaric/compare/v4.33.5...v4.33.6
+
 ## [4.33.5] — 2026-06-19 — Lint sweep PR 3/4: UI/handler no-explicit-any → typed
 
 Batch 3 continues. PR 3 of 4 eliminates **14** `@typescript-eslint/no-explicit-any` suppressions in **rendered** React pages/components — **no behavior or rendering change** (type annotations only; emitted JS byte-identical). Suppressions: **61 → 47** (no-explicit-any 30 → 16; the remaining 16 are legit test stubs → PR 4). `turbo run check-types` 2/2 · `next build` green · vitest **160/160** · `/mimaric-qa` **GO** (behavior/rendering-preserving, all 5 risk points verified). **§3.9 4-theme preview walk done** (see below).

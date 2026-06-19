@@ -17,9 +17,7 @@ import {
   AlertTriangle,
   Plus,
   Trash2,
-  CheckCircle2,
   Image as ImageIcon,
-  ChevronRight,
   ShieldAlert,
   FileCheck2,
 } from "lucide-react";
@@ -245,7 +243,7 @@ export default function SeoSettingsPage() {
     saving: { ar: "جارٍ الحفظ...", en: "Saving..." },
   };
 
-  const l = (key: keyof typeof translations) => translations[key][lang];
+  const _l = (key: keyof typeof translations) => translations[key][lang];
 
   if (loading) {
     return (

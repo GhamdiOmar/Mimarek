@@ -4,7 +4,6 @@ import { db, UnitStatus, CustomerStatus } from "@repo/db";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requirePermission } from "../../lib/auth-helpers";
-import { logAuditEvent } from "../../lib/audit";
 import { checkLimit, FEATURE_KEYS } from "../../lib/entitlements";
 import { isValidUnitTransition } from "../../lib/units/state-machine";
 import { ROUTES } from "../../lib/routes";

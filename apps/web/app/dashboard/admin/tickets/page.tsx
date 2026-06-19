@@ -114,7 +114,7 @@ export default function AdminTicketsPage() {
 
   React.useEffect(() => {
     load(search, status, priority, category, page);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally re-runs only when a filter/page input changes; `load` is stable and `search` is omitted on purpose so it refetches via the debounced handleSearchChange, not on every keystroke.
   }, [status, priority, category, page]);
 
   function handleSearchChange(val: string) {
@@ -282,6 +282,7 @@ export default function AdminTicketsPage() {
         ),
       },
     ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `t` is derived from `lang`, which is already a dep; listing `lang` covers every translation read here.
     [lang],
   );
 

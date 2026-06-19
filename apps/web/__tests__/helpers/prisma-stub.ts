@@ -25,6 +25,7 @@
  * future test that needs more can't silently get a wrong answer.
  */
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- test stub: Prisma mock duck-types arbitrary row shapes
 export type Row = Record<string, any> & { id: string };
 
 type WhereLeaf =
@@ -80,6 +81,7 @@ function matchWhere(row: Row, where: Where | undefined): boolean {
   return true;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- test stub: write payload duck-types arbitrary columns
 function applyData(row: Row, data: Record<string, any>): void {
   for (const [key, val] of Object.entries(data)) {
     if (val && typeof val === "object" && "increment" in val) {
@@ -111,17 +113,20 @@ export function makeDelegate(model: string, rows: Row[]) {
     findMany: async ({ where }: { where?: Where } = {}) =>
       rows.filter((r) => matchWhere(r, where)),
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test stub: create payload duck-types arbitrary columns
     create: async ({ data }: { data: Record<string, any> }) => {
       const row: Row = { id: data.id ?? `${model}_${++seq}`, ...data };
       rows.push(row);
       return row;
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test stub: createMany payload duck-types arbitrary columns
     createMany: async ({ data }: { data: Record<string, any>[] }) => {
       for (const d of data) rows.push({ id: d.id ?? `${model}_${++seq}`, ...d });
       return { count: data.length };
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test stub: update payload duck-types arbitrary columns
     update: async ({ where, data }: { where?: Where; data: Record<string, any> }) => {
       const row = rows.find((r) => matchWhere(r, where));
       if (!row) throw new StubP2025Error(model);
@@ -131,6 +136,7 @@ export function makeDelegate(model: string, rows: Row[]) {
 
     // The atomic compare-and-set used by the coupon race-guard. Runs fully
     // synchronously (no await), so concurrent callers serialise like Postgres.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test stub: updateMany payload duck-types arbitrary columns
     updateMany: async ({ where, data }: { where?: Where; data: Record<string, any> }) => {
       const matched = rows.filter((r) => matchWhere(r, where));
       for (const r of matched) applyData(r, data);
@@ -158,7 +164,9 @@ export function makeDelegate(model: string, rows: Row[]) {
 }
 
 export interface StubDb {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test stub: index signature must admit $transaction (a fn, not a delegate)
   [model: string]: ReturnType<typeof makeDelegate> | any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test stub: $transaction takes either form (callback or promise array) and returns whatever the callback yields
   $transaction: (arg: any) => Promise<any>;
 }
 
@@ -174,6 +182,7 @@ export function makeStubDb(seed: Record<string, Row[]>): StubDb {
   for (const [model, rows] of Object.entries(seed)) {
     db[model] = makeDelegate(model, rows);
   }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test stub: $transaction accepts a callback or a promise array
   db.$transaction = async (arg: any) => {
     if (typeof arg === "function") return arg(db);
     if (Array.isArray(arg)) return Promise.all(arg);

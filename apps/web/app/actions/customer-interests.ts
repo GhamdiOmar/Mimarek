@@ -12,7 +12,6 @@ import { createReservation } from "./reservations";
 import { updateCustomerStatus } from "./customers";
 import {
   syncCustomerPipelineStatus,
-  syncDealStageForUnit,
 } from "../../lib/server/pipeline-sync";
 
 // ─── Add a property interest (Deal) for a customer ────────────────────────────

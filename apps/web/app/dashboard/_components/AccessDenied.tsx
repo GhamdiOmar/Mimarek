@@ -13,7 +13,7 @@ import { Button, EmptyState } from "@repo/ui";
 import { useLanguage } from "../../../components/LanguageProvider";
 
 export function AccessDenied() {
-  const { t, lang } = useLanguage();
+  const { t } = useLanguage();
 
   const title =
     t("ليس لديك صلاحية الوصول إلى هذه الصفحة", "You don't have access to this page");

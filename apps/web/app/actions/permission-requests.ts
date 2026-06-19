@@ -3,7 +3,7 @@
 import { db, UserRole, RequestStatus } from "@repo/db";
 import { revalidatePath } from "next/cache";
 import { ROUTES } from "../../lib/routes";
-import { requirePermission, getSessionOrThrow } from "../../lib/auth-helpers";
+import { requirePermission } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
 import { createNotification, notifyAdmins } from "../../lib/create-notification";
 import { isSystemRole } from "../../lib/permissions";

@@ -186,6 +186,7 @@ export default function DashboardView({
       day: "numeric",
     });
     return `${fmtDate.format(range.from)} – ${fmtDate.format(range.to)}`;
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- `t` is derived from `lang`, which is already a dep; listing `lang` covers every translation read here.
   }, [hasCustomRange, range.from, range.to, lang]);
 
   const formatNumber = (n: number) => n.toLocaleString("en-US");
