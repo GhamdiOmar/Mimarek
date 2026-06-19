@@ -141,9 +141,10 @@ export default function LoginClient({ falLicense }: { falLicense?: string | null
       } else {
         router.push(result?.redirectTo ?? (mode === "tenant" ? "/portal" : "/dashboard"));
       }
-    } catch (err: any) {
-      if (err.message?.includes("NEXT_REDIRECT")) return;
-      if (err.message === "LOGIN_TIMEOUT") {
+    } catch (err) {
+      const message = err instanceof Error ? err.message : undefined;
+      if (message?.includes("NEXT_REDIRECT")) return;
+      if (message === "LOGIN_TIMEOUT") {
         setError(errorMessages.TIMEOUT?.[lang] ?? (lang === "ar" ? "انتهت مهلة الطلب." : "Request timed out."));
       } else {
         setError(lang === "ar" ? "حدث خطأ في النظام. يرجى المحاولة لاحقاً." : "System error. Please try again later.");

@@ -18,7 +18,8 @@ function VerifyEmailInner() {
   const token = searchParams.get("token") ?? "";
 
   const [phase, setPhase] = React.useState<Phase>("confirm");
-  const [reason, setReason] = React.useState<"invalid" | "expired" | "used" | null>(null);
+  type VerifyErrorReason = "invalid" | "expired" | "used";
+  const [reason, setReason] = React.useState<VerifyErrorReason | null>(null);
   const [loading, setLoading] = React.useState(false);
 
   // Resend affordance (shown on error)
@@ -53,7 +54,7 @@ function VerifyEmailInner() {
       if (result.success) {
         setPhase("success");
       } else {
-        setReason((result.error as any) ?? "invalid");
+        setReason((result.error as VerifyErrorReason) ?? "invalid");
         setPhase("error");
       }
     } catch {

@@ -42,7 +42,8 @@ type AuditLog = {
   action: string;
   resource: string;
   resourceId: string | null;
-  metadata: any;
+  // JSON column; not read in this view — `unknown` over `any` (no field access).
+  metadata: unknown;
   ipAddress: string | null;
   createdAt: string;
 };

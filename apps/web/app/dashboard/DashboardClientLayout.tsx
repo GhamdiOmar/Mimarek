@@ -12,6 +12,33 @@ import { isSystemRole } from "../../lib/permissions";
 import { navItems } from "../../components/shell/nav-items";
 import { identify } from "../../lib/analytics";
 
+/**
+ * The dashboard reads a few NextAuth-augmented fields (`id`, `organizationId`)
+ * that the lightweight `SimpleSessionProvider` `SessionData["user"]` type only
+ * carries via its `[key: string]: unknown` index signature. This narrow,
+ * structurally-compatible view names exactly the fields read here so the loose
+ * session shape stays loose-but-typed (no precise NextAuth `Session` import that
+ * would re-tighten the `SimpleSessionProvider` prop contract).
+ */
+type DashboardSessionUser = {
+  id?: string;
+  role?: string;
+  organizationId?: string | null;
+  name?: string | null;
+  email?: string | null;
+};
+
+/**
+ * Loose-but-typed session prop shape — mirrors `SimpleSessionProvider`'s
+ * (non-exported) `SessionData` structurally so it remains assignable to that
+ * provider's `session` prop without importing a 6th file.
+ */
+type DashboardSession = {
+  user?: DashboardSessionUser & { [key: string]: unknown };
+  expires?: string;
+  [key: string]: unknown;
+} | null;
+
 function DashboardContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -19,7 +46,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   const { t, lang } = useLanguage();
   const [navOpen, setNavOpen] = React.useState(false);
 
-  const userRole = (session?.user as any)?.role ?? "USER";
+  const userRole = session?.user?.role ?? "USER";
 
   // Tenant-route guard — redirect platform users off tenant-audience routes.
   // Symmetric to /dashboard/admin/layout.tsx which blocks tenant users from admin routes.
@@ -52,7 +79,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   // Associate the GA4 session with an opaque user + org (CX-004). No-op until
   // analytics consent is granted (window.gtag is undefined before then).
   React.useEffect(() => {
-    const u = session?.user as any;
+    const u = session?.user as DashboardSessionUser | undefined;
     if (!u?.id) return;
     identify({ userId: u.id, orgId: u.organizationId ?? null, role: u.role });
   }, [session]);
@@ -93,7 +120,7 @@ export default function DashboardClientLayout({
   initialLang,
 }: {
   children: React.ReactNode;
-  session: any;
+  session: DashboardSession;
   initialLang?: Lang;
 }) {
   return (

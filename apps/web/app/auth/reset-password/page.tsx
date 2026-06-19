@@ -38,7 +38,7 @@ function ResetPasswordInner() {
       const result = await resetPassword(token, password);
       if (result.error) {
         if (result.error === "WEAK_PASSWORD" && result.details) {
-          setError(result.details.map((e: any) => e[lang]).join(" "));
+          setError(result.details.map((e: { en: string; ar: string }) => e[lang]).join(" "));
         } else {
           const msg = errorMessages[result.error];
           setError(msg ? msg[lang] : (lang === "ar" ? "حدث خطأ." : "An error occurred."));

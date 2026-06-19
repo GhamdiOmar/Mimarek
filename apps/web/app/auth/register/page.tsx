@@ -39,7 +39,7 @@ export default function RegisterPage() {
         if (result.error === "EMAIL_EXISTS") {
           setError(lang === "ar" ? "هذا البريد الإلكتروني مسجل بالفعل." : "This email is already registered.");
         } else if (result.error === "WEAK_PASSWORD" && result.details) {
-          setError(result.details.map((e: any) => e[lang]).join(" "));
+          setError(result.details.map((e: { en: string; ar: string }) => e[lang]).join(" "));
         } else if (result.error === "RATE_LIMITED") {
           setError(lang === "ar" ? "محاولات تسجيل كثيرة. يرجى الانتظار بضع دقائق والمحاولة مجدداً." : "Too many sign-up attempts. Please wait a few minutes and try again.");
         } else if (result.error === "CAPTCHA_FAILED") {
@@ -48,11 +48,11 @@ export default function RegisterPage() {
         } else {
           setError(lang === "ar" ? "حدث خطأ." : "An error occurred.");
         }
-      } else if ((result as any).needsVerification) {
+      } else if ((result as { needsVerification?: boolean }).needsVerification) {
         // Email-verification-before-activation: go to the check-inbox screen.
         router.push(`/auth/verify-email/sent?email=${encodeURIComponent(email)}`);
       } else {
-        router.push((result as any).redirect || "/dashboard/onboarding");
+        router.push((result as { redirect?: string }).redirect || "/dashboard/onboarding");
       }
     } catch {
       setError(lang === "ar" ? "حدث خطأ في النظام." : "System error.");
