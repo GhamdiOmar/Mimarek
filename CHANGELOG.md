@@ -1,5 +1,18 @@
 # Changelog — Mimaric PropTech
 
+## [4.33.5] — 2026-06-19 — Lint sweep PR 3/4: UI/handler no-explicit-any → typed
+
+Batch 3 continues. PR 3 of 4 eliminates **14** `@typescript-eslint/no-explicit-any` suppressions in **rendered** React pages/components — **no behavior or rendering change** (type annotations only; emitted JS byte-identical). Suppressions: **61 → 47** (no-explicit-any 30 → 16; the remaining 16 are legit test stubs → PR 4). `turbo run check-types` 2/2 · `next build` green · vitest **160/160** · `/mimaric-qa` **GO** (behavior/rendering-preserving, all 5 risk points verified). **§3.9 4-theme preview walk done** (see below).
+
+### Typed (no runtime change)
+- **Auth pages** — `LoginClient.tsx` (1, `catch (e)` + `instanceof Error`), `register/page.tsx` (3, `validatePassword` `{en,ar}[]` map + structural result casts), `reset-password/page.tsx` (1) + `verify-email/page.tsx` (1) (`{en,ar}[]` map / a `VerifyErrorReason` union).
+- **Dashboard** — `DashboardClientLayout.tsx` (3, local `DashboardSession`/`DashboardSessionUser` types mirroring the loose `SessionData` — deliberately NOT the precise NextAuth `Session`, to avoid re-tightening the provider contract), `ReportsView.tsx` (2, chart map callbacks typed to the real row shapes; `costPerSqm` typed optional to preserve the identical render), `admin/plans/page.tsx` (1, `catch (e)`), `settings/audit/page.tsx` (1, `metadata: unknown`, field never read), `settings/security/page.tsx` (1, `{en,ar}[]` map).
+
+### §3.9 preview walk (PR 3 touches rendered pages)
+Verified against a local prod build (`next start`): `/auth/login` in **all 4 combos** (light-RTL, dark-RTL, dark-LTR, light-LTR), and `/dashboard` (DashboardClientLayout), `/dashboard/reports` (ReportsView), `/dashboard/settings/security` authenticated — **all render correctly, zero console errors**.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimaric/compare/v4.33.4...v4.33.5
+
 ## [4.33.4] — 2026-06-19 — Lint sweep PR 2/4: Tier-2 server-side no-explicit-any → typed
 
 Batch 3 continues. PR 2 of 4 eliminates **45** `@typescript-eslint/no-explicit-any` suppressions in server-side code (12 server actions + 4 cron routes + uploadthing) — **no behavior change**. Suppressions: **106 → 61** (no-explicit-any 75 → 30). `turbo run check-types` 2/2 · `next build` green · vitest **160/160** · `/mimaric-qa` **GO** (behavior-preserving throughout, all 6 risk items verified). §3.9 N/A — no rendered pages touched (server actions / API routes only).

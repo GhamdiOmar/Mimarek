@@ -285,11 +285,11 @@ export default function AdminPlansPage() {
       setTimeout(() => {
         closeModal();
       }, 800);
-    } catch (error: any) {
+    } catch (error) {
       console.error("Failed to save plan:", error);
       setFeedback({
         type: "error",
-        message: error.message || t.saveError,
+        message: (error instanceof Error && error.message) || t.saveError,
       });
     } finally {
       setSaving(false);

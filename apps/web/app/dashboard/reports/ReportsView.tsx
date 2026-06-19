@@ -327,14 +327,17 @@ export default function ReportsView({ loadedAt }: { loadedAt: string }) {
             },
             {
               title: "حسب التصنيف",
-              rows: data.byCategory.map((c: any) => ({
+              rows: data.byCategory.map((c: { category: string; count: number; actual: number }) => ({
                 label: c.category,
                 value: `${c.count} طلب — ${fmt(c.actual)} ر.س`,
               })),
             },
             {
               title: "حسب المبنى",
-              rows: data.byBuilding.map((b: any) => ({
+              // `costPerSqm` is not present on the report row shape; the read
+              // resolves to `undefined` at runtime today — typed optional to
+              // preserve that exact rendering without a behavior change.
+              rows: data.byBuilding.map((b: { name: string; actual: number; costPerSqm?: number | string }) => ({
                 label: b.name,
                 value: `${fmt(b.actual)} ر.س (${b.costPerSqm} ر.س/م²)`,
               })),
