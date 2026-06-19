@@ -48,7 +48,7 @@ export default async function SchemaMarkup({ lang }: { lang: "ar" | "en" }) {
   const config = await db.systemConfig.findUnique({ where: { id: "system" } }).catch(() => null);
 
   const orgName = config?.schemaOrgName ?? "Mimarek";
-  const logoUrl = config?.schemaOrgLogoUrl ?? "https://mimarek.sa/assets/brand/Mimarek_Official_Logo_transparent.png";
+  const logoUrl = config?.schemaOrgLogoUrl ?? "https://mimarek.sa/icons/icon-512.png";
   const canonicalBase = config?.canonicalUrl ?? "https://mimarek.sa";
 
   const organizationSchema = {

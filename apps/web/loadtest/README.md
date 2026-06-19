@@ -1,6 +1,6 @@
-# Mimaric — k6 Load Test Baseline
+# Mimarek — k6 Load Test Baseline
 
-Load-test scripts for Mimaric PropTech. This directory contains a self-contained
+Load-test scripts for Mimarek PropTech. This directory contains a self-contained
 k6 test suite that is **not part of the TypeScript build** — k6 scripts are plain
 JavaScript executed by the k6 Go binary, not by Node or the Next.js compiler.
 
@@ -46,8 +46,8 @@ Verify: `k6 version` should print `k6 v0.5x.x (go...)`.
 
 ```bash
 # Against staging (recommended — HTTP/2, real DB pool)
-BASE_URL=https://staging.mimaric.sa \
-TEST_EMAIL=admin@mimaric.sa \
+BASE_URL=https://staging.mimarek.sa \
+TEST_EMAIL=admin@mimarek.sa \
 TEST_PASSWORD="$SEED_PASSWORD" \
 k6 run apps/web/loadtest/login-and-browse.js
 ```
@@ -57,7 +57,7 @@ k6 run apps/web/loadtest/login-and-browse.js
 | Variable | Default | Description |
 |---|---|---|
 | `BASE_URL` | `http://localhost:3000` | Full origin of the target instance. Must match `NEXTAUTH_URL` on the server exactly (CSRF check). |
-| `TEST_EMAIL` | `admin@mimaric.sa` | Login email (single-account mode). |
+| `TEST_EMAIL` | `admin@mimarek.sa` | Login email (single-account mode). |
 | `TEST_PASSWORD` | _(required)_ | Login password (single-account mode). Supply from the env — the seed dev password is in AGENTS.md §9. |
 | `TEST_USER_POOL` | _(unset)_ | Comma-separated `email:password` pairs for multi-account mode. Use when `login_spike` scenario is enabled to avoid rate-limiter conflicts. Example: `a@x.sa:pass1,b@x.sa:pass2`. |
 
@@ -110,7 +110,7 @@ repeat.
 
 At 200 VUs × (1 login + 5 page GETs) with ~5s average think-time, the script
 generates roughly **40 req/s** sustained at peak — a realistic daily-peak estimate
-for a mid-size Mimaric tenant with ~50 concurrent staff users.
+for a mid-size Mimarek tenant with ~50 concurrent staff users.
 
 ---
 
@@ -171,7 +171,7 @@ see `403` responses on the POST step, the most common causes are:
   with default k6 settings, but can occur if you manually pass a `jar` option).
 - Your staging instance has a reverse proxy that strips the `Cookie` header.
 
-### 5. Mimaric login rate-limiter
+### 5. Mimarek login rate-limiter
 
 `auth.ts` enforces a 3-tier progressive rate-limiter per email:
 
@@ -267,6 +267,6 @@ me-south-1 Bahrain — add ~80ms baseline RTT).
 
 - AGENTS.md §3.9 — Release-gate rule (preview verification before tagging)
 - `future-plans/REMAINING-WORK.md` §3.9 — Load-test baseline task (this directory)
-- Mimaric staging: https://staging.mimaric.sa (internal)
+- Mimarek staging: https://staging.mimarek.sa (internal)
 - k6 docs: https://grafana.com/docs/k6/latest/
 - Grafana Cloud k6: https://app.k6.io (optional hosted runner + dashboards)

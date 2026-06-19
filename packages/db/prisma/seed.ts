@@ -373,7 +373,7 @@ async function main() {
   // would miss — then blindly create a SECOND active sub, drifting billing state
   // across runs. Find ANY sub for the org and normalize it back to the canonical
   // ACTIVE state; only create when none exists. Never duplicates.
-  const mimaricSub = {
+  const mimarekSub = {
     planId: professionalPlan.id,
     status: "ACTIVE" as const,
     billingCycle: "ANNUAL" as const,
@@ -386,9 +386,9 @@ async function main() {
     where: { organizationId: org.id },
   });
   if (existingSub) {
-    await prisma.subscription.update({ where: { id: existingSub.id }, data: mimaricSub });
+    await prisma.subscription.update({ where: { id: existingSub.id }, data: mimarekSub });
   } else {
-    await prisma.subscription.create({ data: { organizationId: org.id, ...mimaricSub } });
+    await prisma.subscription.create({ data: { organizationId: org.id, ...mimarekSub } });
   }
 
   // Subscription for Dummy org (Starter, ACTIVE) — idempotent, same rationale as above.

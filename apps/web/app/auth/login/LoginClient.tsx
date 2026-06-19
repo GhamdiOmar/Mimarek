@@ -182,7 +182,7 @@ export default function LoginClient({ falLicense }: { falLicense?: string | null
             </h1>
             <p className="text-base text-white/70 max-w-md">
               {lang === "ar"
-                ? "أتمتة وإدارة العقارات بذكاء وفق أرقى المعايير السعودية."
+                ? "أدر عقاراتك بذكاء وفق أرقى المعايير السعودية."
                 : "Real estate automation and management with Saudi-first standards."}
             </p>
           </div>

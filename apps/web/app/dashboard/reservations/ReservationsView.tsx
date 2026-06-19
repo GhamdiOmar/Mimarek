@@ -749,7 +749,7 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
                 <DataCard
                   key={deal.id}
                   icon={Handshake}
-                  iconTone="purple"
+                  iconTone="primary"
                   divider={idx !== filtered.length - 1}
                   title={deal.customer.name}
                   subtitle={[
@@ -1066,7 +1066,7 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
             return (
               <DataCard
                 icon={Handshake}
-                iconTone="purple"
+                iconTone="primary"
                 divider={false}
                 title={deal.customer.name}
                 subtitle={[

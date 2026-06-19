@@ -15,7 +15,7 @@ const COPY = {
     button: "حاول مرة أخرى",
     reference: "المرجع",
     fontFamily:
-      "'IBM Plex Sans Arabic', system-ui, -apple-system, Segoe UI, Tahoma, Arial, sans-serif",
+      "'Tajawal', system-ui, -apple-system, Segoe UI, Tahoma, Arial, sans-serif",
   },
   en: {
     lang: "en",

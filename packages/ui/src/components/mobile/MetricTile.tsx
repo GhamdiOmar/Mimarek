@@ -9,7 +9,7 @@ export type MetricTone =
   | "green"
   | "amber"
   | "red"
-  | "purple";
+  | "primary";
 
 export interface MetricTileProps {
   label: string;
@@ -30,7 +30,7 @@ const TONE_CLASSES: Record<MetricTone, string> = {
   green: "bg-success/10 text-foreground border border-success/20 dark:bg-success/10 dark:border-success/25",
   amber: "bg-warning/10 text-foreground border border-warning/20 dark:bg-warning/10 dark:border-warning/25",
   red: "bg-destructive/10 text-foreground border border-destructive/20 dark:bg-destructive/10 dark:border-destructive/25",
-  purple: "bg-primary/10 text-foreground border border-primary/20 dark:bg-primary/10 dark:border-primary/25",
+  primary: "bg-primary/10 text-foreground border border-primary/20 dark:bg-primary/10 dark:border-primary/25",
 };
 
 /**

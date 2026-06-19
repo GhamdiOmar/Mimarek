@@ -9,7 +9,7 @@ export type DataCardTone =
   | "green"
   | "amber"
   | "red"
-  | "purple";
+  | "primary";
 
 export interface DataCardProps {
   title: React.ReactNode;
@@ -35,7 +35,7 @@ const TONE_CLASSES: Record<DataCardTone, string> = {
   green: "bg-success/10 text-success-strong dark:bg-success/15",
   amber: "bg-warning/10 text-warning dark:bg-warning/15",
   red: "bg-destructive/10 text-destructive dark:bg-destructive/15",
-  purple: "bg-primary/10 text-primary dark:bg-primary/15",
+  primary: "bg-primary/10 text-primary dark:bg-primary/15",
 };
 
 /** Joins subtitle entries with a middle-dot separator when given an array. */

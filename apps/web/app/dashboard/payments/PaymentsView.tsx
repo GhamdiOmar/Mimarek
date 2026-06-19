@@ -597,7 +597,7 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
           ? "red"
           : entry.status === "PARTIALLY_PAID"
             ? "amber"
-            : "purple";
+            : "primary";
 
     const subtitleParts: React.ReactNode[] = [
       entry.clientName,

@@ -42,3 +42,15 @@ dir.writeUInt32LE(png32.length, 8); // image size
 dir.writeUInt32LE(22, 12); // offset = 6 + 16
 writeFileSync("apps/web/app/favicon.ico", Buffer.concat([header, dir, png32]));
 console.log("wrote apps/web/app/favicon.ico 32x32");
+
+// Open Graph / social card — 1200x630, deep-navy background + horizontal on-dark logo centered
+const ogNavy = { r: 0, g: 27, b: 42, alpha: 1 }; // #001B2A
+const ogLogo = await sharp(readFileSync("apps/web/public/assets/brand/mimarek-horizontal-ondark.svg"), { density: 400 })
+  .resize({ width: 760 })
+  .png()
+  .toBuffer();
+await sharp({ create: { width: 1200, height: 630, channels: 4, background: ogNavy } })
+  .composite([{ input: ogLogo, gravity: "center" }])
+  .png()
+  .toFile("apps/web/public/og-image.png");
+console.log("wrote apps/web/public/og-image.png 1200x630");

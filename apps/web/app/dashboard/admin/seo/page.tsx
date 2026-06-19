@@ -916,7 +916,7 @@ export default function SeoSettingsPage() {
               </div>
               <div className="space-y-1.5">
                 <label className="text-sm font-medium">{t("رابط الشعار", "Logo URL")}</label>
-                <Input value={schemaOrgLogoUrl} onChange={(e) => setSchemaOrgLogoUrl(e.target.value)} placeholder="https://mimarek.sa/assets/brand/logo.png" dir="ltr" />
+                <Input value={schemaOrgLogoUrl} onChange={(e) => setSchemaOrgLogoUrl(e.target.value)} placeholder="https://mimarek.sa/assets/brand/mimarek-primary-light.svg" dir="ltr" />
               </div>
               <div className="space-y-1.5">
                 <label className="text-sm font-medium">Twitter/X</label>
@@ -924,7 +924,7 @@ export default function SeoSettingsPage() {
               </div>
               <div className="space-y-1.5">
                 <label className="text-sm font-medium">LinkedIn</label>
-                <Input value={schemaOrgLinkedIn} onChange={(e) => setSchemaOrgLinkedIn(e.target.value)} placeholder="https://linkedin.com/company/mimaric" dir="ltr" />
+                <Input value={schemaOrgLinkedIn} onChange={(e) => setSchemaOrgLinkedIn(e.target.value)} placeholder="https://linkedin.com/company/mimarek" dir="ltr" />
               </div>
               <div className="space-y-1.5 sm:col-span-2">
                 <label className="text-sm font-medium">Instagram</label>

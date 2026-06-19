@@ -401,7 +401,7 @@ function TeamList({
           <DataCard
             key={member.id}
             icon={User}
-            iconTone="purple"
+            iconTone="primary"
             title={member.name || member.email}
             subtitle={[member.email]}
             trailing={

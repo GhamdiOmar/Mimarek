@@ -40,8 +40,8 @@ export const STAGE_HUES: Record<string, string> = {
   CONTACTED: "hsl(210 65% 55%)", // blue
   INTERESTED: "hsl(185 60% 45%)", // teal
   QUALIFIED: "hsl(186 90% 30%)", // deep teal
-  VIEWING: "hsl(40 55% 55%)", // gold
-  NEGOTIATION: "hsl(40 60% 50%)", // darker gold
+  VIEWING: "hsl(28 72% 50%)", // amber
+  NEGOTIATION: "hsl(28 80% 42%)", // deep amber
   RESERVED: "hsl(158 50% 45%)", // green
   CONVERTED: "hsl(158 55% 35%)", // deep green
   LOST: "hsl(0 65% 55%)", // red

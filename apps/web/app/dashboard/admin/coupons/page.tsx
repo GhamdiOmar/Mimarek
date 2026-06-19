@@ -579,7 +579,7 @@ export default function CouponManagementPage() {
     return (
       <DataCard
         icon={Tag}
-        iconTone="purple"
+        iconTone="primary"
         title={<span className="font-mono tracking-wider">{coupon.code}</span>}
         subtitle={[
           formatValue(coupon),

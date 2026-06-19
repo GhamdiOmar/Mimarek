@@ -343,7 +343,7 @@ export default function AdminPaymentsPage() {
       return (
         <DataCard
           icon={CreditCard}
-          iconTone="purple"
+          iconTone="primary"
           title={
             <span className="inline-flex items-center gap-2">
               <SARAmount
@@ -495,7 +495,7 @@ export default function AdminPaymentsPage() {
                       <DataCard
                         key={inv.id}
                         icon={CreditCard}
-                        iconTone="purple"
+                        iconTone="primary"
                         title={
                           <span className="inline-flex items-center gap-2">
                             <SARAmount
