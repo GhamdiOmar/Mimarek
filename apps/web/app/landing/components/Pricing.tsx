@@ -194,7 +194,7 @@ export default function Pricing({ lang }: { lang: "ar" | "en" }) {
 
                 {/* Price */}
                 <div className="mt-5 flex items-baseline gap-1">
-                  <span className="font-dm-sans text-4xl font-bold text-primary dark:text-white">
+                  <span className="font-satoshi text-4xl font-bold text-primary dark:text-white">
                     {formatPrice(plan)}
                   </span>
                   {priceSuffix(plan) && (

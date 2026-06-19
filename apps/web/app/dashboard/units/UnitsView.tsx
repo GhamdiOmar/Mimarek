@@ -1589,7 +1589,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: UnitRow[] })
                         <span className="text-muted-foreground">
                           {t("رقم العقد", "Contract No.")}
                         </span>
-                        <span className="font-bold text-primary font-dm-sans">
+                        <span className="font-bold text-primary font-satoshi">
                           {detailContract.contractNumber}
                         </span>
                       </div>

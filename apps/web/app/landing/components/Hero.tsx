@@ -51,7 +51,7 @@ export default function Hero({ lang }: { lang: "ar" | "en" }) {
       <div className="relative z-10 mx-auto max-w-7xl px-4 pt-28 pb-16 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl text-center">
           <h1
-            className="font-dm-sans text-5xl font-extrabold leading-[1.1] text-white sm:text-6xl lg:text-7xl xl:text-8xl"
+            className="font-satoshi text-5xl font-extrabold leading-[1.1] text-white sm:text-6xl lg:text-7xl xl:text-8xl"
             style={{ letterSpacing: "-0.03em" }}
           >
             {t.heroTitle}

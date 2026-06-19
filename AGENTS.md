@@ -226,13 +226,13 @@ This section supersedes any other design document in the repo. If `packages/ui/s
 
 | Token | Light | Dark | Role |
 |---|---|---|---|
-| `--background` | `220 20% 97%` | `260 25% 7%` | App background |
-| `--foreground` | `215 25% 27%` | `250 15% 90%` | Body text |
-| `--card` | `0 0% 100%` | `258 20% 11%` | Card surface |
-| `--popover` | `0 0% 100%` | `256 18% 14%` | Popover / menu surface |
-| `--muted` | `216 20% 93%` | `258 15% 16%` | Muted bg |
-| `--muted-foreground` | `215 15% 50%` | `255 10% 58%` | Muted text |
-| `--border` | `216 18% 90%` | `258 15% 18%` | Borders, dividers |
+| `--background` | `190 30% 97%` | `200 50% 6%` | App background (faint cyan tint / deep navy) |
+| `--foreground` | `202 45% 16%` | `195 15% 90%` | Body text (deep-navy ink) |
+| `--card` | `0 0% 100%` | `200 40% 10%` | Card surface |
+| `--popover` | `0 0% 100%` | `200 35% 13%` | Popover / menu surface |
+| `--muted` | `195 25% 93%` | `200 30% 15%` | Muted bg |
+| `--muted-foreground` | `205 18% 40%` | `200 12% 60%` | Muted text (gray-blue; a11y-tuned ≥4.5:1) |
+| `--border` | `200 20% 88%` | `200 25% 17%` | Borders, dividers (gray-blue) |
 | `--ring` | same as `--primary` | same as `--primary` | Focus ring color |
 
 #### 6.2.5 Semantic Colors
@@ -246,10 +246,10 @@ This section supersedes any other design document in the repo. If `packages/ui/s
 
 #### 6.2.6 Chart Colors (ordered, hue-stable across themes)
 
-1. `--chart-1` Blue (info) — `210 65% 50%` / `270 55% 65%`
+1. `--chart-1` Teal (brand) — `185 65% 38%` / `183 68% 52%`
 2. `--chart-2` Green — `158 50% 38%` / `160 50% 50%`
-3. `--chart-3` Gold — `40 55% 52%` / `42 55% 58%`
-4. `--chart-4` Purple tint — `280 45% 55%` / `210 65% 60%`
+3. `--chart-3` Gold/amber — `40 55% 52%` / `42 55% 58%`
+4. `--chart-4` Blue — `210 65% 50%` / `210 65% 60%`
 5. `--chart-5` Magenta — `340 55% 55%` / `340 55% 60%`
 
 #### 6.2.7 Logo-Mark Colors — NOT UI colors

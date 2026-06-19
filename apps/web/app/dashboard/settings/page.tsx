@@ -952,7 +952,7 @@ export default function OrgSettingsPage() {
                     </label>
                     <HijriDatePicker
                       id="settings-reg-date"
-                      className="font-dm-sans"
+                      className="font-satoshi"
                       value={form.registrationDate ? new Date(form.registrationDate) : null}
                       onChange={(d) => set("registrationDate", d ? d.toISOString().slice(0, 10) : "")}
                     />
@@ -963,7 +963,7 @@ export default function OrgSettingsPage() {
                     </label>
                     <HijriDatePicker
                       id="settings-expiry-date"
-                      className="font-dm-sans"
+                      className="font-satoshi"
                       value={form.expiryDate ? new Date(form.expiryDate) : null}
                       onChange={(d) => set("expiryDate", d ? d.toISOString().slice(0, 10) : "")}
                     />
@@ -1437,7 +1437,7 @@ export default function OrgSettingsPage() {
                   <span className="text-muted-foreground">
                     {t("سجل تجاري", "CR")}
                   </span>
-                  <span className="font-bold text-foreground font-dm-sans">
+                  <span className="font-bold text-foreground font-satoshi">
                     {form.crNumber}
                   </span>
                 </div>
@@ -1447,7 +1447,7 @@ export default function OrgSettingsPage() {
                   <span className="text-muted-foreground">
                     {t("رقم ضريبي", "VAT")}
                   </span>
-                  <span className="font-bold text-foreground font-dm-sans">
+                  <span className="font-bold text-foreground font-satoshi">
                     {form.vatNumber}
                   </span>
                 </div>

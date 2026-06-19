@@ -102,7 +102,7 @@ function VerifyEmailInner() {
       {/* Content Area */}
       <main className="flex w-full flex-1 flex-col bg-background lg:w-1/2 xl:w-7/12">
         <div className="flex items-center justify-between p-5 lg:px-10">
-          <div className="lg:hidden dark:brightness-0 dark:invert"><MimarekLogo width={100} /></div>
+          <div className="lg:hidden"><MimarekLogo width={100} /></div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
             <Button
