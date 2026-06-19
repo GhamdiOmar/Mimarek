@@ -69,8 +69,12 @@ const config: Config = {
         },
       },
       fontFamily: {
-        'ibm-plex-arabic': ['var(--font-ibm-plex-arabic)', 'IBM Plex Arabic', 'sans-serif'],
-        'dm-sans': ['var(--font-dm-sans)', 'DM Sans', 'sans-serif'],
+        // Mimarek brand fonts (next/font sets the CSS vars on <html>)
+        'tajawal': ['var(--font-tajawal)', 'Tajawal', 'sans-serif'],
+        'satoshi': ['var(--font-satoshi)', 'Satoshi', 'sans-serif'],
+        // Migration aliases — legacy class names now resolve to the new brand fonts
+        'ibm-plex-arabic': ['var(--font-tajawal)', 'Tajawal', 'sans-serif'],
+        'dm-sans': ['var(--font-satoshi)', 'Satoshi', 'sans-serif'],
       },
       boxShadow: {
         card: "var(--shadow-card)",

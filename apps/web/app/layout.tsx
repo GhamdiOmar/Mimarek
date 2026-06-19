@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "@repo/ui/globals.css";
-import { IBM_Plex_Sans_Arabic, DM_Sans } from 'next/font/google';
+import { Tajawal } from 'next/font/google';
+import localFont from 'next/font/local';
 import { ThemeProvider } from "../components/ThemeProvider";
 import { Toaster } from "@repo/ui";
 import { ConsentProvider } from "../components/ConsentProvider";
@@ -9,16 +10,18 @@ import { db } from "@repo/db";
 import { cache } from "react";
 import { getLang } from "../lib/i18n";
 
-const ibmPlexArabic = IBM_Plex_Sans_Arabic({
-  subsets: ['arabic'],
-  weight: ['300', '400', '500', '600', '700'],
-  variable: '--font-ibm-plex-arabic',
+// Mimarek brand typography: Tajawal (Arabic + UI default) + Satoshi (Latin, self-hosted)
+const tajawal = Tajawal({
+  subsets: ['arabic', 'latin'],
+  weight: ['300', '400', '500', '700'],
+  variable: '--font-tajawal',
+  display: 'swap',
 });
 
-const dmSans = DM_Sans({
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700'],
-  variable: '--font-dm-sans',
+const satoshi = localFont({
+  src: [{ path: './fonts/satoshi/Satoshi-Variable.woff2', weight: '300 900', style: 'normal' }],
+  variable: '--font-satoshi',
+  display: 'swap',
 });
 
 export const viewport: Viewport = {
@@ -97,8 +100,8 @@ export default async function RootLayout({
   const dir = lang === "ar" ? "rtl" : "ltr";
 
   return (
-    <html lang={lang} dir={dir} className={`${ibmPlexArabic.variable} ${dmSans.variable}`} suppressHydrationWarning>
-      <body className="font-ibm-plex-arabic antialiased text-body">
+    <html lang={lang} dir={dir} className={`${tajawal.variable} ${satoshi.variable}`} suppressHydrationWarning>
+      <body className="font-tajawal antialiased text-body">
         <ThemeProvider>
           <ConsentProvider
             initialLang={lang}

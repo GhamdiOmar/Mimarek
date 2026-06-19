@@ -8,43 +8,43 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* ═══════════════════════════════════════════════════════════════════
-   MIMARIC DESIGN SYSTEM — Premium Dark-Mode-First PropTech SaaS
+   MIMAREK DESIGN SYSTEM — Premium Dark-Mode-First PropTech SaaS
    ═══════════════════════════════════════════════════════════════════ */
 
 /* ─── Light Theme ─────────────────────────────────────────────────── */
 :root {
-  /* Brand — Purple accent */
-  --primary: 270 50% 45%;
-  --primary-deep: 268 40% 20%;
+  /* Brand — Teal accent (Mimarek) */
+  --primary: 185 100% 24%;
+  --primary-deep: 200 90% 12%;
   --primary-foreground: 0 0% 100%;
 
   --secondary: 158 50% 32%;
   --secondary-foreground: 0 0% 100%;
 
-  --accent: 40 55% 48%;
-  --accent-foreground: 210 60% 15%;
-  /* Text-on-light accent (a11y fix): the base gold is only ~2.6:1 as small text on
-     `bg-accent/10`. This darker gold lets `text-accent-strong` clear WCAG AA 4.5:1 as
-     badge/label text on white/tint. The base `--accent` (premium fills) stays vivid. */
-  --accent-strong: 40 72% 27%;
+  --accent: 180 81% 42%;
+  --accent-foreground: 201 100% 10%;
+  /* Text-on-light accent (a11y fix): base bright-cyan is too light as small text on
+     `bg-accent/10`. This darker teal lets `text-accent-strong` clear WCAG AA 4.5:1 as
+     badge/label text on white/tint. The base `--accent` (highlight fills) stays vivid. */
+  --accent-strong: 186 100% 22%;
 
   --green-bright: 155 55% 38%;
 
   /* Surfaces */
-  --background: 220 20% 97%;
-  --foreground: 215 25% 27%;
+  --background: 190 30% 97%;
+  --foreground: 202 45% 16%;
 
   --card: 0 0% 100%;
-  --card-foreground: 215 25% 27%;
+  --card-foreground: 202 45% 16%;
   /* One surface step between card and muted — used for interactive card hover (v4.11 Outlined Precision). */
-  --card-hover: 220 20% 95%;
+  --card-hover: 190 28% 95%;
 
   --popover: 0 0% 100%;
-  --popover-foreground: 215 25% 27%;
+  --popover-foreground: 202 45% 16%;
 
-  --muted: 216 20% 93%;
-  /* § 6.17 WCAG AA ≥4.5:1 — darkened from 50% → 42% so 11–14px body text clears the bar on white, card, and muted surfaces */
-  --muted-foreground: 215 18% 42%;
+  --muted: 195 25% 93%;
+  /* § 6.17 WCAG AA ≥4.5:1 — gray-blue darkened so 11–14px body text clears the bar on white, card, and muted surfaces */
+  --muted-foreground: 205 18% 40%;
 
   /* Semantic */
   --destructive: 0 72% 51%;
@@ -72,26 +72,26 @@
   --info-strong: 210 70% 30%;
 
   /* UI */
-  --border: 216 18% 90%;
-  --input: 216 18% 90%;
-  --ring: 270 50% 45%;
+  --border: 200 20% 88%;
+  --input: 200 20% 88%;
+  --ring: 185 100% 24%;
 
-  /* Fixed sidebar */
-  --sidebar-bg: 260 30% 14%;
-  --sidebar-deep: 262 35% 10%;
+  /* Fixed sidebar — deep navy */
+  --sidebar-bg: 200 75% 11%;
+  --sidebar-deep: 201 90% 7%;
 
-  --neutral: 215 15% 40%;
+  --neutral: 205 15% 40%;
 
   /* Overlay */
-  --overlay: 215 25% 15%;
+  --overlay: 201 45% 12%;
   --sidebar: hsl(0 0% 98%);
-  --sidebar-foreground: hsl(215 25% 27%);
-  --sidebar-primary: hsl(215 25% 15%);
+  --sidebar-foreground: hsl(202 45% 16%);
+  --sidebar-primary: hsl(202 45% 16%);
   --sidebar-primary-foreground: hsl(0 0% 98%);
-  --sidebar-accent: hsl(216 20% 95%);
-  --sidebar-accent-foreground: hsl(215 25% 15%);
-  --sidebar-border: hsl(216 18% 90%);
-  --sidebar-ring: hsl(270 50% 45%);
+  --sidebar-accent: hsl(195 25% 94%);
+  --sidebar-accent-foreground: hsl(202 45% 16%);
+  --sidebar-border: hsl(200 20% 90%);
+  --sidebar-ring: hsl(185 100% 24%);
 
   /* Glass Morphism */
   --glass-bg: 0 0% 100% / 0.55;
@@ -111,7 +111,7 @@
   /* Glow / Ambient */
   --glow-green: 158 50% 32%;
   --glow-gold: 40 55% 48%;
-  --glow-primary: 270 50% 45%;
+  --glow-primary: 185 100% 24%;
 
   /* Glass Shadows */
   --shadow-glass: inset 0 1px 1px hsl(0 0% 100% / 0.08), 0 4px 24px hsl(0 0% 0% / 0.04);
@@ -123,44 +123,44 @@
   --elevation-3: 0 8px 24px hsl(var(--primary-deep) / 0.08), 0 16px 48px hsl(var(--primary-deep) / 0.06);
 
   /* Chart Colors */
-  --chart-1: 210 65% 50%;
+  --chart-1: 185 65% 38%;
   --chart-2: 158 50% 38%;
   --chart-3: 40 55% 52%;
-  --chart-4: 280 45% 55%;
+  --chart-4: 210 65% 50%;
   --chart-5: 340 55% 55%;
 }
 
-/* ─── Dark Theme (Primary — Warm Charcoal + Purple Accent) ────────── */
+/* ─── Dark Theme (Primary — Deep Navy + Teal Accent) ──────────────── */
 .dark {
-  /* Brand — Purple/Violet accent */
-  --primary: 270 55% 62%;
-  --primary-deep: 265 30% 10%;
+  /* Brand — Teal accent (Mimarek) */
+  --primary: 183 70% 48%;
+  --primary-deep: 201 90% 7%;
   --primary-foreground: 0 0% 100%;
 
   --secondary: 160 45% 42%;
   --secondary-foreground: 0 0% 100%;
 
-  --accent: 42 50% 55%;
-  --accent-foreground: 0 0% 100%;
+  --accent: 180 75% 52%;
+  --accent-foreground: 201 100% 8%;
   /* Dark: lighter than the fill so text-on-dark accent tint clears AA. */
-  --accent-strong: 42 70% 70%;
+  --accent-strong: 180 70% 70%;
 
   --green-bright: 155 55% 45%;
 
   /* Surfaces — warm charcoal layered depth */
-  --background: 260 25% 7%;
-  --foreground: 250 15% 90%;
+  --background: 200 50% 6%;
+  --foreground: 195 15% 90%;
 
-  --card: 258 20% 11%;
-  --card-foreground: 250 15% 90%;
-  /* Dark hover surface step — one level lighter than --card (between card 11% and popover 14%). */
-  --card-hover: 258 20% 13%;
+  --card: 200 40% 10%;
+  --card-foreground: 195 15% 90%;
+  /* Dark hover surface step — one level lighter than --card (between card 10% and popover 13%). */
+  --card-hover: 200 40% 12%;
 
-  --popover: 256 18% 14%;
-  --popover-foreground: 250 15% 90%;
+  --popover: 200 35% 13%;
+  --popover-foreground: 195 15% 90%;
 
-  --muted: 258 15% 16%;
-  --muted-foreground: 255 10% 58%;
+  --muted: 200 30% 15%;
+  --muted-foreground: 200 12% 60%;
 
   /* Semantic */
   --destructive: 0 62% 55%;
@@ -184,31 +184,31 @@
   --info-strong: 210 70% 72%;
 
   /* UI */
-  --border: 258 15% 18%;
-  --input: 258 15% 18%;
-  --ring: 270 55% 62%;
+  --border: 200 25% 17%;
+  --input: 200 25% 17%;
+  --ring: 183 70% 48%;
 
-  /* Sidebar — warm dark */
-  --sidebar-bg: 260 30% 10%;
-  --sidebar-deep: 262 35% 7%;
+  /* Sidebar — deep navy */
+  --sidebar-bg: 201 70% 8%;
+  --sidebar-deep: 201 85% 5%;
 
-  --neutral: 255 10% 65%;
+  --neutral: 200 10% 65%;
 
   /* Overlay */
   --overlay: 0 0% 0%;
-  --sidebar: hsl(258 20% 11%);
-  --sidebar-foreground: hsl(250 15% 90%);
-  --sidebar-primary: hsl(270 55% 62%);
+  --sidebar: hsl(200 40% 10%);
+  --sidebar-foreground: hsl(195 15% 90%);
+  --sidebar-primary: hsl(183 70% 48%);
   --sidebar-primary-foreground: hsl(0 0% 100%);
-  --sidebar-accent: hsl(258 15% 16%);
-  --sidebar-accent-foreground: hsl(250 15% 90%);
-  --sidebar-border: hsl(258 15% 18%);
-  --sidebar-ring: hsl(270 55% 62%);
+  --sidebar-accent: hsl(200 30% 15%);
+  --sidebar-accent-foreground: hsl(195 15% 90%);
+  --sidebar-border: hsl(200 25% 17%);
+  --sidebar-ring: hsl(183 70% 48%);
 
   /* Glass Morphism — strengthened */
-  --glass-bg: 260 20% 12% / 0.55;
-  --glass-bg-heavy: 260 20% 12% / 0.68;
-  --glass-bg-light: 260 20% 12% / 0.30;
+  --glass-bg: 200 40% 11% / 0.55;
+  --glass-bg-heavy: 200 40% 11% / 0.68;
+  --glass-bg-light: 200 40% 11% / 0.30;
   --glass-border: 0 0% 100% / 0.08;
   --glass-border-hover: 0 0% 100% / 0.14;
 
@@ -221,7 +221,7 @@
   --elevation-3: 0 8px 24px hsl(0 0% 0% / 0.35), 0 0 0 1px hsl(0 0% 100% / 0.05);
 
   /* Chart Colors */
-  --chart-1: 270 55% 65%;
+  --chart-1: 183 68% 52%;
   --chart-2: 160 50% 50%;
   --chart-3: 42 55% 58%;
   --chart-4: 210 65% 60%;
@@ -336,8 +336,8 @@
   --radius-xl: 16px;
 
   /* Font Families */
-  --font-primary: "IBM Plex Sans Arabic", "DM Sans", sans-serif;
-  --font-latin: "DM Sans", sans-serif;
+  --font-primary: var(--font-tajawal), "Tajawal", sans-serif;
+  --font-latin: var(--font-satoshi), "Satoshi", sans-serif;
   --font-mono: "IBM Plex Mono", monospace;
 
   /* Typography Scale */
@@ -386,28 +386,28 @@
 
 /* ─── Dark Mode Component Overrides ───────────────────────────────── */
 .dark .btn-primary {
-  background-color: hsl(270 55% 58%);
+  background-color: hsl(183 70% 44%);
   color: #fff;
-  box-shadow: 0 2px 4px hsl(270 55% 50% / 0.20);
+  box-shadow: 0 2px 4px hsl(185 80% 30% / 0.25);
 }
 .dark .btn-primary:hover {
-  background-color: hsl(270 55% 54%);
-  box-shadow: 0 4px 12px hsl(270 55% 50% / 0.25);
+  background-color: hsl(183 70% 40%);
+  box-shadow: 0 4px 12px hsl(185 80% 30% / 0.30);
 }
 
 .dark .btn-secondary {
-  border-color: hsl(270 55% 62% / 0.20);
-  color: hsl(250 15% 85%);
+  border-color: hsl(183 70% 48% / 0.20);
+  color: hsl(195 15% 85%);
 }
 .dark .btn-secondary:hover {
-  border-color: hsl(270 55% 62% / 0.35);
-  color: hsl(270 55% 72%);
-  background-color: hsl(270 55% 62% / 0.08);
+  border-color: hsl(183 70% 48% / 0.35);
+  color: hsl(183 70% 65%);
+  background-color: hsl(183 70% 48% / 0.08);
 }
 
 .dark [data-radix-popper-content-wrapper] [data-side] {
-  background-color: hsl(256 18% 14%);
-  border-color: hsl(258 15% 20%);
+  background-color: hsl(200 35% 13%);
+  border-color: hsl(200 25% 20%);
   box-shadow: 0 16px 32px -4px hsl(0 0% 0% / 0.40), 0 0 0 1px hsl(0 0% 100% / 0.05);
 }
 
@@ -542,7 +542,7 @@
   }
 
   /* ─── Card depth (v4.11 "Outlined Precision") ───────────────────────
-     Light: one barely-there purple-tinted shadow. Dark: no shadow — the
+     Light: one barely-there navy-tinted shadow. Dark: no shadow — the
      hairline border is the edge (§6.13). Use on data cards instead of glass. */
   .card-quiet {
     box-shadow: 0 1px 2px hsl(var(--primary-deep) / 0.04);
@@ -582,10 +582,10 @@
   /* Gradient mesh for hero / dark sections */
   .mesh-bg {
     background:
-      radial-gradient(ellipse at 20% 50%, hsl(270 40% 25% / 0.12) 0%, transparent 50%),
-      radial-gradient(ellipse at 80% 20%, hsl(260 30% 20% / 0.08) 0%, transparent 50%),
-      radial-gradient(ellipse at 50% 80%, hsl(255 25% 15% / 0.15) 0%, transparent 50%),
-      linear-gradient(to bottom, hsl(262 35% 7%), hsl(260 30% 10%));
+      radial-gradient(ellipse at 20% 50%, hsl(185 80% 24% / 0.14) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 20%, hsl(200 70% 22% / 0.10) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 80%, hsl(201 80% 12% / 0.16) 0%, transparent 50%),
+      linear-gradient(to bottom, hsl(201 90% 6%), hsl(200 70% 9%));
   }
 
   /* Print fallback */

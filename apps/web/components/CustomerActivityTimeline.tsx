@@ -59,7 +59,7 @@ const ACTIVITY_ICONS: Record<ActivityType, React.ElementType> = {
 
 const ACTIVITY_COLORS: Record<ActivityType, string> = {
   CALL: "text-blue-600 bg-blue-50",
-  EMAIL: "text-purple-600 bg-purple-50",
+  EMAIL: "text-primary bg-primary/10",
   MEETING: "text-amber-600 bg-amber-50",
   SITE_VISIT: "text-success-strong bg-green-50",
   NOTE: "text-gray-600 bg-gray-100",

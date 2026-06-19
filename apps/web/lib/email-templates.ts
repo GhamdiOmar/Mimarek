@@ -10,7 +10,7 @@ function shell(title: string, body: string): string {
           <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;background:#ffffff;border:1px solid #e4e7ec;border-radius:10px;overflow:hidden">
             <tr>
               <td style="padding:24px 28px;border-bottom:1px solid #e4e7ec">
-                <strong style="font-size:18px;color:#7339ac">MIMARIC</strong>
+                <strong style="font-size:18px;color:#00707A">MIMAREK</strong>
               </td>
             </tr>
             <tr>
@@ -28,7 +28,7 @@ function shell(title: string, body: string): string {
 }
 
 function cta(label: string, url: string): string {
-  return `<p style="margin:24px 0"><a href="${url}" style="display:inline-block;background:#7339ac;color:#ffffff;text-decoration:none;border-radius:8px;padding:12px 18px;font-weight:700">${label}</a></p>`;
+  return `<p style="margin:24px 0"><a href="${url}" style="display:inline-block;background:#00707A;color:#ffffff;text-decoration:none;border-radius:8px;padding:12px 18px;font-weight:700">${label}</a></p>`;
 }
 
 function linkFallback(url: string): string {
