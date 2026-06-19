@@ -91,11 +91,11 @@ function VerifyEmailInner() {
             </h1>
             <p className="text-base text-white/70 max-w-md">
               {lang === "ar"
-                ? "خطوة أخيرة لتفعيل حسابك في ميماريك."
-                : "One last step to activate your Mimaric account."}
+                ? "خطوة أخيرة لتفعيل حسابك في معمارك."
+                : "One last step to activate your Mimarek account."}
             </p>
           </div>
-          <p className="text-xs text-white/40 uppercase tracking-widest">© 2026 Mimaric PropTech</p>
+          <p className="text-xs text-white/40 uppercase tracking-widest">© 2026 Mimarek PropTech</p>
         </div>
       </aside>
 
@@ -202,8 +202,8 @@ function VerifyEmailInner() {
                   </h2>
                   <p className="text-sm text-muted-foreground">
                     {lang === "ar"
-                      ? "اضغط الزر أدناه لتأكيد بريدك وتفعيل حسابك في ميماريك."
-                      : "Press the button below to confirm your email and activate your Mimaric account."}
+                      ? "اضغط الزر أدناه لتأكيد بريدك وتفعيل حسابك في معمارك."
+                      : "Press the button below to confirm your email and activate your Mimarek account."}
                   </p>
                 </div>
                 <Button className="w-full" onClick={handleConfirm} disabled={loading || !token}>

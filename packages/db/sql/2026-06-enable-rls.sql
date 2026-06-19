@@ -1,12 +1,12 @@
 -- ═══════════════════════════════════════════════════════════════════════════
--- MIMARIC — Row Level Security (RLS) Setup
+-- MIMAREK — Row Level Security (RLS) Setup
 -- Run after `prisma db push` in Supabase SQL Editor (Dashboard → SQL Editor → New query),
 -- on every environment (production + any long-lived staging DB).
 -- ═══════════════════════════════════════════════════════════════════════════
 --
 -- STRATEGY
 -- --------
--- Mimaric is a pure server-side app (Next.js + Prisma). All database access
+-- Mimarek is a pure server-side app (Next.js + Prisma). All database access
 -- goes through the `postgres` role via the Supabase connection pooler. That role
 -- OWNS these tables and therefore bypasses RLS automatically — no policies are
 -- needed for the app to function.

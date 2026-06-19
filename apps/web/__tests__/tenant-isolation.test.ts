@@ -5,7 +5,7 @@ import { setSession, tenantAdmin, auth, signIn, signOut } from "./helpers/sessio
 // ─────────────────────────────────────────────────────────────────────────────
 // §8 TENANT ORG-ISOLATION — runtime regression lock.
 //
-// Mimaric is multi-tenant. Every tenant server action MUST scope its DB access
+// Mimarek is multi-tenant. Every tenant server action MUST scope its DB access
 // by `session.organizationId` so org A can never read/mutate org B's rows
 // (CLAUDE.md §8). This test runs a representative high-risk set of REAL tenant
 // actions with a session whose organizationId differs from the seeded row's

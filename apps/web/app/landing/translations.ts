@@ -66,7 +66,7 @@ export const t = {
     // Vision 2030
     vision2030Title: "نبني مستقبل العقارات السعودية",
     vision2030Subtitle:
-      "ميماريك يدعم التحول الرقمي في القطاع العقاري تماشياً مع رؤية المملكة 2030",
+      "معمارك يدعم التحول الرقمي في القطاع العقاري تماشياً مع رؤية المملكة 2030",
     digitalTransformation: "التحول الرقمي",
     digitalTransformationDesc:
       "سير عمل بلا أوراق، منصة سحابية بالكامل، وإدارة ذكية للعقارات",
@@ -100,7 +100,7 @@ export const t = {
 
     // Testimonials
     testimonial1:
-      "ميماريك غيّر طريقة إدارتنا للعقارات. كل شيء في مكان واحد.",
+      "معمارك غيّر طريقة إدارتنا للعقارات. كل شيء في مكان واحد.",
     testimonial1Author: "م. خالد العتيبي",
     testimonial1Role: "مدير التطوير — شركة الأفق العقارية",
     testimonial2:
@@ -152,9 +152,9 @@ export const t = {
 
     // FAQ
     faqTitle: "الأسئلة الشائعة",
-    faq1Q: "ما هو ميماريك؟",
+    faq1Q: "ما هو معمارك؟",
     faq1A:
-      "ميماريك هو منصة سعودية متكاملة لإدارة العقارات والمرافق. يغطي المبيعات وإدارة العملاء، الإيجارات، الصيانة، والفوترة — كل ذلك في منصة واحدة مع حقول بيانات مناسبة للسوق السعودي.",
+      "معمارك هو منصة سعودية متكاملة لإدارة العقارات والمرافق. يغطي المبيعات وإدارة العملاء، الإيجارات، الصيانة، والفوترة — كل ذلك في منصة واحدة مع حقول بيانات مناسبة للسوق السعودي.",
     faq2Q: "هل يوجد اشتراك مجاني؟",
     faq2A:
       "نعم! خطة المبتدئ مجانية بالكامل وتشمل حتى 5 مستخدمين و50 وحدة. يمكنك الترقية في أي وقت.",
@@ -170,20 +170,20 @@ export const t = {
     faq6Q: "هل يمكنني تغيير خطتي؟",
     faq6A:
       "بالتأكيد. يمكنك الترقية أو تغيير خطتك في أي وقت من إعدادات الفوترة. التغييرات تسري فوراً.",
-    faq7Q: "كيف يدعم ميماريك بيانات الأنظمة السعودية؟",
+    faq7Q: "كيف يدعم معمارك بيانات الأنظمة السعودية؟",
     faq7A:
-      "ميماريك يوفّر حقولاً وتدفقات جاهزة لبيانات بلدي، وزارة التجارة، وZATCA. أي تكامل مباشر يُذكر فقط عند تفعيله فعلياً.",
+      "معمارك يوفّر حقولاً وتدفقات جاهزة لبيانات بلدي، وزارة التجارة، وZATCA. أي تكامل مباشر يُذكر فقط عند تفعيله فعلياً.",
 
     // Final CTA
     finalCtaTitle: "جاهز لتحويل إدارة عقاراتك؟",
-    finalCtaSubtitle: "انضم إلى شركات التطوير العقاري التي تثق بميماريك",
+    finalCtaSubtitle: "انضم إلى شركات التطوير العقاري التي تثق بمعمارك",
 
     // Footer
     product: "المنتج",
     company: "الشركة",
     legal: "قانوني",
     support: "الدعم",
-    aboutUs: "عن ميماريك",
+    aboutUs: "عن معمارك",
     careers: "الوظائف",
     blog: "المدونة",
     termsOfService: "شروط الخدمة",
@@ -193,7 +193,7 @@ export const t = {
     status: "حالة النظام",
     madeInSaudi: "صنع في المملكة العربية السعودية",
     allRightsReserved: "جميع الحقوق محفوظة",
-    tagline: "تقنية عقارية سعودية • أتمتة وإدارة",
+    tagline: "أدر وحداتك، ومكِّن قطاع العقار.",
   },
   en: {
     // Nav
@@ -262,7 +262,7 @@ export const t = {
     // Vision 2030
     vision2030Title: "Building the Future of Saudi Real Estate",
     vision2030Subtitle:
-      "Mimaric supports digital transformation in the real estate sector in line with Saudi Vision 2030",
+      "Mimarek supports digital transformation in the real estate sector in line with Saudi Vision 2030",
     digitalTransformation: "Digital Transformation",
     digitalTransformationDesc:
       "Paperless workflows, fully cloud-based platform, and intelligent property management",
@@ -299,7 +299,7 @@ export const t = {
 
     // Testimonials
     testimonial1:
-      "Mimaric transformed how we manage properties. Everything in one place.",
+      "Mimarek transformed how we manage properties. Everything in one place.",
     testimonial1Author: "Eng. Khaled Al-Otaibi",
     testimonial1Role: "Development Director — Al-Ofoq Real Estate",
     testimonial2:
@@ -351,9 +351,9 @@ export const t = {
 
     // FAQ
     faqTitle: "Frequently Asked Questions",
-    faq1Q: "What is Mimaric?",
+    faq1Q: "What is Mimarek?",
     faq1A:
-      "Mimaric is a comprehensive Saudi platform for property and facility management. It covers sales & CRM, rentals, maintenance, and billing — all in one platform with data fields built for the Saudi market.",
+      "Mimarek is a comprehensive Saudi platform for property and facility management. It covers sales & CRM, rentals, maintenance, and billing — all in one platform with data fields built for the Saudi market.",
     faq2Q: "Is there a free plan?",
     faq2A:
       "Yes! The Starter plan is completely free and includes up to 5 users and 50 units. You can upgrade anytime.",
@@ -369,21 +369,21 @@ export const t = {
     faq6Q: "Can I switch plans?",
     faq6A:
       "Absolutely. You can upgrade or change your plan anytime from billing settings. Changes take effect immediately.",
-    faq7Q: "How does Mimaric support Saudi regulatory data?",
+    faq7Q: "How does Mimarek support Saudi regulatory data?",
     faq7A:
-      "Mimaric provides structured fields and workflows for Balady, MOC, and ZATCA data. Direct integrations are described only when they are live.",
+      "Mimarek provides structured fields and workflows for Balady, MOC, and ZATCA data. Direct integrations are described only when they are live.",
 
     // Final CTA
     finalCtaTitle: "Ready to transform your property management?",
     finalCtaSubtitle:
-      "Join the real estate developers who trust Mimaric",
+      "Join the real estate developers who trust Mimarek",
 
     // Footer
     product: "Product",
     company: "Company",
     legal: "Legal",
     support: "Support",
-    aboutUs: "About Mimaric",
+    aboutUs: "About Mimarek",
     careers: "Careers",
     blog: "Blog",
     termsOfService: "Terms of Service",
@@ -393,7 +393,7 @@ export const t = {
     status: "System Status",
     madeInSaudi: "Made in Saudi Arabia",
     allRightsReserved: "All rights reserved",
-    tagline: "Saudi PropTech \u2022 Automation & Management",
+    tagline: "Manage units. Empower real estate.",
   },
 } as const;
 

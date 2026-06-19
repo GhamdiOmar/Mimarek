@@ -1,7 +1,7 @@
 /**
  * Date ⇄ react-aria interop helpers.
  *
- * The Mimaric date pickers expose Date-based (and ISO-string-based) public
+ * The Mimarek date pickers expose Date-based (and ISO-string-based) public
  * APIs to consumers, but react-aria's calendar components work in
  * `@internationalized/date` value space. These null-safe converters live at
  * the component boundary so the public contracts (Date / "YYYY-MM-DD") never

@@ -3,7 +3,7 @@ import "server-only";
 /**
  * Cloudflare Turnstile server-side verification (E1 registration hardening).
  *
- * GRACEFUL-DEGRADE design — Mimaric is not yet deployed and keys may be unset
+ * GRACEFUL-DEGRADE design — Mimarek is not yet deployed and keys may be unset
  * locally:
  *   • No TURNSTILE_SECRET_KEY  → Turnstile is DISABLED (returns true). Local /
  *     undeployed registration keeps working without any captcha.

@@ -1,4 +1,4 @@
-/* ─── Mimaric Custom Components ─────────────────────────────── */
+/* ─── Mimarek Custom Components ─────────────────────────────── */
 /* These take precedence over shadcn primitives where names overlap */
 export * from "./components/Button";
 export * from "./components/Input";

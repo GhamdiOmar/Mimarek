@@ -91,7 +91,7 @@ export default function RegisterPage() {
                 : "The future of property management in Saudi Arabia starts here."}
             </p>
           </div>
-          <p className="text-xs text-white/40 uppercase tracking-widest">© 2026 Mimaric PropTech</p>
+          <p className="text-xs text-white/40 uppercase tracking-widest">© 2026 Mimarek PropTech</p>
         </div>
       </div>
 
@@ -216,8 +216,8 @@ export default function RegisterPage() {
                 <input type="checkbox" id="terms" className="mt-1 accent-secondary" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
                 <label htmlFor="terms" className="text-xs text-muted-foreground leading-relaxed">
                   {lang === "ar"
-                    ? "أوافق على شروط الخدمة وسياسة الخصوصية الخاصة بـ Mimaric"
-                    : "I agree to Mimaric's Terms of Service and Privacy Policy"}
+                    ? "أوافق على شروط الخدمة وسياسة الخصوصية الخاصة بـ Mimarek"
+                    : "I agree to Mimarek's Terms of Service and Privacy Policy"}
                 </label>
               </div>
 

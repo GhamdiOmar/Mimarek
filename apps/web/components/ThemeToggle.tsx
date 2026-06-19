@@ -10,7 +10,7 @@ import { useLanguage } from "./LanguageProvider";
 /**
  * ThemeToggle — sliding sun/moon pill (v4.11 Phase 3).
  *
- * Retokenized from the 21st.dev reference to Mimaric tokens (no zinc/hardcoded
+ * Retokenized from the 21st.dev reference to Mimarek tokens (no zinc/hardcoded
  * colors). Built on the Radix Switch primitive so it carries real `role="switch"`
  * + keyboard semantics (§6.6.6 — not a hand-rolled role="switch" button); the
  * shared `<Switch>` can't host icons, so this specialized theme control uses the

@@ -99,7 +99,7 @@ export const authConfig = {
         // Subscription enforcement — redirect expired/unpaid to billing page
         const subscriptionStatus = sessionUser?.subscriptionStatus;
 
-        // System roles bypass subscription checks (Mimaric platform staff)
+        // System roles bypass subscription checks (Mimarek platform staff)
         if (!isSystemRole && subscriptionStatus) {
           // CANCELED or UNPAID → redirect to billing (except billing page itself)
           if (["CANCELED", "UNPAID"].includes(subscriptionStatus) && !isBillingPage) {

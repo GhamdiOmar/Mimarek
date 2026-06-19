@@ -35,7 +35,7 @@ type EmailSettingsState = {
 const defaults: EmailSettingsState = {
   emailProvider: "HOSTINGER_SMTP",
   emailEnabled: false,
-  emailFromName: "Mimaric",
+  emailFromName: "Mimarek",
   emailFromAddress: "",
   emailReplyTo: "",
   smtpHost: "smtp.hostinger.com",
@@ -53,7 +53,7 @@ const defaults: EmailSettingsState = {
 const copy = {
   ar: {
     title: "إعدادات البريد",
-    description: "ربط ميماريك ببريد Hostinger SMTP لإرسال رسائل إعادة كلمة المرور والدعوات.",
+    description: "ربط معمارك ببريد Hostinger SMTP لإرسال رسائل إعادة كلمة المرور والدعوات.",
     save: "حفظ إعدادات البريد",
     test: "إرسال بريد اختبار",
     clear: "حذف كلمة مرور SMTP",
@@ -82,7 +82,7 @@ const copy = {
   },
   en: {
     title: "Email Settings",
-    description: "Connect Mimaric to Hostinger SMTP for password reset, invitations, and future transactional email.",
+    description: "Connect Mimarek to Hostinger SMTP for password reset, invitations, and future transactional email.",
     save: "Save email settings",
     test: "Send test email",
     clear: "Clear SMTP password",
@@ -94,7 +94,7 @@ const copy = {
     encryption: "Encryption",
     username: "SMTP username",
     password: "SMTP password",
-    passwordHint: "Write-only. After saving, Mimaric only shows that a password is configured.",
+    passwordHint: "Write-only. After saving, Mimarek only shows that a password is configured.",
     fromName: "From name",
     fromEmail: "From email",
     replyTo: "Reply-to email (optional)",
@@ -131,7 +131,7 @@ export default function AdminEmailSettingsPage() {
         "Configure SPF for Hostinger mail.",
         "Enable DKIM in Hostinger and publish the DKIM record.",
         "Add a DMARC record.",
-        "Return to Mimaric, save SMTP settings, then send a test email.",
+        "Return to Mimarek, save SMTP settings, then send a test email.",
       ].join("\n"),
     [],
   );

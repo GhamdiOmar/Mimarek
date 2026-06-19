@@ -117,10 +117,10 @@ export default function SeoSettingsPage() {
 
   // Section A — SEO Metadata
   const [siteTitle, setSiteTitle] = useState("");
-  const [siteTitleTemplate, setSiteTitleTemplate] = useState("%s | Mimaric");
+  const [siteTitleTemplate, setSiteTitleTemplate] = useState("%s | Mimarek");
   const [siteDescriptionAr, setSiteDescriptionAr] = useState("");
   const [siteDescriptionEn, setSiteDescriptionEn] = useState("");
-  const [canonicalUrl, setCanonicalUrl] = useState("https://mimaric.app");
+  const [canonicalUrl, setCanonicalUrl] = useState("https://mimarek.sa");
   const [ogLocale, setOgLocale] = useState("ar_SA");
   const [twitterHandle, setTwitterHandle] = useState("");
   const [twitterCard, setTwitterCard] = useState("summary_large_image");
@@ -146,7 +146,7 @@ export default function SeoSettingsPage() {
   const [robotsRules, setRobotsRules] = useState<RobotsRule[]>(DEFAULT_ROBOTS);
 
   // Section F — Schema.org
-  const [schemaOrgName, setSchemaOrgName] = useState("Mimaric");
+  const [schemaOrgName, setSchemaOrgName] = useState("Mimarek");
   const [schemaOrgLogoUrl, setSchemaOrgLogoUrl] = useState("");
   const [schemaOrgTwitter, setSchemaOrgTwitter] = useState("");
   const [schemaOrgLinkedIn, setSchemaOrgLinkedIn] = useState("");
@@ -160,10 +160,10 @@ export default function SeoSettingsPage() {
       const config = await getSeoConfig();
       if (!config) return;
       setSiteTitle(config.siteTitle ?? "");
-      setSiteTitleTemplate(config.siteTitleTemplate ?? "%s | Mimaric");
+      setSiteTitleTemplate(config.siteTitleTemplate ?? "%s | Mimarek");
       setSiteDescriptionAr(config.siteDescriptionAr ?? "");
       setSiteDescriptionEn(config.siteDescriptionEn ?? "");
-      setCanonicalUrl(config.canonicalUrl ?? "https://mimaric.app");
+      setCanonicalUrl(config.canonicalUrl ?? "https://mimarek.sa");
       setOgLocale(config.ogLocale ?? "ar_SA");
       setTwitterHandle(config.twitterHandle ?? "");
       setTwitterCard(config.twitterCard ?? "summary_large_image");
@@ -181,7 +181,7 @@ export default function SeoSettingsPage() {
       if (config.robotsTxtRules) {
         try { setRobotsRules(JSON.parse(config.robotsTxtRules)); } catch { /* keep default */ }
       }
-      setSchemaOrgName(config.schemaOrgName ?? "Mimaric");
+      setSchemaOrgName(config.schemaOrgName ?? "Mimarek");
       setSchemaOrgLogoUrl(config.schemaOrgLogoUrl ?? "");
       setSchemaOrgTwitter(config.schemaOrgTwitter ?? "");
       setSchemaOrgLinkedIn(config.schemaOrgLinkedIn ?? "");
@@ -529,11 +529,11 @@ export default function SeoSettingsPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <label className="text-sm font-medium">{t("عنوان الموقع (افتراضي)", "Site Title (default)")}</label>
-                <Input value={siteTitle} onChange={(e) => setSiteTitle(e.target.value)} placeholder="Mimaric | منصة إدارة العقارات" />
+                <Input value={siteTitle} onChange={(e) => setSiteTitle(e.target.value)} placeholder="Mimarek | منصة إدارة العقارات" />
               </div>
               <div className="space-y-1.5">
                 <label className="text-sm font-medium">{t("قالب العنوان", "Title Template")}</label>
-                <Input value={siteTitleTemplate} onChange={(e) => setSiteTitleTemplate(e.target.value)} placeholder="%s | Mimaric" />
+                <Input value={siteTitleTemplate} onChange={(e) => setSiteTitleTemplate(e.target.value)} placeholder="%s | Mimarek" />
               </div>
             </div>
 
@@ -564,7 +564,7 @@ export default function SeoSettingsPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <label className="text-sm font-medium">{t("الرابط الأساسي (Canonical)", "Canonical Base URL")}</label>
-                <Input value={canonicalUrl} onChange={(e) => setCanonicalUrl(e.target.value)} placeholder="https://mimaric.app" dir="ltr" />
+                <Input value={canonicalUrl} onChange={(e) => setCanonicalUrl(e.target.value)} placeholder="https://mimarek.sa" dir="ltr" />
               </div>
               <div className="space-y-1.5">
                 <label className="text-sm font-medium">{t("لغة Open Graph", "OG Locale")}</label>
@@ -579,7 +579,7 @@ export default function SeoSettingsPage() {
               </div>
               <div className="space-y-1.5">
                 <label className="text-sm font-medium">{t("حساب Twitter/X", "Twitter/X Handle")}</label>
-                <Input value={twitterHandle} onChange={(e) => setTwitterHandle(e.target.value)} placeholder="@mimaric_sa" dir="ltr" />
+                <Input value={twitterHandle} onChange={(e) => setTwitterHandle(e.target.value)} placeholder="@mimarek_sa" dir="ltr" />
               </div>
               <div className="space-y-1.5">
                 <label className="text-sm font-medium">{t("نوع Twitter Card", "Twitter Card Type")}</label>
@@ -891,7 +891,7 @@ export default function SeoSettingsPage() {
               </h3>
               <pre className="rounded-md bg-muted p-4 text-xs font-mono leading-relaxed overflow-auto max-h-80 text-foreground/80">
                 {renderRobotsPreview(robotsRules)}
-                {"\n\nSitemap: https://mimaric.app/sitemap.xml"}
+                {"\n\nSitemap: https://mimarek.sa/sitemap.xml"}
               </pre>
             </Card>
           </div>
@@ -912,15 +912,15 @@ export default function SeoSettingsPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <label className="text-sm font-medium">{t("اسم المنظمة", "Organization Name")}</label>
-                <Input value={schemaOrgName} onChange={(e) => setSchemaOrgName(e.target.value)} placeholder="Mimaric" />
+                <Input value={schemaOrgName} onChange={(e) => setSchemaOrgName(e.target.value)} placeholder="Mimarek" />
               </div>
               <div className="space-y-1.5">
                 <label className="text-sm font-medium">{t("رابط الشعار", "Logo URL")}</label>
-                <Input value={schemaOrgLogoUrl} onChange={(e) => setSchemaOrgLogoUrl(e.target.value)} placeholder="https://mimaric.app/assets/brand/logo.png" dir="ltr" />
+                <Input value={schemaOrgLogoUrl} onChange={(e) => setSchemaOrgLogoUrl(e.target.value)} placeholder="https://mimarek.sa/assets/brand/logo.png" dir="ltr" />
               </div>
               <div className="space-y-1.5">
                 <label className="text-sm font-medium">Twitter/X</label>
-                <Input value={schemaOrgTwitter} onChange={(e) => setSchemaOrgTwitter(e.target.value)} placeholder="https://x.com/mimaric_sa" dir="ltr" />
+                <Input value={schemaOrgTwitter} onChange={(e) => setSchemaOrgTwitter(e.target.value)} placeholder="https://x.com/mimarek_sa" dir="ltr" />
               </div>
               <div className="space-y-1.5">
                 <label className="text-sm font-medium">LinkedIn</label>
@@ -928,7 +928,7 @@ export default function SeoSettingsPage() {
               </div>
               <div className="space-y-1.5 sm:col-span-2">
                 <label className="text-sm font-medium">Instagram</label>
-                <Input value={schemaOrgInstagram} onChange={(e) => setSchemaOrgInstagram(e.target.value)} placeholder="https://instagram.com/mimaric_sa" dir="ltr" />
+                <Input value={schemaOrgInstagram} onChange={(e) => setSchemaOrgInstagram(e.target.value)} placeholder="https://instagram.com/mimarek_sa" dir="ltr" />
               </div>
             </div>
 
@@ -951,7 +951,7 @@ export default function SeoSettingsPage() {
                 {t("رخصة المنصة الإلكترونية (فال)", "REGA Platform License")}
               </h3>
               <p className="text-sm text-muted-foreground mt-1">
-                {t("رقم رخصة فال للمنصة الإلكترونية العقارية الصادرة من الهيئة العامة للعقار — مطلوب لنشر إعلانات السوق.", "Mimaric's REGA electronic-real-estate-platform advertising license — required before the marketplace can publish listings.")}
+                {t("رقم رخصة فال للمنصة الإلكترونية العقارية الصادرة من الهيئة العامة للعقار — مطلوب لنشر إعلانات السوق.", "Mimarek's REGA electronic-real-estate-platform advertising license — required before the marketplace can publish listings.")}
               </p>
             </div>
 

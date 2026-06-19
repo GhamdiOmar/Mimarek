@@ -258,21 +258,21 @@ async function main() {
 
   const all = [];
 
-  log("### Pass 1: SYSTEM_ADMIN (system@mimaric.sa) ###");
+  log("### Pass 1: SYSTEM_ADMIN (system@mimarek.sa) ###");
   all.push(
     ...(await runUser({
       user: "system_admin",
-      email: "system@mimaric.sa",
+      email: "system@mimarek.sa",
       password: "mimaric2026",
       surfaces: SURFACES_SYSTEM,
     })),
   );
 
-  log("### Pass 2: Tenant ADMIN (admin@mimaric.sa) ###");
+  log("### Pass 2: Tenant ADMIN (admin@mimarek.sa) ###");
   all.push(
     ...(await runUser({
       user: "tenant_admin",
-      email: "admin@mimaric.sa",
+      email: "admin@mimarek.sa",
       password: "mimaric2026",
       surfaces: SURFACES_TENANT,
     })),

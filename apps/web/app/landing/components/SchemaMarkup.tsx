@@ -8,8 +8,8 @@ import { db } from "@repo/db";
 
 const faqs = [
   {
-    q: "ما هو ميماريك؟",
-    a: "ميماريك هو منصة سعودية متكاملة لإدارة العقارات والمرافق. يغطي المبيعات وإدارة العملاء، الإيجارات، الصيانة، والفوترة — كل ذلك في منصة واحدة متوافقة مع الأنظمة السعودية.",
+    q: "ما هو معمارك؟",
+    a: "معمارك هو منصة سعودية متكاملة لإدارة العقارات والمرافق. يغطي المبيعات وإدارة العملاء، الإيجارات، الصيانة، والفوترة — كل ذلك في منصة واحدة متوافقة مع الأنظمة السعودية.",
   },
   {
     q: "هل يوجد اشتراك مجاني؟",
@@ -28,8 +28,8 @@ const faqs = [
     a: "نعم. نستخدم تشفير البيانات الشخصية (PII) في الخطط المدفوعة، مع استضافة سحابية آمنة وسجل مراجعة كامل لجميع العمليات.",
   },
   {
-    q: "هل ميماريك متوافق مع الأنظمة السعودية؟",
-    a: "نعم. ميماريك متوافق مع أنظمة بلدي، وزارة التجارة، وهيئة الزكاة والضريبة والجمارك (ZATCA).",
+    q: "هل معمارك متوافق مع الأنظمة السعودية؟",
+    a: "نعم. معمارك متوافق مع أنظمة بلدي، وزارة التجارة، وهيئة الزكاة والضريبة والجمارك (ZATCA).",
   },
 ];
 
@@ -47,9 +47,9 @@ function JsonLd({ data }: { data: object }) {
 export default async function SchemaMarkup({ lang }: { lang: "ar" | "en" }) {
   const config = await db.systemConfig.findUnique({ where: { id: "system" } }).catch(() => null);
 
-  const orgName = config?.schemaOrgName ?? "Mimaric";
-  const logoUrl = config?.schemaOrgLogoUrl ?? "https://mimaric.app/assets/brand/Mimaric_Official_Logo_transparent.png";
-  const canonicalBase = config?.canonicalUrl ?? "https://mimaric.app";
+  const orgName = config?.schemaOrgName ?? "Mimarek";
+  const logoUrl = config?.schemaOrgLogoUrl ?? "https://mimarek.sa/assets/brand/Mimarek_Official_Logo_transparent.png";
+  const canonicalBase = config?.canonicalUrl ?? "https://mimarek.sa";
 
   const organizationSchema = {
     "@context": "https://schema.org",

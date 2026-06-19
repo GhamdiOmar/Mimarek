@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Mimaric — Saudi PropTech",
-    short_name: "Mimaric",
+    name: "Mimarek — Saudi PropTech",
+    short_name: "Mimarek",
     description:
       "منصة إدارة العقارات السعودية — Saudi real estate management platform for developers.",
     start_url: "/dashboard",

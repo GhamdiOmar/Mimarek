@@ -119,7 +119,7 @@ export default function Footer({
         <div className="mt-10 flex flex-col items-center gap-3 border-t border-border pt-6 sm:flex-row sm:justify-between">
           <div className="flex flex-col items-center gap-1 sm:items-start">
             <p className="text-center text-xs text-muted-foreground sm:text-start">
-              &copy; {new Date().getFullYear()} Mimaric. {t.allRightsReserved}
+              &copy; {new Date().getFullYear()} Mimarek. {t.allRightsReserved}
             </p>
             <p className="text-xs text-muted-foreground/60" dir="ltr">
               {falLicense

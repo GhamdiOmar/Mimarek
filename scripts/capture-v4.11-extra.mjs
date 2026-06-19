@@ -10,7 +10,7 @@ const DESKTOP = { width: 1440, height: 900 };
 
 async function login(page) {
   await page.goto(`${BASE}/auth/login`, { waitUntil: "domcontentloaded" });
-  await page.fill("#login-email", "admin@mimaric.sa");
+  await page.fill("#login-email", "admin@mimarek.sa");
   await page.fill("#login-password", "mimaric2026");
   await Promise.all([
     page.waitForURL(/\/dashboard/, { timeout: 60000 }).catch(() => {}),

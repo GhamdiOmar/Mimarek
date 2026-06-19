@@ -265,7 +265,7 @@ export async function getInvoiceById(invoiceId: string) {
  * Generate a sequential invoice number atomically inside an existing transaction.
  *
  * `invoiceNumber` is GLOBALLY unique (`INV-YYYY-NNNNN`, no org partition) and the
- * issuing entity is the single Mimaric platform — so the counter is GLOBAL, not
+ * issuing entity is the single Mimarek platform — so the counter is GLOBAL, not
  * per-org. A per-org counter would let two tenants both mint `INV-2026-00001` and
  * collide on the global unique index. This preserves the original global-max semantics.
  *

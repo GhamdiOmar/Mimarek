@@ -43,16 +43,16 @@ const getConfig = cache(async () => {
 export async function generateMetadata(): Promise<Metadata> {
   const config = await getConfig();
 
-  const canonical = config?.canonicalUrl ?? "https://mimaric.app";
+  const canonical = config?.canonicalUrl ?? "https://mimarek.sa";
   const ogImage = config?.ogImageUrl ?? "/og-image.png";
 
   return {
     metadataBase: new URL(canonical),
     title: {
-      default: config?.siteTitle ?? "Mimaric | منصة إدارة العقارات السعودية",
-      template: config?.siteTitleTemplate ?? "%s | Mimaric",
+      default: config?.siteTitle ?? "Mimarek | منصة إدارة العقارات السعودية",
+      template: config?.siteTitleTemplate ?? "%s | Mimarek",
     },
-    description: config?.siteDescriptionAr ?? "منصة PropTech السعودية لمطوري العقارات — إدارة المشاريع والمبيعات والإيجارات متوافقة مع بلدي وزاتكا ووافي.",
+    description: config?.siteDescriptionAr ?? "منصة PropTech السعودية لمطوري العقارات — لإدارة الوحدات والمبيعات والإيجارات والصيانة والتحصيل — متوافقة مع بلدي وزاتكا وإيجار.",
     alternates: {
       canonical: "/",
       languages: {
@@ -63,9 +63,9 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     openGraph: {
       type: (config?.ogType as "website" | "article") ?? "website",
-      siteName: "Mimaric",
+      siteName: "Mimarek",
       locale: config?.ogLocale ?? "ar_SA",
-      images: [{ url: ogImage, width: 1200, height: 630, alt: "Mimaric — Saudi PropTech Platform" }],
+      images: [{ url: ogImage, width: 1200, height: 630, alt: "Mimarek — Saudi PropTech Platform" }],
     },
     twitter: {
       card: (config?.twitterCard as "summary" | "summary_large_image") ?? "summary_large_image",
@@ -78,7 +78,7 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     appleWebApp: {
       capable: true,
-      title: "Mimaric",
+      title: "Mimarek",
       statusBarStyle: "default",
     },
     verification: {

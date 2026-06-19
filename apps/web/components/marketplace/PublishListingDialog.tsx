@@ -121,8 +121,8 @@ export function PublishListingDialog({
       title={ar ? "نشر في السوق" : "Publish in Marketplace"}
       description={
         ar
-          ? "اعرض هذه الوحدة لمؤسسات موثوقة أخرى داخل ميماريك."
-          : "List this unit for other verified organizations inside Mimaric."
+          ? "اعرض هذه الوحدة لمؤسسات موثوقة أخرى داخل معمارك."
+          : "List this unit for other verified organizations inside Mimarek."
       }
       footer={
         success ? (

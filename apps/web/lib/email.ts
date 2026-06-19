@@ -41,7 +41,7 @@ const DEFAULTS = {
   host: "smtp.hostinger.com",
   port: 465,
   secure: true,
-  fromName: "Mimaric",
+  fromName: "Mimarek",
 };
 
 function friendlySmtpError(error: unknown): string {
@@ -50,9 +50,9 @@ function friendlySmtpError(error: unknown): string {
     return "SMTP authentication failed. Check the mailbox username and password.";
   }
   if (/timeout|etimedout|connection/i.test(message)) {
-    return "Mimaric could not reach the SMTP server. Check host, port, and encryption mode.";
+    return "Mimarek could not reach the SMTP server. Check host, port, and encryption mode.";
   }
-  return "Mimaric could not send email with the current SMTP settings.";
+  return "Mimarek could not send email with the current SMTP settings.";
 }
 
 function toPublicSettings(config: Awaited<ReturnType<typeof db.systemConfig.findUnique>>): EmailSettings {

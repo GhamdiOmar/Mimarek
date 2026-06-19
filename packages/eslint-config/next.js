@@ -385,7 +385,7 @@ export const nextJsConfig = [
     },
   },
   // ─────────────────────────────────────────────────────────────────────────
-  // Mimaric governed-clickable guardrails (AGENTS.md §6.6)
+  // Mimarek governed-clickable guardrails (AGENTS.md §6.6)
   // Prevents reintroducing banned clickable anti-patterns.
   //
   // NOTE ON SEVERITY (v4.33.0 — H7 ratchet): eslint-plugin-only-warn was REMOVED.
@@ -449,7 +449,7 @@ export const nextJsConfig = [
     },
   },
   // ─────────────────────────────────────────────────────────────────────────
-  // Mimaric data-integrity guardrails (AGENTS.md §4, §6) — v4.18.0
+  // Mimarek data-integrity guardrails (AGENTS.md §4, §6) — v4.18.0
   //
   // (a) PII write path: a fresh Customer must be created through the canonical
   //     encrypt path (encryptCustomerData) so phone/email/nationalId land

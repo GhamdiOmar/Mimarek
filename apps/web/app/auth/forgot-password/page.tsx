@@ -48,7 +48,7 @@ export default function ForgotPasswordPage() {
                 : "We'll help you securely recover access to your account."}
             </p>
           </div>
-          <p className="text-xs font-latin uppercase tracking-widest text-white opacity-50">© 2026 Mimaric PropTech</p>
+          <p className="text-xs font-latin uppercase tracking-widest text-white opacity-50">© 2026 Mimarek PropTech</p>
         </div>
         <div className="absolute -bottom-10 -end-20 opacity-10 transform rotate-3">
           <Building2 className="h-[400px] w-[400px] text-secondary" />

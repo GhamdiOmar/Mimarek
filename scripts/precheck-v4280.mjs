@@ -15,7 +15,7 @@ function parseEnv(p) {
   }
   return o;
 }
-const env = parseEnv("C:/Users/Ghamd/Desktop/Projects/Mimaric/.env.local");
+const env = parseEnv("C:/Users/Ghamd/Desktop/Projects/Mimarek/.env.local");
 const pool = new pg.Pool({ connectionString: env.DATABASE_URL });
 
 // (table, column) money fields that get @db.Decimal(14,2)

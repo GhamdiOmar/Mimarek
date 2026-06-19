@@ -5,7 +5,7 @@
  * `DateRangePicker` and `HijriDatePicker`. Replaces the former
  * react-day-picker `<Calendar>` primitive.
  *
- * Design: Mimaric tokens only (no `dark:` utilities — §6.13). Cells are
+ * Design: Mimarek tokens only (no `dark:` utilities — §6.13). Cells are
  * 44×44 (§6.6.2), tabular-nums, logical radii (RTL-safe). Nav arrows pick the
  * visual chevron from `useLocale().direction` because the react-aria
  * `previous`/`next` slots are *logical*, not visual.

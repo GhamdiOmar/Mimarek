@@ -65,14 +65,14 @@ SURFACE_DESC = {
 USER_DESC = {
     "system_admin": {
         "title": "System Admin (SYSTEM_ADMIN)",
-        "email": "system@mimaric.sa",
+        "email": "system@mimarek.sa",
         "role": "Platform staff — no organizationId binding.",
         "scope": "Sees /dashboard/admin/* only. Every tenant route redirects to /dashboard/admin via Layer 2 guard in auth.config.ts.",
     },
     "tenant_admin": {
         "title": "Tenant Admin (ADMIN)",
-        "email": "admin@mimaric.sa",
-        "role": "Organization owner — bound to Mimaric test org.",
+        "email": "admin@mimarek.sa",
+        "role": "Organization owner — bound to Mimarek test org.",
         "scope": "Full tenant access. /dashboard/admin/* probes redirect back to /dashboard.",
     },
 }
@@ -153,7 +153,7 @@ def build():
     # ───────── Cover ─────────
     title = doc.add_paragraph()
     title.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    run = title.add_run("Mimaric UI Verification Report")
+    run = title.add_run("Mimarek UI Verification Report")
     run.bold = True
     run.font.size = Pt(28)
 
@@ -176,7 +176,7 @@ def build():
     # ───────── 1. Context ─────────
     doc.add_heading("1. Context", level=1)
     doc.add_paragraph(
-        "This report documents a full UI verification sweep of the Mimaric dashboard against "
+        "This report documents a full UI verification sweep of the Mimarek dashboard against "
         "CLAUDE.md § 6 (Design System) and § 8 (Access Model). Captures were produced by "
         "scripts/verify-ui.mjs using Playwright headless Chromium."
     )
@@ -315,7 +315,7 @@ def build():
         doc.add_paragraph(step)
     doc.add_paragraph("Expected runtime: ~35 min for the full 192-capture sweep.")
 
-    out = ROOT / "Mimaric-UI-Verification-Report.docx"
+    out = ROOT / "Mimarek-UI-Verification-Report.docx"
     doc.save(out)
     size_mb = out.stat().st_size / 1024 / 1024
     print(f"Wrote {out} ({size_mb:.2f} MB)")

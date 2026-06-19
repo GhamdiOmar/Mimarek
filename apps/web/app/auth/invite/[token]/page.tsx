@@ -142,8 +142,8 @@ export default function InviteAcceptPage() {
           <div className="space-y-6">
             <h1 className="text-4xl font-bold leading-tight xl:text-5xl text-white">
               {lang === "ar"
-                ? "انضم إلى فريقك على ميماريك"
-                : "Join Your Team on Mimaric"}
+                ? "انضم إلى فريقك على معمارك"
+                : "Join Your Team on Mimarek"}
             </h1>
             <p className="text-lg text-white/80 max-w-md">
               {lang === "ar"
@@ -152,7 +152,7 @@ export default function InviteAcceptPage() {
             </p>
           </div>
           <p className="text-xs font-latin uppercase tracking-widest text-white opacity-50">
-            © 2026 Mimaric PropTech
+            © 2026 Mimarek PropTech
           </p>
         </div>
         <div className="absolute -bottom-10 -end-20 opacity-10 transform rotate-3">
@@ -331,8 +331,8 @@ export default function InviteAcceptPage() {
                     className="text-xs text-muted-foreground leading-relaxed font-dm-sans"
                   >
                     {lang === "ar"
-                      ? "أوافق على شروط الخدمة وسياسة الخصوصية الخاصة بـ Mimaric"
-                      : "I agree to Mimaric's Terms of Service and Privacy Policy"}
+                      ? "أوافق على شروط الخدمة وسياسة الخصوصية الخاصة بـ Mimarek"
+                      : "I agree to Mimarek's Terms of Service and Privacy Policy"}
                   </label>
                 </div>
 

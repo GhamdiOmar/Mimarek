@@ -756,7 +756,7 @@ export default function OnboardingPage() {
         <PageIntro
           title={t("إعداد حسابك", "Set Up Your Account")}
           description={
-            t("أكمل الخطوات التالية لتفعيل حسابك على ميماريك.", "Complete the following steps to activate your Mimaric account.")
+            t("أكمل الخطوات التالية لتفعيل حسابك على معمارك.", "Complete the following steps to activate your Mimarek account.")
           }
         />
 

@@ -10,7 +10,7 @@ import { IconButton } from "../components/IconButton"
 /**
  * Alert — variant × appearance model (v4.11 Phase 3).
  *
- * Retokenized from the 21st.dev reference to Mimaric semantic tokens (no
+ * Retokenized from the 21st.dev reference to Mimarek semantic tokens (no
  * zinc/violet/yellow literals): variant = neutral | primary | destructive |
  * success | info | warning; appearance = solid | outline | light (soft tint).
  * `light` is the default and matches the §6.11.2 banner taxonomy (soft bg +

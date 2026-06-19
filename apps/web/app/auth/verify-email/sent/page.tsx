@@ -43,11 +43,11 @@ function VerifyEmailSentInner() {
             </h1>
             <p className="text-base text-white/70 max-w-md">
               {lang === "ar"
-                ? "أرسلنا رابط تأكيد لتفعيل حسابك في ميماريك."
-                : "We've sent a verification link to activate your Mimaric account."}
+                ? "أرسلنا رابط تأكيد لتفعيل حسابك في معمارك."
+                : "We've sent a verification link to activate your Mimarek account."}
             </p>
           </div>
-          <p className="text-xs text-white/40 uppercase tracking-widest">© 2026 Mimaric PropTech</p>
+          <p className="text-xs text-white/40 uppercase tracking-widest">© 2026 Mimarek PropTech</p>
         </div>
       </aside>
 

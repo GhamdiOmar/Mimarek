@@ -62,10 +62,10 @@ async function shot(page, { path, name, theme, lang, viewport, tableView }) {
 const run = async () => {
   const browser = await chromium.launch();
 
-  // ── Tenant session (admin@mimaric.sa) ─────────────────────────────
+  // ── Tenant session (admin@mimarek.sa) ─────────────────────────────
   const tctx = await browser.newContext({ viewport: DESKTOP });
   const tp = await tctx.newPage();
-  await login(tp, "admin@mimaric.sa", "mimaric2026");
+  await login(tp, "admin@mimarek.sa", "mimaric2026");
 
   const tenant = [
     { path: "/dashboard/reservations", name: "01-reservations-dark-ar", theme: "dark", lang: "ar", viewport: DESKTOP },
@@ -87,10 +87,10 @@ const run = async () => {
   for (const s of tenant) await shot(tp, s);
   await tctx.close();
 
-  // ── System session (system@mimaric.sa) ───────────────────────────
+  // ── System session (system@mimarek.sa) ───────────────────────────
   const sctx = await browser.newContext({ viewport: DESKTOP });
   const sp = await sctx.newPage();
-  await login(sp, "system@mimaric.sa", "mimaric2026");
+  await login(sp, "system@mimarek.sa", "mimaric2026");
 
   const sys = [
     { path: "/dashboard/admin/coupons", name: "15-admin-coupons-light-en", theme: "light", lang: "en", viewport: DESKTOP },

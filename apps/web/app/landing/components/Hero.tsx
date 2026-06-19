@@ -100,7 +100,7 @@ export default function Hero({ lang }: { lang: "ar" | "en" }) {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/assets/screenshots/dashboard.png"
-                alt="Mimaric Dashboard"
+                alt="Mimarek Dashboard"
                 className="h-auto w-full"
               />
             </div>

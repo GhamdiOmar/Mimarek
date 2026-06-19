@@ -178,7 +178,7 @@ export default function LoginClient({ falLicense }: { falLicense?: string | null
 
           <div className="space-y-4">
             <h1 className="text-4xl font-bold leading-tight xl:text-5xl text-white">
-              {lang === "ar" ? "أهلاً بك في ميماريك" : "Welcome to Mimaric"}
+              {lang === "ar" ? "أهلاً بك في معمارك" : "Welcome to Mimarek"}
             </h1>
             <p className="text-base text-white/70 max-w-md">
               {lang === "ar"
@@ -189,7 +189,7 @@ export default function LoginClient({ falLicense }: { falLicense?: string | null
 
           <div className="space-y-1">
             <p className="text-xs text-white/40 uppercase tracking-widest">
-              © 2026 Mimaric PropTech
+              © 2026 Mimarek PropTech
             </p>
             <p className="text-xs text-white/30" dir="ltr">
               {falLicense

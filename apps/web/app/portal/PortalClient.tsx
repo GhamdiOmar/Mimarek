@@ -80,7 +80,7 @@ export default function PortalClient({ initialSummary }: { initialSummary: Porta
       <header className="border-b border-border bg-card">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4 md:px-6">
           <div>
-            <p className="text-xs font-semibold uppercase text-primary">MIMARIC</p>
+            <p className="text-xs font-semibold uppercase text-primary">MIMAREK</p>
             <h1 className="text-xl font-bold">{t("بوابة المستأجر", "Tenant Portal")}</h1>
           </div>
           <div className="flex items-center gap-2">
