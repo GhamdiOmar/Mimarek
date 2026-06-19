@@ -20,10 +20,11 @@
 - `AGENTS.md` (design SSOT) brand sections, `README.md`, `CLAUDE.md`, `cspell`, `.gitguardian` retargeted to Mimarek. Internal identifiers intentionally preserved: `mimaric/*` ESLint rules, HKDF `mimaric/blind-index` context, `mimaric-lang`/`-consent` cookies, `mimaric_*` k6 metrics, the `mimaric2026` seed password.
 
 ### Verify
-- `next build` green · lint 2/2 · `check-types` 2/2 · vitest **160/160**. Foundation preview-verified (landing + login: teal/navy + new logo both variants + Tajawal, zero console errors).
+- `next build` green · lint 2/2 · `check-types` 2/2 · vitest **160/160**. **§3.9 4-theme preview walk passed** — landing, `/auth/login`, `/dashboard`, `/dashboard/crm`, `/dashboard/finance` across light+dark × LTR+RTL: teal/navy tokens, `MimarekLogo` (wordmark flips navy↔white), Satoshi/Tajawal, **zero console errors**.
+- **Post-merge polish:** 3-way Opus audit — `/cx-audit` **84/100**, `/mimaric-qa` **SHIP (8.5/10)**, `/improve-codebase-architecture`. Fixed the brand misses it surfaced: XLSX import-template header purple→navy; PDF report retired IBM Plex Sans Arabic→**Tajawal** + off-brand navy/green hexes→brand. Regenerated the 5 dashboard marketing screenshots from a populated Mimarek org (no consent banner, generic names); maskable PWA icon safe-zone padding; Vision 2030 dark-glass contrast fix. Live Supabase test DB re-seeded to `@mimarek.sa`.
 
-### Deferred (post-merge checkpoint)
-- Regenerate the 5 dashboard marketing screenshots from a populated Mimarek-branded org; GitHub repo + local folder rename (`Mimaric`→`Mimarek`) + Claude memory-dir migration; live Supabase re-seed to `@mimarek.sa`; full §3.9 4-theme route walk at tag time.
+### Deferred (post-tag)
+- GitHub repo + local folder rename (`Mimaric`→`Mimarek`) + Claude memory-dir migration. Architecture-debt initiatives (View-layer decomposition, `maintenance` state-machine extraction, marketplace bounded-context split, i18n `t()` tail) — tracked, non-blocking.
 
 **Full diff:** https://github.com/GhamdiOmar/Mimarek/compare/v4.33.6...v5.0.0
 
