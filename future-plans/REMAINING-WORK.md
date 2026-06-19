@@ -4,8 +4,9 @@
 > closed Sections B+C; v4.33.1 the `contracts.ts` return-shape debt; v4.33.2 **H9** (seller-convert E2E,
 > a test-only root cause); and **v4.33.3–v4.33.6 drove the entire `eslint-suppressions.json` backlog
 > from 160 → 0 and DELETED the file** — every ESLint rule now gates the whole app with no backstop. See
-> `CHANGELOG.md` for per-item detail. This file now tracks only the three indefinitely-deferred programs
-> (Section A) and ONE remaining tail — F1-tail (Section B), which is on-touch-only by Omar's call.
+> `CHANGELOG.md` for per-item detail. This file now tracks the three indefinitely-deferred programs
+> (Section A); **F1-tail** (Section B — promoted to a deferred dedicated sweep on 2026-06-19, scoped in
+> `future-plans/f1-tail-i18n-sweep.md`); and two **known pre-existing P3 display bugs** (Section B.1).
 
 ---
 
@@ -31,10 +32,16 @@
 
 ---
 
-## B. Tracked tail (one — cosmetic / low-value, on-touch-only by Omar's call)
-| ID | Gap | Why deferred | Effort |
+## B. Deferred tails
+| ID | Gap | Status | Effort |
 |---|---|---|---|
-| **F1-tail** | ~650 inline `lang==="ar"?` ternaries remain — correctly NOT converted by the F1 codemod (plumbing / control-values `dir`/`locale`/`className`, non-literal branches, files with no `t` facade incl. the deliberately-documented English-first `admin/marketplace` facade). | P3 cosmetic; convert only true string-literal copy pairs **on touch**. NOT a dedicated sprint (Omar's explicit call). | L (on-touch) |
+| **F1-tail** | ~649 inline `lang==="ar"?` display-copy ternaries remain (across ~67 files) — the harder tail the v4.32.0 F1 codemod skipped (control-values `dir`/`locale`/`className`, non-literal branches, no-facade files, and the reversed `t(en,ar)` marketplace facade). | **Promoted to a dedicated sweep (Omar, 2026-06-19) but deferred to a future session.** Full scope + the per-file facade-order swap-safety in **`future-plans/f1-tail-i18n-sweep.md`**. | L (multi-PR) |
+
+## B.1 Known pre-existing display bugs (P3 — fix on touch; both surfaced by the v4.33 lint sweep, deliberately not fixed there)
+| ID | Bug | Fix |
+|---|---|---|
+| **billing-discount** | `app/dashboard/billing/invoices/page.tsx` reads `viewInvoice.discount` (~lines 596/602/752) to render the discount line, but the Prisma `Invoice` model has no `discount` field — it's `discountAmount` (`Decimal(14,2)`), and `billing.ts` (`getInvoiceById`/`getInvoices`) returns `discountAmount`. So `discount` is always `undefined` → `undefined > 0` is false → the discount line **never renders** even for a genuinely-discounted invoice. | Change the JSX to read `discountAmount`; update the `InvoiceRow` interface `discount: number` → `discountAmount: string \| number`. Verify with a seeded non-zero-discount invoice (desktop detail + mobile/print summary); §3.9 (light/dark × AR/EN) on `/dashboard/billing/invoices`, 0 console errors. |
+| **reports-costPerSqm** | `app/dashboard/reports/ReportsView.tsx` (~lines 337-342) renders the maintenance-cost "by building" rows using a `costPerSqm` field that `getMaintenanceCostReport` (`app/actions/reports.ts`) never returns (its `byBuilding` rows are `{ name, estimated, actual, count }`). Users see a literal **"undefined ر.س/م²"** in the maintenance cost report. | Either compute `costPerSqm` (`actual / building-area`) in the action + add it to the `byBuilding` return type, OR drop the "(… ر.س/م²)" segment from the rendered string. Add the field to the action's return type so it's type-checked; §3.9 verify (AR/EN × light/dark). |
 
 ---
 
