@@ -168,7 +168,7 @@ export default function SecuritySettingsPage() {
           <div className="rounded-lg border border-border bg-card px-4">
             <DataCard
               icon={KeyRound}
-              iconTone="purple"
+              iconTone="primary"
               title={t("كلمة المرور", "Password")}
               subtitle={
                 t("قم بتغيير كلمة المرور الخاصة بك", "Change your account password")

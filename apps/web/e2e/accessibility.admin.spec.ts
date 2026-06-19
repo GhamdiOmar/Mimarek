@@ -9,7 +9,7 @@ import AxeBuilder from "@axe-core/playwright";
  *
  * Coverage:
  *   Five key dashboard routes, exercised under the admin storageState
- *   (admin@mimaric.sa / mimaric2026 — seeded as ADMIN tenant user).
+ *   (admin@mimarek.sa / mimaric2026 — seeded as ADMIN tenant user).
  *
  * Violation threshold:
  *   Currently filtered to "critical" and "serious" impact only, so the suite

@@ -25,7 +25,7 @@ model Organization {
   entityType          EntityType? // MOC: establishment, company, branch, etc.
   legalForm           LegalForm? // MOC: LLC, JSC, sole proprietorship, etc.
   registrationStatus  RegistrationStatus? // MOC: active, expired, suspended, etc.
-  appStatus           OrgAppStatus                @default(ACTIVE) // Mimaric app-level org lifecycle (E1)
+  appStatus           OrgAppStatus                @default(ACTIVE) // Mimarek app-level org lifecycle (E1)
   registrationDate    DateTime? // CR registration date
   expiryDate          DateTime? // CR expiry date
   capitalAmountSar    Decimal?                    @db.Decimal(14, 2) // Declared capital in SAR
@@ -1659,7 +1659,7 @@ model SystemConfig {
   schemaOrgInstagram String?
 
   // ─── REGA / Real-Estate Compliance ──────────────────────────────────────────
-  // Mimaric's own REGA electronic-real-estate-platform FAL license number
+  // Mimarek's own REGA electronic-real-estate-platform FAL license number
   // (required to lawfully host marketplace advertisements; REGA mandates the
   // license be displayed). Surfaced on the login / landing pages as a compliance
   // affordance and set by platform admin. Placeholder until issued.

@@ -978,7 +978,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
               <DataCard
                 key={c.id}
                 icon={c.type === "SALE" ? Home : Key}
-                iconTone="purple"
+                iconTone="primary"
                 divider={idx !== mobileFiltered.length - 1}
                 title={
                   <span className="flex items-center gap-2">
@@ -1276,7 +1276,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
             mobileCard={(row) => (
               <DataCard
                 icon={Home}
-                iconTone="purple"
+                iconTone="primary"
                 divider={false}
                 title={
                   <span className="flex items-center gap-2">
@@ -1360,7 +1360,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
             mobileCard={(row) => (
               <DataCard
                 icon={Key}
-                iconTone="purple"
+                iconTone="primary"
                 divider={false}
                 title={
                   <span className="flex items-center gap-2">

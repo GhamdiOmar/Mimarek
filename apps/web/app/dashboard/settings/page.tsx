@@ -58,7 +58,7 @@ export default function OrgSettingsPage() {
 
   const sessionUser = session?.user ?? {};
   const profileName =
-    sessionUser.name ?? (t("مستخدم ميماريك", "Mimaric User"));
+    sessionUser.name ?? (t("مستخدم معمارك", "Mimarek User"));
   const profileEmail = sessionUser.email ?? "";
   const profileRole = (sessionUser as { role?: string }).role ?? "USER";
   const profileRoleLabel = (roleLabels[profileRole] ?? { ar: "مستخدم", en: "User" })[lang];
@@ -277,7 +277,7 @@ export default function OrgSettingsPage() {
                 {form.name || "\u2014"}
               </p>
               <p className="text-[11px] text-muted-foreground font-latin truncate">
-                {form.tradeNameEnglish || "Mimaric"}
+                {form.tradeNameEnglish || "Mimarek"}
                 {org?.type ? ` · ${org.type as string}` : ""}
               </p>
             </div>
@@ -733,7 +733,7 @@ export default function OrgSettingsPage() {
                     {form.name || "\u2014"}
                   </h2>
                   <p className="text-xs text-muted-foreground mt-1 uppercase tracking-widest font-latin">
-                    {form.tradeNameEnglish || "Mimaric"} &bull;{" "}
+                    {form.tradeNameEnglish || "Mimarek"} &bull;{" "}
                     {(org?.type as string) ?? "Developer"}
                   </p>
                 </div>
@@ -1258,7 +1258,7 @@ export default function OrgSettingsPage() {
               </div>
               <div>
                 <p className="text-xs font-bold">
-                  {t("موثق لدى ميماريك", "Verified by Mimaric")}
+                  {t("موثق لدى معمارك", "Verified by Mimarek")}
                 </p>
                 <p className="text-[10px] text-white/50 font-latin">Active since 2024</p>
               </div>

@@ -1,7 +1,7 @@
 /**
  * Number / currency / date formatting that pins **Western (Latin) digits** in
  * both languages. Modern Saudi digital products (Absher, Aqar, Bayut) and every
- * ZATCA/Ejar integration use 0–9, and Mimaric KPI values already do — so AR
+ * ZATCA/Ejar integration use 0–9, and Mimarek KPI values already do — so AR
  * surfaces must not switch to Arabic-Indic digits (٠–٩).
  *
  * Resolves CX-019: AR dates were rendering Arabic-Indic digits while metrics

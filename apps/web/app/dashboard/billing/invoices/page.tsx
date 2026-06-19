@@ -302,7 +302,7 @@ export default function InvoicesPage() {
     return (
       <DataCard
         icon={Receipt}
-        iconTone="purple"
+        iconTone="primary"
         divider={false}
         onClick={() => handleViewInvoice(inv.id)}
         title={

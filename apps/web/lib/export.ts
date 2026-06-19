@@ -44,7 +44,7 @@ export async function exportToExcel({
   columns,
   filename = 'export',
   lang = 'ar',
-  title = 'تقرير ميماريك',
+  title = 'تقرير معمارك',
 }: {
   data: ExportRow[];
   columns: ExportColumn[];
@@ -58,8 +58,8 @@ export async function exportToExcel({
     properties: { defaultRowHeight: 25 },
   });
 
-  // Mimaric Branding Colors
-  const primaryColor = '0A1628'; // Vision Navy
+  // Mimarek Branding Colors
+  const primaryColor = '001B2A'; // Vision Navy
   const whiteColor = 'FFFFFF';
   
   // Add Title
@@ -121,7 +121,7 @@ export async function exportToExcel({
 export async function exportToPDF({
   elementId,
   filename = 'export',
-  title = 'تقرير ميماريك',
+  title = 'تقرير معمارك',
   lang = 'ar',
 }: {
   elementId: string;
@@ -149,12 +149,12 @@ export async function exportToPDF({
   headerDiv.style.alignItems = 'center';
   headerDiv.style.marginBottom = '20px';
   headerDiv.style.padding = '20px';
-  headerDiv.style.borderBottom = '3px solid #0A1628';
+  headerDiv.style.borderBottom = '3px solid #001B2A';
   headerDiv.style.backgroundColor = '#ffffff';
 
   headerDiv.innerHTML = `
-    <h1 style="color: #0A1628; margin: 0; font-family: sans-serif; font-size: 24px;">${title}</h1>
-    <h2 style="color: #107840; margin: 0; font-family: sans-serif; font-size: 28px; font-weight: 900; letter-spacing: 2px;">MIMARIC</h2>
+    <h1 style="color: #001B2A; margin: 0; font-family: sans-serif; font-size: 24px;">${title}</h1>
+    <h2 style="color: #00707A; margin: 0; font-family: sans-serif; font-size: 28px; font-weight: 900; letter-spacing: 2px;">MIMAREK</h2>
   `;
   
   // Clone the element to avoid mutating the visible DOM

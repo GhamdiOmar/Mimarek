@@ -344,7 +344,7 @@ export default function BillingDashboardPage() {
                   <DataCard
                     key={inv.id}
                     icon={Receipt}
-                    iconTone="purple"
+                    iconTone="primary"
                     divider={idx !== Math.min(invoices.length, 3) - 1}
                     title={
                       <span className="font-mono text-xs text-foreground">

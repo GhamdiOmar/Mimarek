@@ -1,4 +1,4 @@
-# Mimaric — Outstanding Work Report
+# Mimarek — Outstanding Work Report
 
 > **Updated 2026-06-19, post-v4.33.6.** The post-v4.32.0 tracked tails are now **all closed**: v4.33.0
 > closed Sections B+C; v4.33.1 the `contracts.ts` return-shape debt; v4.33.2 **H9** (seller-convert E2E,

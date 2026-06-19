@@ -7,7 +7,7 @@ export default function FinalCTA({ lang }: { lang: "ar" | "en" }) {
   const t = translations[lang];
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-primary via-primary to-primary py-20 lg:py-24">
+    <section id="cta" className="relative overflow-hidden bg-gradient-to-br from-primary via-primary to-primary py-20 lg:py-24">
       {/* Single subtle decorative element */}
       <div className="absolute -top-24 -end-24 h-72 w-72 rounded-full bg-white/5 blur-3xl" />
 

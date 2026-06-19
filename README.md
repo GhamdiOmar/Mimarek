@@ -1,13 +1,13 @@
 <div align="center">
 
-# Mimaric — ميماريك
+# Mimarek — معمارك
 
 **Saudi-first PropTech SaaS for real estate developers.**
 
 Automate the full property lifecycle — sales, CRM, rentals, leasing, finance, and maintenance — on a platform built for Vision 2030 compliance (ZATCA · Ejar · REGA · Balady · Absher).
 
-[![CI](https://github.com/GhamdiOmar/Mimaric/actions/workflows/ci.yml/badge.svg)](https://github.com/GhamdiOmar/Mimaric/actions/workflows/ci.yml)
-![Version](https://img.shields.io/badge/version-4.7.0-7339AC)
+[![CI](https://github.com/GhamdiOmar/Mimarek/actions/workflows/ci.yml/badge.svg)](https://github.com/GhamdiOmar/Mimarek/actions/workflows/ci.yml)
+![Version](https://img.shields.io/badge/version-4.7.0-00707A)
 ![Next.js](https://img.shields.io/badge/Next.js-16-black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6)
 ![Arabic](https://img.shields.io/badge/%D8%B9%D8%B1%D8%A8%D9%8A-first-00875A)
@@ -16,9 +16,9 @@ Automate the full property lifecycle — sales, CRM, rentals, leasing, finance, 
 
 ---
 
-## Why Mimaric
+## Why Mimarek
 
-Saudi real estate runs on a fragmented stack — Excel sheets for rent rolls, WhatsApp threads for tours, paper contracts for Ejar, and separate tools for ZATCA e-invoicing. Mimaric is one platform that replaces all of them, and it speaks Arabic first.
+Saudi real estate runs on a fragmented stack — Excel sheets for rent rolls, WhatsApp threads for tours, paper contracts for Ejar, and separate tools for ZATCA e-invoicing. Mimarek is one platform that replaces all of them, and it speaks Arabic first.
 
 - **One workspace per developer** — properties, units, customers, deals, contracts, payments, maintenance tickets, and documents, all tenant-isolated by `organizationId`.
 - **Saudi-native data model** — customer records aligned with Absher (nationalId, personType, Hijri DOB), organizations aligned with MOC (CR, entityType, legalForm).
@@ -105,8 +105,8 @@ Design-system source of truth: [`packages/ui/src/globals.css`](packages/ui/src/g
 ### 1. Clone & install
 
 ```bash
-git clone git@github.com:GhamdiOmar/Mimaric.git
-cd Mimaric
+git clone git@github.com:GhamdiOmar/Mimarek.git
+cd Mimarek
 npm install
 ```
 
@@ -159,10 +159,10 @@ Visit [`http://localhost:3000/auth/login`](http://localhost:3000/auth/login) and
 
 ## Design system
 
-Mimaric ships a first-class design system documented internally. Highlights:
+Mimarek ships a first-class design system documented internally. Highlights:
 
-- **Brand** — Mimaric Purple (`hsl(270 50% 45%)`) is the single UI color. Semantic colors only: blue=info · red=danger · amber=warning · green=success · gold=premium tier.
-- **Typography** — IBM Plex Sans Arabic + DM Sans + IBM Plex Mono, loaded via `next/font/google` with AR-specific line-height and letter-spacing tuning.
+- **Brand** — Mimarek Teal (`hsl(185 100% 24%)`) is the single UI color. Semantic colors only: blue=info · red=danger · amber=warning · green=success · cyan=premium tier.
+- **Typography** — Tajawal + Satoshi + IBM Plex Mono, loaded via `next/font/google` (Tajawal) and `next/font/local` (Satoshi) with AR-specific line-height and letter-spacing tuning.
 - **KPI anatomy** — 8-field contract (label · value · unit · delta · comparisonPeriod · trend · drill-down href · lastUpdated) with `hero` / `standard` / `utility` tier prop. Each dashboard has **exactly one** hero (the North Star).
 - **Empty states** — 5-element formula (icon · title · value statement · primary CTA · optional secondary action + help link) on every data-backed surface.
 - **RTL-first** — logical CSS properties throughout (`ms-/me-/ps-/pe-/start-/end-`). Directional icons wrapped in `<DirectionalIcon>`. Numbers always LTR in Arabic context.
@@ -204,7 +204,7 @@ Engineering contract is maintained in an internal spec.
 
 Tracked in [CHANGELOG.md](CHANGELOG.md). Recent + upcoming:
 
-- **v4.0.0** (shipped 2026-04-18) — Design System v2 + Access Model Hardening. [Release notes](https://github.com/GhamdiOmar/Mimaric/releases/tag/v4.0.0).
+- **v4.0.0** (shipped 2026-04-18) — Design System v2 + Access Model Hardening. [Release notes](https://github.com/GhamdiOmar/Mimarek/releases/tag/v4.0.0).
 - **v4.1** (planned) — react-hook-form + zod migration, DB-backed TanStack saved views, full Balady district cascade.
 - **v4.2** (planned) — ZATCA e-invoice submission, SAMA-compliant Moyasar payment gateway.
 
@@ -212,6 +212,6 @@ Tracked in [CHANGELOG.md](CHANGELOG.md). Recent + upcoming:
 
 ## License
 
-Proprietary — © Mimaric PropTech Co. All rights reserved.
+Proprietary — © Mimarek PropTech Co. All rights reserved.
 
-For partnership, licensing, or enterprise enquiries: **omar@mimaric.sa**
+For partnership, licensing, or enterprise enquiries: **omar@mimarek.sa**

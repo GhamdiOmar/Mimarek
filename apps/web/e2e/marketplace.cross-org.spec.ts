@@ -19,9 +19,9 @@ test.describe.configure({ mode: "serial" });
 /**
  * Cross-org marketplace E2E — P3 conveyance gates (v4.30).
  *
- * Seller = admin@mimaric.sa (Mimaric org). Buyer = dummy@demo.sa (Dummy org,
+ * Seller = admin@mimarek.sa (Mimarek org). Buyer = dummy@demo.sa (Dummy org,
  * a SECOND tenant org — required for the cross-org visibility assertions).
- * System = system@mimaric.sa (SYSTEM_ADMIN — platform moderation).
+ * System = system@mimarek.sa (SYSTEM_ADMIN — platform moderation).
  *
  * This spec asserts the NEW P3 dark-launch + moderation behavior and RUNS every leg
  * (publish → moderation gate → admin approval → buyer browse → inquiry → kill-switch
@@ -32,9 +32,9 @@ test.describe.configure({ mode: "serial" });
  * Captures light/dark × AR/EN screenshots for the key routes (AGENTS §3.9).
  */
 
-const SELLER = { email: "admin@mimaric.sa", pass: "mimaric2026" };
+const SELLER = { email: "admin@mimarek.sa", pass: "mimaric2026" };
 const BUYER = { email: "dummy@demo.sa", pass: "mimaric2026" };
-const SYS = { email: "system@mimaric.sa", pass: "mimaric2026" };
+const SYS = { email: "system@mimarek.sa", pass: "mimaric2026" };
 
 const SHOT_DIR = path.join(process.cwd(), "e2e", "__screenshots__", "marketplace");
 const UNIT_NO = `MKTE2E-${Date.now().toString(36).toUpperCase()}`;

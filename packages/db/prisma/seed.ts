@@ -18,10 +18,10 @@ async function main() {
   const org = await prisma.organization.upsert({
     where: { crNumber: "1010342981" },
     update: {
-      nameArabic: "شركة معماري للتطوير العقاري",
-      nameEnglish: "Mimaric Real Estate Development Co.",
-      tradeNameArabic: "معماري",
-      tradeNameEnglish: "Mimaric",
+      nameArabic: "شركة معمارك للتطوير العقاري",
+      nameEnglish: "Mimarek Real Estate Development Co.",
+      tradeNameArabic: "معمارك",
+      tradeNameEnglish: "Mimarek",
       entityType: "COMPANY",
       legalForm: "LIMITED_LIABILITY_COMPANY",
       registrationStatus: "ACTIVE_REG",
@@ -33,8 +33,8 @@ async function main() {
       contactInfo: {
         mobileNumber: "0551234567",
         phoneNumber: "0112345678",
-        email: "info@mimaric.sa",
-        websiteUrl: "https://mimaric.sa",
+        email: "info@mimarek.sa",
+        websiteUrl: "https://mimarek.sa",
       },
       nationalAddress: {
         region: "منطقة الرياض",
@@ -53,11 +53,11 @@ async function main() {
       },
     },
     create: {
-      name: "Mimaric Development",
-      nameArabic: "شركة معماري للتطوير العقاري",
-      nameEnglish: "Mimaric Real Estate Development Co.",
-      tradeNameArabic: "معماري",
-      tradeNameEnglish: "Mimaric",
+      name: "Mimarek Development",
+      nameArabic: "شركة معمارك للتطوير العقاري",
+      nameEnglish: "Mimarek Real Estate Development Co.",
+      tradeNameArabic: "معمارك",
+      tradeNameEnglish: "Mimarek",
       crNumber: "1010342981",
       unifiedNumber: "7001234567",
       vatNumber: "310452938100003",
@@ -73,8 +73,8 @@ async function main() {
       contactInfo: {
         mobileNumber: "0551234567",
         phoneNumber: "0112345678",
-        email: "info@mimaric.sa",
-        websiteUrl: "https://mimaric.sa",
+        email: "info@mimarek.sa",
+        websiteUrl: "https://mimarek.sa",
       },
       nationalAddress: {
         region: "منطقة الرياض",
@@ -103,10 +103,10 @@ async function main() {
   // 2. Company Admin User (customer admin test account)
   const hashedPassword = await bcryptHash("mimaric2026", 12);
   const admin = await prisma.user.upsert({
-    where: { email: "admin@mimaric.sa" },
+    where: { email: "admin@mimarek.sa" },
     update: { password: hashedPassword, role: "ADMIN", ...VERIFIED },
     create: {
-      email: "admin@mimaric.sa",
+      email: "admin@mimarek.sa",
       name: "Omar Al-Ghamdi",
       password: hashedPassword,
       role: "ADMIN",
@@ -123,10 +123,10 @@ async function main() {
   const financePassword = await bcryptHash("finance2026", 12);
 
   await prisma.user.upsert({
-    where: { email: "ahmed@mimaric.sa" },
+    where: { email: "ahmed@mimarek.sa" },
     update: { ...VERIFIED },
     create: {
-      email: "ahmed@mimaric.sa",
+      email: "ahmed@mimarek.sa",
       name: "Ahmed Al-Harbi",
       password: salesPassword,
       role: "AGENT",
@@ -138,10 +138,10 @@ async function main() {
   });
 
   await prisma.user.upsert({
-    where: { email: "fatima@mimaric.sa" },
+    where: { email: "fatima@mimarek.sa" },
     update: { ...VERIFIED },
     create: {
-      email: "fatima@mimaric.sa",
+      email: "fatima@mimarek.sa",
       name: "Fatima Al-Rashid",
       password: financePassword,
       role: "MANAGER",
@@ -153,10 +153,10 @@ async function main() {
   });
 
   await prisma.user.upsert({
-    where: { email: "khalid@mimaric.sa" },
+    where: { email: "khalid@mimarek.sa" },
     update: { ...VERIFIED },
     create: {
-      email: "khalid@mimaric.sa",
+      email: "khalid@mimarek.sa",
       name: "Khalid Al-Otaibi",
       password: salesPassword,
       role: "TECHNICIAN",
@@ -171,62 +171,62 @@ async function main() {
   const testPassword = await bcryptHash("mimaric2026", 12);
 
   await prisma.user.upsert({
-    where: { email: "dev_admin@mimaric.sa" },
+    where: { email: "dev_admin@mimarek.sa" },
     update: { role: "SYSTEM_SUPPORT", organizationId: null, ...VERIFIED },
-    create: { email: "dev_admin@mimaric.sa", name: "Saeed Al-Anzi", password: testPassword, role: "SYSTEM_SUPPORT", organizationId: null, onboardingCompleted: true, accountType: "company", ...VERIFIED },
+    create: { email: "dev_admin@mimarek.sa", name: "Saeed Al-Anzi", password: testPassword, role: "SYSTEM_SUPPORT", organizationId: null, onboardingCompleted: true, accountType: "company", ...VERIFIED },
   });
   await prisma.user.upsert({
-    where: { email: "pm@mimaric.sa" },
+    where: { email: "pm@mimarek.sa" },
     update: { ...VERIFIED },
-    create: { email: "pm@mimaric.sa", name: "Nasser Al-Zahrani", password: testPassword, role: "MANAGER", organizationId: org.id, onboardingCompleted: true, accountType: "company", ...VERIFIED },
+    create: { email: "pm@mimarek.sa", name: "Nasser Al-Zahrani", password: testPassword, role: "MANAGER", organizationId: org.id, onboardingCompleted: true, accountType: "company", ...VERIFIED },
   });
   await prisma.user.upsert({
-    where: { email: "sales_mgr@mimaric.sa" },
+    where: { email: "sales_mgr@mimarek.sa" },
     update: { ...VERIFIED },
-    create: { email: "sales_mgr@mimaric.sa", name: "Huda Al-Maliki", password: testPassword, role: "MANAGER", organizationId: org.id, onboardingCompleted: true, accountType: "company", ...VERIFIED },
+    create: { email: "sales_mgr@mimarek.sa", name: "Huda Al-Maliki", password: testPassword, role: "MANAGER", organizationId: org.id, onboardingCompleted: true, accountType: "company", ...VERIFIED },
   });
   await prisma.user.upsert({
-    where: { email: "property_mgr@mimaric.sa" },
+    where: { email: "property_mgr@mimarek.sa" },
     update: { ...VERIFIED },
-    create: { email: "property_mgr@mimaric.sa", name: "Maryam Al-Subaie", password: testPassword, role: "MANAGER", organizationId: org.id, onboardingCompleted: true, accountType: "company", ...VERIFIED },
+    create: { email: "property_mgr@mimarek.sa", name: "Maryam Al-Subaie", password: testPassword, role: "MANAGER", organizationId: org.id, onboardingCompleted: true, accountType: "company", ...VERIFIED },
   });
   await prisma.user.upsert({
-    where: { email: "buyer@mimaric.sa" },
+    where: { email: "buyer@mimarek.sa" },
     update: { ...VERIFIED },
-    create: { email: "buyer@mimaric.sa", name: "Turki Al-Fadhli", password: testPassword, role: "USER", organizationId: org.id, onboardingCompleted: true, accountType: "company", ...VERIFIED },
+    create: { email: "buyer@mimarek.sa", name: "Turki Al-Fadhli", password: testPassword, role: "USER", organizationId: org.id, onboardingCompleted: true, accountType: "company", ...VERIFIED },
   });
   await prisma.user.upsert({
-    where: { email: "tenant@mimaric.sa" },
+    where: { email: "tenant@mimarek.sa" },
     update: { ...VERIFIED },
-    create: { email: "tenant@mimaric.sa", name: "Reem Al-Harthy", password: testPassword, role: "USER", organizationId: org.id, onboardingCompleted: true, accountType: "company", ...VERIFIED },
+    create: { email: "tenant@mimarek.sa", name: "Reem Al-Harthy", password: testPassword, role: "USER", organizationId: org.id, onboardingCompleted: true, accountType: "company", ...VERIFIED },
   });
   await prisma.user.upsert({
-    where: { email: "user@mimaric.sa" },
+    where: { email: "user@mimarek.sa" },
     update: { ...VERIFIED },
-    create: { email: "user@mimaric.sa", name: "Lama Al-Jaber", password: testPassword, role: "USER", organizationId: org.id, onboardingCompleted: true, accountType: "company", ...VERIFIED },
+    create: { email: "user@mimarek.sa", name: "Lama Al-Jaber", password: testPassword, role: "USER", organizationId: org.id, onboardingCompleted: true, accountType: "company", ...VERIFIED },
   });
   // Dedicated LEASING and FINANCE role users (for testing the v4.15.0 role permission sets)
   await prisma.user.upsert({
-    where: { email: "leasing@mimaric.sa" },
+    where: { email: "leasing@mimarek.sa" },
     update: { role: "LEASING", organizationId: org.id, ...VERIFIED },
-    create: { email: "leasing@mimaric.sa", name: "Sara Al-Dossari", password: testPassword, role: "LEASING", organizationId: org.id, onboardingCompleted: true, accountType: "company", ...VERIFIED },
+    create: { email: "leasing@mimarek.sa", name: "Sara Al-Dossari", password: testPassword, role: "LEASING", organizationId: org.id, onboardingCompleted: true, accountType: "company", ...VERIFIED },
   });
   await prisma.user.upsert({
-    where: { email: "finance@mimaric.sa" },
+    where: { email: "finance@mimarek.sa" },
     update: { role: "FINANCE", organizationId: org.id, ...VERIFIED },
-    create: { email: "finance@mimaric.sa", name: "Yousef Al-Qahtani", password: testPassword, role: "FINANCE", organizationId: org.id, onboardingCompleted: true, accountType: "company", ...VERIFIED },
+    create: { email: "finance@mimarek.sa", name: "Yousef Al-Qahtani", password: testPassword, role: "FINANCE", organizationId: org.id, onboardingCompleted: true, accountType: "company", ...VERIFIED },
   });
-  // System Admin — Mimaric platform admin (for testing system-level ticket management)
+  // System Admin — Mimarek platform admin (for testing system-level ticket management)
   await prisma.user.upsert({
-    where: { email: "system@mimaric.sa" },
+    where: { email: "system@mimarek.sa" },
     update: { role: "SYSTEM_ADMIN", organizationId: null, ...VERIFIED },
-    create: { email: "system@mimaric.sa", name: "Mimaric System Admin", password: testPassword, role: "SYSTEM_ADMIN", organizationId: null, onboardingCompleted: true, accountType: "company", ...VERIFIED },
+    create: { email: "system@mimarek.sa", name: "Mimarek System Admin", password: testPassword, role: "SYSTEM_ADMIN", organizationId: null, onboardingCompleted: true, accountType: "company", ...VERIFIED },
   });
-  // System Support — Mimaric support/engineering team
+  // System Support — Mimarek support/engineering team
   await prisma.user.upsert({
-    where: { email: "support@mimaric.sa" },
+    where: { email: "support@mimarek.sa" },
     update: { role: "SYSTEM_SUPPORT", organizationId: null, ...VERIFIED },
-    create: { email: "support@mimaric.sa", name: "Mimaric Support Agent", password: testPassword, role: "SYSTEM_SUPPORT", organizationId: null, onboardingCompleted: true, accountType: "company", ...VERIFIED },
+    create: { email: "support@mimarek.sa", name: "Mimarek Support Agent", password: testPassword, role: "SYSTEM_SUPPORT", organizationId: null, onboardingCompleted: true, accountType: "company", ...VERIFIED },
   });
   console.log("Created 11 role test users (9 operational + 2 system)");
 
@@ -367,13 +367,13 @@ async function main() {
     priceMonthly: 1499, priceAnnual: 14390, trialDays: 14, isPublic: true, isDefault: false, sortOrder: 2,
   }, enterpriseEntitlements);
 
-  // Subscription for Mimaric org (Professional, ACTIVE).
+  // Subscription for Mimarek org (Professional, ACTIVE).
   // Idempotent: a prior test run may have mutated the seed subscription's status
   // (e.g. to PAST_DUE), which the old `findFirst(status in ACTIVE/TRIALING)` guard
   // would miss — then blindly create a SECOND active sub, drifting billing state
   // across runs. Find ANY sub for the org and normalize it back to the canonical
   // ACTIVE state; only create when none exists. Never duplicates.
-  const mimaricSub = {
+  const mimarekSub = {
     planId: professionalPlan.id,
     status: "ACTIVE" as const,
     billingCycle: "ANNUAL" as const,
@@ -386,9 +386,9 @@ async function main() {
     where: { organizationId: org.id },
   });
   if (existingSub) {
-    await prisma.subscription.update({ where: { id: existingSub.id }, data: mimaricSub });
+    await prisma.subscription.update({ where: { id: existingSub.id }, data: mimarekSub });
   } else {
-    await prisma.subscription.create({ data: { organizationId: org.id, ...mimaricSub } });
+    await prisma.subscription.create({ data: { organizationId: org.id, ...mimarekSub } });
   }
 
   // Subscription for Dummy org (Starter, ACTIVE) — idempotent, same rationale as above.

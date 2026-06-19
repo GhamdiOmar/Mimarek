@@ -34,11 +34,11 @@ export default function Hero({ lang }: { lang: "ar" | "en" }) {
             >
               <path
                 d="M0 0L40 40L80 0M0 80L40 40L80 80"
-                stroke="hsl(270 55% 62%)"
+                stroke="hsl(185 65% 45%)"
                 strokeWidth="0.5"
                 fill="none"
               />
-              <circle cx="40" cy="40" r="1.5" fill="hsl(270 55% 62%)" opacity="0.6" />
+              <circle cx="40" cy="40" r="1.5" fill="hsl(185 65% 45%)" opacity="0.6" />
             </pattern>
           </defs>
           <rect width="100%" height="100%" fill="url(#arch-hero)" />
@@ -75,7 +75,7 @@ export default function Hero({ lang }: { lang: "ar" | "en" }) {
               href="#features"
               className="text-sm font-medium text-white/85 underline underline-offset-4 decoration-white/40 transition-colors hover:text-white hover:decoration-white/60"
             >
-              {t.watchDemo}
+              {t.seeFeatures}
             </a>
           </div>
 
@@ -100,7 +100,7 @@ export default function Hero({ lang }: { lang: "ar" | "en" }) {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/assets/screenshots/dashboard.png"
-                alt="Mimaric Dashboard"
+                alt="Mimarek Dashboard"
                 className="h-auto w-full"
               />
             </div>

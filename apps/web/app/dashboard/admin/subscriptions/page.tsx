@@ -477,7 +477,7 @@ export default function AdminSubscriptionsPage() {
                     <DataCard
                       key={sub.id}
                       icon={Building2}
-                      iconTone="purple"
+                      iconTone="primary"
                       title={orgName}
                       subtitle={
                         <span className="inline-flex items-center gap-2">
@@ -607,7 +607,7 @@ export default function AdminSubscriptionsPage() {
           return (
             <DataCard
               icon={Building2}
-              iconTone="purple"
+              iconTone="primary"
               title={orgName}
               subtitle={
                 <span className="inline-flex items-center gap-2">

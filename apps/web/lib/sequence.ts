@@ -5,7 +5,7 @@ import type { Prisma } from "@repo/db";
  * partition in their format / unique constraint).
  *
  * Both `Invoice.invoiceNumber` (`INV-YYYY-NNNNN`, global `@unique`, single issuing
- * entity = the Mimaric platform) and `Contract.contractNumber` (global `@unique`;
+ * entity = the Mimarek platform) and `Contract.contractNumber` (global `@unique`;
  * its 4-char org prefix can repeat across orgs, so the numeric tail must be globally
  * monotonic) require a single shared sequence — NOT a per-org one. Using the real
  * `organizationId` here would let two orgs both mint `INV-YYYY-00001` and collide on

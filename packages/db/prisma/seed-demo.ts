@@ -2,7 +2,7 @@
  * seed-demo.ts — Rich demo data for dashboard KPIs
  * Run: pnpm --filter @repo/db seed:demo
  *
- * Adds to the Mimaric org (admin@mimaric.sa):
+ * Adds to the Mimarek org (admin@mimarek.sa):
  *  • 6 extra customers  (fills CRM pipeline stages)
  *  • 3 reservations     (activeDeals KPI)
  *  • 4 signed contracts + payment plans
@@ -35,7 +35,7 @@ async function main() {
   const org = await prisma.organization.findFirst({
     where: { crNumber: "1010342981" },
   });
-  if (!org) throw new Error("Mimaric org not found — run main seed first");
+  if (!org) throw new Error("Mimarek org not found — run main seed first");
 
   const units = await prisma.unit.findMany({
     where: { organizationId: org.id },
@@ -45,7 +45,7 @@ async function main() {
     throw new Error("No units found — run main seed first");
 
   const adminUser = await prisma.user.findFirst({
-    where: { email: "admin@mimaric.sa" },
+    where: { email: "admin@mimarek.sa" },
   });
 
   // Guard: skip if contracts already exist

@@ -443,7 +443,7 @@ export default function PreventiveMaintenancePage() {
                 <DataCard
                   key={plan.id}
                   icon={CalendarCheck}
-                  iconTone={plan.isActive ? "purple" : "default"}
+                  iconTone={plan.isActive ? "primary" : "default"}
                   onClick={() => openEdit(plan)}
                   title={
                     <span className={plan.isActive ? "" : "opacity-60"}>

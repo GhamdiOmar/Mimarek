@@ -38,14 +38,14 @@ export const FAQ_ITEMS: FAQItem[] = [
   // Getting Started
   {
     id: "gs-1",
-    question: { ar: "كيف أبدأ استخدام ميماريك؟", en: "How do I get started with Mimaric?" },
+    question: { ar: "كيف أبدأ استخدام معمارك؟", en: "How do I get started with Mimarek?" },
     answer: { ar: "بعد تسجيل الدخول تنتقل إلى لوحة التحكم الرئيسية. ابدأ بإضافة العملاء من قسم CRM، ثم أضف العقارات والوحدات من قسم العقارات، وأنشئ الحجوزات والعقود.", en: "After you log in, you land on the main dashboard. Start by adding customers in the CRM section, then add properties and units in the Properties section, and create your reservations and contracts from there." },
     category: "getting_started",
   },
   {
     id: "gs-2",
     question: { ar: "ما هي الأدوار المتاحة في النظام؟", en: "What roles are available in the system?" },
-    answer: { ar: "في ميماريك سبعة أدوار داخل المنشأة: مدير (Admin) بكامل الصلاحيات التشغيلية، مدير عمليات (Manager) لإدارة العمليات، مسؤول تأجير (Leasing) للإيجارات وخط الإيجار، مسؤول مالي (Finance) للمدفوعات والتقارير المالية، وكيل (Agent) للمبيعات وخدمة العملاء، فني صيانة (Technician) للصيانة، ومستخدم (User) للاطلاع فقط. ويوجد دوران إضافيان مخصصان لطاقم منصة ميماريك للدعم الداخلي. ولكل دور صلاحياته الخاصة.", en: "There are seven organization roles: Admin (full operational permissions), Manager (operations management), Leasing (rentals and the leasing pipeline), Finance (payments and financial reports), Agent (sales and customer service), Technician (maintenance), and User (read-only). Two more roles are reserved for Mimaric's own platform-support staff. Each role gets its own set of permissions." },
+    answer: { ar: "في معمارك سبعة أدوار داخل المنشأة: مدير (Admin) بكامل الصلاحيات التشغيلية، مدير عمليات (Manager) لإدارة العمليات، مسؤول تأجير (Leasing) للإيجارات وخط الإيجار، مسؤول مالي (Finance) للمدفوعات والتقارير المالية، وكيل (Agent) للمبيعات وخدمة العملاء، فني صيانة (Technician) للصيانة، ومستخدم (User) للاطلاع فقط. ويوجد دوران إضافيان مخصصان لطاقم منصة معمارك للدعم الداخلي. ولكل دور صلاحياته الخاصة.", en: "There are seven organization roles: Admin (full operational permissions), Manager (operations management), Leasing (rentals and the leasing pipeline), Finance (payments and financial reports), Agent (sales and customer service), Technician (maintenance), and User (read-only). Two more roles are reserved for Mimarek's own platform-support staff. Each role gets its own set of permissions." },
     category: "getting_started",
   },
   {
@@ -108,7 +108,7 @@ export const FAQ_ITEMS: FAQItem[] = [
   {
     id: "fi-2",
     question: { ar: "هل النظام متوافق مع متطلبات هيئة الزكاة والضريبة (ZATCA)؟", en: "Is the system ZATCA compliant?" },
-    answer: { ar: "نعم، يحسب ميماريك ضريبة القيمة المضافة (15%) وفق متطلبات هيئة الزكاة والضريبة والجمارك. والفوترة الإلكترونية قيد التطوير.", en: "Yes. Mimaric calculates VAT (15%) per ZATCA requirements. E-invoicing integration is still under development." },
+    answer: { ar: "نعم، يحسب معمارك ضريبة القيمة المضافة (15%) وفق متطلبات هيئة الزكاة والضريبة والجمارك. والفوترة الإلكترونية قيد التطوير.", en: "Yes. Mimarek calculates VAT (15%) per ZATCA requirements. E-invoicing integration is still under development." },
     category: "finance",
   },
   {
@@ -127,7 +127,7 @@ export const FAQ_ITEMS: FAQItem[] = [
   {
     id: "sp-4",
     question: { ar: "كيف يعمل نظام الصلاحيات للعقود؟", en: "How does the contract permissions system work?" },
-    answer: { ar: "يفصل ميماريك بين عمليات العقود التقدمية والتدميرية. العمليات التقدمية (إنشاء، إرسال، توقيع) تحتاج صلاحية 'contracts:write' المتاحة للمدير (Admin) ومدير العمليات (Manager) والوكيل (Agent). والعمليات التدميرية (إلغاء، إبطال، حذف) تحتاج صلاحية 'contracts:delete' المتاحة للمدير (Admin) فقط. والحذف لا يكون إلا للعقود في حالة 'مسودة'.", en: "Mimaric splits contract actions into progressive and destructive ones. Progressive actions (create, send, sign) need 'contracts:write', which Admin, Manager, and Agent roles have. Destructive actions (cancel, void, delete) need 'contracts:delete', which only Admin has. You can only delete a contract while it's still a Draft." },
+    answer: { ar: "يفصل معمارك بين عمليات العقود التقدمية والتدميرية. العمليات التقدمية (إنشاء، إرسال، توقيع) تحتاج صلاحية 'contracts:write' المتاحة للمدير (Admin) ومدير العمليات (Manager) والوكيل (Agent). والعمليات التدميرية (إلغاء، إبطال، حذف) تحتاج صلاحية 'contracts:delete' المتاحة للمدير (Admin) فقط. والحذف لا يكون إلا للعقود في حالة 'مسودة'.", en: "Mimarek splits contract actions into progressive and destructive ones. Progressive actions (create, send, sign) need 'contracts:write', which Admin, Manager, and Agent roles have. Destructive actions (cancel, void, delete) need 'contracts:delete', which only Admin has. You can only delete a contract while it's still a Draft." },
     category: "security_privacy",
   },
   {
@@ -152,13 +152,13 @@ export const FAQ_ITEMS: FAQItem[] = [
   {
     id: "te-2",
     question: { ar: "هل يدعم النظام اللغة العربية والإنجليزية؟", en: "Does the system support Arabic and English?" },
-    answer: { ar: "نعم، يعمل ميماريك بالعربية والإنجليزية مع تخطيط RTL/LTR كامل. غيّر اللغة من الشريط العلوي.", en: "Yes. Mimaric runs in both Arabic and English with full RTL/LTR layout. Switch the language from the top bar." },
+    answer: { ar: "نعم، يعمل معمارك بالعربية والإنجليزية مع تخطيط RTL/LTR كامل. غيّر اللغة من الشريط العلوي.", en: "Yes. Mimarek runs in both Arabic and English with full RTL/LTR layout. Switch the language from the top bar." },
     category: "technical",
   },
   {
     id: "te-3",
     question: { ar: "هل يدعم النظام التاريخ الهجري؟", en: "Does the system support Hijri dates?" },
-    answer: { ar: "نعم، يعرض ميماريك التاريخ الهجري والميلادي معاً في كل الأقسام.", en: "Yes. The system shows both Hijri and Gregorian dates everywhere." },
+    answer: { ar: "نعم، يعرض معمارك التاريخ الهجري والميلادي معاً في كل الأقسام.", en: "Yes. The system shows both Hijri and Gregorian dates everywhere." },
     category: "technical",
   },
   // Document Vault
@@ -202,13 +202,13 @@ export const FAQ_ITEMS: FAQItem[] = [
   },
   {
     id: "sc-5",
-    question: { ar: "ما هو نظام إيجار وكيف يتوافق ميماريك معه؟", en: "What is Ejar and how does Mimaric comply with it?" },
-    answer: { ar: "إيجار هو النظام الإلكتروني لعقود الإيجار في المملكة العربية السعودية. وعند إنشاء عقد إيجار يلتزم ميماريك بمتطلبات إيجار: تاريخ البدء والانتهاء (إلزامي)، ودورية الدفع (شهري، ربع سنوي، نصف سنوي، سنوي)، ومبلغ الضمان (بحد أقصى 5% من قيمة العقد)، والتجديد التلقائي (يُفعّل تلقائياً للعقود التي تزيد على 3 أشهر)، ومسؤولية الصيانة (المؤجر أو المستأجر)، وفترة الإشعار (60 يوماً افتراضياً). ثم يُنشئ جدول الأقساط تلقائياً ويربطه بالعقد.", en: "Ejar is Saudi Arabia's electronic rental contract system. When you create a lease contract, Mimaric follows the Ejar rules: start and end dates (mandatory), payment frequency (monthly, quarterly, semi-annual, annual), security deposit (maximum 5% of contract value), auto-renewal (turned on automatically for leases over 3 months), maintenance responsibility (landlord or tenant), and notice period (60 days default). The system then builds an installment schedule and links it to the contract." },
+    question: { ar: "ما هو نظام إيجار وكيف يتوافق معمارك معه؟", en: "What is Ejar and how does Mimarek comply with it?" },
+    answer: { ar: "إيجار هو النظام الإلكتروني لعقود الإيجار في المملكة العربية السعودية. وعند إنشاء عقد إيجار يلتزم معمارك بمتطلبات إيجار: تاريخ البدء والانتهاء (إلزامي)، ودورية الدفع (شهري، ربع سنوي، نصف سنوي، سنوي)، ومبلغ الضمان (بحد أقصى 5% من قيمة العقد)، والتجديد التلقائي (يُفعّل تلقائياً للعقود التي تزيد على 3 أشهر)، ومسؤولية الصيانة (المؤجر أو المستأجر)، وفترة الإشعار (60 يوماً افتراضياً). ثم يُنشئ جدول الأقساط تلقائياً ويربطه بالعقد.", en: "Ejar is Saudi Arabia's electronic rental contract system. When you create a lease contract, Mimarek follows the Ejar rules: start and end dates (mandatory), payment frequency (monthly, quarterly, semi-annual, annual), security deposit (maximum 5% of contract value), auto-renewal (turned on automatically for leases over 3 months), maintenance responsibility (landlord or tenant), and notice period (60 days default). The system then builds an installment schedule and links it to the contract." },
     category: "sales_crm",
   },
   {
     id: "sc-7",
-    question: { ar: "ما هي دورة حياة العقد في ميماريك؟", en: "What is the contract lifecycle in Mimaric?" },
+    question: { ar: "ما هي دورة حياة العقد في معمارك؟", en: "What is the contract lifecycle in Mimarek?" },
     answer: { ar: "يمر العقد بثلاث حالات رئيسية: مسودة ← مُرسل ← موقّع، ويمكن إلغاؤه أو إبطاله. المسودة تُرسل أو تُلغى أو تُحذف. والمُرسل يُوقّع أو يُلغى. والموقّع يُبطل فقط (ويتطلب صلاحية Admin). وعند التوقيع: عقد البيع يحوّل الوحدة إلى 'مباع' وتنتقل الصفقة المرتبطة إلى 'مكسوبة'؛ وعقد الإيجار يحوّل الوحدة إلى 'مؤجر' والعميل إلى 'مستأجر نشط' ويفعّل جدول الأقساط. وعند الإلغاء أو الإبطال: تعود الوحدة إلى 'متاح' ويُنهى عقد الإيجار المرتبط (إن وُجد).", en: "A contract moves through three main states, Draft → Sent → Signed, and can also be Cancelled or Voided. A Draft can be sent, cancelled, or deleted. A Sent contract can be signed or cancelled. A Signed contract can only be voided (which requires Admin permission). When you sign a Sale contract, the unit becomes 'Sold' and the linked deal moves to 'Won'. When you sign a Lease contract, the unit becomes 'Rented', the customer becomes an 'Active Tenant', and the installment schedule goes live. If you cancel or void, the unit goes back to 'Available' and the linked lease, if there is one, is terminated." },
     category: "sales_crm",
   },
@@ -245,13 +245,13 @@ export const FAQ_ITEMS: FAQItem[] = [
   // Onboarding / Getting Started
   {
     id: "gs-4",
-    question: { ar: "كيف أُعدّ حسابي ومنشأتي في ميماريك؟", en: "How do I set up my account and organization in Mimaric?" },
+    question: { ar: "كيف أُعدّ حسابي ومنشأتي في معمارك؟", en: "How do I set up my account and organization in Mimarek?" },
     answer: { ar: "عند أول تسجيل دخول يظهر معالج الإعداد المكوّن من 4 خطوات: (1) الانضمام لشركة قائمة أو المتابعة بشكل مستقل، (2) بيانات المنشأة (الاسم بالعربية والإنجليزية، السجل التجاري، الرقم الضريبي، نوع الكيان والشكل القانوني)، (3) بيانات التواصل (الجوال، المدينة، المنطقة)، (4) دعوة أعضاء الفريق عبر البريد الإلكتروني مع تحديد أدوارهم. ويمكنك تخطي أي خطوة والعودة لإكمالها لاحقاً.", en: "The first time you log in, a 4-step setup wizard walks you through it: (1) join an existing company or continue independently, (2) organization details (Arabic and English names, CR number, VAT number, entity type, legal form), (3) contact information (mobile, city, region), and (4) inviting team members by email and assigning their roles. You can skip any step and come back to it later." },
     category: "getting_started",
   },
   {
     id: "gs-5",
-    question: { ar: "كيف أنضم لشركة قائمة في ميماريك؟", en: "How do I join an existing company in Mimaric?" },
+    question: { ar: "كيف أنضم لشركة قائمة في معمارك؟", en: "How do I join an existing company in Mimarek?" },
     answer: { ar: "في الخطوة الأولى من الإعداد، اختر 'انضم لشركة'. أدخل رقم السجل التجاري المكوّن من 10 خانات وانقر 'بحث'. إذا وُجدت الشركة ظهرت بياناتها وأمكنك إرسال طلب انضمام، ثم يراجعه مدير الشركة ويوافق عليه.", en: "In the first setup step, choose 'Join a Company'. Type the 10-digit CR number and click 'Search'. If we find the company, its details show up and you can send a join request. The company admin then reviews and approves it." },
     category: "getting_started",
   },
@@ -296,7 +296,7 @@ export const FAQ_ITEMS: FAQItem[] = [
   },
   {
     id: "an-2",
-    question: { ar: "كيف أبحث بسرعة في ميماريك؟", en: "How do I search quickly across Mimaric?" },
+    question: { ar: "كيف أبحث بسرعة في معمارك؟", en: "How do I search quickly across Mimarek?" },
     answer: { ar: "اضغط Cmd+K (ماك) أو Ctrl+K (ويندوز) لفتح لوحة الأوامر — تعرض إجراءات سريعة (عميل جديد، عقد جديد…) وكل صفحة يمكنك الوصول إليها. ويبحث مربع البحث في الشريط العلوي عن العملاء والوحدات والعقود بالاسم أو الرقم أثناء الكتابة (بحرفين على الأقل). وعلى الجوال، انقر أيقونة البحث.", en: "Press Cmd+K (Mac) or Ctrl+K (Windows) to open the command palette. It lists quick actions (New customer, New contract…) and every page you can reach. The search box in the top bar finds customers, units, and contracts by name or number as you type (two characters minimum). On mobile, tap the search icon." },
     category: "account_notifications",
   },

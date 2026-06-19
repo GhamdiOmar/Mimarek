@@ -10,7 +10,7 @@
 //   const OUT = mkOut("verification-v4310");
 //   const browser = await chromium.launch();
 //   const errs = [];
-//   const { state } = await loginState(browser, "admin@mimaric.sa", "mimaric2026");
+//   const { state } = await loginState(browser, "admin@mimarek.sa", "mimaric2026");
 //   const c = await themedContext(browser, state, "en", "dark");
 //   const p = await c.newPage();
 //   makeWatch(errs)(p, "en-dark");

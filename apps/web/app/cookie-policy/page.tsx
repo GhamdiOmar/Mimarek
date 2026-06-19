@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { getLang } from "../../lib/i18n";
 
 export const metadata: Metadata = {
-  title: "Cookie Policy — Mimaric | سياسة ملفات تعريف الارتباط",
+  title: "Cookie Policy — Mimarek | سياسة ملفات تعريف الارتباط",
   description:
-    "How Mimaric uses cookies, the categories we use, and how to manage or withdraw your consent under the Saudi PDPL.",
+    "How Mimarek uses cookies, the categories we use, and how to manage or withdraw your consent under the Saudi PDPL.",
 };
 
 const t = (lang: "ar" | "en", ar: string, en: string) => (lang === "ar" ? ar : en);
@@ -17,21 +17,21 @@ export default async function CookiePolicyPage() {
     [
       {
         name: "mimaric-lang",
-        provider: t(lang, "ميماريك (طرف أول)", "Mimaric (first-party)"),
+        provider: t(lang, "معمارك (طرف أول)", "Mimarek (first-party)"),
         purpose: t(lang, "تذكّر تفضيل اللغة", "Stores your language preference"),
         category: t(lang, "ضرورية", "Necessary"),
         duration: t(lang, "12 شهرًا", "12 months"),
       },
       {
         name: "mimaric-consent",
-        provider: t(lang, "ميماريك", "Mimaric"),
+        provider: t(lang, "معمارك", "Mimarek"),
         purpose: t(lang, "تخزين اختياراتك لملفات تعريف الارتباط", "Stores your cookie choices"),
         category: t(lang, "ضرورية", "Necessary"),
         duration: t(lang, "12 شهرًا", "12 months"),
       },
       {
         name: t(lang, "جلسة الدخول (NextAuth)", "Session (NextAuth)"),
-        provider: t(lang, "ميماريك", "Mimaric"),
+        provider: t(lang, "معمارك", "Mimarek"),
         purpose: t(lang, "إبقاؤك مسجّل الدخول", "Keeps you signed in"),
         category: t(lang, "ضرورية", "Necessary"),
         duration: t(lang, "الجلسة", "Session"),
@@ -55,7 +55,7 @@ export default async function CookiePolicyPage() {
       ),
     },
     {
-      h: t(lang, "كيف نستخدمها", "How Mimaric uses cookies"),
+      h: t(lang, "كيف نستخدمها", "How Mimarek uses cookies"),
       p: t(
         lang,
         "نستخدم ملفات ضرورية لتشغيل المنصة، وملفات تحليلات اختيارية. لا تُفعّل التحليلات إلا بعد موافقتك الصريحة، وهي معطّلة افتراضيًا.",

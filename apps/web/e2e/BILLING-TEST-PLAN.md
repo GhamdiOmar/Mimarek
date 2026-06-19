@@ -1,4 +1,4 @@
-# Mimaric SaaS Commercialization — E2E Test Plan
+# Mimarek SaaS Commercialization — E2E Test Plan
 
 > **All tests are UI-based (Playwright E2E)**
 > Actions that cannot be performed through the current UI are marked with 🔧 for future enhancement.

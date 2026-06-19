@@ -1,5 +1,5 @@
 /**
- * Mimaric — k6 Load Test: Authenticated Browse Session
+ * Mimarek — k6 Load Test: Authenticated Browse Session
  * =====================================================
  * Models a realistic property-manager session:
  *   1. Acquire a NextAuth session cookie (POST credentials endpoint).
@@ -7,8 +7,8 @@
  *   3. Ramp from 20 → 200 VUs, hold, then ramp down.
  *
  * Run:
- *   BASE_URL=https://staging.mimaric.sa \
- *   TEST_EMAIL=admin@mimaric.sa \
+ *   BASE_URL=https://staging.mimarek.sa \
+ *   TEST_EMAIL=admin@mimarek.sa \
  *   TEST_PASSWORD="$SEED_PASSWORD" \
  *   k6 run apps/web/loadtest/login-and-browse.js
  *
@@ -80,7 +80,7 @@ const USER_POOL = USER_POOL_RAW
     })
   : [
       {
-        email:    __ENV.TEST_EMAIL    || "admin@mimaric.sa",
+        email:    __ENV.TEST_EMAIL    || "admin@mimarek.sa",
         // No hardcoded default — TEST_PASSWORD must be supplied in the env (the
         // seed login password is documented in AGENTS.md §9, not committed here).
         password: __ENV.TEST_PASSWORD || "",
@@ -209,7 +209,7 @@ function pickAccount() {
  * The per-VU CookieJar is automatic in k6; the session cookie is stored and
  * sent on all subsequent requests from the same VU automatically.
  *
- * Rate-limit awareness: Mimaric has a 3-tier login rate-limiter. If your VU pool
+ * Rate-limit awareness: Mimarek has a 3-tier login rate-limiter. If your VU pool
  * is small (< 10 accounts) and you're running the login_spike scenario at 30 VUs,
  * you will hit Tier 1 (5 fails per email per 30s). Use TEST_USER_POOL with ≥30
  * distinct accounts when running login_spike, or reduce login_spike target VUs.

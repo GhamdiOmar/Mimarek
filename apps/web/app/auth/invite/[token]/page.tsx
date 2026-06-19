@@ -14,7 +14,7 @@ import {
   Eye,
   EyeOff,
 } from "lucide-react";
-import { MimaricLogo } from "../../../../components/brand/MimaricLogo";
+import { MimarekLogo } from "../../../../components/brand/MimarekLogo";
 import { PasswordStrengthHint } from "../../../../components/PasswordStrengthHint";
 import {
   getInvitationByToken,
@@ -138,12 +138,12 @@ export default function InviteAcceptPage() {
           }}
         />
         <div className="relative z-20 flex h-full flex-col justify-between p-12 text-white">
-          <MimaricLogo width={180} variant="dark" priority />
+          <MimarekLogo width={180} variant="dark" priority />
           <div className="space-y-6">
             <h1 className="text-4xl font-bold leading-tight xl:text-5xl text-white">
               {lang === "ar"
-                ? "انضم إلى فريقك على ميماريك"
-                : "Join Your Team on Mimaric"}
+                ? "انضم إلى فريقك على معمارك"
+                : "Join Your Team on Mimarek"}
             </h1>
             <p className="text-lg text-white/80 max-w-md">
               {lang === "ar"
@@ -152,7 +152,7 @@ export default function InviteAcceptPage() {
             </p>
           </div>
           <p className="text-xs font-latin uppercase tracking-widest text-white opacity-50">
-            © 2026 Mimaric PropTech
+            © 2026 Mimarek PropTech
           </p>
         </div>
         <div className="absolute -bottom-10 -end-20 opacity-10 transform rotate-3">
@@ -164,7 +164,7 @@ export default function InviteAcceptPage() {
       <div className="flex w-full flex-1 flex-col bg-background lg:w-1/2 xl:w-7/12">
         <div className="flex items-center justify-between p-6 lg:px-12">
           <div className="lg:hidden">
-            <MimaricLogo width={100} />
+            <MimarekLogo width={100} />
           </div>
           <Button
             variant="ghost"
@@ -331,8 +331,8 @@ export default function InviteAcceptPage() {
                     className="text-xs text-muted-foreground leading-relaxed font-dm-sans"
                   >
                     {lang === "ar"
-                      ? "أوافق على شروط الخدمة وسياسة الخصوصية الخاصة بـ Mimaric"
-                      : "I agree to Mimaric's Terms of Service and Privacy Policy"}
+                      ? "أوافق على شروط الخدمة وسياسة الخصوصية الخاصة بـ Mimarek"
+                      : "I agree to Mimarek's Terms of Service and Privacy Policy"}
                   </label>
                 </div>
 

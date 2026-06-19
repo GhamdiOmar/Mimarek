@@ -20,7 +20,7 @@
 // `audience` values:
 //   "tenant"   — customer-org users only. System (platform) users are redirected
 //                to /dashboard/admin when they hit one of these.
-//   "platform" — Mimaric platform staff only (SYSTEM_ADMIN / SYSTEM_SUPPORT).
+//   "platform" — Mimarek platform staff only (SYSTEM_ADMIN / SYSTEM_SUPPORT).
 //   "shared"   — visible to both audiences (e.g. /dashboard/more/profile, notifications).
 //                System users are NOT redirected away from these.
 

@@ -134,5 +134,5 @@ export async function downloadTemplate(config: ImportConfig, lang: "ar" | "en"):
   });
 
   const buffer = await workbook.xlsx.writeBuffer();
-  saveAs(new Blob([buffer]), `mimaric-${config.type}-template.xlsx`);
+  saveAs(new Blob([buffer]), `mimarek-${config.type}-template.xlsx`);
 }

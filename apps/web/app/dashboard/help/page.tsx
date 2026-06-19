@@ -409,7 +409,7 @@ export default function HelpPage() {
       ],
       filename: t("سجل_التذاكر", "tickets_list"),
       lang,
-      title: t("سجل التذاكر — ميماريك", "Tickets List — Mimaric"),
+      title: t("سجل التذاكر — معمارك", "Tickets List — Mimarek"),
     });
   };
 

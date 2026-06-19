@@ -1,6 +1,6 @@
-# Mimaric Development Guidelines
+# Mimarek Development Guidelines
 
-> This file is the **single source of truth** for all Mimaric development and design decisions across desktop, tablet, and mobile, in both Arabic (RTL) and English (LTR), and both light and dark themes.
+> This file is the **single source of truth** for all Mimarek development and design decisions across desktop, tablet, and mobile, in both Arabic (RTL) and English (LTR), and both light and dark themes.
 
 ---
 
@@ -160,7 +160,7 @@ The "journey-first transformation" CI-as-gate exception that once lived here is 
   - Do NOT introduce `prisma migrate dev/deploy` without also converting CI off `db push` in the same change.
   - **`db push` + populated-prod-table hazard (learned 2026-05-17).** Adding a `NOT NULL` column with no SQL default to a model whose table already has rows makes `prisma db push` abort (`--force-reset` would drop data — never). CI never catches this because its Postgres is *ephemeral* (0 rows). **Production drifts from CI.** Any new required column — including `updatedAt DateTime @updatedAt` — MUST carry `@default(...)` (e.g. `@updatedAt @default(now())`) so existing rows backfill. v4.5.0's `Deal.updatedAt` shipped CI-green but was not prod-deployable; fixed in v4.7.0. Before relying on `db push` to deploy, run a *plain* `prisma db push` (no `--accept-data-loss`) against a prod-like DB: it self-aborts and names every blocker. `--accept-data-loss` is safe ONLY for provably non-destructive diffs (new nullable columns; unique indexes on a brand-new all-NULL column are NULL-distinct in Postgres → no violation) — prove it (before/after row counts), don't assume.
 - **Manual post-`db push` DDL lives in `packages/db/sql/` (not in `migrations/`).** `prisma db push` cannot express partial indexes, backfills, or RLS, so these are tracked `.sql` files applied by hand in the Supabase SQL Editor after a push, on every long-lived environment. Current scripts: `2026-06-partial-indexes.sql`, `2026-06-sequence-backfill.sql`, `2026-06-enable-rls.sql`. All are idempotent and safe to re-run.
-  - **RLS coverage contract (learned 2026-06-12).** Mimaric reaches Postgres only via the owning `postgres` role (Prisma + `@prisma/adapter-pg`), which bypasses RLS — so RLS is enabled WITHOUT policies purely to slam the PostgREST/anon-key door (Supabase advisor `rls_disabled_in_public`). `2026-06-enable-rls.sql` must list **every** table in `schema.prisma` + the implicit M2M join table(s) (`_CouponPlans`) + `_prisma_migrations`. **When you add a model, add its table to that script in the same change** — otherwise the new table ships RLS-disabled and silently re-triggers the advisor (this is exactly how `SubscriptionMrrSnapshot`, the 3 marketplace tables, and the 2 counters drifted out of coverage). Never use `FORCE ROW LEVEL SECURITY` — it would route the owner through nonexistent policies and break every query. The resulting `rls_enabled_no_policy` (INFO) advisory on every such table is **expected and correct** — RLS-on + no-policy IS the firewall. Do NOT "resolve" it by adding a permissive policy (`USING (true)`); that re-opens the PostgREST/anon surface and undoes the fix.
+  - **RLS coverage contract (learned 2026-06-12).** Mimarek reaches Postgres only via the owning `postgres` role (Prisma + `@prisma/adapter-pg`), which bypasses RLS — so RLS is enabled WITHOUT policies purely to slam the PostgREST/anon-key door (Supabase advisor `rls_disabled_in_public`). `2026-06-enable-rls.sql` must list **every** table in `schema.prisma` + the implicit M2M join table(s) (`_CouponPlans`) + `_prisma_migrations`. **When you add a model, add its table to that script in the same change** — otherwise the new table ships RLS-disabled and silently re-triggers the advisor (this is exactly how `SubscriptionMrrSnapshot`, the 3 marketplace tables, and the 2 counters drifted out of coverage). Never use `FORCE ROW LEVEL SECURITY` — it would route the owner through nonexistent policies and break every query. The resulting `rls_enabled_no_policy` (INFO) advisory on every such table is **expected and correct** — RLS-on + no-policy IS the firewall. Do NOT "resolve" it by adding a permissive policy (`USING (true)`); that re-opens the PostgREST/anon surface and undoes the fix.
   - **RLS is a required step of every schema change — handle it when needed, don't defer it (reaffirmed 2026-06-12).** Whenever a change adds, renames, or removes a table, treat RLS as part of that change, not an afterthought: **(1)** add/adjust the table's line in `2026-06-enable-rls.sql` in the **same commit** (see the coverage contract above); **(2) apply the manual step on every long-lived environment** — paste the table's `ALTER TABLE IF EXISTS public."<Table>" ENABLE ROW LEVEL SECURITY;` line into the **Supabase SQL Editor** (CI's ephemeral DB doesn't need it, so prod silently drifts until you do — track which envs are done); **(3) verify it took** with `SELECT relname, relrowsecurity FROM pg_class WHERE relname = '<Table>';` (expect `relrowsecurity = t`). **Mixed-case Prisma table names MUST be double-quoted in raw SQL** — `public."ConsentLog"`, never `public.ConsentLog`. Unquoted identifiers fold to lowercase → `42P01: relation "public.consentlog" does not exist`, and worse, `ALTER TABLE IF EXISTS` then **silently no-ops** (returns "Success", RLS never enabled). If the Supabase advisor still shows `rls_disabled_in_public` after you "applied" it, you almost certainly hit the unquoted-no-op trap on that env. (Incident 2026-06-12: `ConsentLog` RLS appeared applied but the unquoted statement no-op'd; the quoted form fixed it.)
 - **Schema change — `paidAmount Decimal?` on `RentInstallment`**: Added in v4.2.1 stabilization. This field tracks partial payment amounts for installments. It was previously only on `PaymentPlanInstallment`. Any new code that records rent payments must write `paidAmount` alongside `status` updates.
 - **`"use server"` files may ONLY export `async` functions (learned 2026-05-17).** No `export const`/object/schema/`export default` non-function — Next.js throws "can only export async functions, found object" and the whole route's server-action bundle collapses at runtime. `tsc` and Playwright do NOT catch it. Keep constants/zod-schemas module-private (no `export`) or move them to a non-`"use server"` module. Bit `document-requirements.ts` in v4.7.0 (broke the Contracts page); found only by real-DB UI verification — reaffirms §3.9: a green CI does not mean a working UI. **Now mechanized (v4.18.0): the `mimaric/no-non-async-export-in-use-server` ESLint rule (`packages/eslint-config/next.js`) flags any non-async-function export from a `"use server"` file at lint time — the first pre-build catch for this class.**
@@ -185,29 +185,29 @@ This section supersedes any other design document in the repo. If `packages/ui/s
 
 ### 6.1 Brand Identity
 
-**Positioning:** Mimaric is a **Saudi-first PropTech SaaS** for real estate developers. Automates the property lifecycle — sales, CRM, rentals, leasing, finance, maintenance — compliant with Vision 2030 infrastructure (ZATCA, Ejar, REGA).
+**Positioning:** Mimarek is a **Saudi-first PropTech SaaS** for real estate developers. Automates the property lifecycle — sales, CRM, rentals, leasing, finance, maintenance — compliant with Vision 2030 infrastructure (ZATCA, Ejar, REGA).
 
 **Personality:** Trusted & professional · Modern & Saudi · Precise & intelligent · Arabic-first, English-capable.
 
 **Name formats:**
-- English: **MIMARIC** (uppercase in display contexts)
-- Arabic: **ميماريك**
-- Pronunciation: Mi-MAR-ik (from معماري — architect)
-- Legal: Mimaric PropTech Co.
+- English: **MIMAREK** (uppercase in display contexts)
+- Arabic: **معمارك**
+- Pronunciation: Mi-MAR-ek (from معمار — builder/architect)
+- Legal: Mimarek PropTech Co.
 
 **Voice:** Confident (no hedging). Clear (short sentences, no jargon). Bilingual (Arabic primary, English follows). Professional (formal in contracts/finance, warmer in onboarding).
 
 ### 6.2 Color System
 
-#### 6.2.1 Primary Brand — Mimaric Purple
+#### 6.2.1 Primary Brand — Mimarek Teal
 
 | Token | Light HSL | Dark HSL | Approx Hex Light | Approx Hex Dark | Use |
 |---|---|---|---|---|---|
-| `--primary` | `270 50% 45%` | `270 55% 62%` | `#7339AC` | `#9E69D3` | All primary CTAs, focus rings, links, active nav, selection highlights |
-| `--primary-deep` | `268 40% 20%` | `265 30% 10%` | `#3E2760` | `#181024` | Shadow tints, sidebar background, deep surfaces |
+| `--primary` | `185 100% 24%` | `183 70% 48%` | `#00707A` | `#3DB8C4` | All primary CTAs, focus rings, links, active nav, selection highlights |
+| `--primary-deep` | `200 90% 12%` | `201 90% 7%` | `#032833` | `#001B2A` | Shadow tints, sidebar background, deep surfaces (Deep Navy) |
 | `--primary-foreground` | `0 0% 100%` | `0 0% 100%` | `#FFFFFF` | `#FFFFFF` | Text on primary surfaces |
 
-**Mimaric Purple is the single UI brand color.** Every interactive primary affordance (primary buttons, focus outlines, brand badges, selection states, sidebar active indicators) uses it.
+**Mimarek Teal is the single UI brand color.** Every interactive primary affordance (primary buttons, focus outlines, brand badges, selection states, sidebar active indicators) uses it.
 
 #### 6.2.2 Secondary — Circuit Green
 
@@ -216,11 +216,11 @@ This section supersedes any other design document in the repo. If `packages/ui/s
 | `--secondary` | `158 50% 32%` | `160 45% 42%` | `#297D54` / `#3DA176` | Success states, positive KPIs, confirmation buttons, active checkmarks |
 | `--green-bright` | `155 55% 38%` | `155 55% 45%` | — | PCB bright green — hover glow, success micro-interactions |
 
-#### 6.2.3 Accent — Horizon Gold
+#### 6.2.3 Accent — Bright Cyan
 
 | Token | Light HSL | Dark HSL | Hex | Use |
 |---|---|---|---|---|
-| `--accent` | `40 55% 48%` | `42 50% 55%` | `#C4912A` / `#C89A44` | **Premium tier only** — luxury property labels, upgrade prompts, enterprise plan callouts. Use sparingly. |
+| `--accent` | `180 81% 42%` | `180 75% 52%` | `#14C0C0` / `#26CCCC` | **Premium tier only** — luxury property labels, upgrade prompts, enterprise plan callouts. Use sparingly. Horizon Gold (`#C4912A`) is retired; premium tier now uses Bright Cyan. |
 
 #### 6.2.4 Neutral / Surface Tokens
 
@@ -252,18 +252,18 @@ This section supersedes any other design document in the repo. If `packages/ui/s
 4. `--chart-4` Purple tint — `280 45% 55%` / `210 65% 60%`
 5. `--chart-5` Magenta — `340 55% 55%` / `340 55% 60%`
 
-#### 6.2.7 Logo-Mark Navy — NOT a UI color
+#### 6.2.7 Logo-Mark Colors — NOT UI colors
 
 | Name | Hex | Rule |
 |---|---|---|
-| Deep Circuit Navy | `#102038` | **Used only inside the 3D logo illustration.** Not a UI token. Never use as text, button, or surface color in the app. |
-| Brand Navy | `#182840` | Same rule. Logo-only. |
+| Mark Teal | `#008d9a` | **Used only inside the logo mark illustration.** Not a UI token. Never use as text, button, or surface color in the app. |
+| Mark Navy | `#031630` | Same rule. Logo-only. |
 
-If a design needs a dark navy-like tone, use `--primary-deep` (purple-dark) — consistency with the brand system.
+If a design needs a dark navy-like tone, use `--primary-deep` (navy-dark) — consistency with the brand system.
 
 #### 6.2.8 Color Rules (hard)
 
-- **One primary brand color.** Mimaric Purple. Never introduce a second primary.
+- **One primary brand color.** Mimarek Teal. Never introduce a second primary.
 - **Semantic colors only** — Blue=info, Red=danger, Amber=warning, Green=success, Gold=premium. No decorative color.
 - **Contrast ≥ 4.5:1** for body text, ≥ 3:1 for large text and UI icons (WCAG 2.2 AA).
 - **Light mode depth** = shadows (low opacity, high blur).
@@ -277,11 +277,11 @@ If a design needs a dark navy-like tone, use `--primary-deep` (purple-dark) — 
 
 | Role | Family | Weights | Use |
 |---|---|---|---|
-| **Primary (Arabic + UI default)** | IBM Plex Sans Arabic | 300, 400, 500, 600, 700 | All Arabic text + primary UI font |
-| **Latin (English + numbers)** | DM Sans | 300, 400, 500, 600, 700 | English UI, numbers, prices (SAR), dates |
+| **Primary (Arabic + UI default)** | Tajawal | 300, 400, 500, 600, 700 | All Arabic text + primary UI font |
+| **Latin (English + numbers)** | Satoshi | 300, 400, 500, 600, 700 | English UI, numbers, prices (SAR), dates (self-hosted via `next/font/local`) |
 | **Monospace** | IBM Plex Mono | 400, 700 | Contract IDs, invoice numbers, unit codes, IBAN, API keys |
 
-Load all three via `next/font/google` at root layout. CSS variables: `--font-ibm-plex-arabic`, `--font-dm-sans`, `--font-ibm-plex-mono`.
+Load Tajawal via `next/font/google` and Satoshi via `next/font/local` at root layout. CSS variables: `--font-tajawal`, `--font-satoshi`, `--font-ibm-plex-mono`.
 
 #### 6.3.2 Type Scale
 
@@ -366,7 +366,7 @@ Load all three via `next/font/google` at root layout. CSS variables: `--font-ibm
 --shadow-modal: 0 25px 50px hsl(var(--primary-deep) / 0.25);
 ```
 
-Shadows are purple-deep tinted (not neutral black) to carry brand identity.
+Shadows are navy-deep tinted (not neutral black) to carry brand identity.
 
 #### 6.4.6 Z-Index Scale
 
@@ -412,7 +412,7 @@ CSS class available in globals.css: `.icon-directional { transform: scaleX(-1); 
 
 #### 6.6.0 Clickable Element Decision Rule
 
-**Every clickable thing in Mimaric MUST be exactly one of the three scenarios below. Anything else is a violation.** Before adding any click target, pick its scenario — there is no fourth option.
+**Every clickable thing in Mimarek MUST be exactly one of the three scenarios below. Anything else is a violation.** Before adding any click target, pick its scenario — there is no fourth option.
 
 | # | Scenario | Element | Required affordances |
 |---|----------|---------|----------------------|
@@ -430,7 +430,7 @@ CSS class available in globals.css: `.icon-directional { transform: scaleX(-1); 
 
 | Variant | Background | Text | Use |
 |---|---|---|---|
-| `primary` | Mimaric Purple `--primary` | White | Main CTA — one per screen |
+| `primary` | Mimarek Teal `--primary` | White | Main CTA — one per screen |
 | `secondary` | White / `--card` | `--foreground` + border | Cancel, alternative actions |
 | `success` | `--secondary` (green) | White | Confirm, approve, paid |
 | `destructive` | `--destructive` (red) | White | Delete, remove, archive-permanent |
@@ -438,7 +438,7 @@ CSS class available in globals.css: `.icon-directional { transform: scaleX(-1); 
 | `outline` | Transparent + border | `--foreground` | Low-emphasis alt |
 | `subtle` | `--muted` | `--foreground` | Toolbar buttons, inline filters |
 | `link` | None | `--primary` | Text-only link actions |
-| `premium` | `--accent` (gold) | `--primary-deep` | Upgrade / premium tier only |
+| `premium` | `--accent` (cyan) | `--primary-deep` | Upgrade / premium tier only |
 
 **Hard rule:** Max ONE `primary` button per screen. Two primaries = one should be secondary.
 
@@ -459,12 +459,12 @@ CSS class available in globals.css: `.icon-directional { transform: scaleX(-1); 
 |---|---|
 | Default | Resting appearance per variant |
 | Hover | `filter: brightness(1.06)` OR `/85` bg opacity |
-| Active | `active:scale-[0.97]` (the Mimaric press state — see note below) + 16–20% darker bg |
-| Focus-visible | 2px ring at `--ring` (Mimaric Purple), 2px offset |
+| Active | `active:scale-[0.97]` (the Mimarek press state — see note below) + 16–20% darker bg |
+| Focus-visible | 2px ring at `--ring` (Mimarek Teal), 2px offset |
 | Disabled | `opacity: 0.45`, `cursor: not-allowed`, no hover change |
 | Loading | Spinner replaces leading icon or prepends to label; width stays stable; disable onClick |
 
-**Press state — `active:scale-[0.97]` (Mimaric choice):** the deliberate Mimaric press feedback is a uniform scale-down (`active:scale-[0.97]`), not the older `translateY(1px)` lift. It reads consistently across button sizes and on touch, and matches the implemented component — the spec follows the component here, not the legacy text.
+**Press state — `active:scale-[0.97]` (Mimarek choice):** the deliberate Mimarek press feedback is a uniform scale-down (`active:scale-[0.97]`), not the older `translateY(1px)` lift. It reads consistently across button sizes and on touch, and matches the implemented component — the spec follows the component here, not the legacy text.
 
 **Post-action micro-feedback (optional `state` prop):**
 - `success` — checkmark for 1.5s (e.g., "Copied!")
@@ -552,14 +552,14 @@ Interactive filter, segment, and view-toggle pills use one mapping everywhere �
 - Never give the same control different active/inactive variants on mobile vs desktop.
 - Non-interactive status chips are **not** pills — render those as `<Badge>` (§ 6.2 / Badge primitive), never as a fake pill.
 
-True on/off toggles use the shared **`<Switch>`** primitive (`@repo/ui`, purple `data-[state=checked]`), never a hand-rolled `role="switch"` `<button>`.
+True on/off toggles use the shared **`<Switch>`** primitive (`@repo/ui`, teal `data-[state=checked]`), never a hand-rolled `role="switch"` `<button>`.
 
 #### Rationale & references
 
-This taxonomy codifies established button-vs-link and target-size guidance — not a Mimaric invention:
+This taxonomy codifies established button-vs-link and target-size guidance — not a Mimarek invention:
 
 - **Buttons act, links navigate** — Nielsen Norman Group and MDN / WAI-ARIA Authoring Practices Guide: a link changes location (`href`), a button performs an action; text-only in-place "actions" are a documented anti-pattern (they break keyboard, screen-reader, and right-click/open-in-new-tab expectations).
-- **Target size** — WCAG 2.2 § 2.5.8 Target Size (Minimum) sets 24×24px as AA; Apple HIG (44pt), Material 3 (48dp), and WCAG 2.5.5 (AAA, 44px) recommend the larger target Mimaric adopts for mobile.
+- **Target size** — WCAG 2.2 § 2.5.8 Target Size (Minimum) sets 24×24px as AA; Apple HIG (44pt), Material 3 (48dp), and WCAG 2.5.5 (AAA, 44px) recommend the larger target Mimarek adopts for mobile.
 - **Governed variant taxonomies** — Material 3 (filled / tonal / outlined / text / icon), IBM Carbon, and GitHub Primer all enforce a small fixed variant set and "max one primary per view".
 - **Data-table row actions** — TanStack/Primer/Carbon table guidance: surface ≤3 actions as icon buttons with tooltips, collapse the rest into an overflow menu.
 
@@ -600,7 +600,7 @@ This taxonomy codifies established button-vs-link and target-size guidance — n
 
 ### 6.8 KPI Cards
 
-> **v4.11 "Outlined Precision" (2026-06-09, locked — the canonical Mimaric card direction).** KPI cards no longer use a colored inline-start accent bar. Hierarchy = surface + hairline border + type scale; hero tier adds a **2px inset TOP rule** in `--primary` (RTL-safe — top/bottom don't mirror). Status/category = tinted icon chip + delta-pill color (never an edge stripe). Depth = `.card-quiet` (faint shadow, light) / hairline-only (dark). Hover (interactive cards): `hover:border-primary/30 -translate-y-px`; dark steps one surface level lighter (`--card-hover`). Glass is marketing/auth-splash only. **This direction governs the whole card family — KPI tile, Kanban card, list row.** Tokens introduced: `--card-hover` (light + dark) and the `.card-quiet` shadow utility (no new colors/radii). The tables below are reconciled to this.
+> **v4.11 "Outlined Precision" (2026-06-09, locked — the canonical Mimarek card direction).** KPI cards no longer use a colored inline-start accent bar. Hierarchy = surface + hairline border + type scale; hero tier adds a **2px inset TOP rule** in `--primary` (RTL-safe — top/bottom don't mirror). Status/category = tinted icon chip + delta-pill color (never an edge stripe). Depth = `.card-quiet` (faint shadow, light) / hairline-only (dark). Hover (interactive cards): `hover:border-primary/30 -translate-y-px`; dark steps one surface level lighter (`--card-hover`). Glass is marketing/auth-splash only. **This direction governs the whole card family — KPI tile, Kanban card, list row.** Tokens introduced: `--card-hover` (light + dark) and the `.card-quiet` shadow utility (no new colors/radii). The tables below are reconciled to this.
 >
 > **Why (design rationale — the source of truth).** Six premium enterprise design systems were mined (Linear, Stripe, Vercel, Cohere, IBM Carbon, Notion): **not one uses a colored side-accent bar.** They carry hierarchy via *surface ladder + hairline border + type scale*, status via *pill / dot / tinted icon-chip*, and dark-mode depth via *lighter surface + hairline, no shadow* — which is already the §6.13 law, so the old accent bar was fighting our own system. The structural patterns (hairline-over-shadow, pill-status, surface ladder) are consistent across all six, so they generalize safely; treat any specific shadow hex as directional, not a literal product token.
 
@@ -712,7 +712,7 @@ No one-dashboard-fits-all. Users see only their role's metrics by default.
 
 **Every chart must have:** title, axis labels, legend, data labels on hover, accessible color palette (6.2.6), empty/loading/error state.
 
-#### 6.9.5 Property-Management-Specific Metrics (Mimaric canon)
+#### 6.9.5 Property-Management-Specific Metrics (Mimarek canon)
 
 **Org Owner dashboard:**
 - Units sold / reserved (count + % of portfolio)
@@ -939,7 +939,7 @@ Never break on mobile — redirect gracefully.
 
 ### 6.15 RTL / Arabic-First (Hard Rule)
 
-**Mimaric is Saudi-targeted. Arabic RTL is the default. LTR is secondary.**
+**Mimarek is Saudi-targeted. Arabic RTL is the default. LTR is secondary.**
 
 - `<html dir="rtl" lang="ar">` on first load. Switch dynamically via `LanguageProvider`.
 - Every feature, component, layout, and flow works in RTL **first**, then LTR.
@@ -1043,87 +1043,93 @@ Globals.css already has `[dir="rtl"] .icon-directional { transform: scaleX(-1); 
 
 #### 6.18.1 Logo System
 
-The Mimaric logo is a **3D isometric design** with four locked elements:
-1. **Logo mark** — three 3D isometric buildings forming stylized "M"; outer two in navy `#182840`, center clad in green PCB circuit pattern `#107840` → `#20A050` with white dot nodes.
-2. **English wordmark** — "MIMARIC" large bold navy uppercase.
-3. **Arabic wordmark** — "ميماريك" large bold navy.
-4. **Tagline** — "SAUDI PROPTECH • AUTOMATION & MANAGEMENT" small light-weight full-width.
+The Mimarek logo is a design with three locked elements:
+1. **Logo mark** — the icon mark in teal `#008d9a` and navy `#031630`.
+2. **English wordmark** — "MIMAREK" large bold uppercase.
+3. **Arabic wordmark** — "معمارك" large bold.
 
-**Conceptual DNA:** navy buildings = physical real estate; green PCB = digital automation layer; together = Saudi PropTech.
+Three lockup arrangements are available: `horizontal` (mark + wordmarks side-by-side), `primary` (mark above wordmarks), `icon` (mark-only).
+
+**Conceptual DNA:** teal mark = modern PropTech digital layer; navy = trust + built environment; together = Saudi PropTech.
 
 #### 6.18.2 Logo Variants
 
-| Variant | File | Background |
+| Variant | Files | Background |
 |---|---|---|
-| Primary (transparent) | `Mimaric_Official_Logo_transparent.png` (1890×921) | White / `#F8F9FA` / any light surface |
-| Dark-bg splash | `Mimaric_Official_Logo.png` (2000×2000) | Pure black / dark navy splash screens only |
-| Mark-only | Crop to mark area | Favicon, collapsed sidebar, app icon |
+| Light (on light bg) | `mimarek-{horizontal,primary,icon}-light.svg` | White / light surfaces |
+| Dark (on dark bg) | `mimarek-{horizontal,primary,icon}-dark.svg` | Dark surfaces |
+| On-dark splash | `mimarek-{horizontal,primary,icon}-ondark.svg` | Pure black / dark navy splash screens only |
+| Theme-adaptive | Use `<MimarekLogo>` with no `variant` prop | Component auto-detects theme |
 
-> Vector files (SVG/AI/EPS) are pending designer delivery. Until then, always use PNG at native resolution.
+All assets are SVG — use at any size without quality loss.
 
 #### 6.18.3 Clear Space & Minimum Size
 
-- Clear space = height of "M" in MIMARIC wordmark, on all four sides. No text or graphic may enter.
-- Digital minimum: 200px wide (full logo), 32px wide (mark-only).
-- Print minimum: 50mm wide (full logo), 12mm wide (mark-only).
+- Clear space = cap-height of the wordmark, on all four sides. No text or graphic may enter.
+- Digital minimum: 200px wide (full lockup), 32px wide (icon-only).
+- Print minimum: 50mm wide (full lockup), 12mm wide (icon-only).
 
 #### 6.18.4 Logo Do's and Don'ts
 
 **✅ Do:**
-- Use transparent variant on all light backgrounds.
-- Use dark-bg variant on black splash screens only.
+- Use the light variant on all light backgrounds.
+- Use the dark or on-dark variant on dark/splash backgrounds.
 - Maintain minimum clear space.
-- Use highest-resolution PNG — never upscale.
-- Use mark-only crop for favicon / collapsed sidebar.
+- Use SVG assets — they scale losslessly.
+- Use `lockup="icon"` for favicon / collapsed sidebar.
 
 **❌ Don't:**
-- Stretch/distort — always maintain 1890:921 aspect ratio.
-- Recolor any element (navy buildings, green circuit, dark wordmark stay fixed).
+- Stretch/distort — maintain the SVG's intrinsic aspect ratio.
+- Recolor any element (teal mark, navy wordmark stay fixed).
 - Add drop shadows, glows, outlines, filters.
-- Place on colored backgrounds other than white or pure black.
+- Place on colored or busy backgrounds.
 - Rotate, tilt, or skew.
-- Separate the four locked elements (except for mark-only variant).
-- Place over busy backgrounds (photos, gradients).
-- Display below 200px on screen.
-- Recreate the 3D mark in CSS, SVG, or code.
+- Separate the locked elements except when using `lockup="icon"`.
+- Display below 200px on screen (full lockup) or 32px (icon).
+- Recreate the mark in CSS or hand-coded SVG — use the asset files.
 
 #### 6.18.5 Logo Size Reference
 
-| Context | Variant | Width |
-|---|---|---|
-| Login brand panel | dark | 240px |
-| Login form panel | light | 160px |
-| Sidebar expanded | dark | 140px |
-| Sidebar collapsed | mark-only | 36px |
-| Top navigation bar | light | 120px |
-| Mobile top bar | light | 100px |
-| Splash / loading | dark | 200px |
-| Email header | light | 180px |
-| Favicon | mark crop | 32px |
-| Apple touch icon | mark crop | 180px |
+| Context | Lockup | Variant | Width |
+|---|---|---|---|
+| Login brand panel | horizontal | ondark | 240px |
+| Login form panel | horizontal | light | 160px |
+| Sidebar expanded | horizontal | dark | 140px |
+| Sidebar collapsed | icon | dark | 36px |
+| Top navigation bar | horizontal | light | 120px |
+| Mobile top bar | horizontal | light | 100px |
+| Splash / loading | primary | ondark | 200px |
+| Email header | horizontal | light | 180px |
+| Favicon | icon | — | 32px |
+| Apple touch icon | icon | — | 180px |
 
-#### 6.18.6 Reusable `<MimaricLogo>` Component
+#### 6.18.6 Reusable `<MimarekLogo>` Component
 
 ```tsx
-// packages/ui/src/components/MimaricLogo.tsx
+// apps/web/components/brand/MimarekLogo.tsx
 import Image from "next/image";
 
-export function MimaricLogo({
-  variant = "light",
+export function MimarekLogo({
+  variant,           // "light" | "dark" | "ondark" — omit for theme-adaptive
+  lockup = "horizontal",  // "horizontal" | "primary" | "icon"
   width = 160,
   className = "",
-}: { variant?: "light" | "dark"; width?: number; className?: string }) {
-  const src =
-    variant === "dark"
-      ? "/assets/brand/Mimaric_Official_Logo.png"
-      : "/assets/brand/Mimaric_Official_Logo_transparent.png";
-  const height = Math.round(width * (921 / 1890));
+}: {
+  variant?: "light" | "dark" | "ondark";
+  lockup?: "horizontal" | "primary" | "icon";
+  width?: number;
+  className?: string;
+}) {
+  // theme-adaptive: resolve at runtime via useTheme if variant omitted
+  const resolvedVariant = variant ?? "light"; // caller handles theme-adaptive logic
+  const src = `/assets/brand/mimarek-${lockup}-${resolvedVariant}.svg`;
   return (
     <Image
       src={src}
-      alt="Mimaric — Saudi PropTech, Automation & Management | ميماريك"
+      alt="Mimarek — Saudi PropTech, Automation & Management | معمارك"
       width={width}
-      height={height}
+      height={0}
+      style={{ height: "auto" }}
       priority
       className={className}
     />
@@ -1131,15 +1137,22 @@ export function MimaricLogo({
 }
 ```
 
-Use `next/image` for automatic WebP/AVIF conversion. Preserve transparent channel.
+SVGs are served directly; `next/image` handles caching and lazy-loading. Use `height={0}` + `style={{ height: "auto" }}` to let the SVG's intrinsic aspect ratio govern height.
 
 #### 6.18.7 Asset Placement
 
 ```
 apps/web/public/assets/brand/
-├── Mimaric_Official_Logo_transparent.png   ← primary
-├── Mimaric_Official_Logo.png               ← dark bg / splash
-└── mimaric-favicon.png                     ← 32×32 mark crop
+├── mimarek-horizontal-light.svg    ← mark + wordmarks, light bg
+├── mimarek-horizontal-dark.svg     ← mark + wordmarks, dark bg
+├── mimarek-horizontal-ondark.svg   ← mark + wordmarks, splash/black bg
+├── mimarek-primary-light.svg       ← stacked lockup, light bg
+├── mimarek-primary-dark.svg        ← stacked lockup, dark bg
+├── mimarek-primary-ondark.svg      ← stacked lockup, splash/black bg
+├── mimarek-icon-light.svg          ← mark only, light bg
+├── mimarek-icon-dark.svg           ← mark only, dark bg
+├── mimarek-icon-ondark.svg         ← mark only, splash/black bg
+└── mimarek-favicon.svg             ← 32×32 icon mark (regenerated from icon SVG)
 ```
 
 ### 6.19 Saudi-Specific Inputs
@@ -1167,7 +1180,7 @@ All use bilingual labels, native Arabic/English placeholders, full RTL, and serv
 - Never leave uncommitted work at the end of a task session.
 
 ### 7.1 Release Notes Discipline (Hard Rule)
-- **Every tagged version MUST have a matching GitHub release** at `https://github.com/GhamdiOmar/Mimaric/releases/tag/<vX.Y.Z>`. A tag without a published release is a failure.
+- **Every tagged version MUST have a matching GitHub release** at `https://github.com/GhamdiOmar/Mimarek/releases/tag/<vX.Y.Z>`. A tag without a published release is a failure.
 - **CHANGELOG.md is the source; the GitHub release mirrors it.** Update `CHANGELOG.md` as part of the same commit that bumps the version — never after the fact.
 - **When the merge that ships a release lands on `main`:**
   1. Tag the merge commit: `git tag -a vX.Y.Z <sha> -m "vX.Y.Z — <headline>"` then `git push origin vX.Y.Z`.
@@ -1176,19 +1189,19 @@ All use bilingual labels, native Arabic/English placeholders, full RTL, and serv
 - **Every subsequent commit that is user-visible under a released version** (hotfix, follow-up a11y fix, copy change) — update the release notes for that version via `gh release edit` the same day. Don't let the published notes drift from reality.
 - **Patch-level bumps (`vX.Y.Z+1`)** — a new tag + new release, not an edit of the previous one. Edits are only for corrections to the notes of a version whose scope hasn't changed.
 - **No "Generated with Codex" or Co-Authored-By lines** in release notes or commit messages (§ 1).
-- **Compare link convention:** every release body ends with `**Full diff:** https://github.com/GhamdiOmar/Mimaric/compare/<prev-tag>...<this-tag>`.
+- **Compare link convention:** every release body ends with `**Full diff:** https://github.com/GhamdiOmar/Mimarek/compare/<prev-tag>...<this-tag>`.
 
 ---
 
 ## 8. Access Model — Tenant vs System (Hard Rule)
 
-Mimaric is a B2B SaaS. **Two distinct user universes must never share surfaces, permissions, or data.**
+Mimarek is a B2B SaaS. **Two distinct user universes must never share surfaces, permissions, or data.**
 
 ### 8.1 The Two Tiers
 
 | Tier | Roles | Purpose | Binds to an Organization? |
 |---|---|---|---|
-| **System (platform staff)** | `SYSTEM_ADMIN`, `SYSTEM_SUPPORT` | Operate the Mimaric product — manage tenants, billing, support, SEO, platform-wide health | **No.** `organizationId = null`. They are never members of a tenant org. |
+| **System (platform staff)** | `SYSTEM_ADMIN`, `SYSTEM_SUPPORT` | Operate the Mimarek product — manage tenants, billing, support, SEO, platform-wide health | **No.** `organizationId = null`. They are never members of a tenant org. |
 | **Tenant (customer users)** | `ADMIN`, `MANAGER`, `AGENT`, `LEASING`, `FINANCE`, `TECHNICIAN`, `USER` | Run a single real-estate org's day-to-day — properties, CRM, deals, contracts, payments, maintenance | **Yes.** `organizationId` required at seed/signup. |
 
 ### 8.2 What Each Tier Can See
@@ -1232,36 +1245,36 @@ Mimaric is a B2B SaaS. **Two distinct user universes must never share surfaces, 
 
 ## 9. Test Credentials (Seed Data — Local/Dev Only)
 
-**Default password for all users is `mimaric2026`** (set at `packages/db/prisma/seed.ts`), except where noted. Never commit real user credentials.
+**Default password for all users is `mimaric2026`** (set at `packages/db/prisma/seed.ts`), except where noted. The password value is intentionally unchanged from the Mimaric era — do NOT update it. Never commit real user credentials.
 
 ### 9.1 System (Platform) Users
 
 | Email | Role | Password | Use |
 |---|---|---|---|
-| `system@mimaric.sa` | `SYSTEM_ADMIN` | `mimaric2026` | Full platform admin — `/dashboard/admin/*`, billing, org management |
-| `support@mimaric.sa` | `SYSTEM_SUPPORT` | `mimaric2026` | Support tier — cross-tenant ticket management |
-| `dev_admin@mimaric.sa` | `SYSTEM_SUPPORT` | `mimaric2026` | Secondary support account |
+| `system@mimarek.sa` | `SYSTEM_ADMIN` | `mimaric2026` | Full platform admin — `/dashboard/admin/*`, billing, org management |
+| `support@mimarek.sa` | `SYSTEM_SUPPORT` | `mimaric2026` | Support tier — cross-tenant ticket management |
+| `dev_admin@mimarek.sa` | `SYSTEM_SUPPORT` | `mimaric2026` | Secondary support account |
 
-### 9.2 Tenant Users (org: Mimaric test org)
+### 9.2 Tenant Users (org: Mimarek test org)
 
 | Email | Role | Password | Use |
 |---|---|---|---|
-| `admin@mimaric.sa` | `ADMIN` | `mimaric2026` | Org owner — full tenant access |
-| `pm@mimaric.sa` | `MANAGER` | `mimaric2026` | Property manager |
-| `sales_mgr@mimaric.sa` | `MANAGER` | `mimaric2026` | Sales manager |
-| `property_mgr@mimaric.sa` | `MANAGER` | `mimaric2026` | Property manager |
-| `fatima@mimaric.sa` | `MANAGER` | `finance2026` | Finance manager (distinct pw) |
-| `ahmed@mimaric.sa` | `AGENT` | `sales2026` | Sales agent (distinct pw) |
-| `khalid@mimaric.sa` | `TECHNICIAN` | `sales2026` | Maintenance tech (distinct pw) |
-| `buyer@mimaric.sa` | `USER` | `mimaric2026` | End-user / buyer persona |
-| `tenant@mimaric.sa` | `USER` | `mimaric2026` | End-user / tenant persona |
-| `user@mimaric.sa` | `USER` | `mimaric2026` | Generic user |
+| `admin@mimarek.sa` | `ADMIN` | `mimaric2026` | Org owner — full tenant access |
+| `pm@mimarek.sa` | `MANAGER` | `mimaric2026` | Property manager |
+| `sales_mgr@mimarek.sa` | `MANAGER` | `mimaric2026` | Sales manager |
+| `property_mgr@mimarek.sa` | `MANAGER` | `mimaric2026` | Property manager |
+| `fatima@mimarek.sa` | `MANAGER` | `finance2026` | Finance manager (distinct pw) |
+| `ahmed@mimarek.sa` | `AGENT` | `sales2026` | Sales agent (distinct pw) |
+| `khalid@mimarek.sa` | `TECHNICIAN` | `sales2026` | Maintenance tech (distinct pw) |
+| `buyer@mimarek.sa` | `USER` | `mimaric2026` | End-user / buyer persona |
+| `tenant@mimarek.sa` | `USER` | `mimaric2026` | End-user / tenant persona |
+| `user@mimarek.sa` | `USER` | `mimaric2026` | Generic user |
 
 ### 9.3 How to Test Access Separation
 
 When verifying access-control work:
-1. Log in as `system@mimaric.sa` → confirm sidebar/More/Cmd-K show ONLY admin routes (no properties, units, CRM, deals, contracts, payments, maintenance).
-2. Log in as `admin@mimaric.sa` → confirm sidebar/More/Cmd-K show ONLY tenant routes (no `/dashboard/admin/*`).
+1. Log in as `system@mimarek.sa` → confirm sidebar/More/Cmd-K show ONLY admin routes (no properties, units, CRM, deals, contracts, payments, maintenance).
+2. Log in as `admin@mimarek.sa` → confirm sidebar/More/Cmd-K show ONLY tenant routes (no `/dashboard/admin/*`).
 3. Attempt direct URL access (e.g., system user to `/dashboard/crm`, tenant user to `/dashboard/admin`) — both must redirect or 403.
 4. Re-seed via `pnpm --filter @repo/db prisma db seed` if credentials drift from this table.
 
@@ -1280,7 +1293,7 @@ A Graphify knowledge graph of this repo lives at `graphify-out/` (god nodes, com
 - On any merge/release that changes code, refresh: `/graphify . --update`. Code-only changes skip the LLM step (fast, free); doc/image changes trigger semantic re-extraction. **This is a MANDATORY § 7 step, never skipped or called "optional" (hard rule — see § 7).** The release is not done until it runs.
 - Prefer `/graphify . --watch` during active dev sessions — it rebuilds on save with no LLM call, so the graph never drifts behind HEAD.
 
-### 10.3 High-value Mimaric uses
+### 10.3 High-value Mimarek uses
 - **§ 8 access-model leak audit.** The graph already holds the permission topology (`requirePermission` ~243 edges, `isSystemRole` ~36, `logAuditEvent` ~91). A `platform`-audience surface that reaches a tenant action, or a tenant action with no edge to a guard, is a structural leak — surface it with `path`/surprising-connections, then verify by Read (§ 3.8).
 - **§ 3.9 release blast-radius.** Before picking "top 6 touched routes" to screenshot, query what actually renders the thing you changed. Changing a god node (`requirePermission`, `useLanguage`) has a large, non-obvious radius.
 - **§ 3.1 orphan detection.** Page nodes with no incoming edge from `nav-items`/sidebar/Cmd-K are discoverability hazards (the `hiddenFromNav` marketplace incident). Un-wired server actions show the same way.
@@ -1293,4 +1306,4 @@ A Graphify knowledge graph of this repo lives at `graphify-out/` (god nodes, com
 
 ---
 
-*Last consolidated: 2026-04-17 (Graphify § 10 added 2026-06-12). When this file and `packages/ui/src/globals.css` diverge, reconcile — don't duplicate.*
+*Last consolidated: 2026-04-17 (Graphify § 10 added 2026-06-12; brand renamed Mimaric → Mimarek 2026-06-19). When this file and `packages/ui/src/globals.css` diverge, reconcile — don't duplicate.*

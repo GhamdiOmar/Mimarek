@@ -53,7 +53,7 @@ const run = async () => {
   const browser = await chromium.launch();
   const ctx = await browser.newContext({ viewport: DESKTOP });
   const page = await ctx.newPage();
-  await login(page, "admin@mimaric.sa", "mimaric2026");
+  await login(page, "admin@mimarek.sa", "mimaric2026");
 
   const shots = [
     // CRM Kanban redesign — the headline (all 4)

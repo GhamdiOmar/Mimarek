@@ -173,7 +173,7 @@ export default function DocumentsView({ initialDocs }: DocumentsViewProps) {
       ],
       filename: t("سجل_الوثائق", "documents_list"),
       lang,
-      title: t("سجل الوثائق — ميماريك", "Document List — Mimaric"),
+      title: t("سجل الوثائق — معمارك", "Document List — Mimarek"),
     });
     } finally {
       setExporting(false);
@@ -322,7 +322,7 @@ export default function DocumentsView({ initialDocs }: DocumentsViewProps) {
                 <DataCard
                   key={doc.id}
                   icon={Icon}
-                  iconTone="purple"
+                  iconTone="primary"
                   divider={idx !== mobileFiltered.length - 1}
                   title={<span className="truncate">{doc.name}</span>}
                   subtitle={[

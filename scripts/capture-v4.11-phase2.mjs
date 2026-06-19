@@ -72,7 +72,7 @@ const run = async () => {
   page.on("console", (m) => {
     if (m.type() === "error") errors.push(m.text());
   });
-  await login(page, "admin@mimaric.sa", "mimaric2026");
+  await login(page, "admin@mimarek.sa", "mimaric2026");
 
   // 01 — desktop closed state: the labelled topbar launcher (discoverability)
   await prep(page, { path: "/dashboard", theme: "light", lang: "en", viewport: DESKTOP });

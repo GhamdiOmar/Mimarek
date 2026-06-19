@@ -10,7 +10,7 @@ function shell(title: string, body: string): string {
           <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;background:#ffffff;border:1px solid #e4e7ec;border-radius:10px;overflow:hidden">
             <tr>
               <td style="padding:24px 28px;border-bottom:1px solid #e4e7ec">
-                <strong style="font-size:18px;color:#7339ac">MIMARIC</strong>
+                <strong style="font-size:18px;color:#00707A">MIMAREK</strong>
               </td>
             </tr>
             <tr>
@@ -28,7 +28,7 @@ function shell(title: string, body: string): string {
 }
 
 function cta(label: string, url: string): string {
-  return `<p style="margin:24px 0"><a href="${url}" style="display:inline-block;background:#7339ac;color:#ffffff;text-decoration:none;border-radius:8px;padding:12px 18px;font-weight:700">${label}</a></p>`;
+  return `<p style="margin:24px 0"><a href="${url}" style="display:inline-block;background:#00707A;color:#ffffff;text-decoration:none;border-radius:8px;padding:12px 18px;font-weight:700">${label}</a></p>`;
 }
 
 function linkFallback(url: string): string {
@@ -40,22 +40,22 @@ export function passwordResetEmail(input: { name?: string | null; resetUrl: stri
   const title = ar ? "إعادة تعيين كلمة المرور" : "Reset your password";
   const body = ar
     ? `<p style="margin:0 0 12px;line-height:1.7">مرحباً${input.name ? ` ${input.name}` : ""}،</p>
-       <p style="margin:0 0 12px;line-height:1.7">وصلنا طلب لإعادة تعيين كلمة مرور حسابك في ميماريك. ينتهي الرابط خلال ساعة واحدة.</p>
+       <p style="margin:0 0 12px;line-height:1.7">وصلنا طلب لإعادة تعيين كلمة مرور حسابك في معمارك. ينتهي الرابط خلال ساعة واحدة.</p>
        ${cta("إعادة تعيين كلمة المرور", input.resetUrl)}
        <p style="margin:0;line-height:1.7;color:#667085">إذا لم تطلب ذلك، يمكنك تجاهل هذه الرسالة.</p>
        ${linkFallback(input.resetUrl)}`
     : `<p style="margin:0 0 12px;line-height:1.7">Hello${input.name ? ` ${input.name}` : ""},</p>
-       <p style="margin:0 0 12px;line-height:1.7">We received a request to reset your Mimaric password. This link expires in one hour.</p>
+       <p style="margin:0 0 12px;line-height:1.7">We received a request to reset your Mimarek password. This link expires in one hour.</p>
        ${cta("Reset password", input.resetUrl)}
        <p style="margin:0;line-height:1.7;color:#667085">If you did not request this, you can ignore this email.</p>
        ${linkFallback(input.resetUrl)}`;
 
   return {
-    subject: ar ? "إعادة تعيين كلمة مرور ميماريك" : "Reset your Mimaric password",
+    subject: ar ? "إعادة تعيين كلمة مرور معمارك" : "Reset your Mimarek password",
     html: shell(title, body),
     text: ar
       ? `إعادة تعيين كلمة المرور: ${input.resetUrl}`
-      : `Reset your Mimaric password: ${input.resetUrl}`,
+      : `Reset your Mimarek password: ${input.resetUrl}`,
   };
 }
 
@@ -64,22 +64,22 @@ export function verificationEmail(input: { name?: string | null; verifyUrl: stri
   const title = ar ? "تأكيد بريدك الإلكتروني" : "Verify your email";
   const body = ar
     ? `<p style="margin:0 0 12px;line-height:1.7">مرحباً${input.name ? ` ${input.name}` : ""}،</p>
-       <p style="margin:0 0 12px;line-height:1.7">شكراً لإنشاء حسابك في ميماريك. أكّد بريدك الإلكتروني لتفعيل الحساب وتسجيل الدخول. ينتهي الرابط خلال 24 ساعة.</p>
+       <p style="margin:0 0 12px;line-height:1.7">شكراً لإنشاء حسابك في معمارك. أكّد بريدك الإلكتروني لتفعيل الحساب وتسجيل الدخول. ينتهي الرابط خلال 24 ساعة.</p>
        ${cta("تأكيد البريد الإلكتروني", input.verifyUrl)}
        <p style="margin:0;line-height:1.7;color:#667085">إذا لم تنشئ هذا الحساب، يمكنك تجاهل هذه الرسالة بأمان.</p>
        ${linkFallback(input.verifyUrl)}`
     : `<p style="margin:0 0 12px;line-height:1.7">Hello${input.name ? ` ${input.name}` : ""},</p>
-       <p style="margin:0 0 12px;line-height:1.7">Thanks for creating your Mimaric account. Verify your email to activate your account and sign in. This link expires in 24 hours.</p>
+       <p style="margin:0 0 12px;line-height:1.7">Thanks for creating your Mimarek account. Verify your email to activate your account and sign in. This link expires in 24 hours.</p>
        ${cta("Verify email", input.verifyUrl)}
        <p style="margin:0;line-height:1.7;color:#667085">If you didn't create an account, you can safely ignore this email.</p>
        ${linkFallback(input.verifyUrl)}`;
 
   return {
-    subject: ar ? "أكّد بريدك الإلكتروني في ميماريك" : "Verify your Mimaric email",
+    subject: ar ? "أكّد بريدك الإلكتروني في معمارك" : "Verify your Mimarek email",
     html: shell(title, body),
     text: ar
       ? `تأكيد البريد الإلكتروني: ${input.verifyUrl}`
-      : `Verify your Mimaric email: ${input.verifyUrl}`,
+      : `Verify your Mimarek email: ${input.verifyUrl}`,
   };
 }
 
@@ -93,14 +93,14 @@ export function invitationEmail(input: {
 }) {
   const ar = input.lang !== "en";
   const title = input.resend
-    ? ar ? "تم إرسال دعوة ميماريك مرة أخرى" : "Your Mimaric invitation was resent"
-    : ar ? "دعوة للانضمام إلى ميماريك" : "You are invited to Mimaric";
+    ? ar ? "تم إرسال دعوة معمارك مرة أخرى" : "Your Mimarek invitation was resent"
+    : ar ? "دعوة للانضمام إلى معمارك" : "You are invited to Mimarek";
   const body = ar
-    ? `<p style="margin:0 0 12px;line-height:1.7">${input.inviterName ?? "مسؤول الفريق"} دعاك للانضمام إلى ${input.organizationName} في ميماريك بدور ${input.role}.</p>
+    ? `<p style="margin:0 0 12px;line-height:1.7">${input.inviterName ?? "مسؤول الفريق"} دعاك للانضمام إلى ${input.organizationName} في معمارك بدور ${input.role}.</p>
        <p style="margin:0 0 12px;line-height:1.7">أنشئ كلمة المرور من الرابط التالي. تنتهي الدعوة خلال 7 أيام.</p>
        ${cta("قبول الدعوة", input.inviteUrl)}
        ${linkFallback(input.inviteUrl)}`
-    : `<p style="margin:0 0 12px;line-height:1.7">${input.inviterName ?? "A team admin"} invited you to join ${input.organizationName} in Mimaric as ${input.role}.</p>
+    : `<p style="margin:0 0 12px;line-height:1.7">${input.inviterName ?? "A team admin"} invited you to join ${input.organizationName} in Mimarek as ${input.role}.</p>
        <p style="margin:0 0 12px;line-height:1.7">Create your password from the link below. The invitation expires in 7 days.</p>
        ${cta("Accept invitation", input.inviteUrl)}
        ${linkFallback(input.inviteUrl)}`;
@@ -114,14 +114,14 @@ export function invitationEmail(input: {
 
 export function testEmail(input: { appUrl: string; lang?: EmailLang }) {
   const ar = input.lang !== "en";
-  const title = ar ? "اختبار بريد ميماريك" : "Mimaric email test";
+  const title = ar ? "اختبار بريد معمارك" : "Mimarek email test";
   const body = ar
-    ? `<p style="margin:0 0 12px;line-height:1.7">تم إرسال هذه الرسالة من إعدادات Hostinger SMTP داخل ميماريك.</p>
+    ? `<p style="margin:0 0 12px;line-height:1.7">تم إرسال هذه الرسالة من إعدادات Hostinger SMTP داخل معمارك.</p>
        <p style="margin:0;line-height:1.7;color:#667085">إذا وصلت الرسالة، يمكن استخدام نفس الإعدادات لتدفقات إعادة تعيين كلمة المرور والدعوات.</p>`
-    : `<p style="margin:0 0 12px;line-height:1.7">This message was sent from the Hostinger SMTP settings configured in Mimaric.</p>
+    : `<p style="margin:0 0 12px;line-height:1.7">This message was sent from the Hostinger SMTP settings configured in Mimarek.</p>
        <p style="margin:0;line-height:1.7;color:#667085">If it arrived, password reset and invitation emails can use the same settings.</p>`;
   return {
-    subject: ar ? "اختبار إعدادات بريد ميماريك" : "Mimaric email settings test",
+    subject: ar ? "اختبار إعدادات بريد معمارك" : "Mimarek email settings test",
     html: shell(title, body),
     text: ar ? `تم إرسال اختبار البريد من ${input.appUrl}` : `Email test sent from ${input.appUrl}`,
   };

@@ -18,7 +18,7 @@ test("My Listings is reachable via a visible button on the marketplace page", as
   fs.mkdirSync(SHOT, { recursive: true });
   const ctx = await browser.newContext();
   const page = await ctx.newPage();
-  await login(page, "admin@mimaric.sa", "mimaric2026");
+  await login(page, "admin@mimarek.sa", "mimaric2026");
 
   await page.goto("/dashboard/marketplace", { waitUntil: "domcontentloaded" });
   await page.waitForTimeout(3500);

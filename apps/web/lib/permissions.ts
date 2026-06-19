@@ -134,7 +134,7 @@ const ALL_PERMISSIONS: Permission[] = [
   "finance:read", "finance:write",
 ];
 
-// ─── System Permissions (Mimaric platform staff only) ────────────────────────
+// ─── System Permissions (Mimarek platform staff only) ────────────────────────
 
 export const SYSTEM_ONLY_PERMISSIONS: Permission[] = [
   "billing:admin",
@@ -186,7 +186,7 @@ export const TENANT_SCOPED_PERMISSIONS: Permission[] = [
 ];
 
 export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
-  // ── System tier (Mimaric platform team) ──────────────────────────────────
+  // ── System tier (Mimarek platform team) ──────────────────────────────────
   SYSTEM_ADMIN: ALL_PERMISSIONS,
 
   SYSTEM_SUPPORT: [
@@ -306,7 +306,7 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
 
 // ─── Role classification helpers ───────────────────────────────────────────
 
-/** Roles that belong to the Mimaric platform team — never assignable by customers */
+/** Roles that belong to the Mimarek platform team — never assignable by customers */
 export const SYSTEM_ROLES: string[] = ["SYSTEM_ADMIN", "SYSTEM_SUPPORT"];
 
 /** Roles that customers can assign to their team members */
@@ -314,7 +314,7 @@ export const CUSTOMER_ASSIGNABLE_ROLES: string[] = [
   "ADMIN", "MANAGER", "AGENT", "LEASING", "FINANCE", "TECHNICIAN", "USER",
 ];
 
-/** Check if a role is a system (Mimaric platform) role */
+/** Check if a role is a system (Mimarek platform) role */
 export function isSystemRole(role: string): boolean {
   return SYSTEM_ROLES.includes(role);
 }

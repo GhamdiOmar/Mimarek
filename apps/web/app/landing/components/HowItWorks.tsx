@@ -28,7 +28,7 @@ export default function HowItWorks({ lang }: { lang: "ar" | "en" }) {
   ];
 
   return (
-    <section className="bg-muted/30 py-20 dark:bg-muted/10 lg:py-28">
+    <section id="how-it-works" className="bg-muted/30 py-20 dark:bg-muted/10 lg:py-28">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-3xl text-center">
           <h2 className="text-3xl font-bold text-primary dark:text-white sm:text-4xl">

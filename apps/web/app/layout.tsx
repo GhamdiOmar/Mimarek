@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "@repo/ui/globals.css";
-import { IBM_Plex_Sans_Arabic, DM_Sans } from 'next/font/google';
+import { Tajawal } from 'next/font/google';
+import localFont from 'next/font/local';
 import { ThemeProvider } from "../components/ThemeProvider";
 import { Toaster } from "@repo/ui";
 import { ConsentProvider } from "../components/ConsentProvider";
@@ -9,16 +10,18 @@ import { db } from "@repo/db";
 import { cache } from "react";
 import { getLang } from "../lib/i18n";
 
-const ibmPlexArabic = IBM_Plex_Sans_Arabic({
-  subsets: ['arabic'],
-  weight: ['300', '400', '500', '600', '700'],
-  variable: '--font-ibm-plex-arabic',
+// Mimarek brand typography: Tajawal (Arabic + UI default) + Satoshi (Latin, self-hosted)
+const tajawal = Tajawal({
+  subsets: ['arabic', 'latin'],
+  weight: ['300', '400', '500', '700'],
+  variable: '--font-tajawal',
+  display: 'swap',
 });
 
-const dmSans = DM_Sans({
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700'],
-  variable: '--font-dm-sans',
+const satoshi = localFont({
+  src: [{ path: './fonts/satoshi/Satoshi-Variable.woff2', weight: '300 900', style: 'normal' }],
+  variable: '--font-satoshi',
+  display: 'swap',
 });
 
 export const viewport: Viewport = {
@@ -27,8 +30,8 @@ export const viewport: Viewport = {
   maximumScale: 5,
   viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
+    { media: "(prefers-color-scheme: light)", color: "#f4f8f9" },
+    { media: "(prefers-color-scheme: dark)", color: "#001B2A" },
   ],
 };
 
@@ -40,16 +43,16 @@ const getConfig = cache(async () => {
 export async function generateMetadata(): Promise<Metadata> {
   const config = await getConfig();
 
-  const canonical = config?.canonicalUrl ?? "https://mimaric.app";
+  const canonical = config?.canonicalUrl ?? "https://mimarek.sa";
   const ogImage = config?.ogImageUrl ?? "/og-image.png";
 
   return {
     metadataBase: new URL(canonical),
     title: {
-      default: config?.siteTitle ?? "Mimaric | منصة إدارة العقارات السعودية",
-      template: config?.siteTitleTemplate ?? "%s | Mimaric",
+      default: config?.siteTitle ?? "Mimarek | منصة إدارة العقارات السعودية",
+      template: config?.siteTitleTemplate ?? "%s | Mimarek",
     },
-    description: config?.siteDescriptionAr ?? "منصة PropTech السعودية لمطوري العقارات — إدارة المشاريع والمبيعات والإيجارات متوافقة مع بلدي وزاتكا ووافي.",
+    description: config?.siteDescriptionAr ?? "منصة PropTech السعودية لمطوري العقارات — لإدارة الوحدات والمبيعات والإيجارات والصيانة والتحصيل — متوافقة مع بلدي وزاتكا وإيجار.",
     alternates: {
       canonical: "/",
       languages: {
@@ -60,9 +63,9 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     openGraph: {
       type: (config?.ogType as "website" | "article") ?? "website",
-      siteName: "Mimaric",
+      siteName: "Mimarek",
       locale: config?.ogLocale ?? "ar_SA",
-      images: [{ url: ogImage, width: 1200, height: 630, alt: "Mimaric — Saudi PropTech Platform" }],
+      images: [{ url: ogImage, width: 1200, height: 630, alt: "Mimarek — Saudi PropTech Platform" }],
     },
     twitter: {
       card: (config?.twitterCard as "summary" | "summary_large_image") ?? "summary_large_image",
@@ -75,7 +78,7 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     appleWebApp: {
       capable: true,
-      title: "Mimaric",
+      title: "Mimarek",
       statusBarStyle: "default",
     },
     verification: {
@@ -97,8 +100,8 @@ export default async function RootLayout({
   const dir = lang === "ar" ? "rtl" : "ltr";
 
   return (
-    <html lang={lang} dir={dir} className={`${ibmPlexArabic.variable} ${dmSans.variable}`} suppressHydrationWarning>
-      <body className="font-ibm-plex-arabic antialiased text-body">
+    <html lang={lang} dir={dir} className={`${tajawal.variable} ${satoshi.variable}`} suppressHydrationWarning>
+      <body className="font-tajawal antialiased text-body">
         <ThemeProvider>
           <ConsentProvider
             initialLang={lang}

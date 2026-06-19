@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Globe } from "lucide-react";
 import { Button } from "@repo/ui";
+import { MimarekLogo } from "../../../components/brand/MimarekLogo";
 import { t as translations } from "../translations";
 import { openCookiePreferences } from "../../../lib/consent";
 
@@ -29,27 +30,15 @@ export default function Footer({
       ],
     },
     {
-      title: t.company,
-      links: [
-        { label: t.aboutUs, href: "#" },
-        { label: t.careers, href: "#" },
-        { label: t.blog, href: "#" },
-      ],
-    },
-    {
       title: t.legal,
       links: [
-        { label: t.termsOfService, href: "#" },
-        { label: t.privacyPolicy, href: "#" },
         { label: lang === "ar" ? "سياسة ملفات تعريف الارتباط" : "Cookie Policy", href: "/cookie-policy" },
       ],
     },
     {
       title: t.support,
       links: [
-        { label: t.helpCenter, href: "#" },
-        { label: t.documentation, href: "#" },
-        { label: t.status, href: "#" },
+        { label: t.helpCenter, href: "/dashboard/help" },
       ],
     },
   ];
@@ -60,12 +49,7 @@ export default function Footer({
         <div className="grid gap-6 lg:grid-cols-6">
           {/* Brand */}
           <div className="lg:col-span-2">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/assets/brand/Mimaric_Official_Logo_transparent.png"
-              alt="Mimaric"
-              className="h-8 w-auto dark:brightness-0 dark:invert"
-            />
+            <MimarekLogo lockup="horizontal" width={130} priority={false} />
             <p className="mt-3 max-w-xs text-sm leading-relaxed text-muted-foreground">
               {t.tagline}
             </p>
@@ -123,7 +107,7 @@ export default function Footer({
         <div className="mt-10 flex flex-col items-center gap-3 border-t border-border pt-6 sm:flex-row sm:justify-between">
           <div className="flex flex-col items-center gap-1 sm:items-start">
             <p className="text-center text-xs text-muted-foreground sm:text-start">
-              &copy; {new Date().getFullYear()} Mimaric. {t.allRightsReserved}
+              &copy; {new Date().getFullYear()} Mimarek. {t.allRightsReserved}
             </p>
             <p className="text-xs text-muted-foreground/60" dir="ltr">
               {falLicense

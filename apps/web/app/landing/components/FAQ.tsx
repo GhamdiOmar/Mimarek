@@ -21,7 +21,7 @@ export default function FAQ({ lang }: { lang: "ar" | "en" }) {
   const [open, setOpen] = useState<number | null>(null);
 
   return (
-    <section className="bg-background py-20 lg:py-28">
+    <section id="faq" className="bg-background py-20 lg:py-28">
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
         <h2 className="text-center text-3xl font-bold text-primary dark:text-white sm:text-4xl">
           {t.faqTitle}

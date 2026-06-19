@@ -1,5 +1,5 @@
 // v4.11 FULL verification capture — all phases. Runs against :3000 (prod build).
-// Saves PNGs to verification-v4.11.0/. Tenant login (admin@mimaric.sa).
+// Saves PNGs to verification-v4.11.0/. Tenant login (admin@mimarek.sa).
 import { chromium } from "playwright";
 import { mkdirSync } from "node:fs";
 
@@ -12,7 +12,7 @@ const MOBILE = { width: 375, height: 812 };
 
 async function login(page) {
   await page.goto(`${BASE}/auth/login`, { waitUntil: "domcontentloaded" });
-  await page.fill("#login-email", "admin@mimaric.sa");
+  await page.fill("#login-email", "admin@mimarek.sa");
   await page.fill("#login-password", "mimaric2026");
   await Promise.all([
     page.waitForURL(/\/dashboard/, { timeout: 60000 }).catch(() => {}),

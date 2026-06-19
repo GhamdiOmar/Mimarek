@@ -11,17 +11,17 @@ const COPY = {
     lang: "ar",
     dir: "rtl" as const,
     heading: "حدث خطأ غير متوقع",
-    body: "تعذّر تحميل ميماريك الآن. حاول مرة أخرى، أو تواصل مع الدعم إذا استمرت المشكلة.",
+    body: "تعذّر تحميل معمارك الآن. حاول مرة أخرى، أو تواصل مع الدعم إذا استمرت المشكلة.",
     button: "حاول مرة أخرى",
     reference: "المرجع",
     fontFamily:
-      "'IBM Plex Sans Arabic', system-ui, -apple-system, Segoe UI, Tahoma, Arial, sans-serif",
+      "'Tajawal', system-ui, -apple-system, Segoe UI, Tahoma, Arial, sans-serif",
   },
   en: {
     lang: "en",
     dir: "ltr" as const,
     heading: "Something went wrong",
-    body: "We couldn’t load Mimaric right now. Try again, or contact support if the problem persists.",
+    body: "We couldn’t load Mimarek right now. Try again, or contact support if the problem persists.",
     button: "Try again",
     reference: "Reference",
     fontFamily:
@@ -79,7 +79,7 @@ export default function GlobalError({
             style={{
               padding: "10px 20px",
               borderRadius: 8,
-              background: "#7339AC",
+              background: "#00707A",
               color: "white",
               fontWeight: 600,
               fontFamily: "inherit",
