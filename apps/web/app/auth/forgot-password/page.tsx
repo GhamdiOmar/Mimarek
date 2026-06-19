@@ -3,7 +3,7 @@
 import * as React from "react";
 import { Button, Input } from "@repo/ui";
 import Link from "next/link";
-import { Globe, Building2, ArrowRight, ArrowLeft, Loader2, CheckCircle2 } from "lucide-react";
+import { Globe, Building2, Loader2, CheckCircle2 } from "lucide-react";
 import { MimaricLogo } from "../../../components/brand/MimaricLogo";
 import { requestPasswordReset } from "../../actions/password";
 

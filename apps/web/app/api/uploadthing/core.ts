@@ -50,13 +50,13 @@ export const ourFileRouter = {
 
   contractUploader: f({ pdf: { maxFileSize: "16MB" } })
     .middleware(authMiddleware)
-    .onUploadComplete(async ({ metadata, file }) => {
+    .onUploadComplete(async ({ metadata, file: _file }) => {
       return { uploadedBy: metadata.userId, organizationId: metadata.organizationId };
     }),
 
   blueprintUploader: f({ image: { maxFileSize: "32MB" }, pdf: { maxFileSize: "32MB" } })
     .middleware(authMiddleware)
-    .onUploadComplete(async ({ metadata, file }) => {
+    .onUploadComplete(async ({ metadata, file: _file }) => {
       return { uploadedBy: metadata.userId, organizationId: metadata.organizationId };
     }),
 

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { makeStubDb, type Row } from "./helpers/prisma-stub";
 import { setSession, tenantAdmin, auth, signIn, signOut } from "./helpers/session-mock";
 
@@ -35,13 +35,16 @@ let seed: Record<string, Row[]>;
 // the live stub. Both live in vi.hoisted so they exist before the hoisted
 // vi.mock factory runs (a top-level const would hit the TDZ).
 const { dbHolder, dbProxy } = vi.hoisted(() => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test stub: holder boxes the per-test stub db (reassigned each test)
   const dbHolder: { stub: any } = { stub: undefined };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test stub: Proxy forwards arbitrary model keys to the live stub
   const dbProxy = new Proxy({} as any, { get: (_t, model) => dbHolder.stub?.[model] });
   return { dbHolder, dbProxy };
 });
 vi.mock("@repo/db", () => ({ db: dbProxy }));
 
 vi.mock("../auth", () => ({ auth, signIn, signOut, handlers: {} }));
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- test stub: unstable_cache mock passes through any wrapped fn
 vi.mock("next/cache", () => ({ revalidatePath: () => {}, revalidateTag: () => {}, unstable_cache: (fn: any) => fn }));
 vi.mock("next/headers", () => ({ headers: async () => new Map(), cookies: async () => new Map() }));
 

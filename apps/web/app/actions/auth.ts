@@ -106,7 +106,11 @@ export async function loginAction(formData: FormData) {
     if (mode === "management" && landingPage && ALLOWED_LANDING_PAGES.includes(landingPage)) {
       redirectTo = landingPage;
     }
-  } catch {}
+  } catch {
+    /* intentionally ignored: redirect resolution is a best-effort UX hint after
+       credentials are already verified — on any DB error we fall through to the
+       default redirectTo ("/dashboard"). */
+  }
 
   return { success: true, redirectTo };
 }

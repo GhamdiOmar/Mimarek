@@ -2,7 +2,7 @@
 
 import { db, type Prisma } from "@repo/db";
 import { revalidatePath } from "next/cache";
-import { requirePermission, getSessionOrThrow } from "../../lib/auth-helpers";
+import { requirePermission } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
 import { ROUTES } from "../../lib/routes";
 import { serialize } from "../../lib/serialize";

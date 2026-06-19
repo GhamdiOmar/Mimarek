@@ -162,6 +162,7 @@ function isAsync(node: TS.Node): boolean {
 function collectActionFns(): ActionFn[] {
   const fns: ActionFn[] = [];
   for (const file of walk(ACTIONS_ROOT)) {
+    // eslint-disable-next-line no-irregular-whitespace -- intentional: the U+FEFF in this regex strips a leading BOM from each scanned source before ts.createSourceFile parses it
     const src = fs.readFileSync(file, "utf8").replace(/^﻿/, "");
     const sf = ts.createSourceFile(file, src, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
     if (!firstDirectiveIsUseServer(sf)) continue;

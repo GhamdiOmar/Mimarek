@@ -146,6 +146,7 @@ export default function AdminEmailSettingsPage() {
         emailTestRecipient: settings.emailTestRecipient ?? "",
       });
     } catch {
+      /* intentionally ignored: fall back to default form values on load failure */
     } finally {
       setLoading(false);
     }

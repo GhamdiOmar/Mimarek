@@ -4,7 +4,6 @@ import { db, Prisma, ContractType } from "@repo/db";
 import { requirePermission } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
 import { serialize } from "../../lib/serialize";
-import { revalidatePath } from "next/cache";
 
 // ─── RED: Contract Templates ────────────────────────────────────────────────
 

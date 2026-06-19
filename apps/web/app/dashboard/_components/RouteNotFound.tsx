@@ -10,7 +10,7 @@ import { Button, EmptyState } from "@repo/ui";
 import { useLanguage } from "../../../components/LanguageProvider";
 
 export function RouteNotFound() {
-  const { t, lang } = useLanguage();
+  const { t } = useLanguage();
 
   const title = t("الصفحة غير موجودة", "Page not found");
   const description =

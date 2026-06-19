@@ -85,7 +85,7 @@ function VerifyEmailSentInner() {
                   </>
                 ) : (
                   <>
-                    We've sent a verification link{email ? <> to <span dir="ltr" className="font-medium text-foreground">{email}</span></> : null}. Open it to activate your account. The link expires in 24 hours.
+                    We&apos;ve sent a verification link{email ? <> to <span dir="ltr" className="font-medium text-foreground">{email}</span></> : null}. Open it to activate your account. The link expires in 24 hours.
                   </>
                 )}
               </p>

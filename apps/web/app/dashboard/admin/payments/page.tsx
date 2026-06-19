@@ -320,6 +320,7 @@ export default function AdminPaymentsPage() {
         ),
       },
     ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `t` is derived from `lang`, which is already a dep; listing `lang` covers every translation read here.
     [lang]
   );
 

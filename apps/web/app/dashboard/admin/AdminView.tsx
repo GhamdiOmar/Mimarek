@@ -347,6 +347,7 @@ export default function AdminView({
         kind: "endpoint" as const,
       },
     ];
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- `t` is derived from `lang`, which is already a dep; listing `lang` covers every translation read here.
   }, [waterfall, lang]);
 
   // AR aging chart data

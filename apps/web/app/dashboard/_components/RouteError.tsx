@@ -17,7 +17,7 @@ export interface RouteErrorProps {
 }
 
 export function RouteError({ error, reset }: RouteErrorProps) {
-  const { t, lang } = useLanguage();
+  const { t } = useLanguage();
 
   React.useEffect(() => {
      
