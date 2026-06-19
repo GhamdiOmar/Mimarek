@@ -10,7 +10,6 @@ const targets = [
   ["apps/web/public/icons/icon-32.png", 32],
   ["apps/web/public/icons/icon-192.png", 192],
   ["apps/web/public/icons/icon-512.png", 512],
-  ["apps/web/public/icons/icon-maskable-512.png", 512],
   ["apps/web/public/apple-touch-icon.png", 180],
 ];
 
@@ -22,6 +21,20 @@ for (const [file, size] of targets) {
     .toFile(file);
   console.log("wrote", file, `${size}x${size}`);
 }
+
+// Maskable icon — scale the mark into the inner ~80% safe-zone on full-bleed navy
+// (Android adaptive masks crop the outer ~20%). The SVG card bg and the canvas are
+// the same navy, so the result reads as full-bleed navy with a smaller centred mark.
+const maskInner = await sharp(svg, { density: 512 })
+  .resize(410, 410, { fit: "contain", background: navy })
+  .flatten({ background: navy })
+  .png()
+  .toBuffer();
+await sharp({ create: { width: 512, height: 512, channels: 4, background: navy } })
+  .composite([{ input: maskInner, gravity: "center" }])
+  .png()
+  .toFile("apps/web/public/icons/icon-maskable-512.png");
+console.log("wrote apps/web/public/icons/icon-maskable-512.png 512x512 (maskable, padded)");
 
 // favicon.ico — wrap a 32x32 PNG in a single-image ICO container (PNG-in-ICO, widely supported)
 // Next.js decodes favicon.ico at build and requires RGBA — keep the alpha channel (no flatten)
