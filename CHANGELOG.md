@@ -1,4 +1,31 @@
-# Changelog — Mimaric PropTech
+# Changelog — Mimarek PropTech
+
+## [5.0.0] — 2026-06-19 — Rebrand: Mimaric → Mimarek (teal/navy identity)
+
+**The product is now Mimarek (معمارك).** Full visual-identity overhaul issued by the CEO: new name, logo system, color palette, and typography — applied across every user-facing surface in both themes and both languages, plus the design SSOT and dev docs. No schema or data-model change; semantic colors (red/amber/green/blue) are unchanged.
+
+### Brand
+- **Name** Mimaric → **Mimarek** (EN) / ميماريك → **معمارك** (AR). Taglines → **PROPTECH • DATA • REAL ESTATE** + motto **"Manage units. Empower real estate."**
+- **Palette** purple → **teal/navy**: primary Teal `#00707A` (`185 100% 24%`), accent Bright Cyan `#14C0C0`, Deep Navy `#001B2A` foundation/surfaces, gray-blue borders. Horizon Gold retired (premium tier now uses cyan). Rewritten light + dark token blocks in `globals.css`; swept all hardcoded purple (Hero grid, CRM stage hues, `.mesh-bg`, dark button overrides, email template, global-error, activity timeline).
+- **Typography** DM Sans + IBM Plex Sans Arabic → **Satoshi** (Latin, self-hosted variable woff2 via `next/font/local`) + **Tajawal** (Arabic + UI default, `next/font/google`); legacy font classes alias to the new families.
+- **Logo** new `MimarekLogo` component (theme-adaptive; horizontal/primary/icon lockups; light/dark/on-dark SVGs); landing Header/Footer + 8 auth/shell call sites migrated off the inverted PNG. Favicons / app-icons / `favicon.ico` regenerated from the icon mark (`scripts/gen-favicons.mjs`).
+
+### Copy / SEO / domains
+- ~130 EN + AR strings renamed; metadata, manifest, sitemap, robots, JSON-LD, email templates updated. Domains `mimaric.app` / `mimaric.sa` → **`mimarek.sa`** (web, canonical, seed/test emails `@mimarek.sa`, social handles). SEO description dropped the removed projects/Wafi scope.
+
+### Landing refresh
+- Removed fabricated social proof (fake client logos + invented stats `500+/10,000+/50M+` → factual Vision 2030 / Balady / ZATCA compliance strip; deleted 3 invented testimonials, kept factual product stats). Honest CTA ("See features", no fake demo); removed dead `#` footer links; added section ids.
+
+### Docs
+- `AGENTS.md` (design SSOT) brand sections, `README.md`, `CLAUDE.md`, `cspell`, `.gitguardian` retargeted to Mimarek. Internal identifiers intentionally preserved: `mimaric/*` ESLint rules, HKDF `mimaric/blind-index` context, `mimaric-lang`/`-consent` cookies, `mimaric_*` k6 metrics, the `mimaric2026` seed password.
+
+### Verify
+- `next build` green · lint 2/2 · `check-types` 2/2 · vitest **160/160**. Foundation preview-verified (landing + login: teal/navy + new logo both variants + Tajawal, zero console errors).
+
+### Deferred (post-merge checkpoint)
+- Regenerate the 5 dashboard marketing screenshots from a populated Mimarek-branded org; GitHub repo + local folder rename (`Mimaric`→`Mimarek`) + Claude memory-dir migration; live Supabase re-seed to `@mimarek.sa`; full §3.9 4-theme route walk at tag time.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimarek/compare/v4.33.6...v5.0.0
 
 ## [4.33.6] — 2026-06-19 — Lint sweep PR 4/4: suppressions backlog → ZERO (file deleted)
 
