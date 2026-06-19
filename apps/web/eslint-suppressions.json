@@ -28,9 +28,6 @@
     }
   },
   "app/actions/auth.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 5
-    },
     "no-empty": {
       "count": 1
     }
@@ -51,11 +48,6 @@
       "count": 1
     }
   },
-  "app/actions/contracts.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 4
-    }
-  },
   "app/actions/coupons.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
@@ -64,11 +56,6 @@
   "app/actions/customer-interests.ts": {
     "@typescript-eslint/no-unused-vars": {
       "count": 1
-    }
-  },
-  "app/actions/customers.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 13
     }
   },
   "app/actions/dashboard-finance.ts": {
@@ -84,16 +71,6 @@
   "app/actions/maintenance.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 8
-    }
-  },
-  "app/actions/onboarding.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 6
-    }
-  },
-  "app/actions/organization.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 7
     }
   },
   "app/actions/password.ts": {
@@ -247,11 +224,6 @@
       "count": 1
     }
   },
-  "app/dashboard/billing/invoices/page.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 16
-    }
-  },
   "app/dashboard/reports/ReportsView.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 2
@@ -278,11 +250,6 @@
     },
     "@typescript-eslint/no-unused-vars": {
       "count": 1
-    }
-  },
-  "auth.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 3
     }
   }
 }

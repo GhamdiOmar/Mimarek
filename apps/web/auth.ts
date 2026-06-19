@@ -169,6 +169,12 @@ const result = NextAuth({
 });
 
 export const handlers = result.handlers;
+// `auth`'s inferred NextAuth v5 return type cascades into the app's intentionally-loose
+// session layer (SimpleSessionProvider's index-signature `SessionData`, DashboardClientLayout's
+// session prop). Typing it precisely breaks those consumers, which are out of this lint PR's
+// scope — so this one re-export keeps the loose contract that layer expects. signIn/signOut are
+// typed normally below.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- NextAuth v5 re-export; a precise return type breaks the SessionData-typed SimpleSessionProvider/DashboardClientLayout consumer layer
 export const auth: any = result.auth;
-export const signIn: any = result.signIn;
-export const signOut: any = result.signOut;
+export const signIn = result.signIn;
+export const signOut = result.signOut;

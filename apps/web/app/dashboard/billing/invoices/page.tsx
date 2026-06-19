@@ -39,13 +39,64 @@ import { PageHeader } from "@repo/ui/components/PageHeader";
 import { getInvoices, getInvoiceById } from "../../../actions/billing";
 import { exportToPDF } from "../../../../lib/export";
 
+// ─── View-model types ────────────────────────────────────────────────────────
+// These describe the *serialized* shape returned by the billing server actions
+// (`getInvoices` / `getInvoiceById`), which both run their Prisma result through
+// `serialize()` (JSON round-trip) → Prisma `Decimal` becomes `string` and `Date`
+// becomes `string`. Numeric money fields are read via `Number(...)` everywhere,
+// so they are typed `string | number` to match the serialized value without
+// changing runtime behavior. `discount` / `paymentMethod` are read by the JSX but
+// are not on the `Invoice` model, so at runtime they are always `undefined` (the
+// discount/payment-method blocks never render) — see the per-field notes below.
+
+interface InvoiceLineItemRow {
+  id?: string;
+  description: string;
+  descriptionAr?: string | null;
+  quantity: number;
+  unitPrice: string | number;
+  vatAmount?: string | number;
+  total: string | number;
+  sortOrder?: number;
+}
+
+interface InvoiceRow {
+  id: string;
+  invoiceNumber: string;
+  status: string;
+  issuedAt?: string | null;
+  dueDate?: string | null;
+  subtotal: string | number;
+  vatAmount: string | number;
+  total: string | number;
+  /**
+   * Not on the `Invoice` model — `undefined` at runtime, so the `discount > 0`
+   * guard is always false and the discount block never renders. Typed `number`
+   * (not `number | undefined`) only so the existing `viewInvoice.discount > 0`
+   * relational comparison type-checks without altering the expression; the
+   * runtime value and behavior are unchanged.
+   */
+  discount: number;
+  /** Not on the Invoice model — `undefined` at runtime; the payment-method block never renders. */
+  paymentMethod?: string | null;
+  lineItems?: InvoiceLineItemRow[];
+}
+
+interface InvoicesResult {
+  invoices: InvoiceRow[];
+  total: number;
+  page: number;
+  pageSize?: number;
+  totalPages: number;
+}
+
 export default function InvoicesPage() {
   const { lang } = useLanguage();
   const router = useRouter();
-  const [data, setData] = React.useState<any>({ invoices: [], total: 0, page: 1, totalPages: 0 });
+  const [data, setData] = React.useState<InvoicesResult>({ invoices: [], total: 0, page: 1, totalPages: 0 });
   const [loading, setLoading] = React.useState(true);
   const [page, setPage] = React.useState(1);
-  const [viewInvoice, setViewInvoice] = React.useState<any>(null);
+  const [viewInvoice, setViewInvoice] = React.useState<InvoiceRow | null>(null);
   const [loadingInvoice, setLoadingInvoice] = React.useState(false);
   const [downloadingId, setDownloadingId] = React.useState<string | null>(null);
   const [mobileFilter, setMobileFilter] = React.useState<"ALL" | "PAID" | "ISSUED" | "OVERDUE">("ALL");
@@ -138,17 +189,17 @@ export default function InvoicesPage() {
 
   const filteredMobile = React.useMemo(() => {
     if (mobileFilter === "ALL") return data.invoices;
-    return data.invoices.filter((inv: any) => inv.status === mobileFilter);
+    return data.invoices.filter((inv) => inv.status === mobileFilter);
   }, [data.invoices, mobileFilter]);
 
   // ─── DataTable columns ──────────────────────────────────────────────────────
 
-  const invoiceColumns = React.useMemo<ColumnDef<any>[]>(
+  const invoiceColumns = React.useMemo<ColumnDef<InvoiceRow>[]>(
     () => [
       {
         accessorKey: "invoiceNumber",
         header: t.invoiceNumber,
-        cell: ({ row }: any) => (
+        cell: ({ row }) => (
           <span className="font-mono text-xs font-medium text-foreground">
             {row.original.invoiceNumber}
           </span>
@@ -159,7 +210,7 @@ export default function InvoicesPage() {
       {
         accessorKey: "issuedAt",
         header: t.date,
-        cell: ({ row }: any) =>
+        cell: ({ row }) =>
           row.original.issuedAt
             ? new Date(row.original.issuedAt).toLocaleDateString(
                 lang === "ar" ? "ar-SA-u-nu-latn" : "en-US",
@@ -170,7 +221,7 @@ export default function InvoicesPage() {
       {
         accessorKey: "status",
         header: t.status,
-        cell: ({ row }: any) => {
+        cell: ({ row }) => {
           const status = statusConfig[row.original.status] ?? statusConfig.DRAFT!;
           return (
             <Badge variant={badgeVariant(row.original.status)} size="sm">
@@ -183,7 +234,7 @@ export default function InvoicesPage() {
       {
         accessorKey: "subtotal",
         header: t.subtotal,
-        cell: ({ row }: any) => (
+        cell: ({ row }) => (
           <span className="tabular-nums">
             {Number(row.original.subtotal).toLocaleString()} {t.sar}
           </span>
@@ -194,7 +245,7 @@ export default function InvoicesPage() {
       {
         accessorKey: "vatAmount",
         header: t.vat,
-        cell: ({ row }: any) => (
+        cell: ({ row }) => (
           <span className="tabular-nums">
             {Number(row.original.vatAmount).toLocaleString()} {t.sar}
           </span>
@@ -205,7 +256,7 @@ export default function InvoicesPage() {
       {
         accessorKey: "total",
         header: t.total,
-        cell: ({ row }: any) => (
+        cell: ({ row }) => (
           <span className="font-semibold tabular-nums">
             {Number(row.original.total).toLocaleString()} {t.sar}
           </span>
@@ -218,7 +269,7 @@ export default function InvoicesPage() {
         header: "",
         enableSorting: false,
         enableHiding: false,
-        cell: ({ row }: any) => {
+        cell: ({ row }) => {
           const inv = row.original;
           return (
             <div className="flex items-center justify-end gap-1">
@@ -246,7 +297,7 @@ export default function InvoicesPage() {
     [lang, t, loadingInvoice, downloadingId],
   );
 
-  function renderMobileInvoiceCard(inv: any) {
+  function renderMobileInvoiceCard(inv: InvoiceRow) {
     const status = statusConfig[inv.status] ?? statusConfig.DRAFT!;
     return (
       <DataCard
@@ -366,7 +417,7 @@ export default function InvoicesPage() {
           )
         ) : (
           <div className="rounded-xl border border-border bg-card px-4">
-            {filteredMobile.map((inv: any, idx: number) => (
+            {filteredMobile.map((inv, idx) => (
               <React.Fragment key={inv.id}>
                 {renderMobileInvoiceCard(inv)}
                 {idx !== filteredMobile.length - 1 && (
@@ -498,7 +549,7 @@ export default function InvoicesPage() {
                   {lang === "ar" ? "البنود" : "Line Items"}
                 </p>
                 <div className="rounded-lg border border-border divide-y divide-border">
-                  {viewInvoice.lineItems.map((item: any, idx: number) => (
+                  {viewInvoice.lineItems.map((item, idx) => (
                     <div key={idx} className="flex items-center justify-between p-3 text-xs">
                       <div className="min-w-0 flex-1">
                         <p className="font-medium text-foreground truncate">
@@ -609,7 +660,7 @@ export default function InvoicesPage() {
         locale={lang === "ar" ? "ar" : "en"}
         pagination
         pageSize={10}
-        getRowId={(r: any) => r.id}
+        getRowId={(r) => r.id}
         mobileCard={renderMobileInvoiceCard}
         emptyTitle={t.noInvoices}
         emptyDescription={
@@ -675,7 +726,7 @@ export default function InvoicesPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {viewInvoice.lineItems.map((item: any, idx: number) => (
+                      {viewInvoice.lineItems.map((item, idx) => (
                         <TableRow key={idx}>
                           <TableCell>{item.description}</TableCell>
                           <TableCell className="text-end">{item.quantity}</TableCell>

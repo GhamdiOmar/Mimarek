@@ -1,5 +1,21 @@
 # Changelog — Mimaric PropTech
 
+## [4.33.3] — 2026-06-19 — Lint sweep PR 1/4: Tier-1 (money/PII/auth) no-explicit-any → typed
+
+Batch 3 of the post-v4.33.0 plan begins — paying the `eslint-suppressions.json` backlog down to zero. PR 1 of 4 eliminates **54** `@typescript-eslint/no-explicit-any` suppressions in the highest-safety-value server actions (money, PII, auth), replacing each `any` with a proper type — **no behavior change**. Suppressions: **160 → 106** (no-explicit-any 129 → 75). `turbo run check-types` 2/2 · `next build` green · vitest **160/160** · `/mimaric-qa` **GO** (behavior-preserving throughout). §3.9 preview walk N/A — the one UI file touched (billing/invoices) changed only type annotations (byte-identical emitted JS; no JSX/logic/value change).
+
+### Typed (no runtime change)
+- **`customers.ts`** (13) — `Prisma.InputJsonValue` for `Json` fields, `Prisma.Customer{Where,Update}Input`, the real `CustomerStatus`/`PersonType`/`Gender`/`ActivityType` enums; params kept `string` (caller-compatible) and cast at the write boundary. The `encryptCustomerData` blind-index path is untouched.
+- **`billing/invoices/page.tsx`** (16) — new `InvoiceRow`/`InvoiceLineItemRow` view-model interfaces + `ColumnDef<InvoiceRow>`, so the DataTable `cell`/`mobileCard`/`getRowId` callbacks infer their params. Purely type annotations.
+- **`auth.ts` actions** (5) — `catch (e)` (`unknown`) + `instanceof Error` / `instanceof Prisma.PrismaClientKnownRequestError` narrowing, `Prisma.TransactionClient`. Error-handling semantics (incl. the P2002 unique-constraint branches) byte-identical.
+- **`organization.ts`** (7) + **`onboarding.ts`** (6) — enum params kept `string` + cast at write sites, `Prisma.*UpdateInput`/`InputJsonValue`, a shared `targetIncludes` helper.
+- **`contracts.ts`** (4) — `Prisma.Contract{Where,Update}Input`, `RecurrenceType` casts.
+- **`auth.ts` root** — `signIn`/`signOut` typed; `auth` kept as a single documented inline-`eslint-disable` `any` (its precise NextAuth v5 type cascades into the intentionally-loose `SessionData`/`DashboardClientLayout` session layer — out of this PR's scope).
+
+**Caught in validation:** two caller-breakages the typing introduced (over-narrowed `organization.ts` enum params broke `settings/page.tsx`; the precise root `auth` type broke `portal/layout.tsx`) — both fixed before merge.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimaric/compare/v4.33.2...v4.33.3
+
 ## [4.33.2] — 2026-06-19 — H9 resolved: seller-convert E2E un-fixme'd (test-only root cause)
 
 Batch 2 of the post-v4.33.0 remaining-work plan. Closes the last tracked test-coverage gap (H9): the marketplace seller-convert E2E now runs and passes, after a focused diagnostic pinned the long-standing "empty grid / Convert button never renders" timeout to two TEST-only defects — no product bug. `turbo run lint check-types` 4/4 · `next build` green · cspell clean · the full `marketplace.cross-org` spec **8/8 green** locally (`next build && next start` + real DB), including H9 + the 0-console-error gate · `/mimaric-qa` verdict GO. §3.9 preview walk N/A (test-only; no app/UI code changed).

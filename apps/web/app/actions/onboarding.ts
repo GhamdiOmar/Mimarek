@@ -1,6 +1,6 @@
 ﻿"use server";
 
-import { db } from "@repo/db";
+import { db, Prisma, type EntityType, type LegalForm } from "@repo/db";
 import { revalidatePath } from "next/cache";
 import { ROUTES } from "../../lib/routes";
 import { getTenantSessionOrThrow } from "../../lib/auth-helpers";
@@ -21,6 +21,15 @@ function isValidCR(cr: string): boolean {
 
 function isValidVAT(vat: string): boolean {
   return /^3\d{13}3$/.test(vat);
+}
+
+// Prisma's PrismaClientKnownRequestError.meta.target is typed as `unknown`;
+// it can be a string or string[] depending on the driver. Mirrors the original
+// `error.meta?.target?.includes(...)` checks without an `any` cast.
+function targetIncludes(target: unknown, field: string): boolean {
+  if (Array.isArray(target)) return target.includes(field);
+  if (typeof target === "string") return target.includes(field);
+  return false;
 }
 
 // â”€â”€â”€ 1. lookupOrgByCR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -176,8 +185,12 @@ export async function convertPersonalOrg(crNumber: string) {
 
     revalidatePath(ROUTES.dashboard);
     return { success: true };
-  } catch (error: any) {
-    if (error.code === "P2002" && error.meta?.target?.includes("crNumber")) {
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002" &&
+      targetIncludes(error.meta?.target, "crNumber")
+    ) {
       return { success: false, error: "CR_TAKEN" };
     }
     console.error("[Onboarding] Convert personal org failed:", error);
@@ -216,8 +229,8 @@ export async function updateOnboardingOrg(data: {
         ...(data.nameEnglish !== undefined && { nameEnglish: data.nameEnglish }),
         ...(data.crNumber !== undefined && { crNumber: data.crNumber }),
         ...(data.vatNumber !== undefined && { vatNumber: data.vatNumber }),
-        ...(data.entityType !== undefined && { entityType: data.entityType as any }),
-        ...(data.legalForm !== undefined && { legalForm: data.legalForm as any }),
+        ...(data.entityType !== undefined && { entityType: data.entityType as EntityType }),
+        ...(data.legalForm !== undefined && { legalForm: data.legalForm as LegalForm }),
       },
     });
 
@@ -234,11 +247,11 @@ export async function updateOnboardingOrg(data: {
 
     revalidatePath(ROUTES.dashboard);
     return { success: true };
-  } catch (error: any) {
-    if (error.code === "P2002") {
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
       const target = error.meta?.target;
-      if (target?.includes("crNumber")) return { success: false, error: "CR_TAKEN" };
-      if (target?.includes("vatNumber")) return { success: false, error: "VAT_TAKEN" };
+      if (targetIncludes(target, "crNumber")) return { success: false, error: "CR_TAKEN" };
+      if (targetIncludes(target, "vatNumber")) return { success: false, error: "VAT_TAKEN" };
     }
     console.error("[Onboarding] Update org failed:", error);
     return { success: false, error: "UPDATE_FAILED" };
@@ -277,8 +290,8 @@ export async function updateOnboardingContact(data: {
     await db.organization.update({
       where: { id: session.organizationId },
       data: {
-        contactInfo: contactInfo as any,
-        nationalAddress: nationalAddress as any,
+        contactInfo: contactInfo as Prisma.InputJsonValue,
+        nationalAddress: nationalAddress as Prisma.InputJsonValue,
       },
     });
 

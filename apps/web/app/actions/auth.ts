@@ -3,7 +3,7 @@
 import { signIn } from "../../auth";
 import { AuthError } from "next-auth";
 import { headers } from "next/headers";
-import { db } from "@repo/db";
+import { db, Prisma, type User } from "@repo/db";
 import { hash as bcryptHash } from "@node-rs/bcrypt";
 import { validatePassword } from "../../lib/password-policy";
 import { logAuditEvent } from "../../lib/audit";
@@ -43,9 +43,11 @@ export async function loginAction(formData: FormData) {
       password,
       redirect: false,
     });
-  } catch (error: any) {
+  } catch (error) {
     if (error instanceof AuthError) {
-      const message = error.cause?.err?.message || error.message;
+      const message =
+        (error.cause?.err instanceof Error ? error.cause.err.message : undefined) ||
+        error.message;
 
       if (message === "INVALID_CREDENTIALS") {
         return { error: "INVALID_CREDENTIALS" };
@@ -71,7 +73,7 @@ export async function loginAction(formData: FormData) {
       }
     }
 
-    if (error.message?.includes("NEXT_REDIRECT")) {
+    if (error instanceof Error && error.message.includes("NEXT_REDIRECT")) {
       throw error;
     }
 
@@ -96,9 +98,13 @@ export async function loginAction(formData: FormData) {
     } else if (user?.role === "USER") {
       return { error: "USE_TENANT_MODE" };
     }
-    const prefs = user?.preferences as any;
-    if (mode === "management" && prefs?.landingPage && ALLOWED_LANDING_PAGES.includes(prefs.landingPage)) {
-      redirectTo = prefs.landingPage;
+    const prefs =
+      user?.preferences && typeof user.preferences === "object" && !Array.isArray(user.preferences)
+        ? (user.preferences as Record<string, unknown>)
+        : undefined;
+    const landingPage = typeof prefs?.landingPage === "string" ? prefs.landingPage : undefined;
+    if (mode === "management" && landingPage && ALLOWED_LANDING_PAGES.includes(landingPage)) {
+      redirectTo = landingPage;
     }
   } catch {}
 
@@ -157,9 +163,9 @@ export async function registerUser(data: {
   const normalizedEmail = data.email.toLowerCase().trim();
   const orgName = accountType === "company" ? data.name : `${data.name}'s Workspace`;
 
-  let user: any;
+  let user: User;
   try {
-    const result = await db.$transaction(async (tx: any) => {
+    const result = await db.$transaction(async (tx: Prisma.TransactionClient) => {
       const org = await tx.organization.create({
         data: {
           name: orgName,
@@ -191,10 +197,19 @@ export async function registerUser(data: {
     });
 
     user = result.user;
-  } catch (error: any) {
-    // Prisma unique constraint violation on User.email
-    if (error.code === "P2002" && error.meta?.target?.includes("email")) {
-      return { error: "EMAIL_EXISTS" };
+  } catch (error) {
+    // Prisma unique constraint violation on User.email.
+    // `meta.target` is a string[] of conflicting columns on Postgres (via
+    // @prisma/adapter-pg); we also accept a bare string to mirror the original
+    // `.includes("email")` semantics exactly across Prisma versions.
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      const target = error.meta?.target;
+      if (
+        (Array.isArray(target) && target.includes("email")) ||
+        (typeof target === "string" && target.includes("email"))
+      ) {
+        return { error: "EMAIL_EXISTS" };
+      }
     }
     throw error;
   }
