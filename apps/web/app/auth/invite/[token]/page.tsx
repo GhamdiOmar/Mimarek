@@ -182,7 +182,7 @@ export default function InviteAcceptPage() {
           {fetching && (
             <div className="flex flex-col items-center justify-center gap-4 py-20">
               <Loader2 className="h-10 w-10 animate-spin text-primary" />
-              <p className="text-sm text-muted-foreground font-dm-sans">
+              <p className="text-sm text-muted-foreground font-satoshi">
                 {lang === "ar"
                   ? "جاري تحميل الدعوة..."
                   : "Loading invitation..."}
@@ -200,7 +200,7 @@ export default function InviteAcceptPage() {
                 <h2 className="text-xl font-bold text-primary">
                   {inviteError[lang]}
                 </h2>
-                <p className="text-sm text-muted-foreground font-dm-sans">
+                <p className="text-sm text-muted-foreground font-satoshi">
                   {lang === "ar"
                     ? "يرجى التواصل مع مسؤول الفريق للحصول على دعوة جديدة."
                     : "Please contact your team administrator for a new invitation."}
@@ -224,7 +224,7 @@ export default function InviteAcceptPage() {
                 <h2 className="text-2xl font-bold text-primary">
                   {lang === "ar" ? "قبول الدعوة" : "Accept Invitation"}
                 </h2>
-                <p className="mt-2 text-sm text-muted-foreground font-dm-sans">
+                <p className="mt-2 text-sm text-muted-foreground font-satoshi">
                   {lang === "ar"
                     ? "أكمل بياناتك للانضمام إلى الفريق"
                     : "Complete your details to join the team"}
@@ -238,12 +238,12 @@ export default function InviteAcceptPage() {
                     className="h-6 w-6 mt-0.5 shrink-0 text-secondary"
                   />
                   <div className="space-y-1">
-                    <p className="text-sm font-medium text-primary font-dm-sans">
+                    <p className="text-sm font-medium text-primary font-satoshi">
                       {lang === "ar"
                         ? `لقد تمت دعوتك للانضمام إلى ${invitation.orgName} بصفة ${roleLang}`
                         : `You've been invited to join ${invitation.orgName} as ${roleLang}`}
                     </p>
-                    <p className="text-xs text-muted-foreground font-dm-sans">
+                    <p className="text-xs text-muted-foreground font-satoshi">
                       {lang === "ar"
                         ? `بواسطة ${invitation.inviterName}`
                         : `Invited by ${invitation.inviterName}`}
@@ -328,7 +328,7 @@ export default function InviteAcceptPage() {
                   />
                   <label
                     htmlFor="terms"
-                    className="text-xs text-muted-foreground leading-relaxed font-dm-sans"
+                    className="text-xs text-muted-foreground leading-relaxed font-satoshi"
                   >
                     {lang === "ar"
                       ? "أوافق على شروط الخدمة وسياسة الخصوصية الخاصة بـ Mimarek"
@@ -353,7 +353,7 @@ export default function InviteAcceptPage() {
                 </Button>
               </div>
 
-              <p className="mt-6 text-center text-sm text-muted-foreground font-dm-sans">
+              <p className="mt-6 text-center text-sm text-muted-foreground font-satoshi">
                 {lang === "ar" ? "لديك حساب بالفعل؟" : "Already have an account?"}{" "}
                 <Link
                   href="/auth/login"

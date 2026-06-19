@@ -52,7 +52,7 @@ export default function Vision2030({ lang }: { lang: "ar" | "en" }) {
           {pillars.map(({ icon: Icon, title, desc }) => (
             <div
               key={title}
-              className="group glass rounded-2xl p-8 transition-colors duration-300 hover:border-primary/30"
+              className="group rounded-2xl p-8 bg-white/[0.04] backdrop-blur-md border border-white/10 shadow-lg transition-colors duration-300 hover:border-primary/30 hover:bg-white/[0.06]"
             >
               <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 transition-colors group-hover:bg-primary/20">
                 <Icon className="h-6 w-6 text-primary" />

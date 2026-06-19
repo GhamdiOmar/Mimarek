@@ -66,8 +66,8 @@ async function main() {
   const [khalid, reem, omar, hessa, turki, mona] = await Promise.all([
     prisma.customer.create({
       data: {
-        name: "Khalid Al-Ghamdi",
-        nameArabic: "خالد عبدالله الغامدي",
+        name: "Khalid Al-Otaibi",
+        nameArabic: "خالد عبدالله العتيبي",
         phone: "0501112222",
         email: "k.ghamdi@gmail.com",
         nationalId: "1067890123",
@@ -98,8 +98,8 @@ async function main() {
     }),
     prisma.customer.create({
       data: {
-        name: "Omar Al-Zahrani",
-        nameArabic: "عمر سعيد الزهراني",
+        name: "Saud Al-Zahrani",
+        nameArabic: "سعود سعيد الزهراني",
         phone: "0531234567",
         email: "omar.z@outlook.com",
         nationalId: "1089012345",
@@ -272,7 +272,7 @@ async function main() {
     return contract;
   }
 
-  // Contract 1 — Omar bought A-102 (720,000 SAR)
+  // Contract 1 — Saud bought A-102 (720,000 SAR)
   // Installment 4 is OVERDUE → shows in pendingPayments KPI
   const unitA102 = u("A-102");
   if (omar && unitA102) {

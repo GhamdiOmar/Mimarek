@@ -47,7 +47,7 @@ async function main() {
         shortAddress: "RRAA2345",
       },
       managerInfo: {
-        managerName: "عمر الغامدي",
+        managerName: "محمد العتيبي",
         managerId: "1098765432",
         managerRole: "المدير العام",
       },
@@ -87,7 +87,7 @@ async function main() {
         shortAddress: "RRAA2345",
       },
       managerInfo: {
-        managerName: "عمر الغامدي",
+        managerName: "محمد العتيبي",
         managerId: "1098765432",
         managerRole: "المدير العام",
       },
@@ -104,10 +104,10 @@ async function main() {
   const hashedPassword = await bcryptHash("mimaric2026", 12);
   const admin = await prisma.user.upsert({
     where: { email: "admin@mimarek.sa" },
-    update: { password: hashedPassword, role: "ADMIN", ...VERIFIED },
+    update: { name: "Mohammed Al-Otaibi", password: hashedPassword, role: "ADMIN", ...VERIFIED },
     create: {
       email: "admin@mimarek.sa",
-      name: "Omar Al-Ghamdi",
+      name: "Mohammed Al-Otaibi",
       password: hashedPassword,
       role: "ADMIN",
       organizationId: org.id,
