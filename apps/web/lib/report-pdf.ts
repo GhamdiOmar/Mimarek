@@ -12,8 +12,8 @@ async function loadArabicFonts(): Promise<{ regular: string; bold: string }> {
   if (fontCache) return fontCache;
 
   const [regularBuf, boldBuf] = await Promise.all([
-    fetch("/fonts/IBMPlexSansArabic-Regular.ttf").then((r) => r.arrayBuffer()),
-    fetch("/fonts/IBMPlexSansArabic-Bold.ttf").then((r) => r.arrayBuffer()),
+    fetch("/fonts/Tajawal-Regular.ttf").then((r) => r.arrayBuffer()),
+    fetch("/fonts/Tajawal-Bold.ttf").then((r) => r.arrayBuffer()),
   ]);
 
   function bufToBase64(buf: ArrayBuffer): string {
@@ -30,10 +30,10 @@ async function loadArabicFonts(): Promise<{ regular: string; bold: string }> {
 }
 
 function registerFonts(pdf: jsPDF, fonts: { regular: string; bold: string }) {
-  pdf.addFileToVFS("IBMPlexSansArabic-Regular.ttf", fonts.regular);
-  pdf.addFont("IBMPlexSansArabic-Regular.ttf", "IBMPlexSansArabic", "normal");
-  pdf.addFileToVFS("IBMPlexSansArabic-Bold.ttf", fonts.bold);
-  pdf.addFont("IBMPlexSansArabic-Bold.ttf", "IBMPlexSansArabic", "bold");
+  pdf.addFileToVFS("Tajawal-Regular.ttf", fonts.regular);
+  pdf.addFont("Tajawal-Regular.ttf", "Tajawal", "normal");
+  pdf.addFileToVFS("Tajawal-Bold.ttf", fonts.bold);
+  pdf.addFont("Tajawal-Bold.ttf", "Tajawal", "bold");
 }
 
 export async function generateReportPDF({
@@ -62,11 +62,11 @@ export async function generateReportPDF({
 
   // Helper: set Arabic font
   const setArabicFont = (style: "normal" | "bold" = "normal") => {
-    pdf.setFont("IBMPlexSansArabic", style);
+    pdf.setFont("Tajawal", style);
   };
 
   // --- Header bar ---
-  pdf.setFillColor(10, 22, 40);
+  pdf.setFillColor(0, 27, 42);
   pdf.rect(0, 0, pageW, 28, "F");
 
   // MIMAREK logo text (always Latin)
@@ -77,14 +77,14 @@ export async function generateReportPDF({
 
   // Date range
   pdf.setFontSize(10);
-  pdf.setTextColor(16, 120, 64);
+  pdf.setTextColor(0, 112, 122);
   setArabicFont();
   pdf.text(dateRange, contentEnd, 18, { align: "right" });
 
   y = 38;
 
   // --- Title ---
-  pdf.setTextColor(10, 22, 40);
+  pdf.setTextColor(0, 27, 42);
   pdf.setFontSize(16);
   setArabicFont("bold");
   pdf.text(title, pageW / 2, y, { align: "center" });
@@ -110,7 +110,7 @@ export async function generateReportPDF({
     // Section header background
     pdf.setFillColor(242, 244, 247);
     pdf.rect(margin, y, pageW - margin * 2, 8, "F");
-    pdf.setTextColor(10, 22, 40);
+    pdf.setTextColor(0, 27, 42);
     pdf.setFontSize(11);
     setArabicFont("bold");
     if (isRTL) {
@@ -138,13 +138,13 @@ export async function generateReportPDF({
         // RTL: label on right, value on left
         pdf.setTextColor(80, 80, 80);
         pdf.text(row.label, contentEnd - 4, y, { align: "right" });
-        pdf.setTextColor(10, 22, 40);
+        pdf.setTextColor(0, 27, 42);
         setArabicFont("bold");
         pdf.text(row.value, margin + 4, y);
       } else {
         pdf.setTextColor(80, 80, 80);
         pdf.text(row.label, margin + 4, y);
-        pdf.setTextColor(10, 22, 40);
+        pdf.setTextColor(0, 27, 42);
         setArabicFont("bold");
         pdf.text(row.value, contentEnd - 4, y, { align: "right" });
       }

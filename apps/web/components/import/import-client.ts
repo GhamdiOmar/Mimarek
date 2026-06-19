@@ -114,7 +114,7 @@ export async function downloadTemplate(config: ImportConfig, lang: "ar" | "en"):
   const headerRow = worksheet.addRow(headers);
   headerRow.height = 26;
   headerRow.eachCell((cell, col) => {
-    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF3E2760" } }; // primary-deep
+    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF001B2A" } }; // primary-deep
     cell.font = { name: "Arial", size: 12, bold: true, color: { argb: "FFFFFFFF" } };
     cell.alignment = { vertical: "middle", horizontal: "center" };
     worksheet.getColumn(col).width = Math.max(18, headers[col - 1]!.length + 4);
