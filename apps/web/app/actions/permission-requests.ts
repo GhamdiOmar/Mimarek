@@ -1,6 +1,6 @@
 "use server";
 
-import { db } from "@repo/db";
+import { db, UserRole, RequestStatus } from "@repo/db";
 import { revalidatePath } from "next/cache";
 import { ROUTES } from "../../lib/routes";
 import { requirePermission, getSessionOrThrow } from "../../lib/auth-helpers";
@@ -30,7 +30,9 @@ export async function createPermissionRequest(data: {
   const request = await db.permissionRequest.create({
     data: {
       userId: session.userId,
-      requestedRole: data.requestedRole as any,
+      // `requestedRole` stays a `string` param (validated against REQUESTABLE_ROLES
+      // above); cast to the enum only at the write site — value unchanged.
+      requestedRole: data.requestedRole as UserRole,
       reason: data.reason,
       status: "PENDING",
       organizationId: session.organizationId,
@@ -96,7 +98,8 @@ export async function getAllPermissionRequests(status?: string) {
   return db.permissionRequest.findMany({
     where: {
       organizationId: session.organizationId,
-      ...(status ? { status: status as any } : {}),
+      // `status` stays a `string` param; cast to the enum only here (value unchanged).
+      ...(status ? { status: status as RequestStatus } : {}),
     },
     include: {
       user: { select: { id: true, name: true, email: true, role: true } },

@@ -22,34 +22,18 @@
       "count": 3
     }
   },
-  "app/actions/audit.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
   "app/actions/auth.ts": {
     "no-empty": {
       "count": 1
     }
   },
   "app/actions/billing.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
     "@typescript-eslint/no-unused-vars": {
       "count": 1
     }
   },
   "app/actions/contract-templates.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
-    },
     "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
-  "app/actions/coupons.ts": {
-    "@typescript-eslint/no-explicit-any": {
       "count": 1
     }
   },
@@ -58,47 +42,9 @@
       "count": 1
     }
   },
-  "app/actions/dashboard-finance.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
-    }
-  },
-  "app/actions/documents.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
-    }
-  },
-  "app/actions/maintenance.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 8
-    }
-  },
-  "app/actions/password.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
-  "app/actions/payment-plans.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 3
-    }
-  },
   "app/actions/permission-requests.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
-    },
     "@typescript-eslint/no-unused-vars": {
       "count": 1
-    }
-  },
-  "app/actions/preventive-maintenance.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 8
-    }
-  },
-  "app/actions/support-tickets.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 7
     }
   },
   "app/actions/units.ts": {
@@ -106,30 +52,7 @@
       "count": 1
     }
   },
-  "app/api/cron/clean-expired-email-tokens/route.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
-  "app/api/cron/expire-reservations/route.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
-  "app/api/cron/expire-unverified-orgs/route.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
-  "app/api/cron/run-data-retention/route.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
   "app/api/uploadthing/core.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 3
-    },
     "@typescript-eslint/no-unused-vars": {
       "count": 2
     }

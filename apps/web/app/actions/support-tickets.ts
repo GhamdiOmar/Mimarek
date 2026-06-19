@@ -1,6 +1,6 @@
 "use server";
 
-import { db } from "@repo/db";
+import { db, Prisma, TicketCategory, TicketPriority, TicketStatus } from "@repo/db";
 import { revalidatePath } from "next/cache";
 import { ROUTES, routeToHelpTicket } from "../../lib/routes";
 import { requirePermission } from "../../lib/auth-helpers";
@@ -37,15 +37,31 @@ export async function createSupportTicket(data: {
           userId: session.userId,
           subject: data.subject,
           description: data.description,
-          category: data.category as any,
-          priority: (data.priority as any) ?? "MEDIUM",
+          category: data.category as TicketCategory,
+          priority: (data.priority as TicketPriority | undefined) ?? "MEDIUM",
           status: "OPEN",
           organizationId: session.organizationId,
         },
       });
       break; // Success
-    } catch (error: any) {
-      if (error.code === "P2002" && error.meta?.target?.includes("ticketNumber")) {
+    } catch (error) {
+      // Prisma's `meta.target` is typed `unknown`; it can be a string or string[]
+      // depending on the driver. Guard both shapes to mirror the original
+      // `error.meta?.target?.includes("ticketNumber")` check without an `any` cast.
+      const target =
+        error instanceof Prisma.PrismaClientKnownRequestError
+          ? error.meta?.target
+          : undefined;
+      const hitsTicketNumber = Array.isArray(target)
+        ? target.includes("ticketNumber")
+        : typeof target === "string"
+          ? target.includes("ticketNumber")
+          : false;
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2002" &&
+        hitsTicketNumber
+      ) {
         retries--;
         if (retries === 0) throw new Error("Unable to create a ticket number. Please try again in a moment.");
         continue; // Retry with new number
@@ -103,9 +119,9 @@ export async function getAllSupportTickets(filters?: {
   return db.supportTicket.findMany({
     where: {
       organizationId: session.organizationId,
-      ...(filters?.status ? { status: filters.status as any } : {}),
-      ...(filters?.category ? { category: filters.category as any } : {}),
-      ...(filters?.priority ? { priority: filters.priority as any } : {}),
+      ...(filters?.status ? { status: filters.status as TicketStatus } : {}),
+      ...(filters?.category ? { category: filters.category as TicketCategory } : {}),
+      ...(filters?.priority ? { priority: filters.priority as TicketPriority } : {}),
     },
     include: {
       user: { select: { id: true, name: true, email: true, role: true } },
@@ -220,7 +236,7 @@ export async function updateTicketStatus(ticketId: string, status: string) {
 
   const updated = await db.supportTicket.update({
     where: { id: ticketId },
-    data: { status: status as any },
+    data: { status: status as TicketStatus },
   });
 
   // Notify ticket owner

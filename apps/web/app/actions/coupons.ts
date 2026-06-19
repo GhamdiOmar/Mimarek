@@ -1,6 +1,6 @@
 "use server";
 
-import { db } from "@repo/db";
+import { db, type Prisma } from "@repo/db";
 import { revalidatePath } from "next/cache";
 import { requirePermission, requireTenantPermission } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
@@ -188,7 +188,7 @@ export async function adminCreateCoupon(data: {
       validFrom: data.validFrom ?? new Date(),
       validUntil: data.validUntil,
       minPurchaseAmount: data.minPurchaseAmount,
-      applicableCycles: data.applicableCycles as any,
+      applicableCycles: data.applicableCycles as Prisma.InputJsonValue,
       plans: data.planIds
         ? { connect: data.planIds.map((id) => ({ id })) }
         : undefined,

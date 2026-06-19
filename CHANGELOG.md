@@ -1,5 +1,21 @@
 # Changelog — Mimaric PropTech
 
+## [4.33.4] — 2026-06-19 — Lint sweep PR 2/4: Tier-2 server-side no-explicit-any → typed
+
+Batch 3 continues. PR 2 of 4 eliminates **45** `@typescript-eslint/no-explicit-any` suppressions in server-side code (12 server actions + 4 cron routes + uploadthing) — **no behavior change**. Suppressions: **106 → 61** (no-explicit-any 75 → 30). `turbo run check-types` 2/2 · `next build` green · vitest **160/160** · `/mimaric-qa` **GO** (behavior-preserving throughout, all 6 risk items verified). §3.9 N/A — no rendered pages touched (server actions / API routes only).
+
+### Typed (no runtime change)
+- **Maintenance** — `maintenance.ts` (8) + `preventive-maintenance.ts` (8): `Prisma.<M>WhereInput`/`UncheckedUpdateInput` (scalar-FK assignments), `MaintenanceStatus`/`Category`/`Priority`/`RecurrenceType` enums cast at write sites.
+- **`support-tickets.ts`** (7) — `Prisma.<M>WhereInput`, `Ticket*` enums; `catch (e)` + `instanceof Prisma.PrismaClientKnownRequestError && code==="P2002"` with array-or-string `meta.target` handling.
+- **Finance/billing** — `payment-plans.ts` (3, incl. a union `GetPayload` tx-return type + `InstallmentStatus`), `dashboard-finance.ts` (2, money stays `Prisma.Decimal`), `billing.ts` (1) + `coupons.ts` (1) `Prisma.InputJsonValue` for `Json` columns, `audit.ts` (1) `Prisma.AuditLogWhereInput` + a semantically-identical `DateTimeFilter` build.
+- **Docs/templates/permissions/password** — `documents.ts` (2), `contract-templates.ts` (2), `permission-requests.ts` (2) enums cast at write sites; `password.ts` (1) `Prisma.TransactionClient`.
+- **`uploadthing/core.ts`** (3) — removed dead `(session.user as any)` casts (the `next-auth.d.ts` augmentation already types `role`/`organizationId`); `?? "USER"` fallback preserved.
+- **4 cron routes** (1 each) — `catch (e)` + `instanceof Error` for the 500 message; auth-secret + retention/expiry logic untouched.
+
+Per the PR1 lesson, **no server-action param was narrowed** — enum-ish `string` params stay `string`, cast only at the Prisma write site. Caught + fixed in validation: `payment-plans.ts` imported `type Prisma` but used it as a runtime value in `instanceof` → value import.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimaric/compare/v4.33.3...v4.33.4
+
 ## [4.33.3] — 2026-06-19 — Lint sweep PR 1/4: Tier-1 (money/PII/auth) no-explicit-any → typed
 
 Batch 3 of the post-v4.33.0 plan begins — paying the `eslint-suppressions.json` backlog down to zero. PR 1 of 4 eliminates **54** `@typescript-eslint/no-explicit-any` suppressions in the highest-safety-value server actions (money, PII, auth), replacing each `any` with a proper type — **no behavior change**. Suppressions: **160 → 106** (no-explicit-any 129 → 75). `turbo run check-types` 2/2 · `next build` green · vitest **160/160** · `/mimaric-qa` **GO** (behavior-preserving throughout). §3.9 preview walk N/A — the one UI file touched (billing/invoices) changed only type annotations (byte-identical emitted JS; no JSX/logic/value change).

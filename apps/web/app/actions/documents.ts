@@ -1,6 +1,6 @@
 "use server";
 
-import { db, DocCategory } from "@repo/db";
+import { db, DocCategory, Prisma } from "@repo/db";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { UTApi } from "uploadthing/server";
@@ -62,7 +62,7 @@ export async function registerFileInDb(data: {
   size?: number;
   customerId?: string;
   unitId?: string;
-  category?: any;
+  category?: DocCategory;
 }) {
   const parsed = RegisterFileSchema.safeParse(data);
   if (!parsed.success) {
@@ -131,10 +131,12 @@ export async function getDocuments(filters?: {
 }) {
   const session = await requirePermission("documents:read");
 
-  const where: any = { organizationId: session.organizationId };
+  const where: Prisma.DocumentWhereInput = { organizationId: session.organizationId };
 
   if (filters?.category) {
-    where.category = filters.category;
+    // `category` arrives as a plain string from the UI filter; the runtime value
+    // is passed through unchanged — the cast only satisfies the enum-typed field.
+    where.category = filters.category as DocCategory;
   }
   if (filters?.search) {
     where.name = { contains: filters.search, mode: "insensitive" };

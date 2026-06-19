@@ -28,8 +28,9 @@ export async function GET(request: Request) {
       },
     });
     return NextResponse.json({ success: true, deleted: result.count });
-  } catch (error: any) {
+  } catch (error) {
     console.error("[Cron] clean-expired-email-tokens failed:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

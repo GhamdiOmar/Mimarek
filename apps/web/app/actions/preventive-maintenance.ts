@@ -1,6 +1,13 @@
 "use server";
 
-import { db } from "@repo/db";
+import {
+  db,
+  Prisma,
+  MaintenanceCategory,
+  MaintenancePriority,
+  MaintenanceStatus,
+  RecurrenceType,
+} from "@repo/db";
 import { revalidatePath } from "next/cache";
 import { requirePermission } from "../../lib/auth-helpers";
 import { computeNextRunDate } from "../../lib/maintenance/recurrence";
@@ -32,10 +39,10 @@ export async function createPreventivePlan(data: {
     data: {
       title: data.title,
       description: data.description,
-      category: (data.category as any) ?? "GENERAL",
-      priority: (data.priority as any) ?? "MEDIUM",
+      category: (data.category as MaintenanceCategory | undefined) ?? "GENERAL",
+      priority: (data.priority as MaintenancePriority | undefined) ?? "MEDIUM",
       unitId: data.unitId || undefined,
-      recurrenceType: data.recurrenceType as any,
+      recurrenceType: data.recurrenceType as RecurrenceType,
       recurrenceInterval: interval,
       startDate,
       endDate: data.endDate ? new Date(data.endDate) : undefined,
@@ -61,9 +68,9 @@ export async function getPreventivePlans(filters?: {
 }) {
   const session = await requirePermission("preventive_maintenance:read");
 
-  const where: any = { organizationId: session.organizationId };
+  const where: Prisma.PreventiveMaintenancePlanWhereInput = { organizationId: session.organizationId };
   if (filters?.isActive !== undefined) where.isActive = filters.isActive;
-  if (filters?.category) where.category = filters.category;
+  if (filters?.category) where.category = filters.category as MaintenanceCategory;
   if (filters?.unitId) where.unitId = filters.unitId;
 
   const plans = await db.preventiveMaintenancePlan.findMany({
@@ -103,11 +110,11 @@ export async function updatePreventivePlan(
   });
   if (!plan) throw new Error("The selected plan was not found. Please refresh and try again.");
 
-  const updateData: any = {};
+  const updateData: Prisma.PreventiveMaintenancePlanUncheckedUpdateInput = {};
   if (data.title !== undefined) updateData.title = data.title;
   if (data.description !== undefined) updateData.description = data.description;
-  if (data.category !== undefined) updateData.category = data.category;
-  if (data.priority !== undefined) updateData.priority = data.priority;
+  if (data.category !== undefined) updateData.category = data.category as MaintenanceCategory;
+  if (data.priority !== undefined) updateData.priority = data.priority as MaintenancePriority;
   if (data.unitId !== undefined) updateData.unitId = data.unitId || null;
   if (data.assignToId !== undefined) updateData.assignToId = data.assignToId || null;
   if (data.estimatedCost !== undefined) updateData.estimatedCost = data.estimatedCost;
@@ -118,7 +125,7 @@ export async function updatePreventivePlan(
     const recType = data.recurrenceType ?? plan.recurrenceType;
     const recInterval = data.recurrenceInterval ?? plan.recurrenceInterval;
     const start = data.startDate ? new Date(data.startDate) : plan.startDate;
-    updateData.recurrenceType = recType;
+    updateData.recurrenceType = recType as RecurrenceType;
     updateData.recurrenceInterval = recInterval;
     updateData.startDate = start;
     updateData.nextRunDate = computeNextRunDate(recType, recInterval, start);
@@ -202,11 +209,11 @@ export async function generateWorkOrdersFromPlans() {
       data: {
         title: `[وقائي] ${plan.title}`,
         description: plan.description ?? undefined,
-        category: plan.category as any,
-        priority: priority as any,
+        category: plan.category,
+        priority: priority,
         unitId: plan.unitId!,
         assignedToId: plan.assignToId ?? undefined,
-        status: plan.assignToId ? ("ASSIGNED" as any) : "OPEN",
+        status: plan.assignToId ? MaintenanceStatus.ASSIGNED : MaintenanceStatus.OPEN,
         dueDate,
         estimatedCost: plan.estimatedCost,
         isPreventive: true,
