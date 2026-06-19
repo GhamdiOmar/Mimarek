@@ -1,6 +1,6 @@
 "use server";
 
-import { db, CustomerStatus } from "@repo/db";
+import { db, CustomerStatus, PersonType, Gender, ActivityType, Prisma } from "@repo/db";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requirePermission, getSessionWithPermissions } from "../../lib/auth-helpers";
@@ -44,7 +44,7 @@ const CreateCustomerSchema = z.object({
   agentId: z.string().optional(),
 });
 
-export async function updateCustomerStatus(customerId: string, status: any, lostReason?: string) {
+export async function updateCustomerStatus(customerId: string, status: string, lostReason?: string) {
   const parsed = UpdateCustomerStatusSchema.safeParse({ status, lostReason });
   if (!parsed.success) {
     throw new Error("Invalid input: " + parsed.error.issues.map(i => i.message).join(", "));
@@ -119,18 +119,18 @@ export async function createCustomer(data: {
   phone: string;
   email?: string;
   source?: string;
-  status?: any;
+  status?: string;
   nationalId?: string;
   nameArabic?: string;
-  personType?: any;
-  gender?: any;
+  personType?: string;
+  gender?: string;
   dateOfBirth?: string;
   dateOfBirthHijri?: string;
   nationality?: string;
   nationalityCode?: string;
   maritalStatus?: string;
-  address?: any;
-  documentInfo?: any;
+  address?: Prisma.InputJsonValue;
+  documentInfo?: Prisma.InputJsonValue;
   budget?: number;
   propertyTypeInterest?: string;
   agentId?: string;
@@ -159,14 +159,14 @@ export async function createCustomer(data: {
       phone: encryptedData.phone,
       email: encryptedData.email || undefined,
       source: data.source || undefined,
-      status: data.status || undefined,
+      status: (data.status || undefined) as CustomerStatus | undefined,
       nationalId: encryptedData.nationalId,
       nationalIdHash: encryptedData.nationalIdHash,
       phoneHash: encryptedData.phoneHash,
       emailHash: encryptedData.emailHash,
       nameArabic: data.nameArabic || undefined,
-      personType: data.personType || undefined,
-      gender: data.gender || undefined,
+      personType: (data.personType || undefined) as PersonType | undefined,
+      gender: (data.gender || undefined) as Gender | undefined,
       dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : undefined,
       dateOfBirthHijri: data.dateOfBirthHijri || undefined,
       nationality: data.nationality || undefined,
@@ -224,15 +224,15 @@ export async function updateCustomer(
     email?: string;
     nationalId?: string;
     nameArabic?: string;
-    personType?: any;
-    gender?: any;
+    personType?: string;
+    gender?: string;
     dateOfBirth?: string;
     dateOfBirthHijri?: string;
     nationality?: string;
     nationalityCode?: string;
     maritalStatus?: string;
-    address?: any;
-    documentInfo?: any;
+    address?: Prisma.InputJsonValue;
+    documentInfo?: Prisma.InputJsonValue;
     source?: string;
     agentId?: string;
     budget?: number;
@@ -241,10 +241,12 @@ export async function updateCustomer(
 ) {
   const session = await requirePermission("customers:write");
 
-  // Sanitize empty strings to undefined for enum/optional fields
-  const updateData: any = Object.fromEntries(
+  // Sanitize empty strings to undefined for enum/optional fields.
+  // Built dynamically from a partial-string input then narrowed to the Prisma
+  // update shape — the validated string values are valid enum members at runtime.
+  const updateData = Object.fromEntries(
     Object.entries(data).map(([k, v]) => [k, v === "" ? undefined : v])
-  );
+  ) as Prisma.CustomerUpdateInput;
   if (data.dateOfBirth) updateData.dateOfBirth = new Date(data.dateOfBirth);
 
   // Encrypt PII fields if being updated
@@ -284,10 +286,10 @@ export async function getCustomers(filters?: {
   const session = await getSessionWithPermissions();
   const hasPiiAccess = session.can("customers:read_pii");
 
-  const where: any = { organizationId: session.organizationId };
+  const where: Prisma.CustomerWhereInput = { organizationId: session.organizationId };
 
   if (filters?.status) {
-    where.status = filters.status;
+    where.status = filters.status as CustomerStatus;
   }
 
   if (filters?.search) {
@@ -393,7 +395,7 @@ export async function addCustomerActivity(
   const activity = await db.customerActivity.create({
     data: {
       customerId,
-      type: data.type as any,
+      type: data.type as ActivityType,
       note: data.note,
       createdById: session.userId,
     },

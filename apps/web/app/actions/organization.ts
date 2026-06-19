@@ -1,6 +1,6 @@
 "use server";
 
-import { db } from "@repo/db";
+import { db, Prisma, type EntityType, type LegalForm, type RegistrationStatus } from "@repo/db";
 import { revalidatePath } from "next/cache";
 import { ROUTES } from "../../lib/routes";
 import { serialize } from "../../lib/serialize";
@@ -42,21 +42,28 @@ export async function updateOrganization(data: {
   crNumber?: string;
   unifiedNumber?: string;
   vatNumber?: string;
-  entityType?: any;
-  legalForm?: any;
-  registrationStatus?: any;
+  entityType?: string;
+  legalForm?: string;
+  registrationStatus?: string;
   registrationDate?: string;
   expiryDate?: string;
   capitalAmountSar?: number;
   mainActivityCode?: string;
   mainActivityNameAr?: string;
-  contactInfo?: any;
-  nationalAddress?: any;
-  managerInfo?: any;
+  contactInfo?: Prisma.InputJsonValue;
+  nationalAddress?: Prisma.InputJsonValue;
+  managerInfo?: Prisma.InputJsonValue;
 }) {
   const session = await requirePermission("organization:write");
 
-  const updateData: any = { ...data };
+  // Callers pass the enum fields as plain strings (form state); cast at the write
+  // boundary so the params stay caller-compatible while the Prisma input stays typed.
+  const updateData: Prisma.OrganizationUpdateInput = {
+    ...data,
+    entityType: data.entityType as EntityType | undefined,
+    legalForm: data.legalForm as LegalForm | undefined,
+    registrationStatus: data.registrationStatus as RegistrationStatus | undefined,
+  };
   if (data.registrationDate) updateData.registrationDate = new Date(data.registrationDate);
   if (data.expiryDate) updateData.expiryDate = new Date(data.expiryDate);
 

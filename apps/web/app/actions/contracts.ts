@@ -1,6 +1,6 @@
 "use server";
 
-import { db } from "@repo/db";
+import { db, Prisma, ContractStatus, ContractType, RecurrenceType } from "@repo/db";
 import { revalidatePath } from "next/cache";
 import { requirePermission } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
@@ -173,7 +173,7 @@ export async function createContract(data: {
           status: "DRAFT",
           contractNumber,
           leaseId: lease.id,
-          paymentFrequency: data.paymentFrequency as any,
+          paymentFrequency: data.paymentFrequency as RecurrenceType,
           securityDeposit: data.securityDeposit,
           autoRenewal: data.autoRenewal,
           maintenanceResponsibility: data.maintenanceResponsibility,
@@ -245,12 +245,12 @@ export async function getContracts(filters?: {
 }) {
   const session = await requirePermission("contracts:read");
 
-  const where: any = {
+  const where: Prisma.ContractWhereInput = {
     customer: { organizationId: session.organizationId },
   };
 
-  if (filters?.status) where.status = filters.status;
-  if (filters?.type) where.type = filters.type;
+  if (filters?.status) where.status = filters.status as ContractStatus;
+  if (filters?.type) where.type = filters.type as ContractType;
 
   const page = Math.max(1, filters?.page ?? 1);
   const pageSize = Math.min(100, Math.max(1, filters?.pageSize ?? 50));
@@ -385,7 +385,7 @@ export async function updateContractStatus(
   } else {
     // NON-SIGNED path (SENT / CANCELLED / VOID) — all writes in one tx.
     updated = await db.$transaction(async (tx) => {
-      const updateData: any = { status };
+      const updateData: Prisma.ContractUpdateInput = { status };
       // Include the customer relation so the returned shape honestly matches
       // `typeof contract` (no cast/shape-lie — see the SIGNED branch above).
       const c = await tx.contract.update({
@@ -556,7 +556,7 @@ export async function updateContract(
         amount: data.amount,
         notes: data.notes,
         ...(isLease
-          ? { paymentFrequency: data.paymentFrequency as any }
+          ? { paymentFrequency: data.paymentFrequency as RecurrenceType }
           : {}),
       },
     });
