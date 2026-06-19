@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Globe } from "lucide-react";
 import { Button } from "@repo/ui";
+import { MimarekLogo } from "../../../components/brand/MimarekLogo";
 import { t as translations } from "../translations";
 import { openCookiePreferences } from "../../../lib/consent";
 
@@ -60,12 +61,7 @@ export default function Footer({
         <div className="grid gap-6 lg:grid-cols-6">
           {/* Brand */}
           <div className="lg:col-span-2">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/assets/brand/Mimaric_Official_Logo_transparent.png"
-              alt="Mimaric"
-              className="h-8 w-auto dark:brightness-0 dark:invert"
-            />
+            <MimarekLogo lockup="horizontal" width={130} priority={false} />
             <p className="mt-3 max-w-xs text-sm leading-relaxed text-muted-foreground">
               {t.tagline}
             </p>

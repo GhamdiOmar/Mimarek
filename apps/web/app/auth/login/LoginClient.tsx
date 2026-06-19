@@ -5,7 +5,7 @@ import { Button, Input, DirectionalIcon, IconButton } from "@repo/ui";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Globe, ArrowRight, Loader2, Eye, EyeOff } from "lucide-react";
-import { MimaricLogo } from "../../../components/brand/MimaricLogo";
+import { MimarekLogo } from "../../../components/brand/MimarekLogo";
 import { ThemeToggle } from "../../../components/ThemeToggle";
 import { loginAction, resendVerificationAction } from "../../actions/auth";
 
@@ -174,7 +174,7 @@ export default function LoginClient({ falLicense }: { falLicense?: string | null
         <div className="absolute top-1/3 start-1/4 w-72 h-72 rounded-full bg-secondary/10 blur-[100px] animate-mesh-drift" />
 
         <div className="relative z-20 flex h-full flex-col justify-between p-12 text-white">
-          <MimaricLogo width={140} variant="dark" priority />
+          <MimarekLogo width={140} variant="dark" priority />
 
           <div className="space-y-4">
             <h1 className="text-4xl font-bold leading-tight xl:text-5xl text-white">
@@ -205,7 +205,7 @@ export default function LoginClient({ falLicense }: { falLicense?: string | null
         {/* Top bar */}
         <div className="flex items-center justify-between p-5 lg:px-10">
           <div className="lg:hidden dark:brightness-0 dark:invert">
-            <MimaricLogo width={100} />
+            <MimarekLogo width={100} />
           </div>
           <div className="flex items-center gap-2">
             <ThemeToggle />

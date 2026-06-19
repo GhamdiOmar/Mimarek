@@ -4,7 +4,7 @@ import * as React from "react";
 import { Menu, Search, Bell, User } from "lucide-react";
 import { cn } from "@repo/ui/lib/utils";
 import { Button, IconButton } from "@repo/ui";
-import { MimaricLogo } from "../brand/MimaricLogo";
+import { MimarekLogo } from "../brand/MimarekLogo";
 import { useSession } from "../SimpleSessionProvider";
 import { useLanguage } from "../LanguageProvider";
 import { getUnreadCount } from "../../app/actions/notifications";
@@ -62,7 +62,7 @@ export function MobileTopbar({ onMenuClick }: MobileTopbarProps) {
 
         {/* Centered wordmark */}
         <div className="flex flex-1 items-center justify-center">
-          <MimaricLogo width={96} />
+          <MimarekLogo width={96} />
         </div>
 
         {/* Trailing */}

@@ -6,7 +6,7 @@ import { Button, Input } from "@repo/ui";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Globe, Building2, Loader2, CheckCircle2 } from "lucide-react";
-import { MimaricLogo } from "../../../components/brand/MimaricLogo";
+import { MimarekLogo } from "../../../components/brand/MimarekLogo";
 import { PasswordStrengthHint } from "../../../components/PasswordStrengthHint";
 import { resetPassword } from "../../actions/password";
 
@@ -59,7 +59,7 @@ function ResetPasswordInner() {
       <div className="relative hidden w-full bg-primary lg:flex lg:w-1/2 xl:w-5/12 overflow-hidden shadow-2xl">
         <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10 10 L10 40 L40 40' stroke='white' fill='none'/%3E%3Ccircle cx='40' cy='40' r='2' fill='white'/%3E%3C/svg%3E")` }} />
         <div className="relative z-20 flex h-full flex-col justify-between p-12 text-white">
-          <MimaricLogo width={180} variant="dark" priority />
+          <MimarekLogo width={180} variant="dark" priority />
           <div className="space-y-6">
             <h1 className="text-4xl font-bold leading-tight xl:text-5xl text-white">
               {lang === "ar" ? "إعادة تعيين كلمة المرور" : "Reset Password"}
@@ -75,7 +75,7 @@ function ResetPasswordInner() {
       {/* Form */}
       <div className="flex w-full flex-1 flex-col bg-background lg:w-1/2 xl:w-7/12">
         <div className="flex items-center justify-between p-6 lg:px-12">
-          <div className="lg:hidden"><MimaricLogo width={100} /></div>
+          <div className="lg:hidden"><MimarekLogo width={100} /></div>
           <Button
             variant="ghost"
             size="sm"

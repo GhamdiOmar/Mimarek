@@ -6,7 +6,7 @@ import { Button } from "@repo/ui";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Globe, MailCheck, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
-import { MimaricLogo } from "../../../components/brand/MimaricLogo";
+import { MimarekLogo } from "../../../components/brand/MimarekLogo";
 import { ThemeToggle } from "../../../components/ThemeToggle";
 import { confirmEmailVerificationAction, resendVerificationAction } from "../../actions/auth";
 
@@ -84,7 +84,7 @@ function VerifyEmailInner() {
       <aside className="relative hidden w-full mesh-bg lg:flex lg:w-1/2 xl:w-5/12 overflow-hidden">
         <div className="absolute top-1/3 start-1/4 w-72 h-72 rounded-full bg-secondary/10 blur-[100px] animate-mesh-drift" />
         <div className="relative z-20 flex h-full flex-col justify-between p-12 text-white">
-          <MimaricLogo width={140} variant="dark" priority />
+          <MimarekLogo width={140} variant="dark" priority />
           <div className="space-y-4">
             <h1 className="text-4xl font-bold leading-tight xl:text-5xl text-white">
               {lang === "ar" ? "تأكيد بريدك الإلكتروني" : "Verify your email"}
@@ -102,7 +102,7 @@ function VerifyEmailInner() {
       {/* Content Area */}
       <main className="flex w-full flex-1 flex-col bg-background lg:w-1/2 xl:w-7/12">
         <div className="flex items-center justify-between p-5 lg:px-10">
-          <div className="lg:hidden dark:brightness-0 dark:invert"><MimaricLogo width={100} /></div>
+          <div className="lg:hidden dark:brightness-0 dark:invert"><MimarekLogo width={100} /></div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
             <Button

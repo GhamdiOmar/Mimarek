@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import { IconButton } from "@repo/ui";
+import { MimarekLogo } from "../../../components/brand/MimarekLogo";
 import { t as translations } from "../translations";
 
 export default function Header({ lang }: { lang: "ar" | "en" }) {
@@ -52,12 +53,7 @@ export default function Header({ lang }: { lang: "ar" | "en" }) {
         <div className="flex h-16 items-center justify-between sm:h-20">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/assets/brand/Mimaric_Official_Logo_transparent.png"
-              alt="Mimaric"
-              className="h-16 w-auto brightness-0 invert sm:h-20"
-            />
+            <MimarekLogo variant="dark" lockup="horizontal" width={170} priority />
           </Link>
 
           {/* Desktop Nav */}

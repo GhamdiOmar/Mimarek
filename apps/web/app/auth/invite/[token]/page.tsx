@@ -14,7 +14,7 @@ import {
   Eye,
   EyeOff,
 } from "lucide-react";
-import { MimaricLogo } from "../../../../components/brand/MimaricLogo";
+import { MimarekLogo } from "../../../../components/brand/MimarekLogo";
 import { PasswordStrengthHint } from "../../../../components/PasswordStrengthHint";
 import {
   getInvitationByToken,
@@ -138,7 +138,7 @@ export default function InviteAcceptPage() {
           }}
         />
         <div className="relative z-20 flex h-full flex-col justify-between p-12 text-white">
-          <MimaricLogo width={180} variant="dark" priority />
+          <MimarekLogo width={180} variant="dark" priority />
           <div className="space-y-6">
             <h1 className="text-4xl font-bold leading-tight xl:text-5xl text-white">
               {lang === "ar"
@@ -164,7 +164,7 @@ export default function InviteAcceptPage() {
       <div className="flex w-full flex-1 flex-col bg-background lg:w-1/2 xl:w-7/12">
         <div className="flex items-center justify-between p-6 lg:px-12">
           <div className="lg:hidden">
-            <MimaricLogo width={100} />
+            <MimarekLogo width={100} />
           </div>
           <Button
             variant="ghost"
