@@ -43,6 +43,8 @@ import {
 import { useRouter } from "next/navigation";
 import { useLanguage } from "../../../components/LanguageProvider";
 import { usePermissions } from "../../../hooks/usePermissions";
+import { useOptimisticAction } from "../../../hooks/useOptimisticAction";
+import { paymentReducer } from "./optimistic";
 import {
   getInstallments,
   recordPayment,
@@ -70,7 +72,7 @@ const SAR = (amount: number) =>
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type RentInstallment = {
+export type RentInstallment = {
   id: string;
   dueDate: string;
   amount: number;
@@ -189,6 +191,12 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
   const router = useRouter();
 
   const [rentInstallments, setRentInstallments] = React.useState<RentInstallment[]>(initialInstallments);
+  // Optimistic layer (AGENTS.md §6.7): the table renders `optimisticInstallments` so a mark-paid
+  // flips the row instantly; `loadData` reconciles the authoritative state, auto-revert on failure.
+  const { data: optimisticInstallments, run: runOptimistic } = useOptimisticAction(
+    rentInstallments,
+    paymentReducer,
+  );
   const [loading, setLoading] = React.useState(false);
   const [loadError, setLoadError] = React.useState<string | null>(null);
 
@@ -273,38 +281,47 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
   async function handleBulkMarkPaid() {
     if (!bulkSelected.length) return;
     setBulkWorking(true);
-    try {
-      const result = await bulkMarkInstallmentsPaid(bulkSelected.map((e) => e.id));
-      const issued = ("zatcaIssued" in result ? result.zatcaIssued : 0) ?? 0;
-      toast.success(
-        issued > 0
-          ? t(
-              `تم تسجيل ${result.updated} دفعة · ${issued} فاتورة ضريبية`,
-              `${result.updated} payment(s) marked as paid · ${issued} tax invoice(s) issued`,
-            )
-          : t(`تم تسجيل ${result.updated} دفعة`, `${result.updated} payment(s) marked as paid`),
-      );
+    const ids = bulkSelected.map((e) => e.id);
+    // Optimistic: rows flip to PAID instantly; loadData reconciles, auto-revert + toast on failure.
+    // Keep the ZATCA-aware confirmation (issued-invoice count) inside the action.
+    const ok = await runOptimistic(
+      { type: "markPaid", ids },
+      async () => {
+        const result = await bulkMarkInstallmentsPaid(ids);
+        const issued = ("zatcaIssued" in result ? result.zatcaIssued : 0) ?? 0;
+        toast.success(
+          issued > 0
+            ? t(
+                `تم تسجيل ${result.updated} دفعة · ${issued} فاتورة ضريبية`,
+                `${result.updated} payment(s) marked as paid · ${issued} tax invoice(s) issued`,
+              )
+            : t(`تم تسجيل ${result.updated} دفعة`, `${result.updated} payment(s) marked as paid`),
+        );
+      },
+      () => loadData({ silent: true }),
+    );
+    if (ok) {
       setBulkMarkPaidOpen(false);
       setBulkSelected([]);
-      loadData();
-    } catch (err: unknown) {
-      toast.error(sanitizeError(err, lang));
-    } finally {
-      setBulkWorking(false);
     }
+    setBulkWorking(false);
   }
 
-  function loadData() {
-    setLoading(true);
+  // `silent` reconcile (post-mutation): refetch WITHOUT the full-table loading skeleton, so the
+  // optimistic row stays on screen until the authoritative data swaps in. Non-silent for fresh loads.
+  function loadData(opts?: { silent?: boolean }) {
+    if (!opts?.silent) setLoading(true);
     setLoadError(null);
-    getInstallments()
+    return getInstallments()
       .then((data) => setRentInstallments(data as RentInstallment[]))
       .catch(() => {
         const msg = t("تعذّر تحميل المدفوعات", "Failed to load payments");
         setLoadError(msg);
         toast.error(msg);
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (!opts?.silent) setLoading(false);
+      });
   }
 
   // Initial installments arrive as props from the RSC server shell (CX-003 pt1 —
@@ -313,7 +330,7 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
 
   // Combine rent installments into unified payment entries
   const allEntries: PaymentEntry[] = React.useMemo(() => {
-    return rentInstallments.map((inst) => ({
+    return optimisticInstallments.map((inst) => ({
       id: inst.id,
       type: "rent" as const,
       clientName: inst.lease.customer.name,
@@ -324,7 +341,7 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
       raw: inst,
     }));
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `t` is derived from `lang`, which is already a dep; listing `lang` covers every translation read here.
-  }, [rentInstallments, lang]);
+  }, [optimisticInstallments, lang]);
 
   const filtered = React.useMemo(() => {
     return allEntries.filter((e) => {
@@ -377,31 +394,35 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
       return;
     }
     setSubmitting(true);
-    try {
-      let zatca: PaymentZatcaOutcome | null = null;
-      if (paymentTarget.type === "rent") {
-        const result = await recordPayment(paymentTarget.id, {
-          paymentMethod: payForm.paymentMethod,
-          amount: parseFloat(payForm.amount),
+    const targetId = paymentTarget.id;
+    const method = payForm.paymentMethod;
+    const amount = parseFloat(payForm.amount);
+    // Optimistic: the row flips to PAID/PARTIALLY_PAID instantly; loadData reconciles, auto-revert
+    // + sanitized toast on failure. Capture the ZATCA outcome so the invoice-aware confirmation
+    // toast (notifyPaymentOutcome) is preserved. All payment entries are rent installments, so the
+    // old `type === "rent"` guard is unconditional and dropped.
+    let zatca: PaymentZatcaOutcome | null = null;
+    const ok = await runOptimistic(
+      { type: "applyPayment", id: targetId, amount },
+      async () => {
+        const result = await recordPayment(targetId, {
+          paymentMethod: method,
+          amount,
           paymentDate: payForm.paymentDate,
           referenceNumber: payForm.referenceNumber || undefined,
           notes: payForm.notes || undefined,
           paymentReference: paymentReferenceRef.current,
         });
         zatca = (result as { zatca?: PaymentZatcaOutcome | null })?.zatca ?? null;
-      }
-      trackEvent(AnalyticsEvent.PaymentRecorded, {
-        method: payForm.paymentMethod,
-        amount: Number(parseFloat(payForm.amount)),
-      });
+      },
+      () => loadData({ silent: true }),
+    );
+    if (ok) {
+      trackEvent(AnalyticsEvent.PaymentRecorded, { method, amount });
       setPaymentTarget(null);
       notifyPaymentOutcome(zatca);
-      loadData();
-    } catch (err: unknown) {
-      toast.error(sanitizeError(err, lang));
-    } finally {
-      setSubmitting(false);
     }
+    setSubmitting(false);
   }
 
   // Outcome-aware confirmation toast — tells the user whether a tax invoice was issued and
