@@ -82,3 +82,10 @@ graphify-out/
 # Internal engineering spec — private; contains test credentials + internal architecture notes
 CLAUDE.md
 MEMORY.md
+
+# ZATCA Java Fatoora SDK (dev oracle — ZATCA redistributable, fetched per-machine; keep the README)
+tools/zatca-sdk/*
+!tools/zatca-sdk/README.md
+
+# Stray browser profile accidentally created inside the mockup dir — never track (caches/cookies/login data)
+zatca-mockup/.edge-profile/
