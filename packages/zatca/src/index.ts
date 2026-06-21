@@ -29,6 +29,8 @@
 export { computeInvoiceHash } from "./hash.js";
 // QR-TLV codec + the deterministic tags (1–6) the EGS derives from the invoice (D28).
 export { encodeQrTlv, decodeQrTlv, deterministicQrTags, type QrTlvTag } from "./qr.js";
+// Certificate hash for xades:CertDigest + QR — base64(hex(sha256(base64-cert-string))).
+export { computeCertHash } from "./cert.js";
 
 // ─── Environments (plan D10) ──────────────────────────────────────────────────
 export type ZatcaEnvironment = "SANDBOX" | "SIMULATION" | "PRODUCTION";

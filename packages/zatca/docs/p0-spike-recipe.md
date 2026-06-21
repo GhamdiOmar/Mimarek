@@ -73,3 +73,37 @@ the engine's `crypto` module must reproduce (P0 target #4):
   `csr.organization.name`, `csr.country.name`, `csr.invoice.type` (`1100`=standard,`0100`/etc), `csr.location.address`, `csr.industry.business.category`.
 > NOTE: JDK keytool flags secp256k1 as "disabled" for cert ops — the SDK runs it via BouncyCastle, so our
 > engine uses Node `crypto`/a BC-equivalent, not the JDK provider. (Keytool warning is cosmetic for decode.)
+
+## 7. XAdES signing recipe — reverse-engineered from the oracle + `Saleh7/php-zatca-xml` (2026-06-21)
+Read off the golden signed XML + the reference `src/Helpers/InvoiceSignatureBuilder.php`.
+
+**ZATCA digest convention (critical asymmetry):**
+- **Invoice** digest (`ds:Reference URI=""`): `base64( raw sha256( c14n(invoice − 3 elements) ) )` — see §2, byte-matched.
+- **Cert digest** (`xades:CertDigest`) + **SignedProperties** digest (`ds:Reference #xadesSignedProperties`):
+  `base64( hex( sha256(...) ) )` — the SHA-256 is **hex-encoded first**, then base64. (PHP `base64_encode(hash('sha256',$x))`.)
+
+**Cert hash — BYTE-MATCHED ✓** (`src/cert.ts`, `test/cert.test.ts`): hash the **base64 cert STRING** (text inside
+`<ds:X509Certificate>`, whitespace stripped), NOT the DER → `base64(hex(sha256(...)))` == golden `CertDigest`.
+
+**SignedProperties** (Reference-2 digest): build the EXACT template (fixed indentation, per-element
+`xmlns:ds`, LF endings) from `InvoiceSignatureBuilder::createSignedPropertiesXml`; substitute SigningTime,
+CertDigest, X509IssuerName (`getFormattedIssuer()` e.g. `CN=TSZEINVOICE-SubCA-1, DC=extgazt, DC=gov, DC=local`),
+X509SerialNumber (decimal `tbsCertificate.serialNumber`). Reference-2 DigestValue = `base64(hex(sha256(templateString)))`.
+
+**SignedInfo / SignatureValue:** CanonicalizationMethod = c14n11, SignatureMethod = `ecdsa-sha256`; sign
+`c14n11(SignedInfo)` with the EGS secp256k1 private key → `ds:SignatureValue` = **base64(DER ECDSA sig)**
+(golden decodes to `30 44 02 20…` = DER). `ds:KeyInfo/X509Certificate` = base64 DER cert.
+
+**⚠ Verification strategy (NOT byte-match):** the SDK's golden signed XML uses ITS own SignedProperties
+serialization + `SigningTime`=now + ECDSA random-k → the full signed doc is **non-deterministic** and the
+SDK golden digest will NOT equal ours. Each signer is self-consistent (its validator recomputes from its own
+output). **So the signer's gate = `fatoora -validate` PASS on OUR signed output (+ signature cryptographically
+verifies)**, not byte-equality. (php-zatca-xml validates against ZATCA using exactly this template → proves it.)
+
+**QR tags 7–9 (TODO, needs analysis):** golden decode showed tag7=88B (SPKI public key DER), tag8/tag9=32B —
+re-derive from the cert's EC public key + the signature/stamp before building the simplified QR.
+
+**NEXT (the full signer, gated by `-validate`):** `src/xades.ts` — buildSignedProperties + signedPropertiesDigest
+(base64-hex) + SignedInfo + c14n11 + ECDSA sign (Node `crypto` secp256k1, DER) + assemble UBLExtensions +
+QR 7–9; then `fatoora -sign`-equivalent output must pass `fatoora -validate`. Reference: php-zatca-xml
+`InvoiceSigner` / `InvoiceSignatureBuilder`.
