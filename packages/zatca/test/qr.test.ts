@@ -8,7 +8,16 @@ const here = dirname(fileURLToPath(import.meta.url));
 const read = (type: string, f: string): string => readFileSync(join(here, "golden", type, f), "utf8");
 const utf8 = (u: Uint8Array): string => Buffer.from(u).toString("utf8");
 
-describe.each(["standard", "simplified"])("QR-TLV codec — %s (byte-match vs SDK QR)", (type) => {
+const DOC_TYPES = [
+  "standard",
+  "simplified",
+  "credit-note-standard",
+  "debit-note-standard",
+  "credit-note-simplified",
+  "debit-note-simplified",
+] as const;
+
+describe.each(DOC_TYPES)("QR-TLV codec — %s (byte-match vs SDK QR)", (type) => {
   const goldenQr = read(type, "qr.txt").trim();
 
   it("round-trips the SDK QR byte-for-byte (decode → encode)", () => {
