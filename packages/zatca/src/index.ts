@@ -33,6 +33,8 @@ export { encodeQrTlv, decodeQrTlv, deterministicQrTags, type QrTlvTag } from "./
 export { computeCertHash } from "./cert.js";
 // XAdES signer — produces a ZATCA-valid signed UBL invoice (gate: fatoora -validate PASS).
 export { signInvoice, buildSignedProperties, type SignOptions } from "./xades.js";
+// CSR generator — secp256k1 keypair + ZATCA PKCS#10 (for tenant/EGS onboarding).
+export { generateCsr, type CsrConfig, type GeneratedCsr } from "./crypto.js";
 // UBL 2.1 invoice builder — structured data → unsigned UBL XML (standard-rated supplies).
 export {
   buildInvoice,
