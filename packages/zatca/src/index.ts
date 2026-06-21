@@ -27,6 +27,8 @@
 // ─── Engine modules (byte-matched to the Fatoora SDK; P0 gate) ────────────────
 // ZATCA invoice hash (C14N 1.1 + SHA-256) — first module past the P0 gate (test/golden/standard).
 export { computeInvoiceHash } from "./hash.js";
+// QR-TLV codec + the deterministic tags (1–6) the EGS derives from the invoice (D28).
+export { encodeQrTlv, decodeQrTlv, deterministicQrTags, type QrTlvTag } from "./qr.js";
 
 // ─── Environments (plan D10) ──────────────────────────────────────────────────
 export type ZatcaEnvironment = "SANDBOX" | "SIMULATION" | "PRODUCTION";
