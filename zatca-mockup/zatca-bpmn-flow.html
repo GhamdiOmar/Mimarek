@@ -1,0 +1,1081 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mimarek ZATCA Invoice Verification and QR Flow</title>
+  <style>
+    :root {
+      --primary: #00707a;
+      --primary-dark: #032833;
+      --accent: #14c0c0;
+      --success: #297d54;
+      --warning: #c46a1d;
+      --danger: #c83232;
+      --info: #2d6fb7;
+      --bg: #f4fafb;
+      --surface: #ffffff;
+      --surface-soft: #eaf4f5;
+      --ink: #163241;
+      --muted: #5e7280;
+      --border: #ccdce1;
+      --lane: #f8fcfc;
+      --lane-alt: #eff7f8;
+      --shadow: 0 16px 38px rgba(3, 40, 51, 0.09);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Inter, "Segoe UI", Arial, sans-serif;
+      line-height: 1.55;
+    }
+
+    main {
+      width: min(1500px, calc(100vw - 40px));
+      margin: 0 auto;
+      padding: 28px 0 42px;
+    }
+
+    header {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .eyebrow {
+      color: var(--primary);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(28px, 3vw, 42px);
+      line-height: 1.12;
+      letter-spacing: 0;
+    }
+
+    .lede {
+      max-width: 960px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    .board {
+      overflow: auto;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+
+    svg {
+      display: block;
+      min-width: 1320px;
+      width: 100%;
+      height: auto;
+      background: var(--surface);
+    }
+
+    .board > svg {
+      display: none;
+    }
+
+    .flow-map {
+      min-width: 1240px;
+      padding: 22px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .flow-title-row {
+      display: grid;
+      grid-template-columns: 150px 1fr;
+      gap: 16px;
+      align-items: stretch;
+    }
+
+    .lane-chip {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--lane);
+      padding: 14px;
+      color: var(--primary-dark);
+      font-weight: 900;
+    }
+
+    .lane-chip span {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .chain {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .chain.wrap {
+      flex-wrap: wrap;
+      row-gap: 12px;
+    }
+
+    .step,
+    .gateway-card,
+    .event-card,
+    .end-card {
+      min-height: 82px;
+      border: 2px solid var(--primary);
+      border-radius: 12px;
+      background: #fff;
+      padding: 12px 14px;
+      display: grid;
+      align-content: center;
+      gap: 4px;
+      box-shadow: 0 8px 18px rgba(3, 40, 51, 0.04);
+    }
+
+    .step {
+      width: 172px;
+      flex: 0 0 172px;
+    }
+
+    .step.wide {
+      width: 210px;
+      flex-basis: 210px;
+    }
+
+    .step.xwide {
+      width: 246px;
+      flex-basis: 246px;
+    }
+
+    .gateway-card {
+      width: 138px;
+      min-height: 104px;
+      flex: 0 0 138px;
+      margin: 24px 18px;
+      transform: rotate(45deg);
+      border-color: var(--primary-dark);
+      box-shadow: none;
+    }
+
+    .gateway-card > div {
+      transform: rotate(-45deg);
+      text-align: center;
+    }
+
+    .event-card {
+      width: 94px;
+      min-height: 94px;
+      flex: 0 0 94px;
+      border-radius: 999px;
+      text-align: center;
+    }
+
+    .end-card {
+      width: 190px;
+      flex: 0 0 190px;
+      border-color: var(--success);
+      background: #f2fbf6;
+    }
+
+    .exception-card {
+      border-color: var(--danger);
+      background: #fff4f4;
+    }
+
+    .receipt-card {
+      border-color: var(--warning);
+      background: #fff8ef;
+    }
+
+    .report-card {
+      border-color: var(--success);
+      background: #f2fbf6;
+    }
+
+    .step strong,
+    .gateway-card strong,
+    .event-card strong,
+    .end-card strong {
+      display: block;
+      color: var(--ink);
+      font-size: 14px;
+      line-height: 1.2;
+    }
+
+    .step span,
+    .gateway-card span,
+    .event-card span,
+    .end-card span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.35;
+    }
+
+    .arrow {
+      flex: 0 0 34px;
+      color: var(--primary-dark);
+      font-size: 26px;
+      font-weight: 900;
+      text-align: center;
+      line-height: 1;
+    }
+
+    .arrow.warning {
+      color: var(--warning);
+    }
+
+    .arrow.danger {
+      color: var(--danger);
+    }
+
+    .label-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 26px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: var(--surface-soft);
+      color: var(--primary-dark);
+      font-size: 11px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .route-section {
+      display: grid;
+      grid-template-columns: 150px 1fr;
+      gap: 16px;
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: var(--lane);
+    }
+
+    .route-section:nth-of-type(even) {
+      background: var(--lane-alt);
+    }
+
+    .route-body {
+      display: grid;
+      gap: 14px;
+    }
+
+    .outcome-row {
+      display: grid;
+      grid-template-columns: 86px 1fr;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .outcome-label {
+      justify-self: start;
+      border-radius: 999px;
+      padding: 5px 10px;
+      font-size: 12px;
+      font-weight: 900;
+      background: #fff;
+      border: 1px solid var(--border);
+      color: var(--primary-dark);
+    }
+
+    .outcome-label.yes {
+      border-color: var(--success);
+      color: var(--success);
+    }
+
+    .outcome-label.no {
+      border-color: var(--danger);
+      color: var(--danger);
+    }
+
+    .outcome-note {
+      border-left: 4px solid var(--border);
+      padding: 10px 12px;
+      color: var(--muted);
+      font-size: 13px;
+      background: #fff;
+      border-radius: 8px;
+    }
+
+    .legend-row {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 2px;
+    }
+
+    .legend-item {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #fff;
+      padding: 10px 12px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .legend-item strong {
+      display: block;
+      color: var(--ink);
+      font-size: 13px;
+      margin-bottom: 3px;
+    }
+
+    .lane-label {
+      fill: var(--primary-dark);
+      font-size: 16px;
+      font-weight: 800;
+    }
+
+    .lane-note {
+      fill: var(--muted);
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .node-title {
+      fill: var(--ink);
+      font-size: 15px;
+      font-weight: 800;
+    }
+
+    .node-small {
+      fill: var(--muted);
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .node-micro {
+      fill: var(--muted);
+      font-size: 10px;
+      font-weight: 600;
+    }
+
+    .flow-label {
+      fill: var(--primary-dark);
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .task {
+      fill: #ffffff;
+      stroke: var(--primary);
+      stroke-width: 2;
+      rx: 10;
+      ry: 10;
+    }
+
+    .task-soft {
+      fill: #f7fbfb;
+      stroke: var(--border);
+      stroke-width: 1.5;
+      rx: 10;
+      ry: 10;
+    }
+
+    .task-success {
+      fill: #f2fbf6;
+      stroke: var(--success);
+      stroke-width: 2;
+      rx: 10;
+      ry: 10;
+    }
+
+    .task-warning {
+      fill: #fff8ef;
+      stroke: var(--warning);
+      stroke-width: 2;
+      rx: 10;
+      ry: 10;
+    }
+
+    .task-danger {
+      fill: #fff4f4;
+      stroke: var(--danger);
+      stroke-width: 2;
+      rx: 10;
+      ry: 10;
+    }
+
+    .gateway {
+      fill: #ffffff;
+      stroke: var(--primary-dark);
+      stroke-width: 2;
+    }
+
+    .event {
+      fill: #ffffff;
+      stroke: var(--primary);
+      stroke-width: 4;
+    }
+
+    .event-end {
+      fill: #ffffff;
+      stroke: var(--success);
+      stroke-width: 5;
+    }
+
+    .flow {
+      fill: none;
+      stroke: var(--primary-dark);
+      stroke-width: 2;
+      marker-end: url(#arrow);
+    }
+
+    .flow-alt {
+      fill: none;
+      stroke: var(--warning);
+      stroke-width: 2;
+      stroke-dasharray: 8 6;
+      marker-end: url(#arrow-warning);
+    }
+
+    .flow-error {
+      fill: none;
+      stroke: var(--danger);
+      stroke-width: 2;
+      stroke-dasharray: 7 5;
+      marker-end: url(#arrow-danger);
+    }
+
+    .divider {
+      stroke: var(--border);
+      stroke-width: 1;
+    }
+
+    .reference-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+      gap: 18px;
+      margin-top: 20px;
+    }
+
+    .panel {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--surface);
+      box-shadow: 0 8px 20px rgba(3, 40, 51, 0.05);
+      padding: 18px;
+    }
+
+    h2 {
+      margin: 0 0 12px;
+      font-size: 20px;
+      line-height: 1.25;
+    }
+
+    ol,
+    ul {
+      margin: 0;
+      padding-left: 20px;
+    }
+
+    li + li {
+      margin-top: 8px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      overflow: hidden;
+      border-radius: 10px;
+      font-size: 13px;
+    }
+
+    th,
+    td {
+      border-bottom: 1px solid var(--border);
+      padding: 9px 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: var(--surface-soft);
+      color: var(--primary-dark);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 30px;
+      height: 26px;
+      border-radius: 999px;
+      background: var(--primary);
+      color: #fff;
+      font-weight: 800;
+      font-size: 12px;
+    }
+
+    .note {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .sources {
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .sources a {
+      color: var(--primary);
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .sources a:hover {
+      text-decoration: underline;
+    }
+
+    code {
+      border-radius: 6px;
+      background: var(--surface-soft);
+      padding: 2px 5px;
+      color: var(--primary-dark);
+      font-family: "IBM Plex Mono", Consolas, monospace;
+      font-size: 0.92em;
+    }
+
+    @media (max-width: 900px) {
+      main {
+        width: min(100vw - 24px, 1500px);
+        padding-top: 18px;
+      }
+
+      .reference-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div class="eyebrow">Mimarek ZATCA Phase 2 BPMN-style flow</div>
+      <h1>Invoice verification, clearance/reporting, and QR code generation</h1>
+      <p class="lede">
+        This diagram shows how Mimarek should turn a taxable transaction into a ZATCA-compliant
+        invoice: validate the business data, build and sign UBL XML, branch between standard
+        clearance and simplified reporting, generate the QR payload, then store the immutable
+        audit record and customer document.
+      </p>
+    </header>
+
+    <section class="board" aria-label="BPMN-style ZATCA invoice verification flow">
+      <div class="flow-map" role="img" aria-label="Clear BPMN-style routes for ZATCA invoice verification and QR generation">
+        <div class="flow-title-row">
+          <div class="lane-chip">
+            Shared start
+            <span>Every document begins here</span>
+          </div>
+          <div class="chain">
+            <div class="event-card">
+              <strong>Start</strong>
+              <span>Payment, SaaS billing, or fee event</span>
+            </div>
+            <div class="arrow">→</div>
+            <div class="step wide">
+              <strong>Classify transaction</strong>
+              <span>Rent, service fee, subscription, sale receipt, deposit</span>
+            </div>
+            <div class="arrow">→</div>
+            <div class="gateway-card">
+              <div>
+                <strong>Taxable?</strong>
+                <span>VAT e-invoice needed?</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="route-section">
+          <div class="lane-chip">
+            Route A
+            <span>Not taxable / receipt only</span>
+          </div>
+          <div class="route-body">
+            <div class="chain">
+              <span class="label-pill">No VAT e-invoice</span>
+              <div class="arrow warning">→</div>
+              <div class="step receipt-card wide">
+                <strong>Create plain receipt</strong>
+                <span>Residential rent, property sale payment, refundable deposit</span>
+              </div>
+              <div class="arrow warning">→</div>
+              <div class="step receipt-card wide">
+                <strong>Store receipt PDF</strong>
+                <span>No ZATCA XML, no ZATCA QR, no clearance/reporting</span>
+              </div>
+              <div class="arrow warning">→</div>
+              <div class="end-card">
+                <strong>End: receipt issued</strong>
+                <span>Customer gets non-tax receipt</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="route-section">
+          <div class="lane-chip">
+            Route B
+            <span>Standard B2B tax invoice</span>
+          </div>
+          <div class="route-body">
+            <div class="chain wrap">
+              <span class="label-pill">Taxable + B2B buyer</span>
+              <div class="arrow">→</div>
+              <div class="step wide">
+                <strong>Validate and lock</strong>
+                <span>Seller VAT, buyer VAT/CR, EGS CSID, source charge</span>
+              </div>
+              <div class="arrow">→</div>
+              <div class="step">
+                <strong>Build UBL XML</strong>
+                <span>Invoice lines, VAT categories, parties</span>
+              </div>
+              <div class="arrow">→</div>
+              <div class="step">
+                <strong>Hash + chain</strong>
+                <span>Canonical hash, ICV, previous invoice hash</span>
+              </div>
+              <div class="arrow">→</div>
+              <div class="step">
+                <strong>Sign + QR</strong>
+                <span>EGS key, CSID, TLV Base64 QR payload</span>
+              </div>
+            </div>
+            <div class="chain">
+              <span class="label-pill">Then submit</span>
+              <div class="arrow">→</div>
+              <div class="step xwide">
+                <strong>Send clearance API</strong>
+                <span>Standard invoice is not shared before ZATCA clearance</span>
+              </div>
+              <div class="arrow">→</div>
+              <div class="gateway-card">
+                <div>
+                  <strong>ZATCA decision</strong>
+                  <span>Cleared or rejected</span>
+                </div>
+              </div>
+            </div>
+            <div class="outcome-row">
+              <div class="outcome-label yes">Cleared</div>
+              <div class="chain">
+                <div class="step report-card wide">
+                  <strong>Store cleared XML</strong>
+                  <span>Persist QR, hash, response, audit log</span>
+                </div>
+                <div class="arrow">→</div>
+                <div class="step report-card wide">
+                  <strong>Publish invoice</strong>
+                  <span>PDF/A-3 or XML download becomes available</span>
+                </div>
+                <div class="arrow">→</div>
+                <div class="end-card">
+                  <strong>End: invoice cleared</strong>
+                  <span>Customer receives valid tax invoice</span>
+                </div>
+              </div>
+            </div>
+            <div class="outcome-row">
+              <div class="outcome-label no">Rejected</div>
+              <div class="chain">
+                <div class="step exception-card wide">
+                  <strong>Exception queue</strong>
+                  <span>Show rejection reason, notify admins, block publishing</span>
+                </div>
+                <div class="arrow danger">→</div>
+                <div class="step exception-card xwide">
+                  <strong>Correct as new document</strong>
+                  <span>New UUID, timestamp, hash, ICV; transport uncertainty may retry same payload</span>
+                </div>
+                <div class="outcome-note">
+                  This is not a successful end state. It loops back into validation after correction.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="route-section">
+          <div class="lane-chip">
+            Route C
+            <span>Simplified B2C tax invoice</span>
+          </div>
+          <div class="route-body">
+            <div class="chain wrap">
+              <span class="label-pill">Taxable + B2C buyer</span>
+              <div class="arrow">→</div>
+              <div class="step wide">
+                <strong>Validate and lock</strong>
+                <span>Seller VAT, EGS CSID, source charge, invoice totals</span>
+              </div>
+              <div class="arrow">→</div>
+              <div class="step">
+                <strong>Build UBL XML</strong>
+                <span>Simplified invoice subtype and VAT lines</span>
+              </div>
+              <div class="arrow">→</div>
+              <div class="step">
+                <strong>Hash + chain</strong>
+                <span>Canonical hash, ICV, previous invoice hash</span>
+              </div>
+              <div class="arrow">→</div>
+              <div class="step">
+                <strong>Sign + QR</strong>
+                <span>QR tags 1-9 where required</span>
+              </div>
+            </div>
+            <div class="chain">
+              <span class="label-pill">Customer copy</span>
+              <div class="arrow">→</div>
+              <div class="step report-card wide">
+                <strong>Share immediately</strong>
+                <span>Customer can receive invoice after local stamp and QR</span>
+              </div>
+            </div>
+            <div class="chain">
+              <span class="label-pill">ZATCA reporting</span>
+              <div class="arrow">→</div>
+              <div class="step wide">
+                <strong>Report within 24h</strong>
+                <span>Queued job sends XML to Fatoora reporting API</span>
+              </div>
+              <div class="arrow">→</div>
+              <div class="gateway-card">
+                <div>
+                  <strong>ZATCA decision</strong>
+                  <span>Accepted or rejected</span>
+                </div>
+              </div>
+            </div>
+            <div class="outcome-row">
+              <div class="outcome-label yes">Accepted</div>
+              <div class="chain">
+                <div class="step report-card wide">
+                  <strong>Mark reported</strong>
+                  <span>Persist accepted response and reporting timestamp</span>
+                </div>
+                <div class="arrow">→</div>
+                <div class="end-card">
+                  <strong>End: invoice reported</strong>
+                  <span>Audit trail complete</span>
+                </div>
+              </div>
+            </div>
+            <div class="outcome-row">
+              <div class="outcome-label no">Rejected</div>
+              <div class="chain">
+                <div class="step exception-card wide">
+                  <strong>Reporting exception</strong>
+                  <span>Invoice was already shared; notify and track SLA breach risk</span>
+                </div>
+                <div class="arrow danger">→</div>
+                <div class="step exception-card xwide">
+                  <strong>Retry or corrective note</strong>
+                  <span>Retry transport failures; use compliant correction flow for real rejection</span>
+                </div>
+                <div class="outcome-note">
+                  This stays open operationally until reporting is accepted or corrected.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="legend-row">
+          <div class="legend-item">
+            <strong>Green end cards</strong>
+            Successful completed routes.
+          </div>
+          <div class="legend-item">
+            <strong>Red cards</strong>
+            Exceptions that require action, not normal ends.
+          </div>
+          <div class="legend-item">
+            <strong>Orange route</strong>
+            Receipt-only path, outside ZATCA e-invoicing.
+          </div>
+          <div class="legend-item">
+            <strong>QR timing</strong>
+            QR is generated only after final signed XML facts exist.
+          </div>
+        </div>
+      </div>
+      <svg viewBox="0 0 1500 1080" role="img" aria-labelledby="svg-title svg-desc">
+        <title id="svg-title">BPMN-style ZATCA invoice verification and QR code flow</title>
+        <desc id="svg-desc">
+          A swimlane process diagram for Mimarek invoice validation, ZATCA standard clearance,
+          simplified reporting, QR code creation, and failure handling.
+        </desc>
+
+        <defs>
+          <marker id="arrow" markerWidth="11" markerHeight="11" refX="9" refY="5.5" orient="auto">
+            <path d="M0,0 L10,5.5 L0,11 Z" fill="#032833"></path>
+          </marker>
+          <marker id="arrow-warning" markerWidth="11" markerHeight="11" refX="9" refY="5.5" orient="auto">
+            <path d="M0,0 L10,5.5 L0,11 Z" fill="#c46a1d"></path>
+          </marker>
+          <marker id="arrow-danger" markerWidth="11" markerHeight="11" refX="9" refY="5.5" orient="auto">
+            <path d="M0,0 L10,5.5 L0,11 Z" fill="#c83232"></path>
+          </marker>
+        </defs>
+
+        <rect x="0" y="0" width="1500" height="1080" fill="#ffffff"></rect>
+        <rect x="0" y="70" width="1500" height="170" fill="#f8fcfc"></rect>
+        <rect x="0" y="240" width="1500" height="360" fill="#eff7f8"></rect>
+        <rect x="0" y="600" width="1500" height="210" fill="#f8fcfc"></rect>
+        <rect x="0" y="810" width="1500" height="270" fill="#eff7f8"></rect>
+
+        <line x1="0" y1="70" x2="1500" y2="70" class="divider"></line>
+        <line x1="0" y1="240" x2="1500" y2="240" class="divider"></line>
+        <line x1="0" y1="600" x2="1500" y2="600" class="divider"></line>
+        <line x1="0" y1="810" x2="1500" y2="810" class="divider"></line>
+
+        <text x="28" y="102" class="lane-label">1. Mimarek app</text>
+        <text x="28" y="122" class="lane-note">Source transaction and user action</text>
+        <text x="28" y="272" class="lane-label">2. Mimarek ZATCA engine</text>
+        <text x="28" y="292" class="lane-note">Data gate, UBL XML, hash, signature, ICV, QR</text>
+        <text x="28" y="632" class="lane-label">3. ZATCA Fatoora API</text>
+        <text x="28" y="652" class="lane-note">Clearance for standard invoices, reporting for simplified invoices</text>
+        <text x="28" y="842" class="lane-label">4. Output and operations</text>
+        <text x="28" y="862" class="lane-note">PDF/A-3 or XML, QR, audit log, retry, alerts</text>
+
+        <!-- Start and app lane -->
+        <circle cx="122" cy="158" r="25" class="event"></circle>
+        <text x="98" y="204" class="node-small">Start</text>
+
+        <rect x="175" y="118" width="180" height="80" class="task"></rect>
+        <text x="198" y="145" class="node-title">Invoice trigger</text>
+        <text x="198" y="166" class="node-small">SaaS invoice, rent,</text>
+        <text x="198" y="184" class="node-small">or taxable service fee</text>
+
+        <polygon points="440,112 505,158 440,204 375,158" class="gateway"></polygon>
+        <text x="414" y="153" class="node-title">Taxable</text>
+        <text x="424" y="172" class="node-title">supply?</text>
+
+        <rect x="580" y="118" width="210" height="80" class="task"></rect>
+        <text x="607" y="144" class="node-title">Local data gate</text>
+        <text x="607" y="165" class="node-small">Seller, buyer, VAT,</text>
+        <text x="607" y="183" class="node-small">totals, EGS status</text>
+
+        <polygon points="890,112 965,158 890,204 815,158" class="gateway"></polygon>
+        <text x="850" y="153" class="node-title">Invoice</text>
+        <text x="850" y="172" class="node-title">route?</text>
+
+        <rect x="1055" y="118" width="210" height="80" class="task-soft"></rect>
+        <text x="1085" y="144" class="node-title">Store draft intent</text>
+        <text x="1085" y="165" class="node-small">Source charge lock and</text>
+        <text x="1085" y="183" class="node-small">idempotency key</text>
+
+        <!-- Engine lane standard path -->
+        <rect x="315" y="302" width="210" height="86" class="task"></rect>
+        <text x="343" y="329" class="node-title">Build UBL 2.1 XML</text>
+        <text x="343" y="351" class="node-small">Document type, tax lines,</text>
+        <text x="343" y="369" class="node-small">buyer and seller parties</text>
+
+        <rect x="575" y="302" width="210" height="86" class="task"></rect>
+        <text x="604" y="329" class="node-title">Hash and reserve chain</text>
+        <text x="604" y="351" class="node-small">Canonical XML hash, ICV,</text>
+        <text x="604" y="369" class="node-small">previous invoice hash</text>
+
+        <rect x="835" y="302" width="210" height="86" class="task"></rect>
+        <text x="866" y="329" class="node-title">Sign XML payload</text>
+        <text x="866" y="351" class="node-small">EGS private key and CSID</text>
+        <text x="866" y="369" class="node-small">inside controlled service</text>
+
+        <rect x="1095" y="302" width="230" height="86" class="task"></rect>
+        <text x="1124" y="329" class="node-title">Generate QR payload</text>
+        <text x="1124" y="351" class="node-small">TLV UTF-8 fields encoded</text>
+        <text x="1124" y="369" class="node-small">as Base64 for rendering</text>
+
+        <!-- Engine lane simplified helper -->
+        <rect x="835" y="465" width="210" height="86" class="task-success"></rect>
+        <text x="866" y="492" class="node-title">Queue reporting</text>
+        <text x="866" y="514" class="node-small">Simplified invoice is</text>
+        <text x="866" y="532" class="node-small">submitted within 24h</text>
+
+        <rect x="1095" y="465" width="230" height="86" class="task-warning"></rect>
+        <text x="1124" y="492" class="node-title">Share immediately</text>
+        <text x="1124" y="514" class="node-small">Only after local stamp,</text>
+        <text x="1124" y="532" class="node-small">signature, and QR exist</text>
+
+        <!-- ZATCA lane -->
+        <rect x="315" y="655" width="250" height="86" class="task"></rect>
+        <text x="345" y="682" class="node-title">Standard clearance API</text>
+        <text x="345" y="704" class="node-small">B2B invoice sent before</text>
+        <text x="345" y="722" class="node-small">customer sharing</text>
+
+        <polygon points="680,650 755,698 680,746 605,698" class="gateway"></polygon>
+        <text x="648" y="693" class="node-title">Cleared?</text>
+        <text x="654" y="712" class="node-small">ZATCA</text>
+
+        <rect x="835" y="655" width="250" height="86" class="task"></rect>
+        <text x="865" y="682" class="node-title">Simplified reporting API</text>
+        <text x="865" y="704" class="node-small">XML sent to Fatoora</text>
+        <text x="865" y="722" class="node-small">within the 24h window</text>
+
+        <polygon points="1210,650 1285,698 1210,746 1135,698" class="gateway"></polygon>
+        <text x="1175" y="693" class="node-title">Accepted?</text>
+        <text x="1187" y="712" class="node-small">ZATCA</text>
+
+        <!-- Output lane -->
+        <rect x="240" y="875" width="230" height="92" class="task-soft"></rect>
+        <text x="270" y="904" class="node-title">Plain receipt path</text>
+        <text x="270" y="926" class="node-small">Residential rent, sale</text>
+        <text x="270" y="944" class="node-small">payment, or deposit</text>
+
+        <rect x="540" y="875" width="250" height="92" class="task-success"></rect>
+        <text x="568" y="904" class="node-title">Store cleared invoice</text>
+        <text x="568" y="926" class="node-small">Cleared XML, hash, QR,</text>
+        <text x="568" y="944" class="node-small">PDF/A-3 or XML download</text>
+
+        <rect x="850" y="875" width="250" height="92" class="task-success"></rect>
+        <text x="878" y="904" class="node-title">Mark reported invoice</text>
+        <text x="878" y="926" class="node-small">Accepted response, audit,</text>
+        <text x="878" y="944" class="node-small">customer document stays valid</text>
+
+        <rect x="1160" y="875" width="230" height="92" class="task-danger"></rect>
+        <text x="1188" y="904" class="node-title">Reject or error</text>
+        <text x="1188" y="926" class="node-small">Alert, retry transport,</text>
+        <text x="1188" y="944" class="node-small">or correct as new doc</text>
+
+        <circle cx="1442" cy="921" r="25" class="event-end"></circle>
+        <text x="1415" y="967" class="node-small">End</text>
+
+        <!-- Flow arrows -->
+        <path d="M147 158 H175" class="flow"></path>
+        <path d="M355 158 H375" class="flow"></path>
+        <path d="M505 158 H580" class="flow"></path>
+        <text x="524" y="146" class="flow-label">Yes</text>
+        <path d="M790 158 H815" class="flow"></path>
+        <path d="M965 158 H1055" class="flow"></path>
+        <text x="985" y="146" class="flow-label">Lock source</text>
+
+        <path d="M440 204 V920 H240" class="flow-alt"></path>
+        <text x="452" y="230" class="flow-label">No</text>
+
+        <path d="M1160 198 V258 H420 V302" class="flow"></path>
+
+        <path d="M890 204 V260 H420 V302" class="flow"></path>
+        <text x="813" y="242" class="flow-label">Standard B2B</text>
+
+        <path d="M525 345 H575" class="flow"></path>
+        <path d="M785 345 H835" class="flow"></path>
+        <path d="M1045 345 H1095" class="flow"></path>
+        <path d="M420 388 V655" class="flow"></path>
+        <path d="M565 698 H605" class="flow"></path>
+        <path d="M755 698 H800 V921 H790" class="flow"></path>
+        <text x="762" y="687" class="flow-label">Yes</text>
+
+        <path d="M890 204 V430 H940 V465" class="flow-alt"></path>
+        <text x="912" y="430" class="flow-label">Simplified B2C</text>
+        <path d="M1045 508 H1095" class="flow-alt"></path>
+        <path d="M940 551 V655 H835" class="flow-alt"></path>
+        <path d="M1085 698 H1135" class="flow-alt"></path>
+        <path d="M1285 698 H1325 V921 H1100" class="flow-alt"></path>
+        <text x="1293" y="687" class="flow-label">Yes</text>
+
+        <path d="M680 746 V790 H1275 V875" class="flow-error"></path>
+        <text x="692" y="765" class="flow-label">No</text>
+        <path d="M1210 746 V875" class="flow-error"></path>
+        <text x="1222" y="765" class="flow-label">No</text>
+        <path d="M1390 921 H1417" class="flow"></path>
+        <path d="M470 921 H540" class="flow"></path>
+        <path d="M790 921 H850" class="flow"></path>
+
+        <!-- Notes -->
+        <rect x="42" y="994" width="1416" height="58" rx="12" fill="#ffffff" stroke="#ccdce1"></rect>
+        <text x="66" y="1018" class="node-title">Important rule:</text>
+        <text x="180" y="1018" class="node-small">
+          transport retries reuse the same signed payload when status is unknown; true ZATCA rejection requires a corrected new document with a new UUID, hash, ICV, and audit link.
+        </text>
+        <text x="66" y="1042" class="node-title">Sharing rule:</text>
+        <text x="180" y="1042" class="node-small">
+          standard invoices are shared only after clearance; simplified invoices can be shared after local stamp/signature/QR and then reported within 24 hours.
+        </text>
+      </svg>
+    </section>
+
+    <section class="reference-grid" aria-label="QR and verification details">
+      <article class="panel">
+        <h2>QR code payload</h2>
+        <p class="note">
+          The QR value is a Base64 string built from Tag-Length-Value fields encoded from UTF-8 text.
+          Phase 2 uses tags 1 to 9 when applicable; tag 9 applies to simplified invoices and their notes.
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>Tag</th>
+              <th>Value placed in QR payload</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><span class="tag">1</span></td><td>Seller name</td></tr>
+            <tr><td><span class="tag">2</span></td><td>Seller VAT registration number</td></tr>
+            <tr><td><span class="tag">3</span></td><td>Invoice issue timestamp</td></tr>
+            <tr><td><span class="tag">4</span></td><td>Invoice total including VAT</td></tr>
+            <tr><td><span class="tag">5</span></td><td>VAT total</td></tr>
+            <tr><td><span class="tag">6</span></td><td>Hash of the XML invoice</td></tr>
+            <tr><td><span class="tag">7</span></td><td>ECDSA signature</td></tr>
+            <tr><td><span class="tag">8</span></td><td>ECDSA public key</td></tr>
+            <tr><td><span class="tag">9</span></td><td>ZATCA CA signature of the cryptographic stamp public key, where required</td></tr>
+          </tbody>
+        </table>
+      </article>
+
+      <article class="panel">
+        <h2>Verification checkpoints</h2>
+        <ol>
+          <li>Confirm the transaction is taxable. Non-taxable receipts skip ZATCA QR and clearance.</li>
+          <li>Confirm seller tax identity, branch, EGS CSID status, private key availability, and active environment.</li>
+          <li>Confirm buyer routing: standard clearance for B2B tax invoice data, simplified reporting for B2C.</li>
+          <li>Validate invoice math: line totals, VAT categories, discounts, total including VAT, and currency.</li>
+          <li>Lock the source charge and reserve ICV plus previous invoice hash atomically before submission.</li>
+          <li>Build canonical UBL XML, compute hash, sign/stamp, then generate QR from the final signed XML facts.</li>
+          <li>For standard invoices, wait for ZATCA clearance before exposing the customer document.</li>
+          <li>For simplified invoices, share after local QR/stamp, then report to ZATCA within 24 hours.</li>
+          <li>Store XML, QR payload, API response, hash chain state, and audit log. Never delete a generated invoice.</li>
+        </ol>
+      </article>
+    </section>
+
+    <section class="panel sources">
+      <strong>Official references used:</strong>
+      <a href="https://zatca.gov.sa/en/E-Invoicing/Introduction/Guidelines/Documents/E-Invoicing_Detailed__Guideline.pdf">ZATCA detailed e-invoicing guideline</a>,
+      <a href="https://zatca.gov.sa/ar/E-Invoicing/SystemsDevelopers/Documents/20230519_ZATCA_Electronic_Invoice_Security_Features_Implementation_Standards_vF.pdf">ZATCA security features implementation standard</a>,
+      and
+      <a href="https://zatca.gov.sa/en/Pages/news_1426.aspx">ZATCA Wave 24 announcement</a>.
+      Last reviewed: 2026-06-21.
+    </section>
+  </main>
+</body>
+</html>

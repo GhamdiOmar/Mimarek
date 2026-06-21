@@ -1,5 +1,39 @@
 # Changelog — Mimarek PropTech
 
+## [5.1.0] — 2026-06-22 — ZATCA Phase-2 e-invoicing engine (R1): issuance + network client
+
+**New `@repo/zatca` package — Mimarek's in-house ZATCA (Fatoora) Phase-2 e-invoicing engine.** A pure, dependency-light TypeScript library that turns invoice data into a ZATCA-valid, XAdES-signed UBL 2.1 document and submits it to the Fatoora API — no middleware, no per-EGS licensing, no third party in the legal path. R1 is the issuance + crypto engine **plus the network client**; the tenant action/orchestration layer (ICV/PIH chaining, onboarding UI, B2C reporting sweep) is R2.
+
+Every cryptographic step is verified against ZATCA's official Java Fatoora SDK (byte-match where deterministic, `fatoora -validate` PASS where not) **and** the full cycle is verified live against the ZATCA **SANDBOX** API: `generateCsr → compliance CSID → build → sign → compliance check → CLEARED`.
+
+### Engine (`packages/zatca/src`)
+- **`hash`** — invoice C14N + SHA-256, byte-matched to the SDK across all 6 document types.
+- **`qr`** — QR-TLV codec + tags 1–9 (B2C self-generated; B2B stamp comes from ZATCA's cleared XML).
+- **`cert`** — certificate digest for `xades:CertDigest` / QR (`base64(hex(sha256(base64-cert-string)))`), == SDK golden.
+- **`xades`** — XAdES signer producing a `fatoora -validate`-PASS signed UBL (standard + credit/debit notes).
+- **`crypto`** — secp256k1 keygen + hand-rolled PKCS#10 CSR; **now accepted by the live ZATCA compliance endpoint** (no offline CSR oracle existed — proven end-to-end this release).
+- **`ubl`** — UBL 2.1 builder (data → unsigned UBL; reconciling totals, type codes 388/381/383, B2B/B2C name flag, BillingReference/InstructionNote for notes).
+
+### Network client (new — `client.ts`)
+- Typed `fetch` wrapper: compliance CSID, compliance-invoice check, production CSID, **clearance** (standard/B2B), **reporting** (simplified/B2C). Base URLs for SANDBOX / SIMULATION / PRODUCTION.
+- Failures map onto the discriminated `ZatcaError` (D22): `transport` → re-POST the same payload; `business` → correct & resubmit as a new document; `config` → never submitted. Error messages carry **no request payload or key material** (D13).
+- Injectable `fetch` + 30s `AbortController` timeout; HTTP Basic auth (`base64(token:secret)`, token used verbatim from the CSID response).
+
+### Fixes found during live verification
+- **Invoice-hash desync (`signInvoice`).** The embedded `ds:Reference` digest was computed from the raw input, but ZATCA recomputes from the FINAL assembled document — the signer's element injection adds inter-element whitespace, so the two diverged and the live API returned `invalid-invoice-hash`. The digest is now taken from the assembled body (two-pass), so the embedded digest, QR tag 6, and ZATCA's recomputation all agree. Live SANDBOX now returns **CLEARED**. (The prior offline-only `-validate` pass missed this — it only ever ran on a hand-authored file, not on `buildInvoice` output through a real hash check.)
+- **Silent-corruption guard.** `signInvoice` now hard-fails if the UBL is missing the `<cbc:ProfileID>` / `<cac:AccountingSupplierParty>` injection anchors, instead of silently returning an unsigned document with a bogus signature.
+
+### Tests / CI
+- `@repo/zatca` is now wired into `turbo run test:unit` (it was previously not run by CI). **65 unit tests** (engine + client; mocked-fetch, every `ZatcaError` branch, hash self-consistency, the anchor guard) + 1 `ZATCA_LIVE`-gated live-cycle test that is **skipped in CI** (never hits the network). cspell allowlist extended with the ZATCA/crypto vocabulary.
+
+### Verify
+- `turbo run test:unit` **65 passed / 1 skipped** · `check-types` 3/3 · `npm run build` green · cspell green · `/mimaric-qa` **SHIP** (no P0/P1; D13 + D22 verified directly, hash fix confirmed across all 6 doc types). R1 is a pure package (no UI) → the §3.9 4-theme browser walk is N/A; the live ZATCA SANDBOX **CLEARED** is the integration proof.
+
+### Deferred to R2 (needs tenant onboarding/CSID + a scheduler)
+- The per-EGS ICV/PIH `pipeline` + `TenantDocument` action layer, the `/dashboard/settings/zatca` config UI, the B2C reporting sweep, and production go-live. Minor engine polish: `signInvoice` recomputes the invoice hash a few times per call (perf only).
+
+**Full diff:** https://github.com/GhamdiOmar/Mimarek/compare/v5.0.0...v5.1.0
+
 ## [5.0.0] — 2026-06-19 — Rebrand: Mimaric → Mimarek (teal/navy identity)
 
 **The product is now Mimarek (معمارك).** Full visual-identity overhaul issued by the CEO: new name, logo system, color palette, and typography — applied across every user-facing surface in both themes and both languages, plus the design SSOT and dev docs. No schema or data-model change; semantic colors (red/amber/green/blue) are unchanged.
