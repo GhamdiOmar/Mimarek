@@ -31,6 +31,8 @@ export { computeInvoiceHash } from "./hash.js";
 export { encodeQrTlv, decodeQrTlv, deterministicQrTags, type QrTlvTag } from "./qr.js";
 // Certificate hash for xades:CertDigest + QR — base64(hex(sha256(base64-cert-string))).
 export { computeCertHash } from "./cert.js";
+// XAdES signer — produces a ZATCA-valid signed UBL invoice (gate: fatoora -validate PASS).
+export { signInvoice, buildSignedProperties, type SignOptions } from "./xades.js";
 
 // ─── Environments (plan D10) ──────────────────────────────────────────────────
 export type ZatcaEnvironment = "SANDBOX" | "SIMULATION" | "PRODUCTION";
