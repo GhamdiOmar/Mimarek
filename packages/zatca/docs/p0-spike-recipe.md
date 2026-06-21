@@ -31,7 +31,15 @@ RUN -csr -csrConfig Data/Input/csr-config-example.properties -privateKey k.pem -
 Capture per document type into `packages/zatca/test/golden/<type>/`: the **input UBL XML**, the **SDK hash**, the **SDK QR**, and the **SDK signed XML**.
 
 Byte-match strategy (critical — not everything is byte-stable):
-- **Invoice hash** (C14N 1.1 of the invoice with UBLExtensions/Signature/QR removed → SHA-256 → base64): **fully deterministic → primary byte-match target.** This retires Key Risk 1 (C14N byte-exactness).
+- **Invoice hash — CONFIRMED from the oracle (2026-06-21).** A first-try SDK-PASSING standard invoice
+  (`test/golden/standard/input.xml`) gives `-generateHash` = **`DpwO39KhVlb/mzQYNMzMZTgA/xM0XqfbTnSIXfYUnFI=`**,
+  which equals the first `ds:DigestValue` in the signed XML. The recipe (read off the signed `ds:Reference`):
+  three XPath transforms (`REC-xpath-19991116`) removing `//ancestor-or-self::ext:UBLExtensions`,
+  `//ancestor-or-self::cac:Signature`, `//ancestor-or-self::cac:AdditionalDocumentReference[cbc:ID='QR']`
+  → **`http://www.w3.org/2006/12/xml-c14n11`** → SHA-256 → base64. Inclusive C14N keeps the (unused) `xmlns:ext`
+  declaration, which is why the unsigned invoice and the signed-minus-elements give the same digest. NOTE: this
+  doc has no `xml:base`/`xml:id`/`xml:lang`, so inclusive **C14N 1.0 == C14N 1.1** output here — a c14n-1.0 lib
+  suffices for the byte-match. **This is the primary byte-match target → retires Key Risk 1.**
 - **QR-TLV:** deterministic given the invoice fields + cert public key + signature. **Simplified/B2C** = EGS self-builds all 9 tags → byte-match. **Standard/B2B** tags 6–9 come from ZATCA's cleared XML (D28) → match what the SDK embeds, don't self-mint tag 9.
 - **XAdES `SignatureValue` (ECDSA/secp256k1):** **non-deterministic** (random k) unless RFC-6979 deterministic-k. So match the canonicalized `SignedInfo` + the reference **digests** (deterministic), and **verify** the signature cryptographically rather than byte-comparing it. Confirm in the spike whether the SDK uses deterministic-k.
 - **CSR:** random keypair → match the **ASN.1 structure / OIDs / SAN extensions** (the `1.3.6.1.4.1.311.20.2` template + the EGS serial/VAT/invoice-type/location/industry), not the bytes.
