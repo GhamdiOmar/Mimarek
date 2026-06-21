@@ -24,6 +24,10 @@
  *   pipeline/ orchestration that threads the per-EGS ICV/PIH chain
  */
 
+// ─── Engine modules (byte-matched to the Fatoora SDK; P0 gate) ────────────────
+// ZATCA invoice hash (C14N 1.1 + SHA-256) — first module past the P0 gate (test/golden/standard).
+export { computeInvoiceHash } from "./hash.js";
+
 // ─── Environments (plan D10) ──────────────────────────────────────────────────
 export type ZatcaEnvironment = "SANDBOX" | "SIMULATION" | "PRODUCTION";
 
