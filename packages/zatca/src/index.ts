@@ -6,22 +6,17 @@
  * this package (plan §2). Shared by Track A (SaaS billing), Track B (tenant config), and
  * Track C (tenant issuance).
  *
- * ┌─────────────────────────────────────────────────────────────────────────────────────────┐
- * │ HARD GATE (plan §5.0): NOTHING below this header beyond these TYPES ships until the P0    │
- * │ spike proves byte-identical hash / XAdES signature / QR-TLV / CSR against ZATCA's         │
- * │ official Java Fatoora SDK for all 6 document types (standard + simplified ×                │
- * │ invoice/credit/debit). The crypto/ubl/xades/qr/client/pipeline module IMPLEMENTATIONS are │
- * │ deliberately absent — they are added only after the spike is green. See README.md and     │
- * │ docs/p0-spike-recipe.md.                                                                   │
- * └─────────────────────────────────────────────────────────────────────────────────────────┘
+ * Module map (R1 — issuance engine + network client COMPLETE; verification gate in parentheses):
+ *   hash    invoice C14N + SHA-256        (byte-match Fatoora SDK, 6 doc types)
+ *   qr      QR-TLV codec + tags 1–9       (byte-match SDK)
+ *   cert    cert hash for CertDigest/QR   (== SDK golden CertDigest)
+ *   xades   XAdES signer                  (fatoora -validate PASS, 6 doc types)
+ *   crypto  secp256k1 keygen + CSR        (accepted by the live ZATCA compliance endpoint)
+ *   ubl     UBL 2.1 invoice builder       (data → fatoora -validate PASS)
+ *   client  Fatoora REST client           (compliance / clearance / reporting; SANDBOX live-verified)
  *
- * Planned module map (added post-spike):
- *   crypto/   secp256k1 keygen + CSR (node-forge/openssl — pinned in P0)
- *   ubl/      UBL 2.1 XML builders: invoice · credit/debit note · simplified
- *   xades/    XAdES enveloped signature + C14N + SHA-256 invoice hash (the #1 risk)
- *   qr/       QR-TLV (tags 1–9) — see ZatcaQrTagSource / D28 below
- *   client/   network client: clearance (B2B) + reporting (B2C)
- *   pipeline/ orchestration that threads the per-EGS ICV/PIH chain
+ * Deferred to R2 (action layer — needs tenant onboarding/CSID + a scheduler): the per-EGS ICV/PIH
+ * `pipeline` orchestration and production go-live.
  */
 
 // ─── Engine modules (byte-matched to the Fatoora SDK; P0 gate) ────────────────
@@ -121,5 +116,19 @@ export type ZatcaClearanceOutcome =
   | "REJECTED"
   | "TRANSPORT_ERROR";
 
-/** Marker re-export so consumers can confirm the package resolves before the engine lands. */
-export const ZATCA_ENGINE_STATUS = "P0_PENDING" as const;
+// ─── Network client (Fatoora REST: compliance / clearance / reporting) ─────────
+export {
+  createZatcaClient,
+  type ZatcaClient,
+  type ZatcaClientOptions,
+  type ZatcaCredentials,
+  type ZatcaCsidResult,
+  type ZatcaInvoicePayload,
+  type ZatcaValidationMessage,
+  type ZatcaValidationResults,
+  type ZatcaSubmissionOutcome,
+  type ZatcaSubmissionResult,
+} from "./client.js";
+
+/** Engine status marker — R1 (issuance engine + network client) complete. */
+export const ZATCA_ENGINE_STATUS = "R1_COMPLETE" as const;

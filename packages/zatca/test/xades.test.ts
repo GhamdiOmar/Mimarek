@@ -39,15 +39,15 @@ describe("signInvoice (XAdES)", () => {
     expect(signed).toContain('Id="xadesSignedProperties"');
   });
 
-  it("SignatureValue is a valid ECDSA signature over the invoice hash (verifies with the signing key)", () => {
+  it("SignatureValue is a valid ECDSA signature over the SIGNED invoice hash (verifies with the signing key)", () => {
     const sig = Buffer.from(firstText(signed, NS_DS, "SignatureValue").replace(/\s/g, ""), "base64");
-    const invoiceHashBinary = Buffer.from(computeInvoiceHash(input), "base64");
+    const invoiceHashBinary = Buffer.from(computeInvoiceHash(signed), "base64");
     expect(cryptoVerify("sha256", invoiceHashBinary, publicKey, sig)).toBe(true);
   });
 
-  it("embeds the invoice digest in Reference-1", () => {
+  it("Reference-1 digest matches ZATCA's recomputation from the SIGNED doc (hash self-consistency)", () => {
     const digests = [...signed.matchAll(/<ds:DigestValue>([^<]+)<\/ds:DigestValue>/g)].map((m) => m[1]);
-    expect(digests[0]).toBe(computeInvoiceHash(input));
+    expect(digests[0]).toBe(computeInvoiceHash(signed));
   });
 
   it("standard QR has 8 tags; simplified QR has 9 (adds CertificateSignature)", () => {
@@ -63,6 +63,16 @@ describe("signInvoice (XAdES)", () => {
       signingTime: "2026-06-21T11:52:02Z",
     });
     expect(decodeQrTlv(qrOf(simplified)).map((t) => t.tag)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+  });
+
+  it("throws (no silent unsigned output) when a required UBL anchor is missing", () => {
+    expect(() =>
+      signInvoice("<Invoice><cbc:ID>X</cbc:ID></Invoice>", {
+        privateKeyPem,
+        certificateBase64,
+        signingTime: "2026-06-21T11:52:02Z",
+      }),
+    ).toThrow(/anchor/);
   });
 });
 

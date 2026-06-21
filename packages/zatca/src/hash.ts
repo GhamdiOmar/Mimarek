@@ -19,8 +19,11 @@ const CBC_NS = "urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponen
  *      `xml-crypto` C14N-1.0 canonicalizer matches.
  *   3. SHA-256, base64.
  *
- * Works on an unsigned invoice (the removals are no-ops) and on a signed invoice (removes the
- * signature/QR first), both yielding the same canonical digest.
+ * IMPORTANT: the canonical ZATCA invoice hash (the value ZATCA recomputes server-side, chains as PIH,
+ * and embeds as QR tag 6 / the `ds:Reference` DigestValue) is taken over the **SIGNED** document. Hashing
+ * the unsigned invoice yields a DIFFERENT digest — the signer injects the (hash-excluded) UBLExtensions/
+ * QR/cac:Signature, which adds inter-element whitespace text nodes that survive the strip. Always compute
+ * this over `signInvoice(...)` output for submission, PIH and QR — never over the unsigned UBL.
  */
 export function computeInvoiceHash(invoiceXml: string): string {
   const doc = new DOMParser().parseFromString(invoiceXml, "text/xml") as unknown as Document;

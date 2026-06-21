@@ -188,16 +188,41 @@ function isSimplified(invoiceXml: string): boolean {
 
 /** Sign an unsigned ZATCA UBL invoice → signed XML (with `ext:UBLExtensions`, QR, and `cac:Signature`). */
 export function signInvoice(invoiceXml: string, opts: SignOptions): string {
-  const invoiceDigest = computeInvoiceHash(invoiceXml);
-  const invoiceHashBinary = Buffer.from(invoiceDigest, "base64");
-
   const privateKey = loadPrivateKey(opts.privateKeyPem);
-  const signatureValue = cryptoSign("sha256", invoiceHashBinary, privateKey).toString("base64");
-
   const cert = readCertificate(opts.certificateBase64);
   const signingTime = opts.signingTime ?? new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
   const signedProperties = buildSignedProperties(signingTime, cert.hash, cert.issuer, cert.serial);
   const signedPropsDigest = b64ofHex(signedProperties);
+
+  // Inject the three hash-EXCLUDED elements (UBLExtensions, QR doc-ref, cac:Signature) at fixed points.
+  // Guard each anchor: a missing tag would otherwise silently return an UNSIGNED doc with a bogus
+  // signature (literal-string `.replace` no-ops when the needle is absent) — fail hard instead.
+  const assemble = (ublExtensionInner: string, qrBase64: string): string => {
+    const withExt = invoiceXml.replace(
+      "<cbc:ProfileID>",
+      `<ext:UBLExtensions>${ublExtensionInner}</ext:UBLExtensions>\n    <cbc:ProfileID>`,
+    );
+    if (withExt === invoiceXml) throw new Error("signInvoice: invoice XML is missing the <cbc:ProfileID> anchor");
+    const withQr = withExt.replace(
+      "<cac:AccountingSupplierParty>",
+      `${qrNode(qrBase64)}\n    <cac:AccountingSupplierParty>`,
+    );
+    if (withQr === withExt) {
+      throw new Error("signInvoice: invoice XML is missing the <cac:AccountingSupplierParty> anchor");
+    }
+    // Drop blank lines (mirror the reference) for clean output.
+    return withQr.replace(/^[ \t]*[\r\n]+/gm, "");
+  };
+
+  // The invoice digest MUST be taken from the FINAL assembled body — ZATCA strips the three excluded
+  // elements and re-hashes what remains, and the injection introduces whitespace text nodes the raw input
+  // doesn't have. Hashing the raw input here is the classic ZATCA `invalid-invoice-hash` bug. So: assemble a
+  // skeleton (the excluded content is irrelevant — it's stripped), hash THAT, then refill the excluded
+  // regions (which never changes the hashed body, so the digest still holds).
+  const skeleton = assemble("", "");
+  const invoiceDigest = computeInvoiceHash(skeleton);
+  const invoiceHashBinary = Buffer.from(invoiceDigest, "base64");
+  const signatureValue = cryptoSign("sha256", invoiceHashBinary, privateKey).toString("base64");
 
   const ublExtension = buildUblExtensions({
     invoiceDigest,
@@ -207,23 +232,16 @@ export function signInvoice(invoiceXml: string, opts: SignOptions): string {
     signedProperties,
   });
 
-  // QR tags: 1–6 deterministic + 7 signature (base64 string) + 8 public key (raw SPKI) [+ 9 cert-sig simplified].
+  // QR tags 1–5 from the invoice + 6 = the (final-body) invoice digest + 7 signature + 8 public key
+  // [+ 9 cert-sig for simplified]. Tag 6 must equal the digest ZATCA recomputes (it validates the B2C QR).
   const tags: QrTlvTag[] = [
-    ...deterministicQrTags(invoiceXml),
+    ...deterministicQrTags(invoiceXml).map((t) =>
+      t.tag === 6 ? { tag: 6, value: new TextEncoder().encode(invoiceDigest) } : t,
+    ),
     { tag: 7, value: new TextEncoder().encode(signatureValue) },
     { tag: 8, value: new Uint8Array(cert.spkiDer) },
   ];
-  // Simplified (B2C) QR carries tag 9 = the certificate's signature (CertificateSignature).
   if (isSimplified(invoiceXml)) tags.push({ tag: 9, value: new Uint8Array(cert.signature) });
-  const qrBase64 = encodeQrTlv(tags);
 
-  const signed = invoiceXml
-    .replace(
-      "<cbc:ProfileID>",
-      `<ext:UBLExtensions>${ublExtension}</ext:UBLExtensions>\n    <cbc:ProfileID>`,
-    )
-    .replace("<cac:AccountingSupplierParty>", `${qrNode(qrBase64)}\n    <cac:AccountingSupplierParty>`);
-
-  // Drop blank lines (mirror the reference) for clean output.
-  return signed.replace(/^[ \t]*[\r\n]+/gm, "");
+  return assemble(ublExtension, encodeQrTlv(tags));
 }

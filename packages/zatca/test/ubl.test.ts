@@ -66,7 +66,7 @@ describe("buildInvoice (UBL builder)", () => {
     expect(xml).toContain('<cbc:PayableAmount currencyID="SAR">230.00</cbc:PayableAmount>');
   });
 
-  it("integrates with the signer: signed Reference-1 digest == hash of the built invoice", () => {
+  it("integrates with the signer: signed Reference-1 digest == hash of the SIGNED invoice (ZATCA self-consistency)", () => {
     const built = buildInvoice({ ...base, docType: "invoice" });
     const { privateKey } = generateKeyPairSync("ec", { namedCurve: "secp256k1" });
     const signed = signInvoice(built, {
@@ -75,6 +75,7 @@ describe("buildInvoice (UBL builder)", () => {
       signingTime: "2026-06-21T11:52:02Z",
     });
     const ref1 = signed.match(/<ds:DigestValue>([^<]+)<\/ds:DigestValue>/)![1];
-    expect(ref1).toBe(computeInvoiceHash(built));
+    // ZATCA recomputes the hash from the SIGNED doc (strips UBLExtensions/QR/Signature) — must equal the embedded digest.
+    expect(ref1).toBe(computeInvoiceHash(signed));
   });
 });
