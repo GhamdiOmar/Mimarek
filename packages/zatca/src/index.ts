@@ -33,6 +33,15 @@ export { encodeQrTlv, decodeQrTlv, deterministicQrTags, type QrTlvTag } from "./
 export { computeCertHash } from "./cert.js";
 // XAdES signer — produces a ZATCA-valid signed UBL invoice (gate: fatoora -validate PASS).
 export { signInvoice, buildSignedProperties, type SignOptions } from "./xades.js";
+// UBL 2.1 invoice builder — structured data → unsigned UBL XML (standard-rated supplies).
+export {
+  buildInvoice,
+  type ZatcaInvoiceInput,
+  type ZatcaParty,
+  type ZatcaAddress,
+  type ZatcaLineItem,
+  type ZatcaDocType,
+} from "./ubl.js";
 
 // ─── Environments (plan D10) ──────────────────────────────────────────────────
 export type ZatcaEnvironment = "SANDBOX" | "SIMULATION" | "PRODUCTION";
