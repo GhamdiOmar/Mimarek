@@ -27,6 +27,10 @@ import type {
   MaintenanceCategory,
   MarketplaceListingStatus,
   UnitStatus,
+  ZatcaStatus,
+  ZatcaEgsStatus,
+  ZatcaDocumentType,
+  ZatcaClearanceOutcome,
 } from "@repo/db";
 
 // ─── Badge variant union (mirrors packages/ui/src/components/Badge.tsx) ───────
@@ -226,3 +230,65 @@ export const MARKETPLACE_LISTING_STATUS_VARIANT = {
   REJECTED: "error",  // added — not in original page map; same tone as SUSPENDED
   SUSPENDED: "error",
 } satisfies Record<MarketplaceListingStatus, BadgeVariant> as Record<string, BadgeVariant>;
+
+// ─── ZATCA document lifecycle status (R2) ─────────────────────────────────────
+
+export const ZATCA_STATUS_LABEL = {
+  NOT_APPLICABLE: { ar: "غير منطبق", en: "Not applicable" },
+  PENDING: { ar: "قيد المعالجة", en: "Pending" },
+  CLEARED: { ar: "معتمدة", en: "Cleared" },
+  REPORTED: { ar: "مُبلّغ عنها", en: "Reported" },
+  REJECTED: { ar: "مرفوضة", en: "Rejected" },
+} satisfies Record<ZatcaStatus, { ar: string; en: string }> as Record<string, { ar: string; en: string }>;
+
+export const ZATCA_STATUS_VARIANT = {
+  NOT_APPLICABLE: "default",
+  PENDING: "pending",
+  CLEARED: "success",
+  REPORTED: "info",
+  REJECTED: "error",
+} satisfies Record<ZatcaStatus, BadgeVariant> as Record<string, BadgeVariant>;
+
+// ─── ZATCA EGS onboarding status (R2) ─────────────────────────────────────────
+
+export const ZATCA_EGS_STATUS_LABEL = {
+  DRAFT: { ar: "مسودة", en: "Draft" },
+  PENDING: { ar: "قيد التهيئة", en: "Pending" },
+  ACTIVE: { ar: "نشط", en: "Active" },
+  RESET: { ar: "أُعيد ضبطه", en: "Reset" },
+} satisfies Record<ZatcaEgsStatus, { ar: string; en: string }> as Record<string, { ar: string; en: string }>;
+
+export const ZATCA_EGS_STATUS_VARIANT = {
+  DRAFT: "draft",
+  PENDING: "pending",
+  ACTIVE: "success",
+  RESET: "warning",
+} satisfies Record<ZatcaEgsStatus, BadgeVariant> as Record<string, BadgeVariant>;
+
+// ─── ZATCA document type (R2) ─────────────────────────────────────────────────
+
+export const ZATCA_DOCUMENT_TYPE_LABEL = {
+  TAX_INVOICE: { ar: "فاتورة ضريبية", en: "Tax Invoice" },
+  SIMPLIFIED: { ar: "فاتورة ضريبية مبسطة", en: "Simplified Tax Invoice" },
+  CREDIT_NOTE: { ar: "إشعار دائن", en: "Credit Note" },
+  DEBIT_NOTE: { ar: "إشعار مدين", en: "Debit Note" },
+  RECEIPT: { ar: "سند قبض", en: "Receipt" },
+} satisfies Record<ZatcaDocumentType, { ar: string; en: string }> as Record<string, { ar: string; en: string }>;
+
+// ─── ZATCA per-attempt clearance/report outcome (R2) ──────────────────────────
+
+export const ZATCA_CLEARANCE_OUTCOME_LABEL = {
+  CLEARED: { ar: "معتمدة", en: "Cleared" },
+  CLEARED_WITH_WARNINGS: { ar: "معتمدة مع تنبيهات", en: "Cleared with warnings" },
+  REPORTED: { ar: "مُبلّغ عنها", en: "Reported" },
+  REJECTED: { ar: "مرفوضة", en: "Rejected" },
+  TRANSPORT_ERROR: { ar: "خطأ في الاتصال", en: "Connection error" },
+} satisfies Record<ZatcaClearanceOutcome, { ar: string; en: string }> as Record<string, { ar: string; en: string }>;
+
+export const ZATCA_CLEARANCE_OUTCOME_VARIANT = {
+  CLEARED: "success",
+  CLEARED_WITH_WARNINGS: "warning",
+  REPORTED: "info",
+  REJECTED: "error",
+  TRANSPORT_ERROR: "warning",
+} satisfies Record<ZatcaClearanceOutcome, BadgeVariant> as Record<string, BadgeVariant>;

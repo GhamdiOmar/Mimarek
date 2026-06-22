@@ -77,6 +77,10 @@ export type Permission =
   | "billing:write"
   | "billing:admin"
 
+  // ZATCA e-invoicing
+  | "zatca:admin"
+  | "zatca:config"
+
   // Help
   | "help:read"
   | "help:create_ticket"
@@ -123,6 +127,7 @@ const ALL_PERMISSIONS: Permission[] = [
   "audit:read",
   "notifications:read",
   "billing:read", "billing:write", "billing:admin",
+  "zatca:admin", "zatca:config",
   "help:read", "help:create_ticket", "help:manage_tickets", "help:manage_permissions",
   "marketplace:read", "marketplace:publish", "marketplace:manage_own",
   "marketplace:inquiry:read", "marketplace:inquiry:write", "marketplace:inquiry:convert",
@@ -138,6 +143,9 @@ const ALL_PERMISSIONS: Permission[] = [
 
 export const SYSTEM_ONLY_PERMISSIONS: Permission[] = [
   "billing:admin",
+  // Platform-only: EGS onboarding + SaaS clearance ops (Track A). Excluded from
+  // ADMIN (= ALL minus SYSTEM_ONLY) so a tenant admin can never run platform ZATCA ops.
+  "zatca:admin",
   "help:manage_tickets",
   // Marketplace moderation/suspension is a platform-staff (REGA kill-switch) duty.
   // Excluded from ADMIN (= ALL minus SYSTEM_ONLY) so tenants can't moderate.
@@ -173,6 +181,9 @@ export const TENANT_SCOPED_PERMISSIONS: Permission[] = [
   "reports:read", "reports:export",
   "audit:read",
   "billing:read", "billing:write",
+  // Tenant ZATCA config (Track B / R3). ADMIN inherits via ALL-minus-SYSTEM_ONLY;
+  // requirePermission("zatca:config") rejects system roles (Layer 3).
+  "zatca:config",
   "help:manage_permissions",
   // Marketplace — tenant-scoped (system staff must NOT operate tenant trading).
   // marketplace:moderate is intentionally EXCLUDED — it is a platform duty.
@@ -207,6 +218,7 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     "audit:read",
     "notifications:read",
     "billing:read",
+    "zatca:admin", // platform ZATCA onboarding / clearance ops
     "help:read", "help:create_ticket", "help:manage_tickets",
   ],
 
@@ -282,6 +294,7 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     "leases:read",
     "customers:read",
     "finance:read", "finance:write",
+    "zatca:config", // finance owns the tenant's ZATCA tax config (Track B / R3)
     "documents:read",
     "notifications:read",
     "help:read", "help:create_ticket",

@@ -10,6 +10,7 @@ import { createSubscription, transitionSubscription } from "../../lib/payment/su
 import { invalidateEntitlements } from "../../lib/entitlements";
 import { getNextSequenceValue, GLOBAL_SEQUENCE_SCOPE } from "../../lib/sequence";
 import { getPublicPlans } from "../../lib/server/plans";
+import { clearSubscriptionInvoiceInternal } from "../../lib/zatca-clearance";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Plans (Public)
@@ -352,7 +353,16 @@ export async function generateSubscriptionInvoice(params: {
     organizationId: session.organizationId,
   });
 
-  return serialize(invoice);
+  // ZATCA Track A: clear the SaaS invoice through the platform EGS (best-effort — NEVER
+  // blocks invoice creation). Outcome is recorded on the invoice (PENDING/REJECTED/CLEARED)
+  // + the clearance log; a no-EGS / failure leaves the invoice as-is.
+  try {
+    await clearSubscriptionInvoiceInternal(invoice.id);
+  } catch (err) {
+    console.error("[zatca] subscription clearance failed (non-blocking):", err instanceof Error ? err.message : err);
+  }
+  const refreshed = await db.invoice.findUnique({ where: { id: invoice.id }, include: { lineItems: true } });
+  return serialize(refreshed ?? invoice);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════

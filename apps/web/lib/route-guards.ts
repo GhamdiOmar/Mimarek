@@ -85,6 +85,7 @@ export const ROUTE_GUARDS: Record<string, RouteGuard> = {
   "/dashboard/admin/tickets": { permission: "billing:admin", audience: "platform" },
   "/dashboard/admin/marketplace": { permission: "marketplace:moderate", audience: "platform" },
   "/dashboard/admin/data-retention": { permission: "billing:admin", audience: "platform" },
+  "/dashboard/admin/zatca": { permission: "zatca:admin", audience: "platform" },
   // /dashboard/admin/coupons + /dashboard/admin/subscriptions are not in nav but
   // are platform surfaces (CLAUDE.md §8.2). The longest-prefix audience match on
   // "/dashboard/admin" covers them for the edge gate; listed here for clarity is

@@ -2,6 +2,18 @@
 const nextConfig = {
   allowedDevOrigins: ["127.0.0.1", "localhost"],
 
+  // @repo/zatca is a zero-build TS package using NodeNext `.js`-extension specifiers
+  // (e.g. `from "./hash.js"` → hash.ts). Teach the bundler to resolve `.js` → `.ts`
+  // first (falls back to a real `.js`), so the engine re-export chain resolves.
+  webpack: (config) => {
+    config.resolve.extensionAlias = {
+      ".js": [".ts", ".tsx", ".js"],
+      ".mjs": [".mts", ".mjs"],
+      ".cjs": [".cts", ".cjs"],
+    };
+    return config;
+  },
+
   async headers() {
     return [
       // ── Security headers — applied to every response ──────────────────────

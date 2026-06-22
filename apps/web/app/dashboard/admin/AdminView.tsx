@@ -5,7 +5,7 @@ import {
   Users, Receipt,
   Ticket, ListChecks, Tag, SearchCheck, Settings,
   ChevronRight, ShieldAlert, TrendingUp, AlertTriangle,
-  TrendingDown, Wallet, PieChart, Sparkles,
+  TrendingDown, Wallet, PieChart, Sparkles, CheckCircle2,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -214,6 +214,12 @@ const quickLinks = [
     icon: Ticket,
     label: { ar: "تذاكر الدعم", en: "Support Tickets" },
     desc: { ar: "إدارة طلبات الدعم", en: "Manage support requests" },
+  },
+  {
+    href: "/dashboard/admin/zatca",
+    icon: CheckCircle2,
+    label: { ar: "فوترة زاتكا", en: "ZATCA" },
+    desc: { ar: "اعتماد الفواتير والامتثال", en: "Clearance status & compliance" },
   },
 ];
 
@@ -692,6 +698,14 @@ export default function AdminView({
                     ? t("ارتفاع في الرفض — تحقق من التكامل", "rejection spike — check integration")
                     : undefined
                 }
+                locale={lang}
+              />
+              <KPICard
+                tier="utility"
+                label={t("معتمدة / مرفوضة", "Cleared / rejected")}
+                description={desc.zatcaClearance}
+                value={`${fmtCount(zatca.cleared)} / ${fmtCount(zatca.rejected)}`}
+                accent={zatca.rejected > 0 ? "warning" : "success"}
                 locale={lang}
               />
             </div>

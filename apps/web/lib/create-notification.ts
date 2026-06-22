@@ -8,7 +8,7 @@ export async function createNotification(params: {
   message: string;
   messageEn: string;
   link?: string;
-  organizationId: string;
+  organizationId?: string | null;
 }) {
   return db.notification.create({
     data: {
@@ -20,7 +20,7 @@ export async function createNotification(params: {
       messageEn: params.messageEn,
       link: params.link,
       read: false,
-      organizationId: params.organizationId,
+      organizationId: params.organizationId ?? null,
     },
   });
 }
@@ -58,5 +58,40 @@ export async function notifyAdmins(params: {
         organizationId: params.organizationId,
       })
     )
+  );
+}
+
+/**
+ * Notify Mimarek platform staff (D29). Targets SYSTEM_ADMIN / SYSTEM_SUPPORT users
+ * with organizationId === null (platform staff are not org members — the old
+ * "system-org sentinel" idea fails). Used for platform-level ZATCA alerts
+ * (REJECTED / ERROR clearance, failed reporting). Notifications carry organizationId null.
+ */
+export async function notifyPlatformStaff(params: {
+  type: string;
+  title: string;
+  titleEn: string;
+  message: string;
+  messageEn: string;
+  link?: string;
+}) {
+  const staff = await db.user.findMany({
+    where: { organizationId: null, role: { in: ["SYSTEM_ADMIN", "SYSTEM_SUPPORT"] } },
+    select: { id: true },
+  });
+
+  await Promise.all(
+    staff.map((u) =>
+      createNotification({
+        userId: u.id,
+        type: params.type,
+        title: params.title,
+        titleEn: params.titleEn,
+        message: params.message,
+        messageEn: params.messageEn,
+        link: params.link,
+        organizationId: null,
+      }),
+    ),
   );
 }
