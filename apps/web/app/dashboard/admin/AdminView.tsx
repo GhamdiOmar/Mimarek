@@ -218,8 +218,8 @@ const quickLinks = [
   {
     href: "/dashboard/admin/zatca",
     icon: CheckCircle2,
-    label: { ar: "فوترة زاتكا", en: "ZATCA" },
-    desc: { ar: "اعتماد الفواتير والامتثال", en: "Clearance status & compliance" },
+    label: { ar: "الربط بنظام فاتورة الضريبي", en: "ZATCA Integration" },
+    desc: { ar: "اعتماد فواتير الاشتراكات والامتثال", en: "Subscription clearance & compliance" },
   },
 ];
 
