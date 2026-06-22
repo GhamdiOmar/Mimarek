@@ -1,5 +1,30 @@
 # Changelog — Mimarek PropTech
 
+## [5.3.0] — 2026-06-22 — ZATCA Phase-2 (R3 — Track B): tenant e-invoicing config
+
+**Every customer org can now connect its OWN ZATCA EGS.** R3 is **Track B** of the program — a tenant-facing config surface at `/dashboard/settings/zatca` where a tenant ADMIN/FINANCE onboards their organization's own EGS (a generalization of R2's platform onboarding, per-org), manages branches, and configures the real-estate tax mapping that R4's issuance classifier will enforce. **Verified live end-to-end against the ZATCA sandbox: a tenant onboards via the real UI → per-org CSR → compliance CSID → production CSID → ACTIVE, with all secrets `z1:`-encrypted and the per-tenant EGS-identity (fresh serial UUID, `TST-…-<orgVAT>` common name) confirmed on the live DB.**
+
+### Schema + DB (applied to the live DB; additive `db push`)
+- Two new models — **`ZatcaBranch`** (D15/D25: explicit `egsUnitId` FK, metadata-only in R3; per-branch CSR/issuance is R4) and **`OrgZatcaTaxConfig`** (D16: configured tax-mapping intent, no runtime reader until R4) — plus enums **`VatCategory`** (S/Z/E/O) and **`ZatcaChargeType`**. `ZatcaEgsUnit.organizationId` was already nullable, so a per-tenant EGS needs no migration. RLS auto-regenerated + enabled on both new tables (`generate-rls.ts`). New partial unique index **`zatca_egs_one_active_per_org_env`** (`sql/2026-06-zatca-tenant-egs-unique.sql`) — the DB backstop for the app-layer single-ACTIVE-EGS guard's TOCTOU window.
+
+### Access model (§8)
+- `/dashboard/settings/zatca` gets an **explicit** `ROUTE_GUARDS` entry `{ zatca:config, tenant }` (so longest-prefix does NOT inherit `/dashboard/settings`'s `organization:read`) + `ROUTES.settingsZatca`. `zatca:config` (TENANT_SCOPED, ADMIN + FINANCE, never MANAGER) gates the page via `getTenantPageAccess` and every action via an **inline** `requirePermission` (the AST guard gate inspects each function body). The permission test now also asserts MANAGER is excluded and the route resolves to the dedicated guard.
+
+### Server actions (Track B)
+- `onboardTenantEgs` / `getTenantEgsSummary` (`tenant-onboarding.ts`): per-org onboarding deriving the CSR identity from the **Organization profile** (legal names / CR / address / VAT) with a **fresh per-tenant serial UUID** — never the platform identity (copying the platform constants would onboard every tenant under Mimarek's identity, a compliance bug). SANDBOX-only (env threading is R5). Reuses the R2 `z1` envelope, `EGS_PUBLIC_SELECT`, `getEgsSigningContext`, `generateCsr` verbatim.
+- Branch CRUD + tax-config get/save (`tenant-config.ts`): strictly org-scoped, ownership re-checked before every mutate (cross-org isolation), tax config persisted via an atomic delete-and-replace (sidesteps the nullable-composite-unique upsert trap), capped at 50 rows. D30 governance: an ACTIVE EGS is locked tenant-side; the tenant raises a `TECHNICAL_SUPPORT` ticket and a platform admin resets it (the platform-side `resetTenantEgs` action is an R4 deferral).
+
+### UI
+- New `/dashboard/settings/zatca` (tenant): EGS connect (VAT + OTP, read-only org identity block), D30 ACTIVE-locked state + "Request reset", Branches (DataTable + `AddressPicker` dialog, §6.6.7 icon-only row actions), Tax mapping (per unit-type × charge-type `VatCategory` selectors + e-invoice toggle), and a clearance-log table. RTL-first bilingual, token-themed; reached via a `can("zatca:config")`-gated Settings link («الربط بنظام فاتورة الضريبي» / "ZATCA E-Invoicing"). `VatCategory` / `ZatcaChargeType` / `UnitType` bilingual labels added to the canonical `domain-labels` registry.
+
+### Verify
+- `npm run build` green · `check-types` green · `npm run lint` exit 0 · `turbo test:unit` green (164 web incl. the extended §8.4 ZATCA-permission test + `guard-coverage` auto-covering all 6 new tenant actions; engine 65) · **`/mimaric-qa` SHIP** (8.2/10; all findings closed — H1 tracked the tenant partial-index SQL, M1 BranchDialog label a11y, M2 row cap, M3 split transitions, L1 label registry, L2 log select-projection, L3 branch-edit address pre-population) · §3.8 cross-org isolation Grep-verified (every query org-scoped / ownership-re-checked) · **§3.9 4-theme walk** on `/dashboard/settings/zatca` (light/dark × AR/EN, not-onboarded + ACTIVE states), **zero console errors** · **live sandbox E2E**: a tenant onboarded its own EGS through the UI → ACTIVE, `z1:`-encrypted secrets + fresh per-tenant serial confirmed on the live DB.
+
+### Deferred (per the program plan)
+- R4 Track C: tenant issuance + the `issueDocumentForCharge` hook matrix (which reads `OrgZatcaTaxConfig`) + buyer routing (D18) + B2C reporting sweep + `TenantDocument` + per-branch CSRs + the platform-side `resetTenantEgs` action. R5: production CSID + the 6-sample gate + a real scheduler + **external tax-advisor signoff** (the tax-mapping defaults are 7-agent-verified vs KSA VAT regs but not yet advisor-confirmed) + PDF/A-3-with-XML + environment threading to PRODUCTION.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimarek/compare/v5.2.1...v5.3.0
+
 ## [5.2.1] — 2026-06-22 — ZATCA admin polish: natural Arabic label + VAT-only onboarding
 
 **A small UX follow-up to R2.** No schema, data, or clearance-logic change — the money path is untouched.
