@@ -1,6 +1,6 @@
 "use server";
 
-import { db, CustomerStatus, PersonType, Gender, ActivityType, Prisma } from "@repo/db";
+import { db, CustomerStatus, PersonType, Gender, ActivityType, CustomerKind, Prisma } from "@repo/db";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requirePermission, getSessionWithPermissions } from "../../lib/auth-helpers";
@@ -42,6 +42,12 @@ const CreateCustomerSchema = z.object({
   budget: z.number().positive().optional(),
   propertyTypeInterest: z.string().optional(),
   agentId: z.string().optional(),
+  // ZATCA Track C buyer party (D18) — plaintext business identifiers, not encrypted.
+  customerKind: z.string().optional(),
+  vatNumber: z.string().optional(),
+  crNumber: z.string().optional(),
+  companyNameAr: z.string().optional(),
+  companyNameEn: z.string().optional(),
 });
 
 export async function updateCustomerStatus(customerId: string, status: string, lostReason?: string) {
@@ -134,6 +140,11 @@ export async function createCustomer(data: {
   budget?: number;
   propertyTypeInterest?: string;
   agentId?: string;
+  customerKind?: string;
+  vatNumber?: string;
+  crNumber?: string;
+  companyNameAr?: string;
+  companyNameEn?: string;
 }) {
   const parsed = CreateCustomerSchema.safeParse(data);
   if (!parsed.success) {
@@ -177,6 +188,12 @@ export async function createCustomer(data: {
       budget: data.budget ?? undefined,
       propertyTypeInterest: data.propertyTypeInterest || undefined,
       agentId: data.agentId || undefined,
+      // ZATCA Track C buyer party (D18) — plaintext, no encryption.
+      customerKind: (data.customerKind || undefined) as CustomerKind | undefined,
+      vatNumber: data.vatNumber || undefined,
+      crNumber: data.crNumber || undefined,
+      companyNameAr: data.companyNameAr || undefined,
+      companyNameEn: data.companyNameEn || undefined,
       organizationId: session.organizationId,
     },
   });
@@ -237,6 +254,11 @@ export async function updateCustomer(
     agentId?: string;
     budget?: number;
     propertyTypeInterest?: string;
+    customerKind?: string;
+    vatNumber?: string;
+    crNumber?: string;
+    companyNameAr?: string;
+    companyNameEn?: string;
   }
 ) {
   const session = await requirePermission("customers:write");
