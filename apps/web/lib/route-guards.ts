@@ -72,6 +72,10 @@ export const ROUTE_GUARDS: Record<string, RouteGuard> = {
   // preserved by DashboardClientLayout/auth.config redirecting them off it
   // regardless; for tenant users the Settings item still shows (organization:read).
   "/dashboard/settings": { permission: "organization:read", audience: "tenant" },
+  // Tenant ZATCA e-invoicing config (R3 — Track B). EXPLICIT entry so longest-prefix
+  // does NOT inherit /dashboard/settings's `organization:read`; this surface is gated
+  // by the dedicated tenant `zatca:config` permission.
+  "/dashboard/settings/zatca": { permission: "zatca:config", audience: "tenant" },
   // Help — tenant audience (system staff use /dashboard/admin/tickets instead).
   // Already surfaced in the radial nav (radial-groups.ts "system" extras) + the
   // profile menu; this entry completes the F4 SSOT and makes the edge audience

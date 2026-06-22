@@ -21,6 +21,7 @@ export const ROUTES = {
   billing: "/dashboard/billing",
   settings: "/dashboard/settings",
   settingsTeam: "/dashboard/settings/team",
+  settingsZatca: "/dashboard/settings/zatca",
 
   // Maintenance
   maintenanceTickets: "/dashboard/maintenance/tickets",
