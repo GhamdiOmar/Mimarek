@@ -174,7 +174,12 @@ export async function getTenantTaxConfig() {
     orderBy: [{ unitType: "asc" }, { chargeType: "asc" }],
   });
 
-  if (rows.length > 0) return serialize({ configs: rows, isDefault: false });
+  if (rows.length > 0) {
+    // Normalize the Decimal vatRate (serializes to a string) to a plain number|null so
+    // the UI contract matches the default rows + saveTenantTaxConfig's input.
+    const configs = rows.map((r) => ({ ...r, vatRate: r.vatRate == null ? null : Number(r.vatRate) }));
+    return serialize({ configs, isDefault: false });
+  }
 
   const defaults = DEFAULT_TAX_MAP.map((d) => ({
     id: null as string | null,
