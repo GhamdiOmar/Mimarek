@@ -1,0 +1,581 @@
+"use client";
+
+import * as React from "react";
+import {
+  ArrowLeft,
+  FileText,
+  ReceiptText,
+  RotateCcw,
+  ShieldCheck,
+  Radio,
+} from "lucide-react";
+import Link from "next/link";
+import { toast } from "sonner";
+import {
+  Button,
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  Badge,
+  Input,
+  CRInput,
+  EmptyState,
+  DataTable,
+  ResponsiveDialog,
+  DirectionalIcon,
+  type ColumnDef,
+} from "@repo/ui";
+import { PageHeader } from "@repo/ui/components/PageHeader";
+import { useLanguage } from "../../../../components/LanguageProvider";
+import {
+  ZATCA_EGS_STATUS_LABEL,
+  ZATCA_EGS_STATUS_VARIANT,
+  ZATCA_CLEARANCE_OUTCOME_LABEL,
+  ZATCA_CLEARANCE_OUTCOME_VARIANT,
+} from "../../../../lib/domain-labels";
+import type { getPlatformEgsSummary } from "../../../actions/zatca/onboarding";
+import {
+  onboardPlatformEgs,
+  resetPlatformEgs,
+} from "../../../actions/zatca/onboarding";
+
+// ─── Prop types (derived from the server action's serialized return) ──────────
+type Summary = Awaited<ReturnType<typeof getPlatformEgsSummary>>;
+type Egs = Summary["egs"];
+type ClearanceLog = Summary["logs"][number];
+
+type ZatcaAdminViewProps = {
+  egs: Egs;
+  logs: ClearanceLog[];
+};
+
+function formatDate(value: string | Date | null | undefined, lang: "ar" | "en"): string {
+  if (!value) return "—";
+  const date = new Date(value);
+  return date.toLocaleDateString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function formatDateTime(value: string | Date | null | undefined, lang: "ar" | "en"): string {
+  if (!value) return "—";
+  const date = new Date(value);
+  return date.toLocaleString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+export default function ZatcaAdminView({ egs, logs }: ZatcaAdminViewProps) {
+  const { t, lang } = useLanguage();
+  const [isPending, startTransition] = React.useTransition();
+
+  const isActive = egs != null && egs.status === "ACTIVE";
+
+  // ── Onboard form state ────────────────────────────────────────────────
+  const [vatNumber, setVatNumber] = React.useState("");
+  const [crNumber, setCrNumber] = React.useState("");
+  const [legalNameEn, setLegalNameEn] = React.useState("");
+  const [legalNameAr, setLegalNameAr] = React.useState("");
+  const [invoiceTypeFlags, setInvoiceTypeFlags] = React.useState("1100");
+  const [otp, setOtp] = React.useState("123456");
+  const [formError, setFormError] = React.useState<string | null>(null);
+
+  const [resetOpen, setResetOpen] = React.useState(false);
+
+  const vatValid = /^\d{15}$/.test(vatNumber);
+
+  const onOnboardSubmit = React.useCallback(
+    (e: React.FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+      setFormError(null);
+
+      if (!/^\d{15}$/.test(vatNumber)) {
+        setFormError(t("رقم ضريبة القيمة المضافة يجب أن يتكوّن من 15 رقمًا.", "The VAT number must be exactly 15 digits."));
+        return;
+      }
+      if (!legalNameEn.trim()) {
+        setFormError(t("الاسم النظامي (بالإنجليزية) مطلوب.", "The legal name (English) is required."));
+        return;
+      }
+
+      startTransition(async () => {
+        try {
+          await onboardPlatformEgs({
+            vatNumber: vatNumber.trim(),
+            crNumber: crNumber.trim() || undefined,
+            legalNameEn: legalNameEn.trim(),
+            legalNameAr: legalNameAr.trim() || undefined,
+            invoiceTypeFlags: invoiceTypeFlags.trim() || undefined,
+            otp: otp.trim() || undefined,
+          });
+          toast.success(t("تم تهيئة جهاز إصدار الفواتير بنجاح.", "EGS onboarded successfully."));
+        } catch (err) {
+          const message =
+            err instanceof Error
+              ? err.message
+              : t("تعذّرت التهيئة. حاول مرة أخرى.", "Onboarding failed. Please try again.");
+          setFormError(message);
+          toast.error(message);
+        }
+      });
+    },
+    [vatNumber, crNumber, legalNameEn, legalNameAr, invoiceTypeFlags, otp, t],
+  );
+
+  const onReset = React.useCallback(() => {
+    startTransition(async () => {
+      try {
+        await resetPlatformEgs();
+        setResetOpen(false);
+        toast.success(t("تم إعادة ضبط جهاز إصدار الفواتير.", "EGS has been reset."));
+      } catch (err) {
+        const message =
+          err instanceof Error
+            ? err.message
+            : t("تعذّرت إعادة الضبط. حاول مرة أخرى.", "Reset failed. Please try again.");
+        toast.error(message);
+      }
+    });
+  }, [t]);
+
+  // ── Clearance-log table columns ───────────────────────────────────────
+  const columns = React.useMemo<ColumnDef<ClearanceLog>[]>(
+    () => [
+      {
+        accessorKey: "createdAt",
+        header: t("التاريخ", "Date"),
+        enableSorting: true,
+        enableHiding: false,
+        cell: ({ row }) => (
+          <span className="text-muted-foreground text-xs">
+            {formatDateTime(row.original.createdAt, lang)}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "outcome",
+        header: t("النتيجة", "Outcome"),
+        enableSorting: true,
+        cell: ({ row }) => {
+          const label = ZATCA_CLEARANCE_OUTCOME_LABEL[row.original.outcome];
+          const variant = ZATCA_CLEARANCE_OUTCOME_VARIANT[row.original.outcome] ?? "default";
+          return (
+            <Badge variant={variant} size="sm">
+              {label ? t(label.ar, label.en) : row.original.outcome}
+            </Badge>
+          );
+        },
+      },
+      {
+        accessorKey: "icv",
+        header: t("العدّاد", "ICV"),
+        enableSorting: true,
+        meta: { numeric: true },
+        cell: ({ row }) => (
+          <span dir="ltr" className="font-mono text-xs tabular-nums text-foreground">
+            {row.original.icv ?? "—"}
+          </span>
+        ),
+      },
+      {
+        id: "zatcaCodes",
+        header: t("رموز زاتكا", "ZATCA codes"),
+        enableSorting: false,
+        cell: ({ row }) => {
+          const codes = row.original.zatcaCodes ?? [];
+          return (
+            <span dir="ltr" className="font-mono text-xs text-muted-foreground">
+              {codes.length > 0 ? codes.join(", ") : "—"}
+            </span>
+          );
+        },
+      },
+      {
+        accessorKey: "message",
+        header: t("الرسالة", "Message"),
+        enableSorting: false,
+        cell: ({ row }) => (
+          <span
+            className="block max-w-[280px] truncate text-xs text-muted-foreground"
+            title={row.original.message ?? undefined}
+          >
+            {row.original.message ?? "—"}
+          </span>
+        ),
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `t` is derived from `lang`, which is already a dep.
+    [lang],
+  );
+
+  return (
+    <div
+      className="space-y-8 animate-in fade-in duration-500"
+      dir={lang === "ar" ? "rtl" : "ltr"}
+    >
+      {/* Back link */}
+      <Link
+        href="/dashboard/admin"
+        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+      >
+        <DirectionalIcon icon={ArrowLeft} className="h-4 w-4" />
+        {t("إدارة المنصة", "Platform Administration")}
+      </Link>
+
+      {/* Header */}
+      <div className="flex items-start gap-4">
+        <div className="h-12 w-12 rounded-md bg-primary/10 flex items-center justify-center text-primary shrink-0">
+          <ReceiptText className="h-7 w-7" />
+        </div>
+        <PageHeader
+          className="flex-1"
+          title={t("فوترة زاتكا", "ZATCA e-invoicing")}
+          description={t(
+            "تهيئة جهاز إصدار فواتير المنصة واعتماد فواتير الاشتراكات لحظيًا مع هيئة الزكاة والضريبة والجمارك.",
+            "Onboard the platform billing EGS and clear subscription invoices with ZATCA in real time.",
+          )}
+        />
+      </div>
+
+      {/* ─── EGS status / onboarding ─────────────────────────────────────── */}
+      {isActive && egs ? (
+        <Card>
+          <CardHeader>
+            <div className="flex items-start justify-between gap-4">
+              <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+                <ShieldCheck className="h-4 w-4 text-success" aria-hidden="true" />
+                {t("جهاز إصدار الفواتير", "Electronic Generation Solution")}
+              </CardTitle>
+              {(() => {
+                const label = ZATCA_EGS_STATUS_LABEL[egs.status];
+                const variant = ZATCA_EGS_STATUS_VARIANT[egs.status] ?? "default";
+                return (
+                  <Badge variant={variant} size="sm">
+                    {label ? t(label.ar, label.en) : egs.status}
+                  </Badge>
+                );
+              })()}
+            </div>
+          </CardHeader>
+          <CardContent>
+            <dl className="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div>
+                <dt className="text-xs text-muted-foreground">
+                  {t("رقم ضريبة القيمة المضافة", "VAT number")}
+                </dt>
+                <dd dir="ltr" className="mt-0.5 font-mono text-sm tabular-nums text-foreground">
+                  {egs.vatNumber}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs text-muted-foreground">
+                  {t("الرقم التسلسلي", "Serial number")}
+                </dt>
+                <dd dir="ltr" className="mt-0.5 break-all font-mono text-xs text-foreground">
+                  {egs.egsSerialNumber}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs text-muted-foreground">
+                  {t("البيئة", "Environment")}
+                </dt>
+                <dd className="mt-0.5 text-sm text-foreground">{egs.environment}</dd>
+              </div>
+              <div>
+                <dt className="text-xs text-muted-foreground">
+                  {t("آخر عدّاد فاتورة", "Last ICV")}
+                </dt>
+                <dd dir="ltr" className="mt-0.5 font-mono text-sm tabular-nums text-foreground">
+                  {egs.lastIcv ?? "—"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs text-muted-foreground">
+                  {t("تاريخ التهيئة", "Onboarded")}
+                </dt>
+                <dd className="mt-0.5 text-sm text-foreground">
+                  {formatDate(egs.onboardedAt, lang)}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs text-muted-foreground">
+                  {t("الاسم النظامي", "Legal name")}
+                </dt>
+                <dd className="mt-0.5 text-sm text-foreground">
+                  {lang === "ar"
+                    ? egs.legalNameAr || egs.legalNameEn
+                    : egs.legalNameEn || egs.legalNameAr}
+                </dd>
+              </div>
+            </dl>
+
+            <div className="mt-6 flex justify-end border-t border-border pt-4">
+              <Button
+                variant="destructive"
+                onClick={() => setResetOpen(true)}
+                disabled={isPending}
+                style={{ display: "inline-flex" }}
+                className="gap-2"
+              >
+                <RotateCcw className="h-4 w-4" aria-hidden="true" />
+                {t("إعادة الضبط", "Reset EGS")}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-semibold">
+              {t("تهيئة جهاز إصدار الفواتير", "Onboard the billing EGS")}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {egs == null ? (
+              <div className="mb-6">
+                <EmptyState
+                  icon={<FileText className="h-12 w-12" aria-hidden="true" />}
+                  title={t("لم تتم التهيئة بعد", "Not onboarded yet")}
+                  description={t(
+                    "هيّئ جهاز إصدار فواتير المنصة مرة واحدة لبدء اعتماد فواتير الاشتراكات مع هيئة الزكاة والضريبة والجمارك.",
+                    "Onboard the platform EGS once to start clearing subscription invoices with ZATCA.",
+                  )}
+                />
+              </div>
+            ) : (
+              <p className="mb-6 rounded-md border border-warning bg-warning/10 px-3 py-2 text-xs text-warning-strong">
+                {t(
+                  `الحالة الحالية: ${ZATCA_EGS_STATUS_LABEL[egs.status]?.ar ?? egs.status}. أعد التهيئة لتفعيل الجهاز.`,
+                  `Current status: ${ZATCA_EGS_STATUS_LABEL[egs.status]?.en ?? egs.status}. Re-onboard to activate the EGS.`,
+                )}
+              </p>
+            )}
+
+            <form onSubmit={onOnboardSubmit} className="space-y-4">
+              <p className="text-xs text-muted-foreground">
+                {t("الحقول المطلوبة معلّمة بـ *", "Required fields marked with *")}
+              </p>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {/* VAT — 15 digits */}
+                <div className="space-y-1.5">
+                  <label htmlFor="zatca-vat" className="block text-xs font-semibold text-foreground">
+                    {t("رقم ضريبة القيمة المضافة *", "VAT number *")}
+                  </label>
+                  <Input
+                    id="zatca-vat"
+                    dir="ltr"
+                    inputMode="numeric"
+                    autoComplete="off"
+                    maxLength={15}
+                    value={vatNumber}
+                    onChange={(e) => setVatNumber(e.target.value.replace(/\D/g, "").slice(0, 15))}
+                    aria-invalid={vatNumber.length > 0 && !vatValid}
+                    className="font-mono tabular-nums"
+                    placeholder="300000000000003"
+                  />
+                  <p className="text-[11px] text-muted-foreground">
+                    {t("15 رقمًا — يبدأ وينتهي بـ 3.", "15 digits — starts and ends with 3.")}
+                  </p>
+                </div>
+
+                {/* CR — optional, CRInput */}
+                <div className="space-y-1.5">
+                  <label htmlFor="zatca-cr" className="block text-xs font-semibold text-foreground">
+                    {t("السجل التجاري (اختياري)", "Commercial registration (optional)")}
+                  </label>
+                  <CRInput
+                    id="zatca-cr"
+                    value={crNumber}
+                    onChange={setCrNumber}
+                    className="font-mono tabular-nums"
+                  />
+                </div>
+
+                {/* Legal name EN — required */}
+                <div className="space-y-1.5">
+                  <label htmlFor="zatca-name-en" className="block text-xs font-semibold text-foreground">
+                    {t("الاسم النظامي (بالإنجليزية) *", "Legal name (English) *")}
+                  </label>
+                  <Input
+                    id="zatca-name-en"
+                    dir="ltr"
+                    value={legalNameEn}
+                    onChange={(e) => setLegalNameEn(e.target.value)}
+                    placeholder="Mimarek PropTech Co."
+                  />
+                </div>
+
+                {/* Legal name AR — optional */}
+                <div className="space-y-1.5">
+                  <label htmlFor="zatca-name-ar" className="block text-xs font-semibold text-foreground">
+                    {t("الاسم النظامي (بالعربية) (اختياري)", "Legal name (Arabic) (optional)")}
+                  </label>
+                  <Input
+                    id="zatca-name-ar"
+                    dir="rtl"
+                    value={legalNameAr}
+                    onChange={(e) => setLegalNameAr(e.target.value)}
+                    placeholder="شركة معمارك للتقنية العقارية"
+                  />
+                </div>
+
+                {/* Invoice type flags — default 1100 */}
+                <div className="space-y-1.5">
+                  <label htmlFor="zatca-flags" className="block text-xs font-semibold text-foreground">
+                    {t("أعلام نوع الفاتورة (اختياري)", "Invoice type flags (optional)")}
+                  </label>
+                  <Input
+                    id="zatca-flags"
+                    dir="ltr"
+                    inputMode="numeric"
+                    maxLength={4}
+                    value={invoiceTypeFlags}
+                    onChange={(e) => setInvoiceTypeFlags(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                    className="font-mono tabular-nums"
+                    placeholder="1100"
+                  />
+                  <p className="text-[11px] text-muted-foreground">
+                    {t("الافتراضي 1100 (فاتورة قياسية B2B).", "Default 1100 (standard B2B invoice).")}
+                  </p>
+                </div>
+
+                {/* OTP — default 123456 sandbox */}
+                <div className="space-y-1.5">
+                  <label htmlFor="zatca-otp" className="block text-xs font-semibold text-foreground">
+                    {t("رمز التحقق (اختياري)", "OTP (optional)")}
+                  </label>
+                  <Input
+                    id="zatca-otp"
+                    dir="ltr"
+                    inputMode="numeric"
+                    maxLength={6}
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                    className="font-mono tabular-nums"
+                    placeholder="123456"
+                  />
+                  <p className="text-[11px] text-muted-foreground">
+                    {t("البيئة التجريبية لا تتحقق من الرمز.", "Sandbox does not validate the OTP.")}
+                  </p>
+                </div>
+              </div>
+
+              {formError && (
+                <p className="rounded-md border border-destructive bg-destructive/10 px-3 py-2 text-xs text-destructive">
+                  {formError}
+                </p>
+              )}
+
+              <div className="flex justify-end">
+                <Button
+                  type="submit"
+                  disabled={isPending || !vatValid || !legalNameEn.trim()}
+                  style={{ display: "inline-flex" }}
+                  className="gap-2"
+                >
+                  {isPending
+                    ? t("جارٍ التهيئة…", "Onboarding…")
+                    : t("تهيئة الجهاز", "Onboard EGS")}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ─── Clearance log ───────────────────────────────────────────────── */}
+      <section>
+        <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+          {t("سجل الاعتماد", "Clearance log")}
+        </h2>
+        <Card className="overflow-hidden">
+          {logs.length === 0 ? (
+            <div className="p-6">
+              <EmptyState
+                icon={<ReceiptText className="h-12 w-12" aria-hidden="true" />}
+                title={t("لا توجد محاولات اعتماد بعد", "No clearance attempts yet")}
+                description={t(
+                  "ستظهر هنا كل محاولة اعتماد لفاتورة اشتراك بمجرد إرسالها إلى هيئة الزكاة والضريبة والجمارك.",
+                  "Every subscription-invoice clearance attempt appears here once sent to ZATCA.",
+                )}
+              />
+            </div>
+          ) : (
+            <DataTable
+              columns={columns}
+              data={logs}
+              locale={lang === "ar" ? "ar" : "en"}
+              pagination
+              pageSize={10}
+              getRowId={(r) => r.id}
+              emptyTitle={t("لا توجد محاولات اعتماد بعد", "No clearance attempts yet")}
+              emptyDescription={t(
+                "ستظهر هنا كل محاولة اعتماد لفاتورة اشتراك.",
+                "Every subscription-invoice clearance attempt appears here.",
+              )}
+            />
+          )}
+        </Card>
+      </section>
+
+      {/* ─── Reporting note (Track A = real-time clearance) ───────────────── */}
+      <div className="flex items-start gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+        <Radio className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+        <span>
+          {t(
+            "المسار (أ) هو الاعتماد اللحظي لفواتير اشتراكات المنصة. أما رفع فواتير المبيعات للأفراد (B2C) دفعةً واحدة فيأتي مع المسار (ج).",
+            "Track A is real-time clearance of platform subscription invoices. The B2C reporting sweep arrives with Track C.",
+          )}
+        </span>
+      </div>
+
+      {/* ─── Reset confirmation dialog ───────────────────────────────────── */}
+      <ResponsiveDialog
+        open={resetOpen}
+        onOpenChange={setResetOpen}
+        title={t("إعادة ضبط جهاز إصدار الفواتير", "Reset the EGS")}
+        description={t(
+          "سيتم إبطال الشهادة الحالية ومسح بيانات الاعتماد. يلزم تهيئة جديدة لإصدار شهادة وزوج مفاتيح جديدين.",
+          "This revokes the current certificate and wipes its credentials. A fresh onboarding is required to issue a new certificate and keypair.",
+        )}
+        footer={
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button
+              variant="outline"
+              onClick={() => setResetOpen(false)}
+              disabled={isPending}
+              style={{ display: "inline-flex" }}
+            >
+              {t("إلغاء", "Cancel")}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={onReset}
+              disabled={isPending}
+              style={{ display: "inline-flex" }}
+              className="gap-2"
+            >
+              <RotateCcw className="h-4 w-4" aria-hidden="true" />
+              {isPending ? t("جارٍ إعادة الضبط…", "Resetting…") : t("إعادة الضبط", "Reset EGS")}
+            </Button>
+          </div>
+        }
+      >
+        <p className="py-2 text-sm text-muted-foreground">
+          {t(
+            "هذا الإجراء لا يمكن التراجع عنه.",
+            "This action cannot be undone.",
+          )}
+        </p>
+      </ResponsiveDialog>
+    </div>
+  );
+}

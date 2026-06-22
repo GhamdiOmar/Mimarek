@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "@repo/ui/globals.css";
-import { Tajawal } from 'next/font/google';
+import { Tajawal, IBM_Plex_Mono } from 'next/font/google';
 import localFont from 'next/font/local';
 import { ThemeProvider } from "../components/ThemeProvider";
 import { Toaster } from "@repo/ui";
@@ -21,6 +21,13 @@ const tajawal = Tajawal({
 const satoshi = localFont({
   src: [{ path: './fonts/satoshi/Satoshi-Variable.woff2', weight: '300 900', style: 'normal' }],
   variable: '--font-satoshi',
+  display: 'swap',
+});
+
+const ibmPlexMono = IBM_Plex_Mono({
+  subsets: ['latin'],
+  weight: ['400', '700'],
+  variable: '--font-ibm-plex-mono',
   display: 'swap',
 });
 
@@ -100,7 +107,7 @@ export default async function RootLayout({
   const dir = lang === "ar" ? "rtl" : "ltr";
 
   return (
-    <html lang={lang} dir={dir} className={`${tajawal.variable} ${satoshi.variable}`} suppressHydrationWarning>
+    <html lang={lang} dir={dir} className={`${tajawal.variable} ${satoshi.variable} ${ibmPlexMono.variable}`} suppressHydrationWarning>
       <body className="font-tajawal antialiased text-body">
         <ThemeProvider>
           <ConsentProvider

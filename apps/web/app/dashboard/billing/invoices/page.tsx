@@ -12,6 +12,8 @@ import {
   Eye,
   X,
   Loader2,
+  FileCode2,
+  QrCode,
 } from "lucide-react";
 import {
   Button,
@@ -38,6 +40,7 @@ import Link from "next/link";
 import { PageHeader } from "@repo/ui/components/PageHeader";
 import { getInvoices, getInvoiceById } from "../../../actions/billing";
 import { exportToPDF } from "../../../../lib/export";
+import { ZATCA_STATUS_LABEL, ZATCA_STATUS_VARIANT } from "../../../../lib/domain-labels";
 
 // ─── View-model types ────────────────────────────────────────────────────────
 // These describe the *serialized* shape returned by the billing server actions
@@ -80,6 +83,14 @@ interface InvoiceRow {
   /** Not on the Invoice model — `undefined` at runtime; the payment-method block never renders. */
   paymentMethod?: string | null;
   lineItems?: InvoiceLineItemRow[];
+  // ─── ZATCA e-invoicing fields (present on the Invoice model; both billing actions
+  // return the full row via serialize(), so these arrive without a data-fetch change). ──
+  zatcaStatus?: string | null;
+  zatcaQrCode?: string | null;
+  /** Signed ZATCA XML (standard); falls back to the cleared/stamped XML when set. */
+  xmlContent?: string | null;
+  /** ZATCA-stamped cleared XML (preferred for download when available). */
+  clearedXml?: string | null;
 }
 
 interface InvoicesResult {
@@ -133,6 +144,37 @@ export default function InvoicesPage() {
       setDownloadingId(null);
     }
   };
+
+  // ─── ZATCA helpers ──────────────────────────────────────────────────────────
+  // The signed XML is preferred from the ZATCA-stamped `clearedXml`, else `xmlContent`.
+  function zatcaXmlOf(inv: InvoiceRow): string | null {
+    return inv.clearedXml || inv.xmlContent || null;
+  }
+  // A ZATCA badge is only meaningful once an invoice has a real e-invoicing status.
+  function hasZatca(inv: InvoiceRow): boolean {
+    return !!inv.zatcaStatus && inv.zatcaStatus !== "NOT_APPLICABLE";
+  }
+  // The signed XML is downloadable only once the invoice is cleared/reported.
+  function canDownloadXml(inv: InvoiceRow): boolean {
+    return (
+      (inv.zatcaStatus === "CLEARED" || inv.zatcaStatus === "REPORTED") &&
+      !!zatcaXmlOf(inv)
+    );
+  }
+  // Client-side download of the signed XML as a `.xml` file — no network round-trip.
+  function downloadZatcaXml(inv: InvoiceRow) {
+    const xml = zatcaXmlOf(inv);
+    if (!xml) return;
+    const blob = new Blob([xml], { type: "application/xml;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${inv.invoiceNumber}.xml`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
 
   React.useEffect(() => {
     async function load() {
@@ -222,11 +264,23 @@ export default function InvoicesPage() {
         accessorKey: "status",
         header: t.status,
         cell: ({ row }) => {
-          const status = statusConfig[row.original.status] ?? statusConfig.DRAFT!;
+          const inv = row.original;
+          const status = statusConfig[inv.status] ?? statusConfig.DRAFT!;
+          const zatca = hasZatca(inv) ? ZATCA_STATUS_LABEL[inv.zatcaStatus!] : null;
           return (
-            <Badge variant={badgeVariant(row.original.status)} size="sm">
-              {lang === "ar" ? status.labelAr : status.labelEn}
-            </Badge>
+            <div className="flex flex-col items-start gap-1">
+              <Badge variant={badgeVariant(inv.status)} size="sm">
+                {lang === "ar" ? status.labelAr : status.labelEn}
+              </Badge>
+              {zatca && (
+                <Badge variant={ZATCA_STATUS_VARIANT[inv.zatcaStatus!] ?? "default"} size="sm">
+                  <span className="inline-flex items-center gap-1">
+                    <QrCode className="h-3 w-3" aria-hidden="true" />
+                    {lang === "ar" ? `زاتكا · ${zatca.ar}` : `ZATCA · ${zatca.en}`}
+                  </span>
+                </Badge>
+              )}
+            </div>
           );
         },
         enableSorting: true,
@@ -282,12 +336,20 @@ export default function InvoicesPage() {
               />
               <IconButton
                 icon={downloadingId === inv.id ? Loader2 : Download}
-                aria-label={lang === "ar" ? "تنزيل" : "Download"}
+                aria-label={lang === "ar" ? "تنزيل PDF" : "Download PDF"}
                 variant="ghost"
                 onClick={() => handleDownloadInvoice(inv.id)}
                 disabled={downloadingId === inv.id}
                 className={downloadingId === inv.id ? "animate-spin" : undefined}
               />
+              {canDownloadXml(inv) && (
+                <IconButton
+                  icon={FileCode2}
+                  aria-label={lang === "ar" ? "تنزيل XML المعتمد" : "Download signed XML"}
+                  variant="ghost"
+                  onClick={() => downloadZatcaXml(inv)}
+                />
+              )}
             </div>
           );
         },
@@ -337,6 +399,16 @@ export default function InvoicesPage() {
             <Badge variant={badgeVariant(inv.status)} size="sm">
               {lang === "ar" ? status.labelAr : status.labelEn}
             </Badge>
+            {hasZatca(inv) && (
+              <Badge variant={ZATCA_STATUS_VARIANT[inv.zatcaStatus!] ?? "default"} size="sm">
+                <span className="inline-flex items-center gap-1">
+                  <QrCode className="h-3 w-3" aria-hidden="true" />
+                  {lang === "ar"
+                    ? ZATCA_STATUS_LABEL[inv.zatcaStatus!]!.ar
+                    : ZATCA_STATUS_LABEL[inv.zatcaStatus!]!.en}
+                </span>
+              </Badge>
+            )}
           </div>
         }
       />
@@ -627,6 +699,44 @@ export default function InvoicesPage() {
                 </p>
               </div>
             )}
+
+            {/* ZATCA e-invoicing */}
+            {hasZatca(viewInvoice) && (
+              <div className="border-t border-border pt-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <QrCode className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+                  <p className="text-xs font-semibold text-foreground">
+                    {lang === "ar" ? "الفوترة الإلكترونية (زاتكا)" : "ZATCA e-invoicing"}
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-3">
+                  <Badge variant={ZATCA_STATUS_VARIANT[viewInvoice.zatcaStatus!] ?? "default"} size="sm">
+                    {lang === "ar"
+                      ? ZATCA_STATUS_LABEL[viewInvoice.zatcaStatus!]!.ar
+                      : ZATCA_STATUS_LABEL[viewInvoice.zatcaStatus!]!.en}
+                  </Badge>
+                  {viewInvoice.zatcaQrCode && (
+                    <img
+                      src={`data:image/png;base64,${viewInvoice.zatcaQrCode}`}
+                      alt={lang === "ar" ? "رمز الاستجابة السريعة (QR) لزاتكا" : "ZATCA QR code"}
+                      className="h-20 w-20 rounded border border-border bg-white p-1"
+                    />
+                  )}
+                </div>
+                {canDownloadXml(viewInvoice) && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    style={{ display: "inline-flex" }}
+                    className="gap-2 mt-3 w-full h-11"
+                    onClick={() => downloadZatcaXml(viewInvoice)}
+                  >
+                    <FileCode2 className="w-4 h-4" />
+                    {lang === "ar" ? "تنزيل XML المعتمد" : "Download signed XML"}
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
         )}
       </BottomSheet>
@@ -700,9 +810,21 @@ export default function InvoicesPage() {
                 </div>
                 <div>
                   <p className="text-muted-foreground">{t.status}</p>
-                  <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${(statusConfig[viewInvoice.status] ?? statusConfig.DRAFT!).color}`}>
-                    {lang === "ar" ? (statusConfig[viewInvoice.status] ?? statusConfig.DRAFT!).labelAr : (statusConfig[viewInvoice.status] ?? statusConfig.DRAFT!).labelEn}
-                  </span>
+                  <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+                    <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${(statusConfig[viewInvoice.status] ?? statusConfig.DRAFT!).color}`}>
+                      {lang === "ar" ? (statusConfig[viewInvoice.status] ?? statusConfig.DRAFT!).labelAr : (statusConfig[viewInvoice.status] ?? statusConfig.DRAFT!).labelEn}
+                    </span>
+                    {hasZatca(viewInvoice) && (
+                      <Badge variant={ZATCA_STATUS_VARIANT[viewInvoice.zatcaStatus!] ?? "default"} size="sm">
+                        <span className="inline-flex items-center gap-1">
+                          <QrCode className="h-3 w-3" aria-hidden="true" />
+                          {lang === "ar"
+                            ? `زاتكا · ${ZATCA_STATUS_LABEL[viewInvoice.zatcaStatus!]!.ar}`
+                            : `ZATCA · ${ZATCA_STATUS_LABEL[viewInvoice.zatcaStatus!]!.en}`}
+                        </span>
+                      </Badge>
+                    )}
+                  </div>
                 </div>
                 {viewInvoice.dueDate && (
                   <div>
@@ -760,11 +882,49 @@ export default function InvoicesPage() {
                   <span>{Number(viewInvoice.total).toLocaleString()} {t.sar}</span>
                 </div>
               </div>
+
+              {/* ZATCA e-invoicing */}
+              {hasZatca(viewInvoice) && (
+                <div className="border-t border-border pt-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <QrCode className="h-4 w-4 text-primary" aria-hidden="true" />
+                    <h3 className="text-sm font-bold text-foreground">
+                      {lang === "ar" ? "الفوترة الإلكترونية (زاتكا)" : "ZATCA e-invoicing"}
+                    </h3>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <Badge variant={ZATCA_STATUS_VARIANT[viewInvoice.zatcaStatus!] ?? "default"} size="md">
+                      {lang === "ar"
+                        ? ZATCA_STATUS_LABEL[viewInvoice.zatcaStatus!]!.ar
+                        : ZATCA_STATUS_LABEL[viewInvoice.zatcaStatus!]!.en}
+                    </Badge>
+                    {viewInvoice.zatcaQrCode && (
+                      <img
+                        src={`data:image/png;base64,${viewInvoice.zatcaQrCode}`}
+                        alt={lang === "ar" ? "رمز الاستجابة السريعة (QR) لزاتكا" : "ZATCA QR code"}
+                        className="h-20 w-20 rounded border border-border bg-white p-1"
+                      />
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
             <div className="flex items-center justify-end gap-3 p-6 border-t border-border">
               <Button variant="secondary" size="sm" style={{ display: "inline-flex" }} onClick={() => setViewInvoice(null)}>
                 {lang === "ar" ? "إغلاق" : "Close"}
               </Button>
+              {canDownloadXml(viewInvoice) && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  style={{ display: "inline-flex" }}
+                  className="gap-2"
+                  onClick={() => downloadZatcaXml(viewInvoice)}
+                >
+                  <FileCode2 className="w-4 h-4" />
+                  {lang === "ar" ? "تنزيل XML" : "Download XML"}
+                </Button>
+              )}
               <Button
                 variant="primary"
                 size="sm"

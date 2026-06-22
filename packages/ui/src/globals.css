@@ -338,7 +338,7 @@
   /* Font Families */
   --font-primary: var(--font-tajawal), "Tajawal", sans-serif;
   --font-latin: var(--font-satoshi), "Satoshi", sans-serif;
-  --font-mono: "IBM Plex Mono", monospace;
+  --font-mono: var(--font-ibm-plex-mono), "IBM Plex Mono", monospace;
 
   /* Typography Scale */
   --text-display: 2.25rem;

@@ -13,6 +13,8 @@ import {
   FileText,
   ShieldAlert,
   CreditCard,
+  FileCheck2,
+  FileMinus,
 } from "lucide-react";
 import {
   Button,
@@ -25,13 +27,24 @@ import {
   Skeleton,
   SARAmount,
   Badge,
+  IconButton,
+  ResponsiveDialog,
   DirectionalIcon,
   DataTable,
   type ColumnDef,
 } from "@repo/ui";
 import { PageHeader } from "@repo/ui/components/PageHeader";
 import Link from "next/link";
+import { toast } from "sonner";
 import { adminGetAllInvoices } from "../../../actions/billing";
+import {
+  ZATCA_STATUS_LABEL,
+  ZATCA_STATUS_VARIANT,
+} from "../../../../lib/domain-labels";
+import {
+  clearInvoiceNow,
+  createInvoiceCreditNote,
+} from "../../../actions/zatca/clearance";
 
 type Invoice = {
   id: string;
@@ -46,6 +59,12 @@ type Invoice = {
   currency: string;
   issuedAt: string | null;
   dueDate: string | null;
+  zatcaStatus:
+    | "NOT_APPLICABLE"
+    | "PENDING"
+    | "CLEARED"
+    | "REPORTED"
+    | "REJECTED";
   organization: { id: string; name: string; nameArabic: string | null } | null;
   subscription: { plan: { nameEn: string; nameAr: string } } | null;
 };
@@ -117,7 +136,26 @@ export default function AdminPaymentsPage() {
   const [mobileFilter, setMobileFilter] = React.useState<
     "ALL" | "PAID" | "ISSUED" | "OVERDUE" | "CANCELED"
   >("ALL");
+  const [isPending, startTransition] = React.useTransition();
+  const [creditNoteFor, setCreditNoteFor] = React.useState<Invoice | null>(null);
+  const [creditNoteReason, setCreditNoteReason] = React.useState("");
   const pageSize = 50;
+
+  // Reload the current page of invoices. Re-callable after a ZATCA mutation.
+  const reload = React.useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await adminGetAllInvoices(page, pageSize);
+      setInvoices(data.invoices);
+      setTotalPages(data.totalPages);
+      setTotal(data.total);
+      setPage(data.page);
+    } catch {
+      // Permission or fetch error — leave empty
+    } finally {
+      setLoading(false);
+    }
+  }, [page]);
 
   React.useEffect(() => {
     let active = true;
@@ -141,6 +179,39 @@ export default function AdminPaymentsPage() {
       active = false;
     };
   }, [page]);
+
+  // ── ZATCA actions ─────────────────────────────────────────────────────
+  const handleClear = React.useCallback(
+    (invoiceId: string) => {
+      startTransition(async () => {
+        try {
+          await clearInvoiceNow(invoiceId);
+          toast.success(t("تمت معالجة الفاتورة في هيئة الزكاة", "Invoice submitted to ZATCA"));
+          await reload();
+        } catch {
+          toast.error(t("تعذّر اعتماد الفاتورة. حاول مرة أخرى.", "Couldn't clear the invoice. Try again."));
+        }
+      });
+    },
+    [reload, t]
+  );
+
+  const submitCreditNote = React.useCallback(() => {
+    if (!creditNoteFor || !creditNoteReason.trim()) return;
+    const invoiceId = creditNoteFor.id;
+    const reason = creditNoteReason.trim();
+    startTransition(async () => {
+      try {
+        await createInvoiceCreditNote(invoiceId, reason);
+        toast.success(t("تم إصدار الإشعار الدائن", "Credit note issued"));
+        setCreditNoteFor(null);
+        setCreditNoteReason("");
+        await reload();
+      } catch {
+        toast.error(t("تعذّر إصدار الإشعار الدائن. حاول مرة أخرى.", "Couldn't issue the credit note. Try again."));
+      }
+    });
+  }, [creditNoteFor, creditNoteReason, reload, t]);
 
   // Computed stats
   const totalRevenue = invoices
@@ -319,9 +390,59 @@ export default function AdminPaymentsPage() {
           </span>
         ),
       },
+      {
+        accessorKey: "zatcaStatus",
+        header: t("هيئة الزكاة", "ZATCA"),
+        enableSorting: true,
+        cell: ({ row }) => {
+          const z = row.original.zatcaStatus;
+          const label = ZATCA_STATUS_LABEL[z] ?? { ar: "—", en: "—" };
+          const variant = ZATCA_STATUS_VARIANT[z] ?? "default";
+          return (
+            <Badge variant={variant} size="sm">
+              {t(label.ar, label.en)}
+            </Badge>
+          );
+        },
+      },
+      {
+        id: "actions",
+        header: "",
+        enableSorting: false,
+        enableHiding: false,
+        cell: ({ row }) => {
+          const z = row.original.zatcaStatus;
+          const isCleared = z === "CLEARED";
+          const isReported = z === "REPORTED";
+          return (
+            <div className="flex items-center justify-end gap-1">
+              {!isCleared && !isReported && (
+                <IconButton
+                  icon={FileCheck2}
+                  aria-label={t("اعتماد", "Clear")}
+                  className="text-primary"
+                  disabled={isPending}
+                  onClick={() => handleClear(row.original.id)}
+                />
+              )}
+              {isCleared && (
+                <IconButton
+                  icon={FileMinus}
+                  aria-label={t("إشعار دائن", "Credit note")}
+                  disabled={isPending}
+                  onClick={() => {
+                    setCreditNoteReason("");
+                    setCreditNoteFor(row.original);
+                  }}
+                />
+              )}
+            </div>
+          );
+        },
+      },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `t` is derived from `lang`, which is already a dep; listing `lang` covers every translation read here.
-    [lang]
+    [lang, isPending, handleClear]
   );
 
   // ── Mobile card renderer ──────────────────────────────────────────────
@@ -627,6 +748,66 @@ export default function AdminPaymentsPage() {
           </Card>
         </div>
       </div>
+
+      {/* ─── Credit-note dialog (shared mobile + desktop) ───────────────── */}
+      <ResponsiveDialog
+        open={creditNoteFor !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setCreditNoteFor(null);
+            setCreditNoteReason("");
+          }
+        }}
+        title={t("إصدار إشعار دائن", "Issue credit note")}
+        description={
+          creditNoteFor
+            ? t(
+                `إلغاء/استرداد الفاتورة ${creditNoteFor.invoiceNumber}. سيتم إصدار إشعار دائن واعتماده في هيئة الزكاة.`,
+                `Cancel/refund invoice ${creditNoteFor.invoiceNumber}. A credit note will be issued and cleared with ZATCA.`
+              )
+            : undefined
+        }
+        footer={
+          <div className="flex items-center justify-end gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                setCreditNoteFor(null);
+                setCreditNoteReason("");
+              }}
+              disabled={isPending}
+            >
+              {t("إلغاء", "Cancel")}
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={submitCreditNote}
+              disabled={isPending || !creditNoteReason.trim()}
+            >
+              {t("إصدار الإشعار", "Issue credit note")}
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-2" dir={lang === "ar" ? "rtl" : "ltr"}>
+          <label
+            htmlFor="credit-note-reason"
+            className="block text-xs font-semibold text-foreground"
+          >
+            {t("سبب الإشعار الدائن", "Reason for the credit note")}
+          </label>
+          <textarea
+            id="credit-note-reason"
+            value={creditNoteReason}
+            onChange={(e) => setCreditNoteReason(e.target.value)}
+            rows={3}
+            className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            placeholder={t("مثال: استرداد كامل بناءً على طلب العميل", "e.g. Full refund at customer request")}
+          />
+        </div>
+      </ResponsiveDialog>
     </>
   );
 }
