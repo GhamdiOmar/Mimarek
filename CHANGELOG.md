@@ -1,5 +1,24 @@
 # Changelog — Mimarek PropTech
 
+## [5.2.1] — 2026-06-22 — ZATCA admin polish: natural Arabic label + VAT-only onboarding
+
+**A small UX follow-up to R2.** No schema, data, or clearance-logic change — the money path is untouched.
+
+### Changed
+- **Natural Arabic naming.** The awkward literal "فوترة زاتكا" is replaced everywhere with **"الربط بنظام فاتورة الضريبي"** (page title) / **"زاتكا"** (nav + breadcrumb), and the English label is now **"ZATCA Integration"**. Renamed in `nav-items.ts` (nav seed + breadcrumb), the admin quick-link (`AdminView.tsx`), and the page header (`ZatcaAdminView.tsx`).
+- **VAT-only onboarding form.** Mimarek's tax identity (legal name, CR, national address, industry, invoice flags) is a constant, so the platform-EGS onboarding form no longer re-asks for it. The new **`lib/zatca-platform-config.ts`** (`PLATFORM_SELLER`) is the single source for that identity; `onboardPlatformEgs` defaults everything from it and treats **only the VAT number** as required (OTP stays optional). The form now shows a read-only "Seller (platform) identity" block + the VAT field + OTP — the admin types one value to connect.
+
+### Fixed
+- The read-only national address (romanized Latin text) bidi-scrambled in the Arabic RTL layout — the building number floated to the visual end. Now wrapped `dir="ltr"` so it renders `2322 Prince Sultan, Al-Murabba, Riyadh 23333` in both locales (§6.15.2).
+
+### Notes
+- The full settings-integrated **tenant** ZATCA config flow — reusing each org's completed CR profile from `/dashboard/settings`, so a tenant ADMIN also supplies only the VAT — is **R3 Track B**, not this patch. `PLATFORM_SELLER.crNumber` + national address are sandbox placeholders; the `TODO(R5)` swaps in Mimarek's real registered values before production go-live.
+
+### Verify
+- `check-types` green · `npm run lint` exit 0 · `npm run build` green · `/mimaric-qa` gate · **§3.9 4-theme walk** on `/dashboard/admin/zatca` (light/dark × AR/EN), **zero console errors**, address confirmed LTR in RTL.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimarek/compare/v5.2.0...v5.2.1
+
 ## [5.2.0] — 2026-06-22 — ZATCA Phase-2 (R2 — Track A): SaaS subscription-invoice clearance
 
 **Mimarek's own subscription invoices now clear with ZATCA in real time.** R2 is **Track A** of the program — the platform (Mimarek PropTech Co.) as seller, tenant orgs as buyers, standard B2B clearance. The R1 engine (`@repo/zatca`) is now wired into the app through a thin server-action layer that owns the DB, encryption, auth and the per-EGS hash chain. **Verified live end-to-end against the ZATCA sandbox: onboard → production CSID → build → sign → `clearInvoice` → CLEARED, with the QR parsed from ZATCA's cleared XML (D28).**

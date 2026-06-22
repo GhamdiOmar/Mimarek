@@ -19,7 +19,6 @@ import {
   CardContent,
   Badge,
   Input,
-  CRInput,
   EmptyState,
   DataTable,
   ResponsiveDialog,
@@ -39,6 +38,7 @@ import {
   onboardPlatformEgs,
   resetPlatformEgs,
 } from "../../../actions/zatca/onboarding";
+import { PLATFORM_SELLER } from "../../../../lib/zatca-platform-config";
 
 // ─── Prop types (derived from the server action's serialized return) ──────────
 type Summary = Awaited<ReturnType<typeof getPlatformEgsSummary>>;
@@ -78,12 +78,8 @@ export default function ZatcaAdminView({ egs, logs }: ZatcaAdminViewProps) {
 
   const isActive = egs != null && egs.status === "ACTIVE";
 
-  // ── Onboard form state ────────────────────────────────────────────────
+  // ── Onboard form state — VAT + OTP only; the company identity is fixed (PLATFORM_SELLER).
   const [vatNumber, setVatNumber] = React.useState("");
-  const [crNumber, setCrNumber] = React.useState("");
-  const [legalNameEn, setLegalNameEn] = React.useState("");
-  const [legalNameAr, setLegalNameAr] = React.useState("");
-  const [invoiceTypeFlags, setInvoiceTypeFlags] = React.useState("1100");
   const [otp, setOtp] = React.useState("123456");
   const [formError, setFormError] = React.useState<string | null>(null);
 
@@ -100,33 +96,22 @@ export default function ZatcaAdminView({ egs, logs }: ZatcaAdminViewProps) {
         setFormError(t("رقم ضريبة القيمة المضافة يجب أن يتكوّن من 15 رقمًا.", "The VAT number must be exactly 15 digits."));
         return;
       }
-      if (!legalNameEn.trim()) {
-        setFormError(t("الاسم النظامي (بالإنجليزية) مطلوب.", "The legal name (English) is required."));
-        return;
-      }
 
       startTransition(async () => {
         try {
-          await onboardPlatformEgs({
-            vatNumber: vatNumber.trim(),
-            crNumber: crNumber.trim() || undefined,
-            legalNameEn: legalNameEn.trim(),
-            legalNameAr: legalNameAr.trim() || undefined,
-            invoiceTypeFlags: invoiceTypeFlags.trim() || undefined,
-            otp: otp.trim() || undefined,
-          });
-          toast.success(t("تم تهيئة جهاز إصدار الفواتير بنجاح.", "EGS onboarded successfully."));
+          await onboardPlatformEgs({ vatNumber: vatNumber.trim(), otp: otp.trim() || undefined });
+          toast.success(t("تم الربط بنجاح.", "Connected to ZATCA successfully."));
         } catch (err) {
           const message =
             err instanceof Error
               ? err.message
-              : t("تعذّرت التهيئة. حاول مرة أخرى.", "Onboarding failed. Please try again.");
+              : t("تعذّر الربط. حاول مرة أخرى.", "Connection failed. Please try again.");
           setFormError(message);
           toast.error(message);
         }
       });
     },
-    [vatNumber, crNumber, legalNameEn, legalNameAr, invoiceTypeFlags, otp, t],
+    [vatNumber, otp, t],
   );
 
   const onReset = React.useCallback(() => {
@@ -236,10 +221,10 @@ export default function ZatcaAdminView({ egs, logs }: ZatcaAdminViewProps) {
         </div>
         <PageHeader
           className="flex-1"
-          title={t("فوترة زاتكا", "ZATCA e-invoicing")}
+          title={t("الربط بنظام فاتورة الضريبي", "ZATCA Integration")}
           description={t(
-            "تهيئة جهاز إصدار فواتير المنصة واعتماد فواتير الاشتراكات لحظيًا مع هيئة الزكاة والضريبة والجمارك.",
-            "Onboard the platform billing EGS and clear subscription invoices with ZATCA in real time.",
+            "اربط جهاز إصدار فواتير المنصة لاعتماد فواتير الاشتراكات لحظيًا مع هيئة الزكاة والضريبة والجمارك.",
+            "Connect the platform billing EGS to clear subscription invoices with ZATCA in real time.",
           )}
         />
       </div>
@@ -358,13 +343,41 @@ export default function ZatcaAdminView({ egs, logs }: ZatcaAdminViewProps) {
               </p>
             )}
 
-            <form onSubmit={onOnboardSubmit} className="space-y-4">
-              <p className="text-xs text-muted-foreground">
-                {t("الحقول المطلوبة معلّمة بـ *", "Required fields marked with *")}
-              </p>
+            <form onSubmit={onOnboardSubmit} className="space-y-5">
+              {/* Seller identity is FIXED (Mimarek PropTech Co.) — shown read-only, never re-asked. */}
+              <div className="rounded-md border border-border bg-muted/40 p-4">
+                <p className="mb-3 text-xs font-semibold text-foreground">
+                  {t("بيانات البائع (المنصة)", "Seller (platform) identity")}
+                </p>
+                <dl className="grid grid-cols-1 gap-x-8 gap-y-2 text-xs sm:grid-cols-2">
+                  <div className="flex justify-between gap-2">
+                    <dt className="text-muted-foreground">{t("الاسم النظامي", "Legal name")}</dt>
+                    <dd className="text-foreground">
+                      {lang === "ar" ? PLATFORM_SELLER.legalNameAr : PLATFORM_SELLER.legalNameEn}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between gap-2">
+                    <dt className="text-muted-foreground">{t("السجل التجاري", "CR")}</dt>
+                    <dd dir="ltr" className="font-mono tabular-nums text-foreground">{PLATFORM_SELLER.crNumber}</dd>
+                  </div>
+                  <div className="flex justify-between gap-2 sm:col-span-2">
+                    <dt className="shrink-0 text-muted-foreground">{t("العنوان الوطني", "National address")}</dt>
+                    {/* Romanized Latin address — keep LTR so the building number doesn't bidi-scramble in RTL (§6.15.2). */}
+                    <dd dir="ltr" className="text-end text-foreground">
+                      {`${PLATFORM_SELLER.nationalAddress.buildingNumber} ${PLATFORM_SELLER.nationalAddress.streetName}, ${PLATFORM_SELLER.nationalAddress.district}, ${PLATFORM_SELLER.nationalAddress.city} ${PLATFORM_SELLER.nationalAddress.postalCode}`}
+                    </dd>
+                  </div>
+                </dl>
+                <p className="mt-3 text-[11px] text-muted-foreground">
+                  {t(
+                    "بيانات الشركة ثابتة — أدخل رقم ضريبة القيمة المضافة فقط لإتمام الربط.",
+                    "Company details are fixed — enter only the VAT number to connect.",
+                  )}
+                </p>
+              </div>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                {/* VAT — 15 digits */}
+                {/* VAT — the only required input */}
                 <div className="space-y-1.5">
                   <label htmlFor="zatca-vat" className="block text-xs font-semibold text-foreground">
                     {t("رقم ضريبة القيمة المضافة *", "VAT number *")}
@@ -386,68 +399,7 @@ export default function ZatcaAdminView({ egs, logs }: ZatcaAdminViewProps) {
                   </p>
                 </div>
 
-                {/* CR — optional, CRInput */}
-                <div className="space-y-1.5">
-                  <label htmlFor="zatca-cr" className="block text-xs font-semibold text-foreground">
-                    {t("السجل التجاري (اختياري)", "Commercial registration (optional)")}
-                  </label>
-                  <CRInput
-                    id="zatca-cr"
-                    value={crNumber}
-                    onChange={setCrNumber}
-                    className="font-mono tabular-nums"
-                  />
-                </div>
-
-                {/* Legal name EN — required */}
-                <div className="space-y-1.5">
-                  <label htmlFor="zatca-name-en" className="block text-xs font-semibold text-foreground">
-                    {t("الاسم النظامي (بالإنجليزية) *", "Legal name (English) *")}
-                  </label>
-                  <Input
-                    id="zatca-name-en"
-                    dir="ltr"
-                    value={legalNameEn}
-                    onChange={(e) => setLegalNameEn(e.target.value)}
-                    placeholder="Mimarek PropTech Co."
-                  />
-                </div>
-
-                {/* Legal name AR — optional */}
-                <div className="space-y-1.5">
-                  <label htmlFor="zatca-name-ar" className="block text-xs font-semibold text-foreground">
-                    {t("الاسم النظامي (بالعربية) (اختياري)", "Legal name (Arabic) (optional)")}
-                  </label>
-                  <Input
-                    id="zatca-name-ar"
-                    dir="rtl"
-                    value={legalNameAr}
-                    onChange={(e) => setLegalNameAr(e.target.value)}
-                    placeholder="شركة معمارك للتقنية العقارية"
-                  />
-                </div>
-
-                {/* Invoice type flags — default 1100 */}
-                <div className="space-y-1.5">
-                  <label htmlFor="zatca-flags" className="block text-xs font-semibold text-foreground">
-                    {t("أعلام نوع الفاتورة (اختياري)", "Invoice type flags (optional)")}
-                  </label>
-                  <Input
-                    id="zatca-flags"
-                    dir="ltr"
-                    inputMode="numeric"
-                    maxLength={4}
-                    value={invoiceTypeFlags}
-                    onChange={(e) => setInvoiceTypeFlags(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                    className="font-mono tabular-nums"
-                    placeholder="1100"
-                  />
-                  <p className="text-[11px] text-muted-foreground">
-                    {t("الافتراضي 1100 (فاتورة قياسية B2B).", "Default 1100 (standard B2B invoice).")}
-                  </p>
-                </div>
-
-                {/* OTP — default 123456 sandbox */}
+                {/* OTP — default 123456 (sandbox does not validate it) */}
                 <div className="space-y-1.5">
                   <label htmlFor="zatca-otp" className="block text-xs font-semibold text-foreground">
                     {t("رمز التحقق (اختياري)", "OTP (optional)")}
@@ -477,13 +429,11 @@ export default function ZatcaAdminView({ egs, logs }: ZatcaAdminViewProps) {
               <div className="flex justify-end">
                 <Button
                   type="submit"
-                  disabled={isPending || !vatValid || !legalNameEn.trim()}
+                  disabled={isPending || !vatValid}
                   style={{ display: "inline-flex" }}
                   className="gap-2"
                 >
-                  {isPending
-                    ? t("جارٍ التهيئة…", "Onboarding…")
-                    : t("تهيئة الجهاز", "Onboard EGS")}
+                  {isPending ? t("جارٍ الربط…", "Connecting…") : t("الربط بزاتكا", "Connect to ZATCA")}
                 </Button>
               </div>
             </form>

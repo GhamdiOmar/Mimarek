@@ -9,6 +9,7 @@ import { ROUTES } from "../../../lib/routes";
 import { generateCsr, createZatcaClient, ZatcaError } from "@repo/zatca";
 import { encryptZatca, encryptZatcaOptional } from "../../../lib/zatca-crypto";
 import { EGS_PUBLIC_SELECT, getPlatformEgs } from "../../../lib/zatca-server";
+import { PLATFORM_SELLER } from "../../../lib/zatca-platform-config";
 
 /**
  * Track-A platform-EGS onboarding (Mimarek PropTech Co. as the SaaS-billing seller).
@@ -24,9 +25,9 @@ import { EGS_PUBLIC_SELECT, getPlatformEgs } from "../../../lib/zatca-server";
 
 // Module-private input shape (a "use server" file may export only async functions, §4).
 interface OnboardInput {
-  vatNumber: string; // 15-digit
+  vatNumber: string; // 15-digit — the only required input
   crNumber?: string;
-  legalNameEn: string;
+  legalNameEn?: string; // defaults to PLATFORM_SELLER.legalNameEn
   legalNameAr?: string;
   egsSerialNumber?: string; // 1-<sol>|2-<model>|3-<uuid>
   invoiceTypeFlags?: string; // CSR title flags, default 1100 (standard B2B)
@@ -43,9 +44,13 @@ export async function onboardPlatformEgs(rawInput: OnboardInput) {
   if (!input.vatNumber || !/^\d{15}$/.test(input.vatNumber)) {
     throw new Error("A valid 15-digit VAT number is required to onboard the ZATCA EGS.");
   }
-  if (!input.legalNameEn?.trim()) {
-    throw new Error("The seller legal name is required.");
-  }
+  // Mimarek's company tax identity is FIXED (PLATFORM_SELLER) — the form collects only
+  // the VAT (+ a one-time OTP). Everything else defaults from config, so the admin never
+  // re-types the company profile. Inputs, when present, still win (override for edge cases).
+  const legalNameEn = input.legalNameEn?.trim() || PLATFORM_SELLER.legalNameEn;
+  const legalNameAr = input.legalNameAr?.trim() || PLATFORM_SELLER.legalNameAr;
+  const crNumber = input.crNumber?.trim() || PLATFORM_SELLER.crNumber || null;
+  const industryCategory = input.industryCategory?.trim() || PLATFORM_SELLER.industryCategory;
 
   // Enforce a single platform EGS per environment (NULL-org rows are NULL-distinct,
   // so app logic owns this invariant). Reuse a DRAFT/RESET row; refuse to clobber ACTIVE.
@@ -57,7 +62,7 @@ export async function onboardPlatformEgs(rawInput: OnboardInput) {
   const egsSerialNumber =
     input.egsSerialNumber?.trim() ||
     `${SANDBOX_BASE_SERIAL}${crypto.randomUUID()}`;
-  const invoiceTypeFlags = input.invoiceTypeFlags?.trim() || "1100";
+  const invoiceTypeFlags = input.invoiceTypeFlags?.trim() || PLATFORM_SELLER.invoiceTypeFlags;
   const commonName = `TST-886431145-${input.vatNumber}`;
 
   // 1. CSR (sandbox template). secp256k1 keypair + PKCS#10.
@@ -66,11 +71,11 @@ export async function onboardPlatformEgs(rawInput: OnboardInput) {
     serialNumber: egsSerialNumber,
     organizationIdentifier: input.vatNumber,
     organizationUnitName: input.vatNumber.slice(0, 10),
-    organizationName: input.legalNameEn,
+    organizationName: legalNameEn,
     countryName: "SA",
     invoiceType: invoiceTypeFlags,
-    locationAddress: "Riyadh",
-    industryBusinessCategory: input.industryCategory?.trim() || "Software",
+    locationAddress: PLATFORM_SELLER.nationalAddress.city,
+    industryBusinessCategory: industryCategory,
     environment: "sandbox",
   });
 
@@ -108,11 +113,12 @@ export async function onboardPlatformEgs(rawInput: OnboardInput) {
     egsSerialNumber,
     commonName,
     vatNumber: input.vatNumber,
-    crNumber: input.crNumber?.trim() || null,
-    legalNameEn: input.legalNameEn.trim(),
-    legalNameAr: input.legalNameAr?.trim() || null,
+    crNumber,
+    legalNameEn,
+    legalNameAr,
+    nationalAddress: { ...PLATFORM_SELLER.nationalAddress },
     invoiceTypeFlags,
-    industryCategory: input.industryCategory?.trim() || null,
+    industryCategory,
     privateKeyPem: encryptZatca(privateKeyPem),
     csrPem: encryptZatca(csrPem),
     complianceRequestId: encryptZatcaOptional(String(compliance.requestId)),
