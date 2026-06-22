@@ -462,8 +462,17 @@ export async function createTenantCreditNote(originalDocumentId: string, reason:
   const egs = await db.zatcaEgsUnit.findUnique({ where: { id: original.egsUnitId } });
   if (!egs) return { outcome: "SKIPPED" };
 
+  // Idempotency (H1): one credit note per original document — never double-credit. The
+  // tenant_document_cn_idem partial-unique index backs this against races (P2002 → re-fetch).
+  const existingCn = await db.tenantDocument.findFirst({
+    where: { originalDocumentId: original.id, documentType: "CREDIT_NOTE" },
+  });
+  if (existingCn) return { outcome: outcomeFromStatus(existingCn), documentId: existingCn.id };
+
   const year = new Date().getFullYear();
-  const note = await db.$transaction(async (tx) => {
+  let note;
+  try {
+    note = await db.$transaction(async (tx) => {
     const seq = await getNextSequenceValue(tx, `egs:${egs.id}`, "TENANT_DOCUMENT", year);
     return tx.tenantDocument.create({
       data: {
@@ -505,7 +514,16 @@ export async function createTenantCreditNote(originalDocumentId: string, reason:
         },
       },
     });
-  });
+    });
+  } catch (e) {
+    if (isP2002(e)) {
+      const dup = await db.tenantDocument.findFirst({
+        where: { originalDocumentId: original.id, documentType: "CREDIT_NOTE" },
+      });
+      if (dup) return { outcome: outcomeFromStatus(dup), documentId: dup.id };
+    }
+    throw e;
+  }
 
   return clearTenantDocumentInternal(note.id);
 }

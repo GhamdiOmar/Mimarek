@@ -11,3 +11,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS "tenant_document_rent_idem"
 CREATE UNIQUE INDEX IF NOT EXISTS "tenant_document_ppi_idem"
   ON public."TenantDocument" ("paymentPlanInstallmentId", "sourceKey")
   WHERE "paymentPlanInstallmentId" IS NOT NULL AND "sourceKey" IS NOT NULL AND "documentType" <> 'CREDIT_NOTE';
+
+-- H1 — exactly ONE credit note per original document (never double-credit a reversal).
+CREATE UNIQUE INDEX IF NOT EXISTS "tenant_document_cn_idem"
+  ON public."TenantDocument" ("originalDocumentId")
+  WHERE "originalDocumentId" IS NOT NULL AND "documentType" = 'CREDIT_NOTE';

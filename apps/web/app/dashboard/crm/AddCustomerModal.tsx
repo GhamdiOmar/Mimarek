@@ -21,6 +21,8 @@ import {
   NationalIdInput,
   SaudiPhoneInput,
   SARAmountInput,
+  AddressPicker,
+  type SaudiAddress,
 } from "@repo/ui";
 import { cn } from "@repo/ui/lib/utils";
 import { createCustomer } from "../../actions/customers";
@@ -152,6 +154,8 @@ export function AddCustomerModal({
         crNumber: z.string().optional(),
         companyNameAr: z.string().optional(),
         companyNameEn: z.string().optional(),
+        // National address — required for a B2B cleared tax invoice (D18 data gate).
+        address: z.any().optional(),
       }),
     [lang],
   );
@@ -187,6 +191,7 @@ export function AddCustomerModal({
       crNumber: "",
       companyNameAr: "",
       companyNameEn: "",
+      address: undefined,
     },
   });
 
@@ -227,6 +232,7 @@ export function AddCustomerModal({
         crNumber: "",
         companyNameAr: "",
         companyNameEn: "",
+        address: undefined,
       });
       setUnitSearch("");
       setSelectedUnit(null);
@@ -275,6 +281,7 @@ export function AddCustomerModal({
         crNumber: values.crNumber || undefined,
         companyNameAr: values.companyNameAr || undefined,
         companyNameEn: values.companyNameEn || undefined,
+        address: values.address || undefined,
       });
 
       // Link property interest if a unit + intent was selected
@@ -907,6 +914,23 @@ export function AddCustomerModal({
                             <Input {...f} dir="rtl" value={field.value ?? ""} onChange={field.onChange} onBlur={field.onBlur} placeholder="شركة" />
                           )}
                         </Field>
+                      )}
+                    />
+                    <Controller
+                      name="address"
+                      control={control}
+                      render={({ field }) => (
+                        <div className="col-span-2 space-y-1.5">
+                          <label className="block text-xs font-semibold text-foreground">
+                            {lang === "ar" ? "العنوان الوطني" : "National address"}
+                          </label>
+                          <AddressPicker
+                            value={(field.value as SaudiAddress | undefined) ?? undefined}
+                            onChange={field.onChange}
+                            locale={lang}
+                            showDistrict
+                          />
+                        </div>
                       )}
                     />
                     <p className="col-span-2 text-[11px] text-muted-foreground">

@@ -403,17 +403,21 @@ export async function bulkMarkInstallmentsPaid(ids: string[]) {
   });
 
   // ZATCA Track C (R4 / H2): issue a tenant document for EACH bulk-collected installment —
-  // loop, no skip. Best-effort; never blocks (L26). Same sourceKey as the ledger dedup.
+  // no skip. Best-effort; never blocks (L26). Parallel (allSettled — the wrappers never throw)
+  // so a large batch doesn't serialize N ZATCA round-trips. Same sourceKey as the ledger dedup.
   if (session.organizationId) {
-    for (const a of applied) {
-      await issueForChargeBestEffort({
-        kind: "RENT_INSTALLMENT",
-        organizationId: session.organizationId,
-        rentInstallmentId: a.id,
-        amount: a.amount,
-        sourceKey: a.sourceKey,
-      });
-    }
+    const orgId = session.organizationId;
+    await Promise.allSettled(
+      applied.map((a) =>
+        issueForChargeBestEffort({
+          kind: "RENT_INSTALLMENT",
+          organizationId: orgId,
+          rentInstallmentId: a.id,
+          amount: a.amount,
+          sourceKey: a.sourceKey,
+        }),
+      ),
+    );
   }
 
   revalidatePath(ROUTES.payments);

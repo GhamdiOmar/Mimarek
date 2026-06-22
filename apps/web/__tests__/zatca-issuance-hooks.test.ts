@@ -28,10 +28,10 @@ describe("ZATCA Track C — every money-movement path issues a document (no sile
     expect(fnBody(installments, "recordPayment", "bulkMarkInstallmentsPaid")).toContain("issueForChargeBestEffort");
   });
 
-  it("H2 bulkMarkInstallmentsPaid issues each collected installment (loops over `applied`)", () => {
+  it("H2 bulkMarkInstallmentsPaid issues each collected installment (maps over `applied`)", () => {
     const body = fnBody(installments, "bulkMarkInstallmentsPaid", "reverseRentPayment");
     expect(body).toContain("issueForChargeBestEffort");
-    expect(body).toMatch(/for\s*\(const\s+\w+\s+of\s+applied\)/);
+    expect(body).toMatch(/applied\.map|of\s+applied/);
   });
 
   it("H3 reverseRentPayment issues a credit note", () => {
