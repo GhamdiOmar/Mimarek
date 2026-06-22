@@ -175,16 +175,33 @@ export async function onboardTenantEgs(rawInput: TenantOnboardInput) {
   return serialize(egs);
 }
 
-/** The tenant org's own EGS summary + recent clearance attempts for the settings surface. */
+/**
+ * The tenant org's own EGS summary + recent clearance attempts + the org's tax-identity
+ * profile (for the read-only identity block + the VAT default) for the settings surface.
+ * Org-scoped — the profile fields are non-secret business identifiers only.
+ */
 export async function getTenantEgsSummary() {
   const session = await requirePermission("zatca:config");
   const organizationId = session.organizationId;
   if (!organizationId) throw new Error("An organization context is required.");
 
-  const egs = await db.zatcaEgsUnit.findFirst({
-    where: { organizationId, environment: "SANDBOX" },
-    select: EGS_PUBLIC_SELECT,
-  });
+  const [egs, org] = await Promise.all([
+    db.zatcaEgsUnit.findFirst({
+      where: { organizationId, environment: "SANDBOX" },
+      select: EGS_PUBLIC_SELECT,
+    }),
+    db.organization.findUnique({
+      where: { id: organizationId },
+      select: {
+        name: true,
+        nameArabic: true,
+        nameEnglish: true,
+        crNumber: true,
+        vatNumber: true,
+        nationalAddress: true,
+      },
+    }),
+  ]);
   const logs = egs
     ? await db.zatcaClearanceLog.findMany({
         where: { egsUnitId: egs.id },
@@ -192,7 +209,7 @@ export async function getTenantEgsSummary() {
         take: 25,
       })
     : [];
-  return serialize({ egs, logs });
+  return serialize({ egs, org, logs });
 }
 
 function onboardError(stage: string, err: unknown): Error {
