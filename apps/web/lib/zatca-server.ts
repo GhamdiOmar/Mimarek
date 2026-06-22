@@ -64,6 +64,19 @@ export async function getPlatformEgs(environment: ZatcaEnvironment = "SANDBOX"):
   return db.zatcaEgsUnit.findFirst({ where: { organizationId: null, environment } });
 }
 
+/**
+ * A tenant org's own EGS row for an environment (Track B / R3). ORG-SCOPED — the
+ * caller MUST pass the session's organizationId; this is the cross-org isolation
+ * boundary for the tenant config surface. Returns full row (server-only); client
+ * DTOs go through {@link EGS_PUBLIC_SELECT}.
+ */
+export async function getTenantEgs(
+  organizationId: string,
+  environment: ZatcaEnvironment = "SANDBOX",
+): Promise<ZatcaEgsUnit | null> {
+  return db.zatcaEgsUnit.findFirst({ where: { organizationId, environment } });
+}
+
 /** Decrypted production (or compliance-fallback) credentials + signing material for an EGS. */
 export interface EgsSigningContext {
   credentials: ZatcaCredentials;

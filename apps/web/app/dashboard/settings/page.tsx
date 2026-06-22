@@ -19,6 +19,7 @@ import {
   Loader2,
   Trash2,
   Mail,
+  ReceiptText,
 } from "lucide-react";
 import {
   Button,
@@ -668,6 +669,25 @@ export default function OrgSettingsPage() {
                 <span className="text-muted-foreground rtl:scale-x-[-1]">›</span>
               </Link>
             )}
+            {can("zatca:config") && (
+              <Link
+                href="/dashboard/settings/zatca"
+                className="flex items-center gap-3 px-4 py-3 min-h-[44px] border-b border-border hover:bg-muted/30 transition-colors"
+              >
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <ReceiptText className="h-5 w-5" />
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-foreground">
+                    {t("الربط بنظام فاتورة الضريبي", "ZATCA E-Invoicing")}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">
+                    {t("الفوترة الإلكترونية مع زاتكا", "Phase-2 e-invoicing with ZATCA")}
+                  </p>
+                </div>
+                <span className="text-muted-foreground rtl:scale-x-[-1]">›</span>
+              </Link>
+            )}
             <Link
               href="/dashboard/settings/security"
               className="flex items-center gap-3 px-4 py-3 min-h-[44px] hover:bg-muted/30 transition-colors"
@@ -1305,6 +1325,24 @@ export default function OrgSettingsPage() {
                   </p>
                   <p className="text-[10px] text-muted-foreground">
                     {t("تتبع الوصول والتعديلات", "Track access & changes")}
+                  </p>
+                </div>
+              </Link>
+            )}
+            {can("zatca:config") && (
+              <Link
+                href="/dashboard/settings/zatca"
+                className="flex items-center gap-3 p-3 rounded-md hover:bg-muted/30 transition-colors group"
+              >
+                <div className="p-2 bg-primary/5 rounded text-primary group-hover:bg-primary/10 transition-colors">
+                  <ReceiptText className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-foreground">
+                    {t("الربط بنظام فاتورة الضريبي", "ZATCA E-Invoicing")}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">
+                    {t("الفوترة الإلكترونية مع زاتكا", "Phase-2 e-invoicing with ZATCA")}
                   </p>
                 </div>
               </Link>

@@ -56,6 +56,8 @@ model Organization {
   invoices             Invoice[]
   couponRedemptions    CouponRedemption[]
   zatcaEgsUnits        ZatcaEgsUnit[]            @relation("OrgZatcaEgsUnits")
+  zatcaBranches        ZatcaBranch[]             @relation("OrgZatcaBranches")
+  zatcaTaxConfigs      OrgZatcaTaxConfig[]       @relation("OrgZatcaTaxConfig")
 
   // ── Marketplace relations ──
   marketplaceSellerListings  MarketplaceListing[]      @relation("MarketplaceSellerListings")
@@ -72,10 +74,10 @@ model Organization {
   // These mirror the child tables' direct `organizationId` column added for
   // org-scoped list/AR queries. They are denormalized — the canonical owner is
   // still Unit/PaymentPlan — so the relation names are suffixed `…Denorm`.
-  leasesDenorm                   Lease[]                  @relation("LeaseOrg")
-  reservationsDenorm             Reservation[]            @relation("ReservationOrg")
-  paymentPlansDenorm             PaymentPlan[]            @relation("PaymentPlanOrg")
-  paymentPlanInstallmentsDenorm  PaymentPlanInstallment[] @relation("PaymentPlanInstallmentOrg")
+  leasesDenorm                  Lease[]                  @relation("LeaseOrg")
+  reservationsDenorm            Reservation[]            @relation("ReservationOrg")
+  paymentPlansDenorm            PaymentPlan[]            @relation("PaymentPlanOrg")
+  paymentPlanInstallmentsDenorm PaymentPlanInstallment[] @relation("PaymentPlanInstallmentOrg")
 }
 
 enum OrgType {
@@ -126,38 +128,38 @@ enum RegistrationStatus {
 // ─── User ─────────────────────────────────────────────────────────────────────
 
 model User {
-  id                   String               @id @default(cuid())
-  email                String               @unique
-  name                 String?
-  password             String
-  role                 UserRole             @default(USER)
-  organizationId       String?
-  organization         Organization?        @relation(fields: [organizationId], references: [id])
-  accountType          String? // "individual" | "company"
-  onboardingCompleted  Boolean              @default(false)
-  emailVerified        DateTime? // null = unverified → login denied (EMAIL_NOT_VERIFIED). Set on confirm. Existing rows backfilled to now().
-  invitedBy            String? // userId of the person who invited this user
-  invitedVia           String? // "registration" | "invitation" | "direct" | "join_request"
-  customers            Customer[]           @relation("AssignedCustomers")
-  assignedMaintenance  MaintenanceRequest[] @relation("AssignedMaintenance")
-  preferences          Json?
-  resetTokens          PasswordResetToken[]
+  id                      String                   @id @default(cuid())
+  email                   String                   @unique
+  name                    String?
+  password                String
+  role                    UserRole                 @default(USER)
+  organizationId          String?
+  organization            Organization?            @relation(fields: [organizationId], references: [id])
+  accountType             String? // "individual" | "company"
+  onboardingCompleted     Boolean                  @default(false)
+  emailVerified           DateTime? // null = unverified → login denied (EMAIL_NOT_VERIFIED). Set on confirm. Existing rows backfilled to now().
+  invitedBy               String? // userId of the person who invited this user
+  invitedVia              String? // "registration" | "invitation" | "direct" | "join_request"
+  customers               Customer[]               @relation("AssignedCustomers")
+  assignedMaintenance     MaintenanceRequest[]     @relation("AssignedMaintenance")
+  preferences             Json?
+  resetTokens             PasswordResetToken[]
   emailVerificationTokens EmailVerificationToken[]
-  notifications        Notification[]
-  permissionRequests   PermissionRequest[]  @relation("PermissionRequests")
-  reviewedRequests     PermissionRequest[]  @relation("ReviewedRequests")
-  supportTickets       SupportTicket[]      @relation("SupportTickets")
-  assignedTickets      SupportTicket[]      @relation("AssignedTickets")
-  ticketMessages       TicketMessage[]      @relation("TicketMessages")
-  sentInvitations      Invitation[]         @relation("SentInvitations")
-  receivedInvitation   Invitation?          @relation("ReceivedInvitation")
-  joinRequests         JoinRequest[]        @relation("UserJoinRequests")
-  reviewedJoinRequests JoinRequest[]        @relation("JoinReviewers")
-  customerActivities   CustomerActivity[]   @relation("ActivityCreator")
-  savedTableViews      SavedTableView[]
-  lastActiveAt         DateTime? // Debounced sign-in / authed-request timestamp — powers admin-no-login KPIs
-  createdAt            DateTime             @default(now())
-  updatedAt            DateTime             @updatedAt
+  notifications           Notification[]
+  permissionRequests      PermissionRequest[]      @relation("PermissionRequests")
+  reviewedRequests        PermissionRequest[]      @relation("ReviewedRequests")
+  supportTickets          SupportTicket[]          @relation("SupportTickets")
+  assignedTickets         SupportTicket[]          @relation("AssignedTickets")
+  ticketMessages          TicketMessage[]          @relation("TicketMessages")
+  sentInvitations         Invitation[]             @relation("SentInvitations")
+  receivedInvitation      Invitation?              @relation("ReceivedInvitation")
+  joinRequests            JoinRequest[]            @relation("UserJoinRequests")
+  reviewedJoinRequests    JoinRequest[]            @relation("JoinReviewers")
+  customerActivities      CustomerActivity[]       @relation("ActivityCreator")
+  savedTableViews         SavedTableView[]
+  lastActiveAt            DateTime? // Debounced sign-in / authed-request timestamp — powers admin-no-login KPIs
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
 
   @@index([organizationId])
   @@index([organizationId, lastActiveAt])
@@ -178,7 +180,7 @@ model SavedTableView {
   config         Json
   isShared       Boolean      @default(false)
   createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt @default(now())
+  updatedAt      DateTime     @default(now()) @updatedAt
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -250,7 +252,7 @@ model Unit {
 // ─── Customer (Absher individual data aligned) ────────────────────────────────
 
 model Customer {
-  id                   String                     @id @default(cuid())
+  id                   String               @id @default(cuid())
   name                 String
   nameArabic           String? // Full name in Arabic
   email                String?
@@ -269,31 +271,33 @@ model Customer {
   phoneHash            String? // HMAC-SHA256 blind index (lib/encryption.ts hashForSearch) for exact search on encrypted phone (E.164-normalized)
   emailHash            String? // HMAC-SHA256 blind index (lib/encryption.ts hashForSearch) for exact search on encrypted email
   // RED: Buyer profile enhancements
-  preferredLanguage    String?                    @default("ar")
+  preferredLanguage    String?              @default("ar")
   authorizedSignatory  String? // For corporate buyers
   companyDocuments     Json? // For corporate buyers
-  status               CustomerStatus             @default(NEW)
+  status               CustomerStatus       @default(NEW)
   source               String?
-  budget               Decimal?                   @db.Decimal(14, 2) // Customer's budget in SAR
+  budget               Decimal?             @db.Decimal(14, 2) // Customer's budget in SAR
   propertyTypeInterest String? // e.g. "APARTMENT", "VILLA", "OFFICE"
   lostReason           String? // Reason for LOST status
   organizationId       String
-  organization         Organization               @relation(fields: [organizationId], references: [id])
+  organization         Organization         @relation(fields: [organizationId], references: [id])
   agentId              String?
-  agent                User?                      @relation("AssignedCustomers", fields: [agentId], references: [id])
+  agent                User?                @relation("AssignedCustomers", fields: [agentId], references: [id])
   reservations         Reservation[]
   contracts            Contract[]
   leases               Lease[]
   documents            Document[]
   activities           CustomerActivity[]
   propertyInterests    Deal[]
-  marketplaceInquiries MarketplaceInquiry[]       @relation("MarketplaceInquiryCustomer")
+  marketplaceInquiries MarketplaceInquiry[] @relation("MarketplaceInquiryCustomer")
   // Timestamp the customer entered its CURRENT pipeline stage (status). Distinct from
   // updatedAt (which any edit bumps). Set on status change in updateCustomerStatus.
   // @default(now()) safely backfills existing rows on `db push` (nullable + defaulted).
-  stageEnteredAt      DateTime?                  @default(now())
-  createdAt            DateTime                   @default(now())
-  updatedAt            DateTime                   @updatedAt
+  stageEnteredAt       DateTime?            @default(now())
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  // NOTE: @@index([nationalId]) removed in v4.18.0 — it indexed random-IV ciphertext
+  // (never equality-matched), so it was pure write-amplification dead weight.
 
   @@index([organizationId])
   @@index([agentId])
@@ -304,8 +308,6 @@ model Customer {
   @@index([organizationId, phoneHash])
   @@index([organizationId, emailHash])
   @@index([organizationId, nationalIdHash])
-  // NOTE: @@index([nationalId]) removed in v4.18.0 — it indexed random-IV ciphertext
-  // (never equality-matched), so it was pure write-amplification dead weight.
 }
 
 enum PersonType {
@@ -442,9 +444,9 @@ model Contract {
   termsAndConditions   String?
   notes                String?
   // RED: Amount breakdown
-  grossAmount          Decimal?        @db.Decimal(14, 2)
-  discountAmount       Decimal?        @db.Decimal(14, 2)
-  netAmount            Decimal?        @db.Decimal(14, 2)
+  grossAmount          Decimal?     @db.Decimal(14, 2)
+  discountAmount       Decimal?     @db.Decimal(14, 2)
+  netAmount            Decimal?     @db.Decimal(14, 2)
   // RED: Template & signatures
   templateId           String?
   templateVersion      Int?
@@ -461,7 +463,7 @@ model Contract {
   sellerOrgId          String?
 
   // Documents linked to this contract
-  documents            Document[]
+  documents Document[]
 
   @@index([customerId])
   @@index([unitId])
@@ -529,8 +531,8 @@ model PaymentPlanInstallment {
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
 
-  @@index([paymentPlanId])
   @@unique([paymentPlanId, paymentReference])
+  @@index([paymentPlanId])
   // QA-DB-04/06: tenant-leading composite — also serves org-only lookups via its
   // leading column, so no standalone @@index([organizationId]) is needed (effective
   // once organizationId is backfilled — see 2026-06-orgid-backfill.sql).
@@ -634,8 +636,8 @@ model RentInstallment {
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
 
-  @@index([leaseId])
   @@unique([leaseId, paymentReference])
+  @@index([leaseId])
 }
 
 // ─── RentPayment (I2 append-only ledger) ────────────────────────────────────
@@ -738,8 +740,8 @@ model MaintenanceRequest {
   completedAt   DateTime?
 
   // Cost tracking
-  estimatedCost Decimal?            @db.Decimal(14, 2)
-  actualCost    Decimal?            @db.Decimal(14, 2)
+  estimatedCost Decimal? @db.Decimal(14, 2)
+  actualCost    Decimal? @db.Decimal(14, 2)
   laborHours    Float?
 
   // Work order notes
@@ -788,7 +790,7 @@ model PreventiveMaintenancePlan {
   nextRunDate        DateTime
 
   // Cost estimation
-  estimatedCost  Decimal?       @db.Decimal(14, 2)
+  estimatedCost  Decimal? @db.Decimal(14, 2)
   estimatedHours Float?
 
   // Assignment
@@ -1205,6 +1207,26 @@ enum ZatcaClearanceOutcome {
   TRANSPORT_ERROR
 }
 
+// ─── ZATCA tax-mapping enums (R3 — Track B, D16) ──────────────────────────────
+// VAT category per ZATCA Phase-2 (S/Z/E/O). OrgZatcaTaxConfig stores configured
+// intent; the resolver that reads it to classify a document line is R4.
+enum VatCategory {
+  STANDARD // S — standard-rated 15%
+  ZERO // Z — zero-rated
+  EXEMPT // E — exempt (residential lease, VATEX-SA-30)
+  OUT_OF_SCOPE // O — outside VAT scope (sale/RETT, refundable deposit)
+}
+
+// Tenant charge purpose the tax mapping keys onto (no such taxonomy exists on the
+// tenant-charge tables today — introduced here for the R4 issuance classifier).
+enum ZatcaChargeType {
+  RENT
+  SERVICE_FEE
+  DEPOSIT
+  SALE
+  OTHER
+}
+
 enum TransactionStatus {
   PENDING
   AUTHORIZED
@@ -1383,12 +1405,12 @@ model Invoice {
   notes          String?
 
   // ZATCA e-invoicing fields
-  zatcaStatus      ZatcaStatus @default(NOT_APPLICABLE)
-  zatcaHash        String? // Previous invoice hash (for chaining)
-  zatcaQrCode      String? // Base64 encoded QR
-  xmlContent       String? // Signed ZATCA XML
-  zatcaSubmittedAt DateTime?
-  zatcaClearedAt   DateTime?
+  zatcaStatus       ZatcaStatus        @default(NOT_APPLICABLE)
+  zatcaHash         String? // Previous invoice hash (for chaining)
+  zatcaQrCode       String? // Base64 encoded QR
+  xmlContent        String? // Signed ZATCA XML
+  zatcaSubmittedAt  DateTime?
+  zatcaClearedAt    DateTime?
   // R2 (Track A): document type + credit-note linkage + the ZATCA-stamped cleared XML.
   documentType      ZatcaDocumentType? @default(TAX_INVOICE)
   originalInvoiceId String? // set on CREDIT_NOTE/DEBIT_NOTE → the original cleared invoice
@@ -1620,7 +1642,7 @@ model Deal {
   expectedCloseDate DateTime?
   lostReason        String?
   createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt @default(now())
+  updatedAt         DateTime       @default(now()) @updatedAt
 
   @@index([customerId])
   @@index([unitId])
@@ -1873,26 +1895,26 @@ model MarketplaceInquiry {
 }
 
 model UnitTransferTransaction {
-  id            String             @id @default(cuid())
-  inquiryId     String             @unique
-  inquiry       MarketplaceInquiry @relation(fields: [inquiryId], references: [id])
+  id            String                @id @default(cuid())
+  inquiryId     String                @unique
+  inquiry       MarketplaceInquiry    @relation(fields: [inquiryId], references: [id])
   listingId     String
-  listing       MarketplaceListing @relation(fields: [listingId], references: [id])
+  listing       MarketplaceListing    @relation(fields: [listingId], references: [id])
   reservationId String?
   contractId    String?
   sellerOrgId   String
-  sellerOrg     Organization       @relation("MarketplaceSellerTransfers", fields: [sellerOrgId], references: [id])
+  sellerOrg     Organization          @relation("MarketplaceSellerTransfers", fields: [sellerOrgId], references: [id])
   buyerOrgId    String
-  buyerOrg      Organization       @relation("MarketplaceBuyerTransfers", fields: [buyerOrgId], references: [id])
+  buyerOrg      Organization          @relation("MarketplaceBuyerTransfers", fields: [buyerOrgId], references: [id])
   sellerUnitId  String
   buyerUnitId   String?
-  status        UnitTransferStatus @default(PENDING_SETTLEMENT)
+  status        UnitTransferStatus    @default(PENDING_SETTLEMENT)
   deedProof     MarketplaceDeedProof? // P3: 1:1 deed-transfer proof gating settlement
   failureReason String?
   settledAt     DateTime?
   completedAt   DateTime?
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
 
   @@index([sellerOrgId])
   @@index([buyerOrgId])
@@ -2019,9 +2041,11 @@ model ZatcaEgsUnit {
   updatedAt           DateTime         @updatedAt
 
   clearanceLogs ZatcaClearanceLog[]
+  branches      ZatcaBranch[]
 
   // NULL org (platform) rows are distinct under NULL semantics — app logic enforces a
-  // single ACTIVE platform EGS per environment (a partial unique index is a later refinement).
+  // single ACTIVE platform EGS per environment, backed by partial unique indexes
+  // (platform: 2026-06-zatca-platform-egs-unique.sql; tenant: zatca_egs_one_active_per_org_env, R3).
   @@unique([organizationId, environment, egsSerialNumber])
   @@index([organizationId])
   @@index([status])
@@ -2044,4 +2068,56 @@ model ZatcaClearanceLog {
 
   @@index([egsUnitId])
   @@index([invoiceId])
+}
+
+// ─── ZATCA branch (R3 — Track B, D15/D25) ─────────────────────────────────────
+// Metadata-only in R3: stores branch identity + location. Per-branch CSR/issuance
+// is R4 (egsSerialNumber/onboardedAt are reserved for then). Explicit FK model
+// (NOT an implicit Prisma M2M) so generate-rls.ts auto-covers it.
+model ZatcaBranch {
+  id              String       @id @default(cuid())
+  organizationId  String
+  organization    Organization @relation("OrgZatcaBranches", fields: [organizationId], references: [id], onDelete: Cascade)
+  egsUnitId       String
+  egsUnit         ZatcaEgsUnit @relation(fields: [egsUnitId], references: [id], onDelete: Cascade)
+  name            String // Arabic branch name
+  nameEn          String?
+  locationAddress Json? // national-address shape (region/city/district/streetName/buildingNumber/postalCode/additionalNumber/shortAddress)
+  locationCode    String? // ZATCA branch/location code (if assigned)
+  egsSerialNumber String? // reserved for R4 per-branch CSR; null in R3
+  isActive        Boolean      @default(true)
+  onboardedAt     DateTime? // R4: set when the branch EGS is issued
+  revokedAt       DateTime?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  taxConfigs OrgZatcaTaxConfig[]
+
+  @@unique([organizationId, egsUnitId, locationCode])
+  @@index([organizationId])
+  @@index([egsUnitId])
+}
+
+// ─── ZATCA tax mapping (R3 — Track B, D16) ────────────────────────────────────
+// Configured INTENT only. The resolver that reads this to classify a document
+// line (issueDocumentForCharge) lands in R4 — there is no R3 runtime reader.
+model OrgZatcaTaxConfig {
+  id              String           @id @default(cuid())
+  organizationId  String
+  organization    Organization     @relation("OrgZatcaTaxConfig", fields: [organizationId], references: [id], onDelete: Cascade)
+  unitType        UnitType? // null = applies to all unit types
+  chargeType      ZatcaChargeType? // null = applies to all charges
+  branchId        String? // future per-branch scope
+  branch          ZatcaBranch?     @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  vatCategory     VatCategory      @default(STANDARD)
+  vatRate         Decimal?         @db.Decimal(6, 4) // null = ZATCA standard for the category
+  eInvoiceEnabled Boolean          @default(true) // residential rent = false (no e-invoice)
+  notes           String?
+  isActive        Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@unique([organizationId, unitType, chargeType, branchId])
+  @@index([organizationId])
+  @@index([organizationId, unitType])
 }

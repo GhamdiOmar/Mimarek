@@ -4,6 +4,7 @@ import {
   TENANT_SCOPED_PERMISSIONS,
   ROLE_PERMISSIONS,
 } from "../lib/permissions";
+import { routeGuardForPath } from "../lib/route-guards";
 
 /**
  * §8.4 permission-wiring gate for the two ZATCA permissions. Permission membership
@@ -25,5 +26,21 @@ describe("ZATCA permission wiring (§8.4)", () => {
     expect(ROLE_PERMISSIONS.FINANCE).toContain("zatca:config");
     // SYSTEM_ADMIN technically holds it (ALL_PERMISSIONS), but requirePermission("zatca:config")
     // rejects system roles because it is TENANT_SCOPED — the Layer-3 rule in auth-helpers.
+  });
+
+  it("zatca:config is NOT held by MANAGER (R3 — only ADMIN + FINANCE reach /dashboard/settings/zatca)", () => {
+    expect(ROLE_PERMISSIONS.MANAGER).not.toContain("zatca:config");
+  });
+
+  it("the R3 tenant config route resolves to an EXPLICIT guard, NOT the parent /dashboard/settings", () => {
+    // Without an explicit entry, longest-prefix would inherit /dashboard/settings's
+    // organization:read — the wrong permission. Assert the dedicated gate.
+    const guard = routeGuardForPath("/dashboard/settings/zatca");
+    expect(guard).toEqual({ permission: "zatca:config", audience: "tenant" });
+    // The parent stays organization:read — proving the explicit entry won the match.
+    expect(routeGuardForPath("/dashboard/settings")).toEqual({
+      permission: "organization:read",
+      audience: "tenant",
+    });
   });
 });

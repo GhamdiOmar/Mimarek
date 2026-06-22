@@ -27,10 +27,13 @@ import type {
   MaintenanceCategory,
   MarketplaceListingStatus,
   UnitStatus,
+  UnitType,
   ZatcaStatus,
   ZatcaEgsStatus,
   ZatcaDocumentType,
   ZatcaClearanceOutcome,
+  VatCategory,
+  ZatcaChargeType,
 } from "@repo/db";
 
 // ─── Badge variant union (mirrors packages/ui/src/components/Badge.tsx) ───────
@@ -292,3 +295,38 @@ export const ZATCA_CLEARANCE_OUTCOME_VARIANT = {
   REJECTED: "error",
   TRANSPORT_ERROR: "warning",
 } satisfies Record<ZatcaClearanceOutcome, BadgeVariant> as Record<string, BadgeVariant>;
+
+// ─── ZATCA tax mapping (R3 — Track B, D16) ────────────────────────────────────
+
+export const VAT_CATEGORY_LABEL = {
+  STANDARD: { ar: "خاضعة ١٥٪", en: "Standard 15%" },
+  ZERO: { ar: "صفرية", en: "Zero-rated" },
+  EXEMPT: { ar: "معفاة", en: "Exempt" },
+  OUT_OF_SCOPE: { ar: "خارج النطاق", en: "Out of scope" },
+} satisfies Record<VatCategory, { ar: string; en: string }> as Record<string, { ar: string; en: string }>;
+
+export const VAT_CATEGORY_VARIANT = {
+  STANDARD: "success",
+  ZERO: "info",
+  EXEMPT: "default",
+  OUT_OF_SCOPE: "warning",
+} satisfies Record<VatCategory, BadgeVariant> as Record<string, BadgeVariant>;
+
+export const ZATCA_CHARGE_TYPE_LABEL = {
+  RENT: { ar: "إيجار", en: "Rent" },
+  SERVICE_FEE: { ar: "رسوم خدمات", en: "Service fee" },
+  DEPOSIT: { ar: "تأمين", en: "Deposit" },
+  SALE: { ar: "بيع", en: "Sale" },
+  OTHER: { ar: "أخرى", en: "Other" },
+} satisfies Record<ZatcaChargeType, { ar: string; en: string }> as Record<string, { ar: string; en: string }>;
+
+// Unit-type bilingual labels (canonical registry — used by the ZATCA tax-mapping grid
+// and any future unit-type display; do not re-declare locally per page, §6.11.4).
+export const UNIT_TYPE_LABEL = {
+  APARTMENT: { ar: "شقة", en: "Apartment" },
+  VILLA: { ar: "فيلا", en: "Villa" },
+  OFFICE: { ar: "مكتب", en: "Office" },
+  RETAIL: { ar: "محل تجاري", en: "Retail" },
+  WAREHOUSE: { ar: "مستودع", en: "Warehouse" },
+  PARKING: { ar: "موقف سيارات", en: "Parking" },
+} satisfies Record<UnitType, { ar: string; en: string }> as Record<string, { ar: string; en: string }>;
