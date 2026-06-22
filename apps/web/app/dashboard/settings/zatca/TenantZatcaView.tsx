@@ -771,7 +771,7 @@ export default function TenantZatcaView({ summary, taxConfig, branches }: Tenant
                         <td className="py-2.5 pe-4 text-foreground">{chargeLabel ? t(chargeLabel.ar, chargeLabel.en) : "—"}</td>
                         <td className="py-2.5 pe-4">
                           <SelectField
-                            className="h-8 w-auto min-w-[150px] text-xs"
+                            className="h-8 w-full min-w-[150px] text-xs"
                             value={row.vatCategory}
                             onChange={(e) => {
                               const next = [...taxRows];
