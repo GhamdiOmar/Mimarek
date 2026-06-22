@@ -1,5 +1,32 @@
 # Changelog — Mimarek PropTech
 
+## [5.2.0] — 2026-06-22 — ZATCA Phase-2 (R2 — Track A): SaaS subscription-invoice clearance
+
+**Mimarek's own subscription invoices now clear with ZATCA in real time.** R2 is **Track A** of the program — the platform (Mimarek PropTech Co.) as seller, tenant orgs as buyers, standard B2B clearance. The R1 engine (`@repo/zatca`) is now wired into the app through a thin server-action layer that owns the DB, encryption, auth and the per-EGS hash chain. **Verified live end-to-end against the ZATCA sandbox: onboard → production CSID → build → sign → `clearInvoice` → CLEARED, with the QR parsed from ZATCA's cleared XML (D28).**
+
+### Schema + DB (applied to the live DB; `db push`)
+- New enums `ZatcaEnvironment` / `ZatcaEgsStatus` / `ZatcaDocumentType` / `ZatcaClearanceOutcome`. New models **`ZatcaEgsUnit`** (org-scoped EGS; `organizationId = NULL` is the platform-seller EGS; secret columns AES-256-GCM-encrypted) and **`ZatcaClearanceLog`** (per-attempt outcome + ZATCA codes, no payload). `Invoice` += `documentType` / `originalInvoiceId` (self-relation) / `clearedXml`; `Notification.organizationId` → nullable (D29); `Organization.logoUrl`. RLS regenerated + enabled on both new tables; a partial unique index enforces one ACTIVE platform EGS per environment.
+- Dedicated secret helper **`lib/zatca-crypto.ts`** (`encryptZatca` / `decryptZatca`, `z1:` envelope, fail-closed) keyed to a separate **`ZATCA_MASTER_KEY`** trust domain (not `PII_ENCRYPTION_KEY`); added to `turbo.json` globalEnv + CI env. EGS secrets are excluded from every client DTO via an explicit `select` allowlist (D13).
+
+### Access model (§8)
+- `zatca:admin` (SYSTEM_ONLY) + `zatca:config` (TENANT_SCOPED) wired through the `Permission` type, `ALL_PERMISSIONS`, `SYSTEM_ONLY` / `TENANT_SCOPED` arrays, `SYSTEM_SUPPORT` + `FINANCE` roles, `ROUTE_GUARDS`, nav, and an §8.4 guard-coverage test. A tenant ADMIN provably can never hold `zatca:admin`.
+
+### Clearance (the money path)
+- Onboarding actions (platform): generate CSR → compliance CSID → production CSID (graceful sandbox fallback) → ACTIVE; reset (D30). The post-commit hook on `generateSubscriptionInvoice` clears each invoice best-effort (never blocks creation). The per-EGS **ICV/PIH hash chain** is advanced atomically inside a `SELECT … FOR UPDATE` transaction so concurrent clearances can't fork it. The typed `ZatcaError` drives **D22** retry (transport → re-POST the same payload, idempotent) vs resubmit (business → REJECTED + platform-staff alert). Credit notes (D11). Platform alerts via `notifyPlatformStaff` (D29).
+- **D3 finding:** the alleged SaaS discount/VAT bug is a **false positive** — VAT-on-net is KSA-correct (a discount is a taxable-base allowance), so `coupons.ts` is unchanged; flagged for the R5 tax-advisor review.
+
+### UI
+- New `/dashboard/admin/zatca` (platform-only): EGS onboard form + status + reset + clearance-log table; discoverable via nav + an admin quick-link (§3.1). The admin payments table gains a ZATCA status column + clear/retry + credit-note row actions; the admin dashboard adds a cleared/rejected KPI; tenant billing invoices show a ZATCA badge + download-XML. **`components/zatca/ZatcaDocument.tsx`** — tokenized port of the locked invoice mockup (D26: `hsl(var(--token))`, `--primary-deep` not `#032833`, IBM Plex Mono loaded via `next/font`, light-only print surface). A CRON_SECRET-guarded reporting-sweep endpoint is scaffolded (D24; the real B2C sweep lands in R4).
+- `next.config.js`: webpack `extensionAlias` (`.js`→`.ts`) so the NodeNext `@repo/zatca` engine bundles into the app; build + dev pinned to `--webpack`.
+
+### Verify
+- `npm run build` green · `check-types` 3/3 · `npm run lint` exit 0 · `turbo test:unit` 162/162 (engine 65 + the new §8.4 permission test; guard-coverage auto-covers the new actions) · `/mimaric-qa` **SHIP** (no Critical; the two High findings — PIH-chain atomicity + the `ROUTES` seam — fixed and re-verified) · **§3.9 4-theme walk** on `/dashboard/admin/zatca` + the payments page (light/dark × AR/EN), **zero console errors** · live sandbox cycle returns **CLEARED**.
+
+### Deferred (per the program plan)
+- R3 Track B (tenant config UI), R4 Track C (tenant issuance + buyer routing + B2C reporting sweep + `TenantDocument`), R5 production go-live (production CSID + the 6-sample gate + a real scheduler + **tax-advisor signoff**). Recommended R3 follow-ups from the QA: a concurrency test for the PIH lock, and `parseQrFromClearedXml` / credit-note unit tests.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimarek/compare/v5.1.0...v5.2.0
+
 ## [5.1.0] — 2026-06-22 — ZATCA Phase-2 e-invoicing engine (R1): issuance + network client
 
 **New `@repo/zatca` package — Mimarek's in-house ZATCA (Fatoora) Phase-2 e-invoicing engine.** A pure, dependency-light TypeScript library that turns invoice data into a ZATCA-valid, XAdES-signed UBL 2.1 document and submits it to the Fatoora API — no middleware, no per-EGS licensing, no third party in the legal path. R1 is the issuance + crypto engine **plus the network client**; the tenant action/orchestration layer (ICV/PIH chaining, onboarding UI, B2C reporting sweep) is R2.

@@ -260,7 +260,10 @@
     "Rewaa",
     "regs",
     "desyncs",
-    "placeholdered"
+    "placeholdered",
+    "MAREK",
+    "qrcode",
+    "VBOR"
   ],
   "ignoreRegExpList": [
     "[\\u0600-\\u06FF\\u0750-\\u077F\\uFB50-\\uFDFF\\uFE70-\\uFEFF]+",
