@@ -10,6 +10,7 @@ import { decidePaymentApplication } from "../../lib/payments/recording";
 import { appendRentPayment } from "../../lib/payments/ledger";
 import { ROUTES } from "../../lib/routes";
 import { serialize } from "../../lib/serialize";
+import { issueForChargeBestEffort, issueCreditNoteForRentReversalBestEffort } from "../../lib/zatca-issuance";
 
 const RecordPaymentSchema = z.object({
   paymentMethod: z.string().min(1),
@@ -264,6 +265,18 @@ export async function recordPayment(
     });
   }
 
+  // ZATCA Track C (R4 / H1): issue the tenant document for this rent payment — best-effort,
+  // post-commit, NEVER blocks the payment (L26). Residential → receipt; commercial → invoice.
+  if (!txResult.replayed && session.organizationId) {
+    await issueForChargeBestEffort({
+      kind: "RENT_INSTALLMENT",
+      organizationId: session.organizationId,
+      rentInstallmentId: installmentId,
+      amount: safeData.amount,
+      sourceKey: safeData.paymentReference,
+    });
+  }
+
   revalidatePath(ROUTES.payments);
   revalidatePath(ROUTES.finance);
   return serialize(txResult.row);
@@ -319,8 +332,8 @@ export async function bulkMarkInstallmentsPaid(ids: string[]) {
   // of the same batch dedupes: the 2nd attempt either finds remaining<=0 and skips,
   // or collides on the [installmentId, idempotencyKey] unique index (P2002 → no-op
   // replay) for the same starting state (QA M-3).
-  const appliedIds = await db.$transaction(async (tx) => {
-    const done: string[] = [];
+  const applied = await db.$transaction(async (tx) => {
+    const done: { id: string; amount: number; sourceKey: string }[] = [];
     for (const inst of payable) {
       // Re-read + lock the row inside the tx; org-scope re-checked on the locked row.
       const locked = await tx.$queryRaw<LockedRow[]>`
@@ -359,7 +372,7 @@ export async function bulkMarkInstallmentsPaid(ids: string[]) {
           createdById: session.userId,
           lastPaymentMeta: { paidAt: now },
         });
-        done.push(row.id);
+        done.push({ id: row.id, amount: remaining, sourceKey: `bulk:${row.id}:${lockedPaidAmount}` });
       } catch (e: unknown) {
         // Duplicate append for the same [installmentId, idempotencyKey] (a rapid
         // double-submit of the same batch in the same state) — treat as a no-op
@@ -372,7 +385,7 @@ export async function bulkMarkInstallmentsPaid(ids: string[]) {
     return done;
   });
 
-  if (!appliedIds.length) return { updated: 0 };
+  if (!applied.length) return { updated: 0 };
 
   logAuditEvent({
     userId: session.userId,
@@ -383,15 +396,29 @@ export async function bulkMarkInstallmentsPaid(ids: string[]) {
     resourceId: "bulk",
     metadata: {
       action: "bulkMarkPaid",
-      count: appliedIds.length,
-      ids: appliedIds,
+      count: applied.length,
+      ids: applied.map((a) => a.id),
     },
     organizationId: session.organizationId,
   });
 
+  // ZATCA Track C (R4 / H2): issue a tenant document for EACH bulk-collected installment —
+  // loop, no skip. Best-effort; never blocks (L26). Same sourceKey as the ledger dedup.
+  if (session.organizationId) {
+    for (const a of applied) {
+      await issueForChargeBestEffort({
+        kind: "RENT_INSTALLMENT",
+        organizationId: session.organizationId,
+        rentInstallmentId: a.id,
+        amount: a.amount,
+        sourceKey: a.sourceKey,
+      });
+    }
+  }
+
   revalidatePath(ROUTES.payments);
   revalidatePath(ROUTES.finance);
-  return { updated: appliedIds.length };
+  return { updated: applied.length };
 }
 
 // ─── I2: Reversal / Refund ──────────────────────────────────────────────────
@@ -566,6 +593,12 @@ export async function reverseRentPayment(
       },
       organizationId: session.organizationId,
     });
+  }
+
+  // ZATCA Track C (R4 / H3): a reversal/refund of a cleared rent invoice → credit note
+  // (chained, verbatim positive — L23). Best-effort; never blocks the reversal (L26).
+  if (!txResult.replayed && session.organizationId) {
+    await issueCreditNoteForRentReversalBestEffort(session.organizationId, installmentId, safeData.reason);
   }
 
   revalidatePath(ROUTES.payments);

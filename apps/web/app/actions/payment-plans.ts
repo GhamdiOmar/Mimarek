@@ -7,6 +7,7 @@ import { logAuditEvent } from "../../lib/audit";
 import { revalidatePath } from "next/cache";
 import { routeToContract } from "../../lib/routes";
 import { serialize } from "../../lib/serialize";
+import { issueForChargeBestEffort } from "../../lib/zatca-issuance";
 
 // ─── RED: Payment Plans ─────────────────────────────────────────────────────
 
@@ -290,6 +291,18 @@ export async function recordInstallmentPayment(
         paymentReference: safeData.paymentReference,
       },
       organizationId: session.organizationId,
+    });
+  }
+
+  // ZATCA Track C (R4 / H4): issue the tenant document for this sale/payment-plan installment
+  // — best-effort, post-commit, NEVER blocks (L26). Sale → receipt; lease-by-config otherwise.
+  if (!txResult.replayed && session.organizationId) {
+    await issueForChargeBestEffort({
+      kind: "CONTRACT_INSTALLMENT",
+      organizationId: session.organizationId,
+      paymentPlanInstallmentId: installmentId,
+      amount: safeData.amount,
+      sourceKey: safeData.paymentReference,
     });
   }
 

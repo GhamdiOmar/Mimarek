@@ -509,3 +509,51 @@ export async function createTenantCreditNote(originalDocumentId: string, reason:
 
   return clearTenantDocumentInternal(note.id);
 }
+
+/**
+ * A rent reversal/refund → credit note. Finds the installment's original CLEARED/REPORTED
+ * document and credits it. If there is none (the original was a receipt or never cleared),
+ * there is nothing to credit in ZATCA → SKIPPED.
+ */
+export async function issueCreditNoteForRentReversal(
+  organizationId: string,
+  rentInstallmentId: string,
+  reason: string,
+): Promise<IssuanceResult> {
+  const original = await db.tenantDocument.findFirst({
+    where: {
+      organizationId,
+      rentInstallmentId,
+      documentType: { not: "CREDIT_NOTE" },
+      zatcaStatus: { in: ["CLEARED", "REPORTED"] },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+  if (!original) return { outcome: "SKIPPED" };
+  return createTenantCreditNote(original.id, reason);
+}
+
+// ─── best-effort wrappers for the money-movement hooks ────────────────────────
+// These NEVER throw — a ZATCA issuance failure must not roll back the payment (L26 +
+// the billing.ts best-effort precedent). The money movement already committed; issuance
+// is a follow-on side effect. Failures are logged (no key material) and swept later (R4b).
+
+export async function issueForChargeBestEffort(charge: ChargeInput): Promise<void> {
+  try {
+    await issueDocumentForCharge(charge);
+  } catch (e) {
+    console.error("[zatca] issuance failed (non-blocking)", charge.kind, e instanceof Error ? e.message : String(e));
+  }
+}
+
+export async function issueCreditNoteForRentReversalBestEffort(
+  organizationId: string,
+  rentInstallmentId: string,
+  reason: string,
+): Promise<void> {
+  try {
+    await issueCreditNoteForRentReversal(organizationId, rentInstallmentId, reason);
+  } catch (e) {
+    console.error("[zatca] reversal credit-note failed (non-blocking)", e instanceof Error ? e.message : String(e));
+  }
+}
