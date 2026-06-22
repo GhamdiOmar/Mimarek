@@ -9,9 +9,10 @@ import { ROUTES } from "../../../lib/routes";
 import { getTenantEgs } from "../../../lib/zatca-server";
 
 /**
- * Track-B tenant ZATCA config (R3): branch metadata + tax mapping. All actions are
- * gated by the tenant `zatca:config` permission (the guard call lives in EACH action's
- * own body — guard-coverage.test.ts inspects per-function), strictly org-scoped, and
+ * Track-B tenant ZATCA config (R3): branch metadata + tax mapping. Every exported
+ * action calls `requirePermission("zatca:config")` IN ITS OWN BODY — the QA-SEC-01
+ * AST guard (mimaric/require-action-guard) inspects each function body, so the guard
+ * must be inline, NOT behind a shared wrapper. All actions are strictly org-scoped and
  * re-check row ownership before any mutate (cross-org isolation, §8).
  *
  * OrgZatcaTaxConfig stores configured INTENT only — the resolver that reads it to
@@ -52,17 +53,12 @@ interface TaxRowInput {
   eInvoiceEnabled: boolean;
 }
 
-async function requireOrg(): Promise<{ session: Awaited<ReturnType<typeof requirePermission>>; organizationId: string }> {
-  const session = await requirePermission("zatca:config");
-  if (!session.organizationId) throw new Error("An organization context is required.");
-  return { session, organizationId: session.organizationId };
-}
-
 // ─── Branches (D15 — metadata-only in R3) ─────────────────────────────────────
 
 /** List the tenant org's ZATCA branches. */
 export async function getTenantBranches() {
-  const { organizationId } = await requireOrg();
+  const { organizationId } = await requirePermission("zatca:config");
+  if (!organizationId) throw new Error("An organization context is required.");
   const branches = await db.zatcaBranch.findMany({
     where: { organizationId },
     orderBy: { createdAt: "asc" },
@@ -72,7 +68,10 @@ export async function getTenantBranches() {
 
 /** Create a branch under the org's EGS (requires the org to have onboarded an EGS). */
 export async function createTenantBranch(input: BranchInput) {
-  const { session, organizationId } = await requireOrg();
+  const session = await requirePermission("zatca:config");
+  const organizationId = session.organizationId;
+  if (!organizationId) throw new Error("An organization context is required.");
+
   const name = input?.name?.trim();
   if (!name) throw new Error("A branch name is required.");
 
@@ -107,7 +106,10 @@ export async function createTenantBranch(input: BranchInput) {
 
 /** Update a branch — re-checks org ownership before mutating (cross-org isolation). */
 export async function updateTenantBranch(id: string, input: BranchInput) {
-  const { session, organizationId } = await requireOrg();
+  const session = await requirePermission("zatca:config");
+  const organizationId = session.organizationId;
+  if (!organizationId) throw new Error("An organization context is required.");
+
   const existing = await db.zatcaBranch.findUnique({ where: { id } });
   if (!existing || existing.organizationId !== organizationId) throw new Error("Branch not found.");
 
@@ -140,7 +142,10 @@ export async function updateTenantBranch(id: string, input: BranchInput) {
 
 /** Delete a branch — re-checks org ownership first. */
 export async function deleteTenantBranch(id: string) {
-  const { session, organizationId } = await requireOrg();
+  const session = await requirePermission("zatca:config");
+  const organizationId = session.organizationId;
+  if (!organizationId) throw new Error("An organization context is required.");
+
   const existing = await db.zatcaBranch.findUnique({ where: { id } });
   if (!existing || existing.organizationId !== organizationId) throw new Error("Branch not found.");
 
@@ -168,7 +173,9 @@ export async function deleteTenantBranch(id: string) {
  * a sensible starting point the tenant can edit and save.
  */
 export async function getTenantTaxConfig() {
-  const { organizationId } = await requireOrg();
+  const { organizationId } = await requirePermission("zatca:config");
+  if (!organizationId) throw new Error("An organization context is required.");
+
   const rows = await db.orgZatcaTaxConfig.findMany({
     where: { organizationId },
     orderBy: [{ unitType: "asc" }, { chargeType: "asc" }],
@@ -198,7 +205,9 @@ export async function getTenantTaxConfig() {
  * R3 is org-wide only (branchId = null); per-branch overrides are a later extension.
  */
 export async function saveTenantTaxConfig(rows: TaxRowInput[]) {
-  const { session, organizationId } = await requireOrg();
+  const session = await requirePermission("zatca:config");
+  const organizationId = session.organizationId;
+  if (!organizationId) throw new Error("An organization context is required.");
   if (!Array.isArray(rows)) throw new Error("Invalid tax configuration.");
 
   const data = rows.map((r) => {
