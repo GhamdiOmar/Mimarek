@@ -52,6 +52,7 @@ const navSeeds: NavSeed[] = [
   { label: { ar: "تذاكر الدعم", en: "Support Tickets" }, icon: "TicketCheck", href: "/dashboard/admin/tickets", section: "system" },
   { label: { ar: "إدارة السوق", en: "Marketplace Moderation" }, icon: "ShieldAlert", href: "/dashboard/admin/marketplace", section: "system" },
   { label: { ar: "الاحتفاظ بالبيانات", en: "Data Retention" }, icon: "DatabaseBackup", href: "/dashboard/admin/data-retention", section: "system" },
+  { label: { ar: "فوترة زاتكا", en: "ZATCA" }, icon: "FileCheck2", href: "/dashboard/admin/zatca", section: "system" },
   { label: { ar: "الإعدادات", en: "Settings" }, icon: "Settings", href: "/dashboard/settings", section: "system" },
 ];
 
@@ -105,6 +106,7 @@ export const breadcrumbLabels: Record<string, { ar: string; en: string }> = {
   "coupons": { ar: "الكوبونات", en: "Coupons" },
   "subscriptions": { ar: "الاشتراكات", en: "Subscriptions" },
   "data-retention": { ar: "الاحتفاظ بالبيانات", en: "Data Retention" },
+  "zatca": { ar: "فوترة زاتكا", en: "ZATCA" },
   "help": { ar: "المساعدة", en: "Help" },
   "new": { ar: "جديد", en: "New" },
   "onboarding": { ar: "التهيئة", en: "Onboarding" },

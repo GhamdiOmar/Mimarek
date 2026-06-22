@@ -16,6 +16,7 @@ model Organization {
   name                String
   nameArabic          String? // Official entity name in Arabic
   nameEnglish         String? // Official entity name in English
+  logoUrl             String? // Org logo (Track C: seller branding on issued ZATCA documents)
   tradeNameArabic     String? // Trade name in Arabic
   tradeNameEnglish    String? // Trade name in English
   crNumber            String?                     @unique // Commercial Registration Number (10 digits)
@@ -54,6 +55,7 @@ model Organization {
   paymentMethods       PaymentMethod[]
   invoices             Invoice[]
   couponRedemptions    CouponRedemption[]
+  zatcaEgsUnits        ZatcaEgsUnit[]            @relation("OrgZatcaEgsUnits")
 
   // ── Marketplace relations ──
   marketplaceSellerListings  MarketplaceListing[]      @relation("MarketplaceSellerListings")
@@ -949,7 +951,7 @@ model Notification {
   messageEn      String?
   link           String?
   read           Boolean  @default(false)
-  organizationId String
+  organizationId String? // D29: nullable so platform-staff alerts (no org) can be targeted via notifyPlatformStaff()
   createdAt      DateTime @default(now())
 
   @@index([userId, read])
@@ -1171,6 +1173,38 @@ enum ZatcaStatus {
   REJECTED
 }
 
+// ─── ZATCA Phase-2 e-invoicing enums (R2 — Track A) ───────────────────────────
+enum ZatcaEnvironment {
+  SANDBOX
+  SIMULATION
+  PRODUCTION
+}
+
+enum ZatcaEgsStatus {
+  DRAFT // created, no CSR yet
+  PENDING // CSR submitted / compliance CSID issued, not production-ready
+  ACTIVE // production (or sandbox-production) CSID issued — locked (D30)
+  RESET // platform-revoked; tenant must re-onboard
+}
+
+enum ZatcaDocumentType {
+  TAX_INVOICE
+  SIMPLIFIED
+  CREDIT_NOTE
+  DEBIT_NOTE
+  RECEIPT
+}
+
+// Per-attempt clearance/report outcome (ZatcaClearanceLog.outcome). Distinct from
+// ZatcaStatus (the document lifecycle field) — no overlap (plan D8/#8).
+enum ZatcaClearanceOutcome {
+  CLEARED
+  CLEARED_WITH_WARNINGS
+  REPORTED
+  REJECTED
+  TRANSPORT_ERROR
+}
+
 enum TransactionStatus {
   PENDING
   AUTHORIZED
@@ -1355,6 +1389,12 @@ model Invoice {
   xmlContent       String? // Signed ZATCA XML
   zatcaSubmittedAt DateTime?
   zatcaClearedAt   DateTime?
+  // R2 (Track A): document type + credit-note linkage + the ZATCA-stamped cleared XML.
+  documentType      ZatcaDocumentType? @default(TAX_INVOICE)
+  originalInvoiceId String? // set on CREDIT_NOTE/DEBIT_NOTE → the original cleared invoice
+  originalInvoice   Invoice?           @relation("InvoiceAdjustments", fields: [originalInvoiceId], references: [id])
+  adjustments       Invoice[]          @relation("InvoiceAdjustments")
+  clearedXml        String? // ZATCA-stamped cleared XML (standard/clearance; QR parsed from here, D28)
 
   couponId String?
   coupon   Coupon? @relation(fields: [couponId], references: [id])
@@ -1937,4 +1977,71 @@ model RateLimitCounter {
   updatedAt   DateTime @updatedAt
 
   @@index([expiresAt])
+}
+
+// ─── ZATCA EGS unit (R2 — Track A) ────────────────────────────────────────────
+// An EGS (E-invoice Generation Solution) unit holds one ZATCA identity + crypto
+// chain. organizationId == NULL is THE PLATFORM EGS (Mimarek PropTech Co. as the
+// seller for SaaS billing, Track A); a non-null org is a tenant's own EGS (Track B/R3).
+// All secret columns are AES-256-GCM encrypted via lib/zatca-crypto (ZATCA_MASTER_KEY)
+// and MUST be excluded from every client DTO via explicit Prisma `select` (D13).
+model ZatcaEgsUnit {
+  id                  String           @id @default(cuid())
+  organizationId      String?
+  organization        Organization?    @relation("OrgZatcaEgsUnits", fields: [organizationId], references: [id])
+  environment         ZatcaEnvironment @default(SANDBOX)
+  status              ZatcaEgsStatus   @default(DRAFT)
+  // EGS identity / tax identity
+  egsSerialNumber     String // 1-<sol>|2-<model>|3-<uuid>
+  commonName          String
+  vatNumber           String // 15-digit
+  crNumber            String?
+  legalNameAr         String?
+  legalNameEn         String?
+  nationalAddress     Json?
+  invoiceTypeFlags    String           @default("1100") // CSR title flags
+  industryCategory    String?
+  // Per-EGS chain state (advanced via atomic CAS in the issue/clear tx, D8)
+  lastIcv             Int              @default(0)
+  lastInvoiceHash     String? // PIH (base64); genesis seed for the first document
+  // Encrypted secrets (z1: ciphertext) — NEVER selected into a client DTO
+  privateKeyPem       String?
+  csrPem              String?
+  complianceRequestId String?
+  complianceToken     String?
+  complianceSecret    String?
+  productionToken     String?
+  productionSecret    String?
+  certificateBase64   String? // the issued CSID cert (base64 DER string for the signer)
+  onboardedAt         DateTime?
+  revokedAt           DateTime?
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
+  clearanceLogs ZatcaClearanceLog[]
+
+  // NULL org (platform) rows are distinct under NULL semantics — app logic enforces a
+  // single ACTIVE platform EGS per environment (a partial unique index is a later refinement).
+  @@unique([organizationId, environment, egsSerialNumber])
+  @@index([organizationId])
+  @@index([status])
+}
+
+// ─── ZATCA clearance/report attempt log (R2) ──────────────────────────────────
+model ZatcaClearanceLog {
+  id          String                @id @default(cuid())
+  egsUnitId   String
+  egsUnit     ZatcaEgsUnit          @relation(fields: [egsUnitId], references: [id], onDelete: Cascade)
+  invoiceId   String? // Track A: the SaaS Invoice this attempt was for
+  documentId  String? // Track C: the TenantDocument (wired in R4)
+  outcome     ZatcaClearanceOutcome
+  attempt     Int                   @default(1)
+  requestUuid String?
+  icv         Int?
+  zatcaCodes  String[] // ZATCA validation codes only (no payload/key material, D13)
+  message     String? // sanitized; never carries key material or request payload
+  createdAt   DateTime              @default(now())
+
+  @@index([egsUnitId])
+  @@index([invoiceId])
 }
