@@ -4,6 +4,7 @@ import { db } from "@repo/db";
 import { requirePermission } from "../../../lib/auth-helpers";
 import { logAuditEvent } from "../../../lib/audit";
 import { revalidatePath } from "next/cache";
+import { ROUTES } from "../../../lib/routes";
 import { clearSubscriptionInvoiceInternal, createCreditNoteInternal } from "../../../lib/zatca-clearance";
 
 /**
@@ -31,8 +32,8 @@ export async function clearInvoiceNow(invoiceId: string) {
     organizationId: session.organizationId,
     metadata: { zatca: result.outcome, retry: isRetry },
   });
-  revalidatePath("/dashboard/admin/zatca");
-  revalidatePath("/dashboard/admin/payments");
+  revalidatePath(ROUTES.adminZatca);
+  revalidatePath(ROUTES.adminPayments);
   return result;
 }
 
@@ -51,7 +52,7 @@ export async function createInvoiceCreditNote(originalInvoiceId: string, reason:
     organizationId: session.organizationId,
     metadata: { creditNoteFor: originalInvoiceId, zatca: result.outcome },
   });
-  revalidatePath("/dashboard/admin/zatca");
-  revalidatePath("/dashboard/admin/payments");
+  revalidatePath(ROUTES.adminZatca);
+  revalidatePath(ROUTES.adminPayments);
   return { creditNoteId, result };
 }

@@ -7,8 +7,7 @@ import { notifyPlatformStaff } from "./create-notification";
 import {
   getActivePlatformEgs,
   getEgsSigningContext,
-  reserveIcvAndPih,
-  commitInvoiceHash,
+  GENESIS_PIH,
   buildSellerFromEgs,
   buildBuyerFromOrg,
   buildSubscriptionInvoiceInput,
@@ -104,31 +103,46 @@ export async function clearSubscriptionInvoiceInternal(
     invoiceHash = invoice.zatcaHash;
     icvUsed = null;
   } else {
-    const { icv, pih } = await reserveIcvAndPih(egs.id);
-    icvUsed = icv;
     const planName = invoice.subscription?.plan?.nameEn ?? "Subscription";
     const isCredit = invoice.documentType === "CREDIT_NOTE";
-    const input = buildSubscriptionInvoiceInput({
-      invoice,
-      seller: buildSellerFromEgs(egs),
-      buyer: buildBuyerFromOrg(invoice.organization),
-      icv,
-      pih,
-      lineName: `${planName} — ${invoice.billingCycle ?? "subscription"}`,
-      docType: isCredit ? "credit-note" : "invoice",
-      billingReferenceId: isCredit ? invoice.originalInvoice?.invoiceNumber : undefined,
-      reason: isCredit ? invoice.notes ?? "Adjustment" : undefined,
+    // H1: hold the EGS row lock across reserve → sign → chain-advance → persist so two
+    // concurrent clearances on the same EGS cannot read the same PIH and fork the hash
+    // chain. The lock spans only the (CPU-bound, ms-scale) build+sign — NOT the HTTP submit.
+    const reserved = await db.$transaction(async (tx) => {
+      const rows = await tx.$queryRaw<{ lastIcv: number; lastInvoiceHash: string | null }[]>`
+        SELECT "lastIcv", "lastInvoiceHash" FROM "ZatcaEgsUnit" WHERE "id" = ${egs.id} FOR UPDATE`;
+      const r = rows[0];
+      if (!r) throw new Error("EGS not found while reserving the ICV.");
+      const icv = r.lastIcv + 1;
+      const pih = r.lastInvoiceHash ?? GENESIS_PIH;
+      const input = buildSubscriptionInvoiceInput({
+        invoice,
+        seller: buildSellerFromEgs(egs),
+        buyer: buildBuyerFromOrg(invoice.organization),
+        icv,
+        pih,
+        lineName: `${planName} — ${invoice.billingCycle ?? "subscription"}`,
+        docType: isCredit ? "credit-note" : "invoice",
+        billingReferenceId: isCredit ? invoice.originalInvoice?.invoiceNumber : undefined,
+        reason: isCredit ? invoice.notes ?? "Adjustment" : undefined,
+      });
+      const s = signInvoice(buildInvoice(input), {
+        privateKeyPem: ctx.privateKeyPem,
+        certificateBase64: ctx.certificateBase64,
+      });
+      const hash = computeInvoiceHash(s);
+      await tx.$executeRaw`
+        UPDATE "ZatcaEgsUnit" SET "lastIcv" = ${icv}, "lastInvoiceHash" = ${hash}, "updatedAt" = now()
+         WHERE "id" = ${egs.id}`;
+      await tx.invoice.update({
+        where: { id: invoiceId },
+        data: { zatcaStatus: "PENDING", zatcaHash: hash, xmlContent: s, zatcaSubmittedAt: new Date() },
+      });
+      return { icv, signed: s, invoiceHash: hash };
     });
-    signed = signInvoice(buildInvoice(input), {
-      privateKeyPem: ctx.privateKeyPem,
-      certificateBase64: ctx.certificateBase64,
-    });
-    invoiceHash = computeInvoiceHash(signed);
-    await commitInvoiceHash(egs.id, invoiceHash); // advance the chain in generation order
-    await db.invoice.update({
-      where: { id: invoiceId },
-      data: { zatcaStatus: "PENDING", zatcaHash: invoiceHash, xmlContent: signed, zatcaSubmittedAt: new Date() },
-    });
+    icvUsed = reserved.icv;
+    signed = reserved.signed;
+    invoiceHash = reserved.invoiceHash;
   }
 
   const payload = { invoiceHash, uuid: invoice.uuid, invoiceXmlBase64: Buffer.from(signed, "utf8").toString("base64") };

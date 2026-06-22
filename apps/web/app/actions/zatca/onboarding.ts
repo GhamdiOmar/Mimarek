@@ -5,6 +5,7 @@ import { requirePermission } from "../../../lib/auth-helpers";
 import { logAuditEvent } from "../../../lib/audit";
 import { serialize } from "../../../lib/serialize";
 import { revalidatePath } from "next/cache";
+import { ROUTES } from "../../../lib/routes";
 import { generateCsr, createZatcaClient, ZatcaError } from "@repo/zatca";
 import { encryptZatca, encryptZatcaOptional } from "../../../lib/zatca-crypto";
 import { EGS_PUBLIC_SELECT, getPlatformEgs } from "../../../lib/zatca-server";
@@ -139,7 +140,7 @@ export async function onboardPlatformEgs(rawInput: OnboardInput) {
     metadata: { environment: "SANDBOX", productionCsid: production != null, vatNumber: input.vatNumber },
   });
 
-  revalidatePath("/dashboard/admin/zatca");
+  revalidatePath(ROUTES.adminZatca);
   return serialize(egs);
 }
 
@@ -196,7 +197,7 @@ export async function resetPlatformEgs() {
     metadata: { action: "RESET" },
   });
 
-  revalidatePath("/dashboard/admin/zatca");
+  revalidatePath(ROUTES.adminZatca);
   return { ok: true };
 }
 

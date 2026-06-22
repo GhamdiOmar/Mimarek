@@ -36,6 +36,8 @@ export const ROUTES = {
   adminEmail: "/dashboard/admin/email",
   adminMarketplace: "/dashboard/admin/marketplace",
   adminDataRetention: "/dashboard/admin/data-retention",
+  adminZatca: "/dashboard/admin/zatca",
+  adminPayments: "/dashboard/admin/payments",
 
   // Portal (non-dashboard tenant-facing surface)
   portal: "/portal",

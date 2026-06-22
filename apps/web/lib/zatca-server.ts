@@ -95,30 +95,11 @@ export function getEgsSigningContext(egs: ZatcaEgsUnit): EgsSigningContext {
   return { credentials: { binarySecurityToken, secret }, privateKeyPem, certificateBase64 };
 }
 
-/**
- * Atomically reserve the next ICV and read the previous-invoice-hash (PIH) for an EGS.
- * A single `UPDATE ... RETURNING` is the compare-and-set: concurrent callers get
- * monotonically increasing ICVs; the returned `lastInvoiceHash` is this document's PIH.
- */
-export async function reserveIcvAndPih(
-  egsUnitId: string,
-  tx?: Prisma.TransactionClient,
-): Promise<{ icv: number; pih: string }> {
-  const client = tx ?? db;
-  const rows = await client.$queryRaw<{ lastIcv: number; lastInvoiceHash: string | null }[]>`
-    UPDATE "ZatcaEgsUnit"
-       SET "lastIcv" = "lastIcv" + 1, "updatedAt" = now()
-     WHERE "id" = ${egsUnitId}
-    RETURNING "lastIcv", "lastInvoiceHash"`;
-  const row = rows[0];
-  if (!row) throw new Error("EGS not found while reserving ICV.");
-  return { icv: row.lastIcv, pih: row.lastInvoiceHash ?? GENESIS_PIH };
-}
-
-/** Advance the EGS chain head to this document's hash (PIH for the next document). */
-export async function commitInvoiceHash(egsUnitId: string, invoiceHash: string): Promise<void> {
-  await db.zatcaEgsUnit.update({ where: { id: egsUnitId }, data: { lastInvoiceHash: invoiceHash } });
-}
+// NOTE: ICV/PIH reservation + chain advance are done INSIDE a single `$transaction`
+// with `SELECT … FOR UPDATE` on the EGS row in lib/zatca-clearance.ts, so the reserve
+// (read PIH) and the advance (write the new hash) are atomic w.r.t. concurrent
+// clearances and the chain cannot fork (H1). A two-step UPDATE..RETURNING then a
+// separate hash-commit was racy and was removed.
 
 // ─── Address / party mapping ──────────────────────────────────────────────────
 
