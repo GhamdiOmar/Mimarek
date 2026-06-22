@@ -209,6 +209,9 @@ export async function saveTenantTaxConfig(rows: TaxRowInput[]) {
   const organizationId = session.organizationId;
   if (!organizationId) throw new Error("An organization context is required.");
   if (!Array.isArray(rows)) throw new Error("Invalid tax configuration.");
+  // Bound the write — the form renders ~9 rows; the full unit×charge taxonomy is ~30.
+  // 50 is a generous cap that blocks a pathological payload from locking the table.
+  if (rows.length > 50) throw new Error("Too many tax configuration rows (max 50).");
 
   const data = rows.map((r) => {
     if (r.unitType !== null && !UNIT_TYPES.includes(r.unitType)) throw new Error("Invalid unit type.");

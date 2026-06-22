@@ -41,13 +41,11 @@ import {
   ZATCA_CLEARANCE_OUTCOME_VARIANT,
   VAT_CATEGORY_LABEL,
   ZATCA_CHARGE_TYPE_LABEL,
+  UNIT_TYPE_LABEL,
 } from "../../../../lib/domain-labels";
 import type { getTenantEgsSummary } from "../../../actions/zatca/tenant-onboarding";
 import type { getTenantTaxConfig, getTenantBranches } from "../../../actions/zatca/tenant-config";
-import {
-  onboardTenantEgs,
-  // getTenantEgsSummary is imported only for the type above
-} from "../../../actions/zatca/tenant-onboarding";
+import { onboardTenantEgs } from "../../../actions/zatca/tenant-onboarding";
 import {
   createTenantBranch,
   updateTenantBranch,
@@ -72,17 +70,6 @@ interface TenantZatcaViewProps {
   taxConfig: TaxConfig;
   branches: BranchesList;
 }
-
-// ─── Unit type labels (inline — no registry in domain-labels for UnitType) ────
-
-const UNIT_TYPE_LABEL: Record<string, { ar: string; en: string }> = {
-  APARTMENT: { ar: "شقة", en: "Apartment" },
-  VILLA: { ar: "فيلا", en: "Villa" },
-  OFFICE: { ar: "مكتب", en: "Office" },
-  RETAIL: { ar: "تجاري", en: "Retail" },
-  WAREHOUSE: { ar: "مستودع", en: "Warehouse" },
-  PARKING: { ar: "موقف سيارات", en: "Parking" },
-};
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -109,13 +96,7 @@ function formatDateTime(value: string | Date | null | undefined, lang: "ar" | "e
 function formatAddress(addr: unknown): string {
   if (!addr || typeof addr !== "object") return "—";
   const a = addr as Record<string, unknown>;
-  const parts = [
-    a.buildingNumber,
-    a.streetName,
-    a.district,
-    a.city,
-    a.postalCode,
-  ]
+  const parts = [a.buildingNumber, a.streetName, a.district, a.city, a.postalCode]
     .filter((v) => typeof v === "string" && v.trim())
     .map(String);
   return parts.length > 0 ? parts.join(", ") : "—";
@@ -138,28 +119,23 @@ interface BranchDialogProps {
   t: (ar: string, en: string) => string;
 }
 
-function BranchDialog({
-  open,
-  onOpenChange,
-  initial,
-  onSave,
-  isPending,
-  lang,
-  t,
-}: BranchDialogProps) {
+function BranchDialog({ open, onOpenChange, initial, onSave, isPending, lang, t }: BranchDialogProps) {
   const [name, setName] = React.useState(initial?.name ?? "");
   const [nameEn, setNameEn] = React.useState(initial?.nameEn ?? "");
   const [locationCode, setLocationCode] = React.useState(initial?.locationCode ?? "");
-  const [address, setAddress] = React.useState<SaudiAddress | null>(null);
+  const [address, setAddress] = React.useState<SaudiAddress | null>(
+    (initial?.locationAddress as SaudiAddress | null) ?? null,
+  );
   const [nameError, setNameError] = React.useState(false);
 
-  // Reset when dialog opens/changes target
+  // Reset when the dialog opens / changes target — pre-populate from `initial`
+  // (including the stored address, so editing a branch doesn't wipe its location).
   React.useEffect(() => {
     if (open) {
       setName(initial?.name ?? "");
       setNameEn(initial?.nameEn ?? "");
       setLocationCode(initial?.locationCode ?? "");
-      setAddress(null);
+      setAddress((initial?.locationAddress as SaudiAddress | null) ?? null);
       setNameError(false);
     }
   }, [open, initial]);
@@ -183,19 +159,10 @@ function BranchDialog({
       )}
       footer={
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={isPending}
-            style={{ display: "inline-flex" }}
-          >
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isPending} style={{ display: "inline-flex" }}>
             {t("إلغاء", "Cancel")}
           </Button>
-          <Button
-            onClick={handleSave}
-            disabled={isPending}
-            style={{ display: "inline-flex" }}
-          >
+          <Button onClick={handleSave} disabled={isPending} style={{ display: "inline-flex" }}>
             {isPending ? t("جارٍ الحفظ…", "Saving…") : t("حفظ", "Save")}
           </Button>
         </div>
@@ -203,10 +170,11 @@ function BranchDialog({
     >
       <div className="space-y-4 py-2">
         <div className="space-y-1.5">
-          <label className="block text-xs font-semibold text-foreground">
+          <label htmlFor="branch-name-ar" className="block text-xs font-semibold text-foreground">
             {t("اسم الفرع (عربي) *", "Branch name (Arabic) *")}
           </label>
           <Input
+            id="branch-name-ar"
             value={name}
             onChange={(e) => { setName(e.target.value); setNameError(false); }}
             dir="rtl"
@@ -214,48 +182,35 @@ function BranchDialog({
             placeholder={t("الفرع الرئيسي", "Main Branch")}
           />
           {nameError && (
-            <p className="text-xs text-destructive">
-              {t("اسم الفرع مطلوب.", "Branch name is required.")}
-            </p>
+            <p className="text-xs text-destructive">{t("اسم الفرع مطلوب.", "Branch name is required.")}</p>
           )}
         </div>
         <div className="space-y-1.5">
-          <label className="block text-xs font-semibold text-foreground">
+          <label htmlFor="branch-name-en" className="block text-xs font-semibold text-foreground">
             {t("اسم الفرع (إنجليزي)", "Branch name (English)")}
           </label>
-          <Input
-            value={nameEn}
-            onChange={(e) => setNameEn(e.target.value)}
-            dir="ltr"
-            placeholder="Main Branch"
-          />
+          <Input id="branch-name-en" value={nameEn} onChange={(e) => setNameEn(e.target.value)} dir="ltr" placeholder="Main Branch" />
         </div>
         <div className="space-y-1.5">
-          <label className="block text-xs font-semibold text-foreground">
+          <label htmlFor="branch-location-code" className="block text-xs font-semibold text-foreground">
             {t("رمز الموقع", "Location code")}
           </label>
           <Input
+            id="branch-location-code"
             value={locationCode}
             onChange={(e) => setLocationCode(e.target.value)}
             dir="ltr"
             placeholder="BR-001"
             className="font-mono"
           />
-          <p className="text-[11px] text-muted-foreground">
-            {t("اختياري — معرّف داخلي للفرع.", "Optional — internal branch identifier.")}
-          </p>
+          <p className="text-[11px] text-muted-foreground">{t("اختياري — معرّف داخلي للفرع.", "Optional — internal branch identifier.")}</p>
         </div>
-        <div className="space-y-1.5">
-          <label className="block text-xs font-semibold text-foreground">
-            {t("موقع الفرع", "Branch location")}
-          </label>
-          <AddressPicker
-            value={address ?? undefined}
-            onChange={setAddress}
-            locale={lang}
-            showDistrict
-          />
-        </div>
+        {/* AddressPicker is a compound control with its own internal field labels,
+            so this is a section heading (not a <label>) — avoids an orphan label. */}
+        <fieldset className="space-y-1.5">
+          <legend className="block text-xs font-semibold text-foreground">{t("موقع الفرع", "Branch location")}</legend>
+          <AddressPicker value={address ?? undefined} onChange={setAddress} locale={lang} showDistrict />
+        </fieldset>
       </div>
     </ResponsiveDialog>
   );
@@ -283,23 +238,11 @@ function ResetRequestDialog({ open, onOpenChange, onConfirm, isPending, t }: Res
       )}
       footer={
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={isPending}
-            style={{ display: "inline-flex" }}
-          >
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isPending} style={{ display: "inline-flex" }}>
             {t("إلغاء", "Cancel")}
           </Button>
-          <Button
-            variant="secondary"
-            onClick={onConfirm}
-            disabled={isPending}
-            style={{ display: "inline-flex" }}
-          >
-            {isPending
-              ? t("جارٍ الإرسال…", "Sending…")
-              : t("إرسال الطلب", "Send request")}
+          <Button variant="secondary" onClick={onConfirm} disabled={isPending} style={{ display: "inline-flex" }}>
+            {isPending ? t("جارٍ الإرسال…", "Sending…") : t("إرسال الطلب", "Send request")}
           </Button>
         </div>
       }
@@ -319,7 +262,11 @@ function ResetRequestDialog({ open, onOpenChange, onConfirm, isPending, t }: Res
 export default function TenantZatcaView({ summary, taxConfig, branches }: TenantZatcaViewProps) {
   const { t, lang } = useLanguage();
   const router = useRouter();
-  const [isPending, startTransition] = React.useTransition();
+  // Separate transitions so an in-flight onboard doesn't disable the branch/tax
+  // controls (and vice versa). Reset-request shares the onboard transition.
+  const [onboardPending, startOnboard] = React.useTransition();
+  const [branchPending, startBranch] = React.useTransition();
+  const [taxPending, startTax] = React.useTransition();
 
   const { egs, org, logs } = summary;
   const isActive = egs != null && egs.status === "ACTIVE";
@@ -335,24 +282,16 @@ export default function TenantZatcaView({ summary, taxConfig, branches }: Tenant
       e.preventDefault();
       setFormError(null);
       if (!vatValid) {
-        setFormError(
-          t(
-            "رقم ضريبة القيمة المضافة يجب أن يتكوّن من 15 رقمًا.",
-            "The VAT number must be exactly 15 digits.",
-          ),
-        );
+        setFormError(t("رقم ضريبة القيمة المضافة يجب أن يتكوّن من 15 رقمًا.", "The VAT number must be exactly 15 digits."));
         return;
       }
-      startTransition(async () => {
+      startOnboard(async () => {
         try {
           await onboardTenantEgs({ vatNumber: vatNumber.trim(), otp: otp.trim() || undefined });
           toast.success(t("تم الربط بنجاح.", "Connected to ZATCA successfully."));
           router.refresh();
         } catch (err) {
-          const message =
-            err instanceof Error
-              ? err.message
-              : t("تعذّر الربط. حاول مرة أخرى.", "Connection failed. Please try again.");
+          const message = err instanceof Error ? err.message : t("تعذّر الربط. حاول مرة أخرى.", "Connection failed. Please try again.");
           setFormError(message);
           toast.error(message);
         }
@@ -365,7 +304,7 @@ export default function TenantZatcaView({ summary, taxConfig, branches }: Tenant
   const [resetOpen, setResetOpen] = React.useState(false);
 
   const onRequestReset = React.useCallback(() => {
-    startTransition(async () => {
+    startOnboard(async () => {
       try {
         await createSupportTicket({
           subject: t("طلب إعادة ضبط شهادة زاتكا", "ZATCA EGS reset request"),
@@ -376,17 +315,9 @@ export default function TenantZatcaView({ summary, taxConfig, branches }: Tenant
           category: "TECHNICAL_SUPPORT",
         });
         setResetOpen(false);
-        toast.success(
-          t(
-            "تم إرسال طلبك. سيتواصل فريق الدعم معك قريبًا.",
-            "Your request has been sent. Support will contact you soon.",
-          ),
-        );
+        toast.success(t("تم إرسال طلبك. سيتواصل فريق الدعم معك قريبًا.", "Your request has been sent. Support will contact you soon."));
       } catch (err) {
-        const message =
-          err instanceof Error
-            ? err.message
-            : t("تعذّر إرسال الطلب. حاول مرة أخرى.", "Failed to send the request. Please try again.");
+        const message = err instanceof Error ? err.message : t("تعذّر إرسال الطلب. حاول مرة أخرى.", "Failed to send the request. Please try again.");
         toast.error(message);
       }
     });
@@ -403,7 +334,7 @@ export default function TenantZatcaView({ summary, taxConfig, branches }: Tenant
 
   const onBranchSave = React.useCallback(
     (data: { name: string; nameEn: string; locationCode: string; locationAddress: SaudiAddress | null }) => {
-      startTransition(async () => {
+      startBranch(async () => {
         try {
           const input = {
             name: data.name,
@@ -421,10 +352,7 @@ export default function TenantZatcaView({ summary, taxConfig, branches }: Tenant
           setBranchDialogOpen(false);
           router.refresh();
         } catch (err) {
-          const message =
-            err instanceof Error
-              ? err.message
-              : t("تعذّر حفظ الفرع.", "Failed to save branch.");
+          const message = err instanceof Error ? err.message : t("تعذّر حفظ الفرع.", "Failed to save branch.");
           toast.error(message);
         }
       });
@@ -432,17 +360,14 @@ export default function TenantZatcaView({ summary, taxConfig, branches }: Tenant
     [editingBranch, t, router],
   );
 
-  const onBranchDelete = React.useCallback(
-    (id: string) => {
-      setDeletingBranchId(id);
-      setDeleteConfirmOpen(true);
-    },
-    [],
-  );
+  const onBranchDelete = React.useCallback((id: string) => {
+    setDeletingBranchId(id);
+    setDeleteConfirmOpen(true);
+  }, []);
 
   const onBranchDeleteConfirm = React.useCallback(() => {
     if (!deletingBranchId) return;
-    startTransition(async () => {
+    startBranch(async () => {
       try {
         await deleteTenantBranch(deletingBranchId);
         toast.success(t("تم حذف الفرع.", "Branch deleted."));
@@ -450,10 +375,7 @@ export default function TenantZatcaView({ summary, taxConfig, branches }: Tenant
         setDeletingBranchId(null);
         router.refresh();
       } catch (err) {
-        const message =
-          err instanceof Error
-            ? err.message
-            : t("تعذّر حذف الفرع.", "Failed to delete branch.");
+        const message = err instanceof Error ? err.message : t("تعذّر حذف الفرع.", "Failed to delete branch.");
         toast.error(message);
       }
     });
@@ -463,7 +385,7 @@ export default function TenantZatcaView({ summary, taxConfig, branches }: Tenant
   const [taxRows, setTaxRows] = React.useState<TaxRow[]>(taxConfig.configs);
 
   const onSaveTaxConfig = React.useCallback(() => {
-    startTransition(async () => {
+    startTax(async () => {
       try {
         await saveTenantTaxConfig(
           taxRows.map((r) => ({
@@ -477,10 +399,7 @@ export default function TenantZatcaView({ summary, taxConfig, branches }: Tenant
         toast.success(t("تم حفظ إعدادات الضريبة.", "Tax mapping saved."));
         router.refresh();
       } catch (err) {
-        const message =
-          err instanceof Error
-            ? err.message
-            : t("تعذّر حفظ الإعدادات.", "Failed to save settings.");
+        const message = err instanceof Error ? err.message : t("تعذّر حفظ الإعدادات.", "Failed to save settings.");
         toast.error(message);
       }
     });
@@ -507,9 +426,7 @@ export default function TenantZatcaView({ summary, taxConfig, branches }: Tenant
         header: t("الرمز", "Code"),
         enableSorting: false,
         cell: ({ row }) => (
-          <span dir="ltr" className="font-mono text-xs text-muted-foreground">
-            {row.original.locationCode ?? "—"}
-          </span>
+          <span dir="ltr" className="font-mono text-xs text-muted-foreground">{row.original.locationCode ?? "—"}</span>
         ),
       },
       {
@@ -529,19 +446,8 @@ export default function TenantZatcaView({ summary, taxConfig, branches }: Tenant
         enableHiding: false,
         cell: ({ row }) => (
           <div className="flex items-center justify-end gap-1">
-            <IconButton
-              icon={Pencil}
-              aria-label={t("تعديل", "Edit")}
-              variant="ghost"
-              onClick={() => openEditBranch(row.original)}
-            />
-            <IconButton
-              icon={Trash2}
-              aria-label={t("حذف", "Delete")}
-              variant="ghost"
-              className="text-destructive"
-              onClick={() => onBranchDelete(row.original.id)}
-            />
+            <IconButton icon={Pencil} aria-label={t("تعديل", "Edit")} variant="ghost" onClick={() => openEditBranch(row.original)} />
+            <IconButton icon={Trash2} aria-label={t("حذف", "Delete")} variant="ghost" className="text-destructive" onClick={() => onBranchDelete(row.original.id)} />
           </div>
         ),
       },
@@ -558,11 +464,7 @@ export default function TenantZatcaView({ summary, taxConfig, branches }: Tenant
         header: t("التاريخ", "Date"),
         enableSorting: true,
         enableHiding: false,
-        cell: ({ row }) => (
-          <span className="text-muted-foreground text-xs">
-            {formatDateTime(row.original.createdAt, lang)}
-          </span>
-        ),
+        cell: ({ row }) => <span className="text-muted-foreground text-xs">{formatDateTime(row.original.createdAt, lang)}</span>,
       },
       {
         accessorKey: "outcome",
@@ -571,11 +473,7 @@ export default function TenantZatcaView({ summary, taxConfig, branches }: Tenant
         cell: ({ row }) => {
           const label = ZATCA_CLEARANCE_OUTCOME_LABEL[row.original.outcome];
           const variant = ZATCA_CLEARANCE_OUTCOME_VARIANT[row.original.outcome] ?? "default";
-          return (
-            <Badge variant={variant} size="sm">
-              {label ? t(label.ar, label.en) : row.original.outcome}
-            </Badge>
-          );
+          return <Badge variant={variant} size="sm">{label ? t(label.ar, label.en) : row.original.outcome}</Badge>;
         },
       },
       {
@@ -584,9 +482,7 @@ export default function TenantZatcaView({ summary, taxConfig, branches }: Tenant
         enableSorting: true,
         meta: { numeric: true },
         cell: ({ row }) => (
-          <span dir="ltr" className="font-mono text-xs tabular-nums text-foreground">
-            {row.original.icv ?? "—"}
-          </span>
+          <span dir="ltr" className="font-mono text-xs tabular-nums text-foreground">{row.original.icv ?? "—"}</span>
         ),
       },
       {
@@ -595,11 +491,7 @@ export default function TenantZatcaView({ summary, taxConfig, branches }: Tenant
         enableSorting: false,
         cell: ({ row }) => {
           const codes = row.original.zatcaCodes ?? [];
-          return (
-            <span dir="ltr" className="font-mono text-xs text-muted-foreground">
-              {codes.length > 0 ? codes.join(", ") : "—"}
-            </span>
-          );
+          return <span dir="ltr" className="font-mono text-xs text-muted-foreground">{codes.length > 0 ? codes.join(", ") : "—"}</span>;
         },
       },
       {
@@ -607,10 +499,7 @@ export default function TenantZatcaView({ summary, taxConfig, branches }: Tenant
         header: t("الرسالة", "Message"),
         enableSorting: false,
         cell: ({ row }) => (
-          <span
-            className="block max-w-[280px] truncate text-xs text-muted-foreground"
-            title={row.original.message ?? undefined}
-          >
+          <span className="block max-w-[280px] truncate text-xs text-muted-foreground" title={row.original.message ?? undefined}>
             {row.original.message ?? "—"}
           </span>
         ),
@@ -621,10 +510,7 @@ export default function TenantZatcaView({ summary, taxConfig, branches }: Tenant
   );
 
   return (
-    <div
-      className="space-y-8 animate-in fade-in duration-500"
-      dir={lang === "ar" ? "rtl" : "ltr"}
-    >
+    <div className="space-y-8 animate-in fade-in duration-500" dir={lang === "ar" ? "rtl" : "ltr"}>
       {/* Back link */}
       <Link
         href="/dashboard/settings"
@@ -661,72 +547,42 @@ export default function TenantZatcaView({ summary, taxConfig, branches }: Tenant
               {(() => {
                 const label = ZATCA_EGS_STATUS_LABEL[egs.status];
                 const variant = ZATCA_EGS_STATUS_VARIANT[egs.status] ?? "default";
-                return (
-                  <Badge variant={variant} size="sm">
-                    {label ? t(label.ar, label.en) : egs.status}
-                  </Badge>
-                );
+                return <Badge variant={variant} size="sm">{label ? t(label.ar, label.en) : egs.status}</Badge>;
               })()}
             </div>
           </CardHeader>
           <CardContent>
             <dl className="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
               <div>
-                <dt className="text-xs text-muted-foreground">
-                  {t("رقم ضريبة القيمة المضافة", "VAT number")}
-                </dt>
-                <dd dir="ltr" className="mt-0.5 font-mono text-sm tabular-nums text-foreground">
-                  {egs.vatNumber}
-                </dd>
+                <dt className="text-xs text-muted-foreground">{t("رقم ضريبة القيمة المضافة", "VAT number")}</dt>
+                <dd dir="ltr" className="mt-0.5 font-mono text-sm tabular-nums text-foreground">{egs.vatNumber}</dd>
               </div>
               <div>
-                <dt className="text-xs text-muted-foreground">
-                  {t("الرقم التسلسلي", "Serial number")}
-                </dt>
-                <dd dir="ltr" className="mt-0.5 break-all font-mono text-xs text-foreground">
-                  {egs.egsSerialNumber}
-                </dd>
+                <dt className="text-xs text-muted-foreground">{t("الرقم التسلسلي", "Serial number")}</dt>
+                <dd dir="ltr" className="mt-0.5 break-all font-mono text-xs text-foreground">{egs.egsSerialNumber}</dd>
               </div>
               <div>
-                <dt className="text-xs text-muted-foreground">
-                  {t("البيئة", "Environment")}
-                </dt>
+                <dt className="text-xs text-muted-foreground">{t("البيئة", "Environment")}</dt>
                 <dd className="mt-0.5 text-sm text-foreground">{egs.environment}</dd>
               </div>
               <div>
-                <dt className="text-xs text-muted-foreground">
-                  {t("آخر عدّاد فاتورة", "Last ICV")}
-                </dt>
-                <dd dir="ltr" className="mt-0.5 font-mono text-sm tabular-nums text-foreground">
-                  {egs.lastIcv ?? "—"}
-                </dd>
+                <dt className="text-xs text-muted-foreground">{t("آخر عدّاد فاتورة", "Last ICV")}</dt>
+                <dd dir="ltr" className="mt-0.5 font-mono text-sm tabular-nums text-foreground">{egs.lastIcv ?? "—"}</dd>
               </div>
               <div>
-                <dt className="text-xs text-muted-foreground">
-                  {t("تاريخ التهيئة", "Onboarded")}
-                </dt>
-                <dd className="mt-0.5 text-sm text-foreground">
-                  {formatDate(egs.onboardedAt, lang)}
-                </dd>
+                <dt className="text-xs text-muted-foreground">{t("تاريخ التهيئة", "Onboarded")}</dt>
+                <dd className="mt-0.5 text-sm text-foreground">{formatDate(egs.onboardedAt, lang)}</dd>
               </div>
               <div>
-                <dt className="text-xs text-muted-foreground">
-                  {t("الاسم النظامي", "Legal name")}
-                </dt>
+                <dt className="text-xs text-muted-foreground">{t("الاسم النظامي", "Legal name")}</dt>
                 <dd className="mt-0.5 text-sm text-foreground">
-                  {lang === "ar"
-                    ? egs.legalNameAr || egs.legalNameEn
-                    : egs.legalNameEn || egs.legalNameAr}
+                  {lang === "ar" ? egs.legalNameAr || egs.legalNameEn : egs.legalNameEn || egs.legalNameAr}
                 </dd>
               </div>
               {egs.crNumber && (
                 <div>
-                  <dt className="text-xs text-muted-foreground">
-                    {t("السجل التجاري", "CR number")}
-                  </dt>
-                  <dd dir="ltr" className="mt-0.5 font-mono text-sm tabular-nums text-foreground">
-                    {egs.crNumber}
-                  </dd>
+                  <dt className="text-xs text-muted-foreground">{t("السجل التجاري", "CR number")}</dt>
+                  <dd dir="ltr" className="mt-0.5 font-mono text-sm tabular-nums text-foreground">{egs.crNumber}</dd>
                 </div>
               )}
             </dl>
@@ -739,13 +595,7 @@ export default function TenantZatcaView({ summary, taxConfig, branches }: Tenant
             </div>
 
             <div className="mt-6 flex justify-end border-t border-border pt-4">
-              <Button
-                variant="secondary"
-                onClick={() => setResetOpen(true)}
-                disabled={isPending}
-                style={{ display: "inline-flex" }}
-                className="gap-2"
-              >
+              <Button variant="secondary" onClick={() => setResetOpen(true)} disabled={onboardPending} style={{ display: "inline-flex" }} className="gap-2">
                 <RefreshCw className="h-4 w-4" aria-hidden="true" />
                 {t("طلب إعادة الربط", "Request reset")}
               </Button>
@@ -755,25 +605,19 @@ export default function TenantZatcaView({ summary, taxConfig, branches }: Tenant
       ) : (
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-semibold">
-              {t("ربط مؤسستك بزاتكا", "Connect your organization to ZATCA")}
-            </CardTitle>
+            <CardTitle className="text-sm font-semibold">{t("ربط مؤسستك بزاتكا", "Connect your organization to ZATCA")}</CardTitle>
           </CardHeader>
           <CardContent>
             {/* Read-only org identity block */}
             {org && (
               <div className="mb-6 rounded-md border border-border bg-muted/40 p-4">
-                <p className="mb-3 text-xs font-semibold text-foreground">
-                  {t("بيانات المنشأة (من إعدادات المؤسسة)", "Organization identity (from settings)")}
-                </p>
+                <p className="mb-3 text-xs font-semibold text-foreground">{t("بيانات المنشأة (من إعدادات المؤسسة)", "Organization identity (from settings)")}</p>
                 <dl className="grid grid-cols-1 gap-x-8 gap-y-2 text-xs sm:grid-cols-2">
                   {(org.nameArabic || org.nameEnglish || org.name) && (
                     <div className="flex justify-between gap-2">
                       <dt className="text-muted-foreground">{t("الاسم النظامي", "Legal name")}</dt>
                       <dd className="text-foreground">
-                        {lang === "ar"
-                          ? org.nameArabic || org.nameEnglish || org.name
-                          : org.nameEnglish || org.nameArabic || org.name}
+                        {lang === "ar" ? org.nameArabic || org.nameEnglish || org.name : org.nameEnglish || org.nameArabic || org.name}
                       </dd>
                     </div>
                   )}
@@ -786,9 +630,7 @@ export default function TenantZatcaView({ summary, taxConfig, branches }: Tenant
                   {org.nationalAddress && (
                     <div className="flex justify-between gap-2 sm:col-span-2">
                       <dt className="shrink-0 text-muted-foreground">{t("العنوان الوطني", "National address")}</dt>
-                      <dd dir="ltr" className="text-end text-foreground">
-                        {formatAddress(org.nationalAddress)}
-                      </dd>
+                      <dd dir="ltr" className="text-end text-foreground">{formatAddress(org.nationalAddress)}</dd>
                     </div>
                   )}
                 </dl>
@@ -804,11 +646,8 @@ export default function TenantZatcaView({ summary, taxConfig, branches }: Tenant
             {/* Onboard form */}
             <form onSubmit={onOnboardSubmit} className="space-y-5">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                {/* VAT number */}
                 <div className="space-y-1.5">
-                  <label htmlFor="tenant-zatca-vat" className="block text-xs font-semibold text-foreground">
-                    {t("رقم ضريبة القيمة المضافة *", "VAT number *")}
-                  </label>
+                  <label htmlFor="tenant-zatca-vat" className="block text-xs font-semibold text-foreground">{t("رقم ضريبة القيمة المضافة *", "VAT number *")}</label>
                   <Input
                     id="tenant-zatca-vat"
                     dir="ltr"
@@ -821,16 +660,11 @@ export default function TenantZatcaView({ summary, taxConfig, branches }: Tenant
                     className="font-mono tabular-nums"
                     placeholder="300000000000003"
                   />
-                  <p className="text-[11px] text-muted-foreground">
-                    {t("15 رقمًا.", "15 digits.")}
-                  </p>
+                  <p className="text-[11px] text-muted-foreground">{t("15 رقمًا.", "15 digits.")}</p>
                 </div>
 
-                {/* OTP */}
                 <div className="space-y-1.5">
-                  <label htmlFor="tenant-zatca-otp" className="block text-xs font-semibold text-foreground">
-                    {t("رمز التحقق (اختياري)", "OTP (optional)")}
-                  </label>
+                  <label htmlFor="tenant-zatca-otp" className="block text-xs font-semibold text-foreground">{t("رمز التحقق (اختياري)", "OTP (optional)")}</label>
                   <Input
                     id="tenant-zatca-otp"
                     dir="ltr"
@@ -841,28 +675,17 @@ export default function TenantZatcaView({ summary, taxConfig, branches }: Tenant
                     className="font-mono tabular-nums"
                     placeholder="123456"
                   />
-                  <p className="text-[11px] text-muted-foreground">
-                    {t("البيئة التجريبية لا تتحقق من الرمز.", "Sandbox does not validate the OTP.")}
-                  </p>
+                  <p className="text-[11px] text-muted-foreground">{t("البيئة التجريبية لا تتحقق من الرمز.", "Sandbox does not validate the OTP.")}</p>
                 </div>
               </div>
 
               {formError && (
-                <p className="rounded-md border border-destructive bg-destructive/10 px-3 py-2 text-xs text-destructive">
-                  {formError}
-                </p>
+                <p className="rounded-md border border-destructive bg-destructive/10 px-3 py-2 text-xs text-destructive">{formError}</p>
               )}
 
               <div className="flex justify-end">
-                <Button
-                  type="submit"
-                  disabled={isPending || !vatValid}
-                  style={{ display: "inline-flex" }}
-                  className="gap-2"
-                >
-                  {isPending
-                    ? t("جارٍ الربط…", "Connecting…")
-                    : t("ربط مع زاتكا", "Connect to ZATCA")}
+                <Button type="submit" disabled={onboardPending || !vatValid} style={{ display: "inline-flex" }} className="gap-2">
+                  {onboardPending ? t("جارٍ الربط…", "Connecting…") : t("ربط مع زاتكا", "Connect to ZATCA")}
                 </Button>
               </div>
             </form>
@@ -873,17 +696,9 @@ export default function TenantZatcaView({ summary, taxConfig, branches }: Tenant
       {/* ─── Branches card (D15) ─────────────────────────────────────────── */}
       <section>
         <div className="mb-3 flex items-center justify-between gap-4">
-          <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-            {t("الفروع", "Branches")}
-          </h2>
+          <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">{t("الفروع", "Branches")}</h2>
           {isActive && (
-            <Button
-              size="sm"
-              onClick={openAddBranch}
-              disabled={isPending}
-              style={{ display: "inline-flex" }}
-              className="gap-2"
-            >
+            <Button size="sm" onClick={openAddBranch} disabled={branchPending} style={{ display: "inline-flex" }} className="gap-2">
               <GitBranch className="h-4 w-4" aria-hidden="true" />
               {t("إضافة فرع", "Add branch")}
             </Button>
@@ -895,12 +710,7 @@ export default function TenantZatcaView({ summary, taxConfig, branches }: Tenant
             <div className="p-6">
               <div className="flex items-start gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
                 <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                <span>
-                  {t(
-                    "اربط مؤسستك بزاتكا أولاً لإضافة الفروع.",
-                    "Connect to ZATCA first to add branches.",
-                  )}
-                </span>
+                <span>{t("اربط مؤسستك بزاتكا أولاً لإضافة الفروع.", "Connect to ZATCA first to add branches.")}</span>
               </div>
             </div>
           ) : branches.length === 0 ? (
@@ -908,14 +718,9 @@ export default function TenantZatcaView({ summary, taxConfig, branches }: Tenant
               <EmptyState
                 icon={<GitBranch className="h-12 w-12" aria-hidden="true" />}
                 title={t("لا توجد فروع بعد", "No branches yet")}
-                description={t(
-                  "أضف فروع مؤسستك لتتبع فواتير كل موقع بشكل منفصل.",
-                  "Add your organization branches to track invoices per location.",
-                )}
+                description={t("أضف فروع مؤسستك لتتبع فواتير كل موقع بشكل منفصل.", "Add your organization branches to track invoices per location.")}
                 action={
-                  <Button onClick={openAddBranch} style={{ display: "inline-flex" }}>
-                    {t("إضافة فرع", "Add branch")}
-                  </Button>
+                  <Button onClick={openAddBranch} style={{ display: "inline-flex" }}>{t("إضافة فرع", "Add branch")}</Button>
                 }
               />
             </div>
@@ -936,17 +741,12 @@ export default function TenantZatcaView({ summary, taxConfig, branches }: Tenant
 
       {/* ─── Tax mapping card (D16) ──────────────────────────────────────── */}
       <section>
-        <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-          {t("إعداد الضريبة", "Tax mapping")}
-        </h2>
+        <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">{t("إعداد الضريبة", "Tax mapping")}</h2>
         <Card>
           <CardContent className="pt-6">
             {taxConfig.isDefault && (
               <div className="mb-4 rounded-md border border-info bg-info/10 px-3 py-2 text-xs text-info-strong">
-                {t(
-                  "هذه قيم مقترحة — راجعها ثم احفظها.",
-                  "These are recommended defaults — review and save them.",
-                )}
+                {t("هذه قيم مقترحة — راجعها ثم احفظها.", "These are recommended defaults — review and save them.")}
               </div>
             )}
 
@@ -967,17 +767,11 @@ export default function TenantZatcaView({ summary, taxConfig, branches }: Tenant
                     const chargeLabel = row.chargeType ? ZATCA_CHARGE_TYPE_LABEL[row.chargeType] : null;
                     return (
                       <tr key={`${row.unitType ?? "null"}-${row.chargeType ?? "null"}-${idx}`} className="hover:bg-muted/20">
-                        <td className="py-2.5 pe-4 text-foreground">
-                          {unitLabel
-                            ? t(unitLabel.ar, unitLabel.en)
-                            : t("جميع الأنواع", "All unit types")}
-                        </td>
-                        <td className="py-2.5 pe-4 text-foreground">
-                          {chargeLabel ? t(chargeLabel.ar, chargeLabel.en) : "—"}
-                        </td>
+                        <td className="py-2.5 pe-4 text-foreground">{unitLabel ? t(unitLabel.ar, unitLabel.en) : t("جميع الأنواع", "All unit types")}</td>
+                        <td className="py-2.5 pe-4 text-foreground">{chargeLabel ? t(chargeLabel.ar, chargeLabel.en) : "—"}</td>
                         <td className="py-2.5 pe-4">
                           <SelectField
-                            className="h-8 w-auto min-w-[130px] text-xs"
+                            className="h-8 w-auto min-w-[150px] text-xs"
                             value={row.vatCategory}
                             onChange={(e) => {
                               const next = [...taxRows];
@@ -988,11 +782,7 @@ export default function TenantZatcaView({ summary, taxConfig, branches }: Tenant
                           >
                             {(["STANDARD", "ZERO", "EXEMPT", "OUT_OF_SCOPE"] as const).map((cat) => {
                               const lbl = VAT_CATEGORY_LABEL[cat];
-                              return (
-                                <option key={cat} value={cat}>
-                                  {lbl ? t(lbl.ar, lbl.en) : cat}
-                                </option>
-                              );
+                              return <option key={cat} value={cat}>{lbl ? t(lbl.ar, lbl.en) : cat}</option>;
                             })}
                           </SelectField>
                         </td>
@@ -1006,10 +796,7 @@ export default function TenantZatcaView({ summary, taxConfig, branches }: Tenant
                             onChange={(e) => {
                               const next = [...taxRows];
                               const raw = e.target.value;
-                              next[idx] = {
-                                ...row,
-                                vatRate: raw === "" ? null : parseFloat(raw),
-                              };
+                              next[idx] = { ...row, vatRate: raw === "" ? null : parseFloat(raw) };
                               setTaxRows(next);
                             }}
                             className="w-20 font-mono tabular-nums"
@@ -1036,12 +823,8 @@ export default function TenantZatcaView({ summary, taxConfig, branches }: Tenant
             </div>
 
             <div className="mt-6 flex justify-end border-t border-border pt-4">
-              <Button
-                onClick={onSaveTaxConfig}
-                disabled={isPending}
-                style={{ display: "inline-flex" }}
-              >
-                {isPending ? t("جارٍ الحفظ…", "Saving…") : t("حفظ إعداد الضريبة", "Save tax mapping")}
+              <Button onClick={onSaveTaxConfig} disabled={taxPending} style={{ display: "inline-flex" }}>
+                {taxPending ? t("جارٍ الحفظ…", "Saving…") : t("حفظ إعداد الضريبة", "Save tax mapping")}
               </Button>
             </div>
           </CardContent>
@@ -1050,9 +833,7 @@ export default function TenantZatcaView({ summary, taxConfig, branches }: Tenant
 
       {/* ─── Clearance log ───────────────────────────────────────────────── */}
       <section>
-        <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-          {t("سجل الاعتماد", "Clearance log")}
-        </h2>
+        <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">{t("سجل الاعتماد", "Clearance log")}</h2>
         <Card className="overflow-hidden">
           {logs.length === 0 ? (
             <div className="p-6">
@@ -1074,10 +855,7 @@ export default function TenantZatcaView({ summary, taxConfig, branches }: Tenant
               pageSize={10}
               getRowId={(r) => r.id}
               emptyTitle={t("لا توجد محاولات اعتماد بعد", "No clearance attempts yet")}
-              emptyDescription={t(
-                "ستظهر هنا كل محاولة اعتماد.",
-                "Every clearance attempt appears here.",
-              )}
+              emptyDescription={t("ستظهر هنا كل محاولة اعتماد.", "Every clearance attempt appears here.")}
             />
           )}
         </Card>
@@ -1089,7 +867,7 @@ export default function TenantZatcaView({ summary, taxConfig, branches }: Tenant
         onOpenChange={setBranchDialogOpen}
         initial={editingBranch}
         onSave={onBranchSave}
-        isPending={isPending}
+        isPending={branchPending}
         lang={lang}
         t={t}
       />
@@ -1098,45 +876,23 @@ export default function TenantZatcaView({ summary, taxConfig, branches }: Tenant
         open={deleteConfirmOpen}
         onOpenChange={setDeleteConfirmOpen}
         title={t("حذف الفرع", "Delete branch")}
-        description={t(
-          "سيتم حذف الفرع نهائيًا. هذا الإجراء لا يمكن التراجع عنه.",
-          "The branch will be permanently deleted. This action cannot be undone.",
-        )}
+        description={t("سيتم حذف الفرع نهائيًا. هذا الإجراء لا يمكن التراجع عنه.", "The branch will be permanently deleted. This action cannot be undone.")}
         footer={
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-            <Button
-              variant="outline"
-              onClick={() => setDeleteConfirmOpen(false)}
-              disabled={isPending}
-              style={{ display: "inline-flex" }}
-            >
+            <Button variant="outline" onClick={() => setDeleteConfirmOpen(false)} disabled={branchPending} style={{ display: "inline-flex" }}>
               {t("إلغاء", "Cancel")}
             </Button>
-            <Button
-              variant="destructive"
-              onClick={onBranchDeleteConfirm}
-              disabled={isPending}
-              style={{ display: "inline-flex" }}
-              className="gap-2"
-            >
+            <Button variant="destructive" onClick={onBranchDeleteConfirm} disabled={branchPending} style={{ display: "inline-flex" }} className="gap-2">
               <Trash2 className="h-4 w-4" aria-hidden="true" />
-              {isPending ? t("جارٍ الحذف…", "Deleting…") : t("حذف", "Delete")}
+              {branchPending ? t("جارٍ الحذف…", "Deleting…") : t("حذف", "Delete")}
             </Button>
           </div>
         }
       >
-        <p className="py-2 text-sm text-muted-foreground">
-          {t("لا يمكن التراجع عن هذا الإجراء.", "This action cannot be undone.")}
-        </p>
+        <p className="py-2 text-sm text-muted-foreground">{t("لا يمكن التراجع عن هذا الإجراء.", "This action cannot be undone.")}</p>
       </ResponsiveDialog>
 
-      <ResetRequestDialog
-        open={resetOpen}
-        onOpenChange={setResetOpen}
-        onConfirm={onRequestReset}
-        isPending={isPending}
-        t={t}
-      />
+      <ResetRequestDialog open={resetOpen} onOpenChange={setResetOpen} onConfirm={onRequestReset} isPending={onboardPending} t={t} />
     </div>
   );
 }

@@ -207,6 +207,8 @@ export async function getTenantEgsSummary() {
         where: { egsUnitId: egs.id },
         orderBy: { createdAt: "desc" },
         take: 25,
+        // Project only what the UI renders — never ship more of the log row than needed.
+        select: { id: true, createdAt: true, outcome: true, icv: true, zatcaCodes: true, message: true },
       })
     : [];
   return serialize({ egs, org, logs });

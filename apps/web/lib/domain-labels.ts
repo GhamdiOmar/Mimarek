@@ -27,6 +27,7 @@ import type {
   MaintenanceCategory,
   MarketplaceListingStatus,
   UnitStatus,
+  UnitType,
   ZatcaStatus,
   ZatcaEgsStatus,
   ZatcaDocumentType,
@@ -318,3 +319,14 @@ export const ZATCA_CHARGE_TYPE_LABEL = {
   SALE: { ar: "بيع", en: "Sale" },
   OTHER: { ar: "أخرى", en: "Other" },
 } satisfies Record<ZatcaChargeType, { ar: string; en: string }> as Record<string, { ar: string; en: string }>;
+
+// Unit-type bilingual labels (canonical registry — used by the ZATCA tax-mapping grid
+// and any future unit-type display; do not re-declare locally per page, §6.11.4).
+export const UNIT_TYPE_LABEL = {
+  APARTMENT: { ar: "شقة", en: "Apartment" },
+  VILLA: { ar: "فيلا", en: "Villa" },
+  OFFICE: { ar: "مكتب", en: "Office" },
+  RETAIL: { ar: "محل تجاري", en: "Retail" },
+  WAREHOUSE: { ar: "مستودع", en: "Warehouse" },
+  PARKING: { ar: "موقف سيارات", en: "Parking" },
+} satisfies Record<UnitType, { ar: string; en: string }> as Record<string, { ar: string; en: string }>;
