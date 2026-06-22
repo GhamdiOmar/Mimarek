@@ -101,6 +101,8 @@ ALTER TABLE IF EXISTS public."SequenceCounter"           ENABLE ROW LEVEL SECURI
 ALTER TABLE IF EXISTS public."RateLimitCounter"          ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public."ZatcaEgsUnit"              ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public."ZatcaClearanceLog"         ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public."ZatcaBranch"               ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public."OrgZatcaTaxConfig"         ENABLE ROW LEVEL SECURITY;
 
 -- ── Non-model tables ─────────────────────────────────────────────────────────
 ALTER TABLE IF EXISTS public."_CouponPlans"              ENABLE ROW LEVEL SECURITY; -- implicit M2M join table (Plan ↔ Coupon)
