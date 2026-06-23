@@ -1,5 +1,31 @@
 # Changelog — Mimarek PropTech
 
+## [5.5.0] — 2026-06-23 — ZATCA Phase-2 (R4b — Track C): reporting recovery + Invoices surface
+
+**The recovery + surfacing layer around R4a's issuance core.** R4a wired issuance into every money path; R4b closes the loop: a B2C reporting **recovery sweep** for documents that failed their first submission, a tenant-facing **Invoices & Receipts** page, the previously-orphaned printable `ZatcaDocument` wired in with a real scannable QR + a portrait PDF, and the **re-issue** action for held B2B invoices. No schema change — R4b is pure recovery + UI on the R4a tables. SANDBOX-only.
+
+### B2C reporting recovery
+- **`runReportingSweepInternal`** (`lib/zatca-reporting.ts`) re-submits every tenant document parked at `zatcaStatus = PENDING` with a stored payload — idempotent (`clearTenantDocumentInternal({ isRetry: true })` re-POSTs the SAME signed payload and short-circuits any document that has since reached a terminal state). The **cron stub is filled** (`/api/cron/zatca-report`, cron-secret gated, never tenant-reachable); a guarded **`runReportingSweep`** admin action + a **"Run sweep now"** button land on `/dashboard/admin/zatca`. A **>12h stuck-reporting alarm** (`notifyPlatformStaff`) + a tenant-`TenantDocument`-aware **reporting-health metric** (cleared / reported / pending / rejected / held / stuck>12h) — a NEW counter, distinct from the platform-`Invoice` `getZatcaClearanceRate`.
+
+### Tenant Invoices & Receipts surface
+- New **`/dashboard/invoices`** (tenant, `payments:read`) — a `DataTable` of every issued document with status badges, a compact reporting-health strip, and §6.6.7 icon-only row actions (view + HELD re-issue); 5-element `EmptyState`; RTL-first bilingual. `ROUTE_GUARDS` entry + nav (sidebar / radial finance group / Cmd-K) wired off the single SSOT.
+- New **`/dashboard/invoices/[id]`** detail — wires the previously-**orphaned** `ZatcaDocument` component (0 importers → now rendered) with a **real scannable QR** (the `qrcode` lib renders the ZATCA TLV to a raster) and a **portrait A4 PDF** download (`html2canvas` + `jsPDF`, snapshot of the light-only document surface — not the landscape `exportToPDF`).
+- **HELD re-issue:** `reissueHeldDocumentInternal` re-snapshots the buyer from the now-completed `Customer`, re-validates, clears `needsBuyerData` and submits — or returns the still-missing fields. Surfaced as a row action + a detail-page banner (`finance:write`, org-ownership re-checked, audited).
+
+### Doc-sync
+- AGENTS.md §4: `2026-06-enable-rls.sql` is **generated** by `generate-rls.ts` (`rls:generate`, CI `rls:check`), not hand-edited — corrects the stale prose. The ZATCA spike recipe's `SignatureValue` note corrected (signs `invoiceHashBinary`, not `c14n(SignedInfo)` — `xades.ts:225`).
+
+### Verify
+- `npm run build` green (`--webpack`) · `check-types` green · `lint` 0 errors · `turbo test:unit` green (**190** web incl. 8 structural + 5 behavioral reporting-sweep tests) · **`/mimaric-qa` GO (8.5/10)** — zero Critical/High; the two valid Mediums fixed (cron registration in `vercel.json`, the `companyName` missing-field label key) + the behavioral sweep tests added; two Lows dismissed with reasons.
+- **§3.9 4-theme walk** (light/dark × AR/EN) on `/dashboard/invoices`, `/dashboard/invoices/[id]` and `/dashboard/admin/zatca` — **0 console errors**; the real scannable QR renders, the HELD row shows its re-issue affordance, the printable document correctly stays light-only in dark mode (D26), mobile 375×812 verified, access-separation holds (tenant → invoices, system → admin reporting card).
+- **§3.8 verification re-caught four stale dossier claims by direct Read:** `Organization.logoUrl`, the ZATCA status/document-type `domain-labels` maps, and IBM Plex Mono (`--font-ibm-plex-mono`) all **already exist** → no schema/label/font work; the reporting *branch* already works at issuance (only the recovery *sweep* was missing).
+
+### Deferred
+- **Still R4b-scope but deferred (own surfaces):** platform `resetTenantEgs` needs an admin tenant-EGS-management list that does not exist yet (the `TECHNICAL_SUPPORT`-ticket workaround remains); the contract-signing / reservation-deposit issuance hooks have no payment charge-site to attach to today.
+- **R5:** production CSID + the 6-sample compliance gate + a real reporting scheduler + external tax-advisor signoff + PRODUCTION env threading + PDF/A-3-with-embedded-XML.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimarek/compare/v5.4.0...v5.5.0
+
 ## [5.4.0] — 2026-06-23 — ZATCA Phase-2 (R4a — Track C): tenant issuance core
 
 **Tenants now issue real ZATCA documents for their own customers.** R4a is the issuance core of **Track C** — a single `issueDocumentForCharge` classifier wired into **every** money-receipt path so no charge silently skips a document: commercial-lease rent → cleared/reported e-invoice, residential rent / sale → receipt, a reversal of a cleared invoice → credit note. The reporting sweep, the `/dashboard/invoices` page and the printable `ZatcaDocument` render are **R4b** (`v5.5.0`). SANDBOX-only.
