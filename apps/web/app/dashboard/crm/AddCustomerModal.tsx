@@ -21,6 +21,8 @@ import {
   NationalIdInput,
   SaudiPhoneInput,
   SARAmountInput,
+  AddressPicker,
+  type SaudiAddress,
 } from "@repo/ui";
 import { cn } from "@repo/ui/lib/utils";
 import { createCustomer } from "../../actions/customers";
@@ -146,6 +148,14 @@ export function AddCustomerModal({
         nationality: z.string().optional(),
         maritalStatus: z.string().optional(),
         dateOfBirth: z.string().optional(),
+        // ZATCA Track C buyer party (D18)
+        customerKind: z.string().optional(),
+        vatNumber: z.string().optional(),
+        crNumber: z.string().optional(),
+        companyNameAr: z.string().optional(),
+        companyNameEn: z.string().optional(),
+        // National address — required for a B2B cleared tax invoice (D18 data gate).
+        address: z.any().optional(),
       }),
     [lang],
   );
@@ -176,6 +186,12 @@ export function AddCustomerModal({
       nationality: "",
       maritalStatus: "",
       dateOfBirth: "",
+      customerKind: "",
+      vatNumber: "",
+      crNumber: "",
+      companyNameAr: "",
+      companyNameEn: "",
+      address: undefined,
     },
   });
 
@@ -190,6 +206,7 @@ export function AddCustomerModal({
   const [error, setError] = React.useState<string | null>(null);
 
   const budget = watch("budget");
+  const customerKind = watch("customerKind");
 
   // Reset form + aux state every time the modal opens, so each trigger site
   // (the 3 desktop call-sites + the Kanban per-column add) gets a clean form.
@@ -210,6 +227,12 @@ export function AddCustomerModal({
         nationality: "",
         maritalStatus: "",
         dateOfBirth: "",
+        customerKind: "",
+        vatNumber: "",
+        crNumber: "",
+        companyNameAr: "",
+        companyNameEn: "",
+        address: undefined,
       });
       setUnitSearch("");
       setSelectedUnit(null);
@@ -253,6 +276,12 @@ export function AddCustomerModal({
         maritalStatus: values.maritalStatus || undefined,
         budget: values.budget != null ? Number(values.budget) : undefined,
         agentId: values.agentId || undefined,
+        customerKind: values.customerKind || undefined,
+        vatNumber: values.vatNumber || undefined,
+        crNumber: values.crNumber || undefined,
+        companyNameAr: values.companyNameAr || undefined,
+        companyNameEn: values.companyNameEn || undefined,
+        address: values.address || undefined,
       });
 
       // Link property interest if a unit + intent was selected
@@ -793,6 +822,124 @@ export function AddCustomerModal({
                     </Field>
                   )}
                 />
+              </div>
+            </details>
+
+            {/* ZATCA e-invoicing buyer party (R4 Track C — D18). A COMPANY with a complete
+                VAT + CR + national address gets a cleared B2B tax invoice; otherwise simplified. */}
+            <details className="group">
+              <summary className="cursor-pointer text-xs font-bold text-muted-foreground hover:text-foreground transition-colors list-none flex items-center gap-2 py-1">
+                <ChevronRight className="h-3.5 w-3.5 transition-transform group-open:rotate-90" />
+                {lang === "ar" ? "الفوترة الإلكترونية (زاتكا)" : "E-Invoicing (ZATCA)"}
+              </summary>
+              <div className="pt-3 grid grid-cols-2 gap-4">
+                <Controller
+                  name="customerKind"
+                  control={control}
+                  render={({ field }) => (
+                    <SelectField
+                      label={lang === "ar" ? "نوع المشتري" : "Buyer type"}
+                      value={field.value ?? ""}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      wrapperClassName="col-span-2"
+                    >
+                      <option value="">—</option>
+                      <option value="INDIVIDUAL">{lang === "ar" ? "فرد" : "Individual"}</option>
+                      <option value="COMPANY">{lang === "ar" ? "منشأة" : "Company"}</option>
+                    </SelectField>
+                  )}
+                />
+                {customerKind === "COMPANY" && (
+                  <>
+                    <Controller
+                      name="vatNumber"
+                      control={control}
+                      render={({ field, fieldState }) => (
+                        <Field label={lang === "ar" ? "الرقم الضريبي" : "VAT number"} error={fieldState.error?.message}>
+                          {(f) => (
+                            <Input
+                              {...f}
+                              dir="ltr"
+                              inputMode="numeric"
+                              maxLength={15}
+                              value={field.value ?? ""}
+                              onChange={(e) => field.onChange(e.target.value.replace(/\D/g, "").slice(0, 15))}
+                              onBlur={field.onBlur}
+                              placeholder="3XXXXXXXXXXXXX3"
+                              className="font-mono tabular-nums"
+                            />
+                          )}
+                        </Field>
+                      )}
+                    />
+                    <Controller
+                      name="crNumber"
+                      control={control}
+                      render={({ field, fieldState }) => (
+                        <Field label={lang === "ar" ? "السجل التجاري" : "CR number"} error={fieldState.error?.message}>
+                          {(f) => (
+                            <Input
+                              {...f}
+                              dir="ltr"
+                              inputMode="numeric"
+                              maxLength={10}
+                              value={field.value ?? ""}
+                              onChange={(e) => field.onChange(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                              onBlur={field.onBlur}
+                              placeholder="1010XXXXXX"
+                              className="font-mono tabular-nums"
+                            />
+                          )}
+                        </Field>
+                      )}
+                    />
+                    <Controller
+                      name="companyNameEn"
+                      control={control}
+                      render={({ field, fieldState }) => (
+                        <Field label={lang === "ar" ? "اسم المنشأة (إنجليزي)" : "Company name (English)"} error={fieldState.error?.message}>
+                          {(f) => (
+                            <Input {...f} dir="ltr" value={field.value ?? ""} onChange={field.onChange} onBlur={field.onBlur} placeholder="Company Co." />
+                          )}
+                        </Field>
+                      )}
+                    />
+                    <Controller
+                      name="companyNameAr"
+                      control={control}
+                      render={({ field, fieldState }) => (
+                        <Field label={lang === "ar" ? "اسم المنشأة (عربي)" : "Company name (Arabic)"} error={fieldState.error?.message}>
+                          {(f) => (
+                            <Input {...f} dir="rtl" value={field.value ?? ""} onChange={field.onChange} onBlur={field.onBlur} placeholder="شركة" />
+                          )}
+                        </Field>
+                      )}
+                    />
+                    <Controller
+                      name="address"
+                      control={control}
+                      render={({ field }) => (
+                        <div className="col-span-2 space-y-1.5">
+                          <label className="block text-xs font-semibold text-foreground">
+                            {lang === "ar" ? "العنوان الوطني" : "National address"}
+                          </label>
+                          <AddressPicker
+                            value={(field.value as SaudiAddress | undefined) ?? undefined}
+                            onChange={field.onChange}
+                            locale={lang}
+                            showDistrict
+                          />
+                        </div>
+                      )}
+                    />
+                    <p className="col-span-2 text-[11px] text-muted-foreground">
+                      {lang === "ar"
+                        ? "أكمل الرقم الضريبي والسجل التجاري والعنوان الوطني لإصدار فاتورة ضريبية معتمدة؛ وإلا تُصدر فاتورة مبسطة."
+                        : "Complete the VAT, CR and national address for a cleared tax invoice; otherwise a simplified invoice is issued."}
+                    </p>
+                  </>
+                )}
               </div>
             </details>
 

@@ -82,6 +82,8 @@ ALTER TABLE IF EXISTS public."SubscriptionMrrSnapshot"   ENABLE ROW LEVEL SECURI
 ALTER TABLE IF EXISTS public."EntitlementOverride"       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public."Invoice"                   ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public."InvoiceLineItem"           ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public."TenantDocument"            ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public."TenantDocumentLineItem"    ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public."PaymentTransaction"        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public."PaymentMethod"             ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public."GatewayConfig"             ENABLE ROW LEVEL SECURITY;

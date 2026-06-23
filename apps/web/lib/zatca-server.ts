@@ -1,6 +1,6 @@
 import "server-only";
 
-import { db, type Prisma, type ZatcaEgsUnit, type Invoice, type Organization } from "@repo/db";
+import { db, type Prisma, type ZatcaEgsUnit, type Invoice, type Organization, type Customer } from "@repo/db";
 import {
   buildInvoice,
   signInvoice,
@@ -154,6 +154,22 @@ export function buildBuyerFromOrg(org: Pick<Organization, "name" | "vatNumber" |
   };
 }
 
+/**
+ * Buyer party = a tenant's own Customer (Track C, R4). Business identifiers are plaintext.
+ * Used at issuance to populate the immutable buyer SNAPSHOT on the TenantDocument; the doc
+ * snapshot (not the live Customer) is what {@link buildTenantDocumentInput} renders.
+ */
+export function buildBuyerFromCustomer(
+  c: Pick<Customer, "name" | "nameArabic" | "vatNumber" | "crNumber" | "companyNameAr" | "companyNameEn" | "address">,
+): ZatcaParty {
+  return {
+    registrationName: c.companyNameEn?.trim() || c.companyNameAr?.trim() || c.name,
+    vatNumber: c.vatNumber ?? undefined,
+    crn: c.crNumber ?? undefined,
+    address: toZatcaAddress(c.address as AddressJson),
+  };
+}
+
 // ─── Invoice → engine input ───────────────────────────────────────────────────
 
 function nowParts(): { issueDate: string; issueTime: string } {
@@ -190,6 +206,53 @@ export function buildSubscriptionInvoiceInput(args: {
     seller: args.seller,
     buyer: args.buyer,
     lines: [{ name: args.lineName, quantity: 1, unitPrice: Math.max(net, 0), vatPercent: 15 }],
+    billingReferenceId: args.billingReferenceId,
+    reason: args.reason,
+  };
+}
+
+/**
+ * Build the engine input for a Track-C tenant document (R4). Renders the immutable buyer
+ * SNAPSHOT stored on the document (not the live Customer). The engine builds only category-S
+ * (15%) supplies, so this is called only for TAXABLE docs — receipts skip the engine (D21).
+ * `simplified` selects the B2C type-code name flag ("02…") + the self-generated tag-9 QR.
+ */
+export function buildTenantDocumentInput(args: {
+  doc: {
+    documentNumber: string;
+    uuid: string;
+    buyerName: string | null;
+    buyerVatNumber: string | null;
+    buyerCrNumber: string | null;
+    buyerAddress: Prisma.JsonValue | null;
+  };
+  seller: ZatcaParty;
+  lines: { name: string; quantity: number; unitPrice: number; vatPercent: number }[];
+  icv: number;
+  pih: string;
+  simplified: boolean;
+  docType?: "invoice" | "credit-note" | "debit-note";
+  billingReferenceId?: string;
+  reason?: string;
+}): ZatcaInvoiceInput {
+  const { issueDate, issueTime } = nowParts();
+  return {
+    id: args.doc.documentNumber,
+    uuid: args.doc.uuid,
+    issueDate,
+    issueTime,
+    docType: args.docType ?? "invoice",
+    simplified: args.simplified,
+    icv: args.icv,
+    pih: args.pih,
+    seller: args.seller,
+    buyer: {
+      registrationName: args.doc.buyerName ?? "Customer",
+      vatNumber: args.doc.buyerVatNumber ?? undefined,
+      crn: args.doc.buyerCrNumber ?? undefined,
+      address: toZatcaAddress(args.doc.buyerAddress as AddressJson),
+    },
+    lines: args.lines,
     billingReferenceId: args.billingReferenceId,
     reason: args.reason,
   };

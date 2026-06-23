@@ -1,5 +1,29 @@
 # Changelog — Mimarek PropTech
 
+## [5.4.0] — 2026-06-23 — ZATCA Phase-2 (R4a — Track C): tenant issuance core
+
+**Tenants now issue real ZATCA documents for their own customers.** R4a is the issuance core of **Track C** — a single `issueDocumentForCharge` classifier wired into **every** money-receipt path so no charge silently skips a document: commercial-lease rent → cleared/reported e-invoice, residential rent / sale → receipt, a reversal of a cleared invoice → credit note. The reporting sweep, the `/dashboard/invoices` page and the printable `ZatcaDocument` render are **R4b** (`v5.5.0`). SANDBOX-only.
+
+### Schema + DB (additive `db push`)
+- **`TenantDocument`** + **`TenantDocumentLineItem`** (D19): tenant-issued docs separate from the Track-A SaaS `Invoice` — per-EGS display number, a stable per-document `uuid` minted once (L24), buyer **snapshot** (immutable at issuance), polymorphic source FKs (rent / payment-plan installment), `needsBuyerData` held-state. **`Customer`** gains plaintext buyer columns `customerKind` / `vatNumber` / `crNumber` / `companyNameAr` / `companyNameEn` (D18 — ride `encryptCustomerData`'s passthrough). New `CustomerKind` / `TenantDocumentKind` enums; `ZatcaClearanceLog.documentId` FK wired. RLS auto-covers both new tables; three partial-unique idempotency indexes (per source + one credit-note-per-original) prevent a payment replay minting a duplicate.
+
+### The classifier + hook matrix
+- **`lib/zatca-issuance.ts`** — `issueDocumentForCharge` loads the charge context (re-asserting org ownership), looks up the R3 `OrgZatcaTaxConfig` (most-specific match, safe defaults), and routes: exempt/out-of-scope → **RECEIPT** (no engine); B2C / individual → **SIMPLIFIED** (reported, self-generated QR); B2B company with a **complete** VAT + CR + national address → **TAX_INVOICE** (cleared); a B2B company with **incomplete** data → **HELD** (`needsBuyerData`, not cleared, tenant alerted) — never silently downgraded (Omar's decision). Mints + persists the stable uuid (L24) and advances the **tenant** EGS ICV/PIH chain in a `FOR UPDATE` tx (mirrors R2). `clearTenantDocumentInternal` generalizes the R2 clearance engine (clear B2B / report B2C); `createTenantCreditNote` (verbatim positive amounts, type 381, L23). **UNGUARDED internal — every caller guards (L26).**
+- **Hooks (best-effort, NEVER block the payment):** H1 `recordPayment`, H2 `bulkMarkInstallmentsPaid` (each, in parallel), H3 `reverseRentPayment` (→ credit note), H4 `payment-plans.recordInstallmentPayment`. An issuance failure is caught + logged; the money movement always commits.
+
+### UI
+- The customer form (`AddCustomerModal`) gains an **"E-Invoicing (ZATCA)"** section: buyer-type + (for a company) VAT / CR / company-name + the national `AddressPicker` — so a B2B buyer is fully creatable in one place. R4a-issued documents surface in the existing R3 tenant clearance log; the dedicated Invoices & Receipts page is R4b.
+
+### Verify
+- `npm run build` green · `check-types` green · `lint` 0 errors · `turbo test:unit` green (**177** web incl. the new buyer-routing gate + every-hook-path structural test; engine 65) · **`/mimaric-qa` GO (8.5/10)** — the two High (credit-note idempotency, serial bulk hooks) + one Medium (missing address field) fixed; the rest dismissed with reasons · §3.8 cross-org isolation + no-secret-leak Grep-verified · **§3.9 4-theme walk** on the customer form, **0 console errors**.
+- **Live sandbox E2E** (a real commercial-rent payment recorded through the running server): the full pipeline executed end-to-end — correct routing → `TAX_INVOICE`, exact VAT-inclusive math (12000 + 1800 = 13800), buyer snapshot, per-EGS number, **ICV chain 0→1**, build → sign → submit to live ZATCA. ZATCA returned a business **REJECTED** on a **cert-identity rule** (`certificate-permissions` — the seller VAT must match the auth certificate); the sandbox tenant **production** cert isn't bound to the org VAT. This is the **R5** production-CSID/compliance-gate scope, not R4a code — R4a built, signed, chained and handled the rejection correctly (no payment rollback).
+
+### Deferred
+- **R4b (`v5.5.0`):** the operator-triggered B2C reporting sweep + the >12h stuck alarm + metrics; the `/dashboard/invoices` (Invoices & Receipts) page; wiring `ZatcaDocument.tsx` (install `qrcode`, per-seller logo) + a portrait preview-PDF; the re-issue-after-buyer-data action for HELD docs; the deferred contract-signing / reservation-deposit hooks (no payment charge-site today).
+- **R5:** production CSID + the 6-sample compliance gate (which resolves the cert-VAT clearance binding above) + a real reporting scheduler + **external tax-advisor signoff** (the VAT-inclusive amount convention + the tax-mapping defaults) + PRODUCTION env threading + PDF/A-3-with-embedded-XML.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimarek/compare/v5.3.0...v5.4.0
+
 ## [5.3.0] — 2026-06-22 — ZATCA Phase-2 (R3 — Track B): tenant e-invoicing config
 
 **Every customer org can now connect its OWN ZATCA EGS.** R3 is **Track B** of the program — a tenant-facing config surface at `/dashboard/settings/zatca` where a tenant ADMIN/FINANCE onboards their organization's own EGS (a generalization of R2's platform onboarding, per-org), manages branches, and configures the real-estate tax mapping that R4's issuance classifier will enforce. **Verified live end-to-end against the ZATCA sandbox: a tenant onboards via the real UI → per-org CSR → compliance CSID → production CSID → ACTIVE, with all secrets `z1:`-encrypted and the per-tenant EGS-identity (fresh serial UUID, `TST-…-<orgVAT>` common name) confirmed on the live DB.**

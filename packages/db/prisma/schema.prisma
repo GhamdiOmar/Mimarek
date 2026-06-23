@@ -58,6 +58,7 @@ model Organization {
   zatcaEgsUnits        ZatcaEgsUnit[]            @relation("OrgZatcaEgsUnits")
   zatcaBranches        ZatcaBranch[]             @relation("OrgZatcaBranches")
   zatcaTaxConfigs      OrgZatcaTaxConfig[]       @relation("OrgZatcaTaxConfig")
+  tenantDocuments      TenantDocument[]          @relation("OrgTenantDocuments")
 
   // ── Marketplace relations ──
   marketplaceSellerListings  MarketplaceListing[]      @relation("MarketplaceSellerListings")
@@ -274,6 +275,14 @@ model Customer {
   preferredLanguage    String?              @default("ar")
   authorizedSignatory  String? // For corporate buyers
   companyDocuments     Json? // For corporate buyers
+  // ZATCA Track C buyer party (R4 — D18): plaintext, non-unique business identifiers
+  // (NOT encrypted — they ride encryptCustomerData's passthrough). Drive B2B-vs-B2C
+  // routing: a COMPANY with a valid VAT + CR + complete address → standard clearance.
+  customerKind         CustomerKind?
+  vatNumber            String? // 15-digit VAT (3...3); plaintext, non-unique
+  crNumber             String? // 10-digit Commercial Registration; plaintext
+  companyNameAr        String?
+  companyNameEn        String?
   status               CustomerStatus       @default(NEW)
   source               String?
   budget               Decimal?             @db.Decimal(14, 2) // Customer's budget in SAR
@@ -290,6 +299,7 @@ model Customer {
   activities           CustomerActivity[]
   propertyInterests    Deal[]
   marketplaceInquiries MarketplaceInquiry[] @relation("MarketplaceInquiryCustomer")
+  tenantDocuments      TenantDocument[]     @relation("CustomerTenantDocs")
   // Timestamp the customer entered its CURRENT pipeline stage (status). Distinct from
   // updatedAt (which any edit bumps). Set on status change in updateCustomerStatus.
   // @default(now()) safely backfills existing rows on `db push` (nullable + defaulted).
@@ -308,6 +318,7 @@ model Customer {
   @@index([organizationId, phoneHash])
   @@index([organizationId, emailHash])
   @@index([organizationId, nationalIdHash])
+  @@index([organizationId, vatNumber]) // ZATCA Track C — B2B buyer matching (non-unique, D18)
 }
 
 enum PersonType {
@@ -528,6 +539,7 @@ model PaymentPlanInstallment {
   // 2026-06-orgid-backfill.sql ← paymentPlan.organizationId before the push.
   organizationId    String
   organization      Organization      @relation("PaymentPlanInstallmentOrg", fields: [organizationId], references: [id])
+  tenantDocuments   TenantDocument[]  @relation("PpiTenantDocs")
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
 
@@ -620,21 +632,22 @@ enum LeaseStatus {
 // ─── Rent Installment ─────────────────────────────────────────────────────────
 
 model RentInstallment {
-  id               String        @id @default(cuid())
+  id               String           @id @default(cuid())
   leaseId          String
-  lease            Lease         @relation(fields: [leaseId], references: [id])
+  lease            Lease            @relation(fields: [leaseId], references: [id])
   dueDate          DateTime
-  amount           Decimal       @db.Decimal(14, 2)
-  status           PaymentStatus @default(UNPAID)
+  amount           Decimal          @db.Decimal(14, 2)
+  status           PaymentStatus    @default(UNPAID)
   paidAt           DateTime?
-  paidAmount       Decimal?      @db.Decimal(14, 2)
+  paidAmount       Decimal?         @db.Decimal(14, 2)
   paymentMethod    String?
   referenceNumber  String?
   paymentReference String?
   notes            String?
   payments         RentPayment[] // I2: append-only ledger of payment/reversal/refund/adjustment txns
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
+  tenantDocuments  TenantDocument[] @relation("RentInstallmentTenantDocs")
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
 
   @@unique([leaseId, paymentReference])
   @@index([leaseId])
@@ -1452,6 +1465,116 @@ model InvoiceLineItem {
   @@index([invoiceId])
 }
 
+// ─── ZATCA tenant document (R4 — Track C tenant issuance) ─────────────────────
+// A real ZATCA document a TENANT issues to ITS customer (separate from the global
+// SaaS Invoice, Track A). Per-EGS display number; a stable per-document uuid minted
+// once, never on retry (L24); the buyer snapshot is immutable at issuance (cleared
+// XML is immutable, so a later Customer edit does NOT re-clear). Receipts (residential
+// rent / sale / deposit) carry no QR/XML/clearance (D21). generate-rls auto-covers it.
+
+enum CustomerKind {
+  INDIVIDUAL
+  COMPANY
+}
+
+enum TenantDocumentKind {
+  RENT_INSTALLMENT
+  CONTRACT_INSTALLMENT
+  CREDIT_NOTE
+}
+
+model TenantDocument {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation("OrgTenantDocuments", fields: [organizationId], references: [id], onDelete: Cascade)
+  egsUnitId      String
+  egsUnit        ZatcaEgsUnit @relation("EgsTenantDocuments", fields: [egsUnitId], references: [id], onDelete: Cascade)
+
+  documentNumber String // per-EGS display number (sequence scope = egs:<egsUnitId>)
+  uuid           String             @unique @default(uuid()) // stable per-document UUID (L24)
+  documentType   ZatcaDocumentType  @default(TAX_INVOICE)
+  kind           TenantDocumentKind
+  chargeType     ZatcaChargeType
+
+  // Polymorphic source (one set per kind; typed FKs keep referential integrity)
+  rentInstallmentId        String?
+  rentInstallment          RentInstallment?        @relation("RentInstallmentTenantDocs", fields: [rentInstallmentId], references: [id])
+  paymentPlanInstallmentId String?
+  paymentPlanInstallment   PaymentPlanInstallment? @relation("PpiTenantDocs", fields: [paymentPlanInstallmentId], references: [id])
+  sourceKey                String? // idempotency seam (matches the ledger dedup key)
+
+  // Buyer snapshot — immutable at issuance (a later Customer edit does NOT re-clear)
+  customerId     String?
+  customer       Customer? @relation("CustomerTenantDocs", fields: [customerId], references: [id])
+  buyerName      String?
+  buyerNameAr    String?
+  buyerVatNumber String?
+  buyerCrNumber  String?
+  buyerAddress   Json?
+
+  unitType UnitType?
+
+  // Money (mirrors Invoice)
+  subtotal       Decimal     @db.Decimal(14, 2)
+  vatCategory    VatCategory
+  vatRate        Decimal     @default(0.15) @db.Decimal(6, 4) // rate, not money
+  vatAmount      Decimal     @db.Decimal(14, 2)
+  discountAmount Decimal     @default(0) @db.Decimal(14, 2)
+  total          Decimal     @db.Decimal(14, 2)
+  currency       String      @default("SAR")
+
+  status         InvoiceStatus @default(DRAFT)
+  zatcaStatus    ZatcaStatus   @default(NOT_APPLICABLE)
+  needsBuyerData Boolean       @default(false) // held: awaiting B2B buyer VAT/CR/address (D18)
+
+  // ZATCA fields (mirror Invoice)
+  zatcaHash        String?
+  zatcaQrCode      String?
+  xmlContent       String?
+  clearedXml       String?
+  zatcaSubmittedAt DateTime?
+  zatcaClearedAt   DateTime?
+
+  // Credit-note linkage (verbatim positive amounts, type 381, no sign-flip — L23)
+  originalDocumentId String?
+  originalDocument   TenantDocument?  @relation("TenantDocAdjustments", fields: [originalDocumentId], references: [id])
+  adjustments        TenantDocument[] @relation("TenantDocAdjustments")
+
+  issuedAt  DateTime @default(now())
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  lineItems     TenantDocumentLineItem[]
+  clearanceLogs ZatcaClearanceLog[]
+
+  @@unique([egsUnitId, documentNumber])
+  @@index([organizationId])
+  @@index([egsUnitId])
+  @@index([zatcaStatus])
+  @@index([organizationId, status])
+  @@index([organizationId, zatcaStatus])
+  @@index([rentInstallmentId])
+  @@index([paymentPlanInstallmentId])
+  @@index([customerId])
+}
+
+model TenantDocumentLineItem {
+  id            String         @id @default(cuid())
+  documentId    String
+  document      TenantDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  description   String
+  descriptionAr String?
+  quantity      Int            @default(1)
+  unitPrice     Decimal        @db.Decimal(14, 2)
+  vatRate       Decimal        @default(0.15) @db.Decimal(6, 4) // rate, not money
+  vatAmount     Decimal        @db.Decimal(14, 2)
+  total         Decimal        @db.Decimal(14, 2)
+  sortOrder     Int            @default(0)
+
+  @@index([documentId])
+}
+
 // ─── Payment Transaction ────────────────────────────────────────────────────
 
 model PaymentTransaction {
@@ -2040,8 +2163,9 @@ model ZatcaEgsUnit {
   createdAt           DateTime         @default(now())
   updatedAt           DateTime         @updatedAt
 
-  clearanceLogs ZatcaClearanceLog[]
-  branches      ZatcaBranch[]
+  clearanceLogs   ZatcaClearanceLog[]
+  branches        ZatcaBranch[]
+  tenantDocuments TenantDocument[]    @relation("EgsTenantDocuments")
 
   // NULL org (platform) rows are distinct under NULL semantics — app logic enforces a
   // single ACTIVE platform EGS per environment, backed by partial unique indexes
@@ -2057,7 +2181,8 @@ model ZatcaClearanceLog {
   egsUnitId   String
   egsUnit     ZatcaEgsUnit          @relation(fields: [egsUnitId], references: [id], onDelete: Cascade)
   invoiceId   String? // Track A: the SaaS Invoice this attempt was for
-  documentId  String? // Track C: the TenantDocument (wired in R4)
+  documentId  String? // Track C: the TenantDocument (R4)
+  document    TenantDocument?       @relation(fields: [documentId], references: [id], onDelete: Cascade)
   outcome     ZatcaClearanceOutcome
   attempt     Int                   @default(1)
   requestUuid String?
@@ -2068,6 +2193,7 @@ model ZatcaClearanceLog {
 
   @@index([egsUnitId])
   @@index([invoiceId])
+  @@index([documentId])
 }
 
 // ─── ZATCA branch (R3 — Track B, D15/D25) ─────────────────────────────────────
