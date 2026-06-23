@@ -22,7 +22,7 @@ import { usePathname } from "next/navigation";
 import { LazyMotion, domAnimation, m, useReducedMotion } from "framer-motion";
 import {
   LayoutGrid, ClipboardList, Wallet, Users, Building2, TrendingUp, FileText,
-  Store, Tags, CreditCard, Wrench, BarChart3, Receipt, ShieldCheck, SearchCheck,
+  Store, Tags, CreditCard, ReceiptText, Wrench, BarChart3, Receipt, ShieldCheck, SearchCheck,
   Mail, TicketCheck, ShieldAlert, Settings, CalendarCheck, Gauge, HelpCircle,
   DatabaseBackup, X, ArrowLeft, type LucideIcon,
 } from "lucide-react";
@@ -34,7 +34,7 @@ import { computeRadialLayout, radialDimensions, type RadialVariant } from "./rad
 
 const ICONS: Record<string, LucideIcon> = {
   LayoutGrid, ClipboardList, Wallet, Users, Building2, TrendingUp, FileText,
-  Store, Tags, CreditCard, Wrench, BarChart3, Receipt, ShieldCheck, SearchCheck,
+  Store, Tags, CreditCard, ReceiptText, Wrench, BarChart3, Receipt, ShieldCheck, SearchCheck,
   Mail, TicketCheck, ShieldAlert, Settings, CalendarCheck, Gauge, HelpCircle,
   DatabaseBackup,
 };

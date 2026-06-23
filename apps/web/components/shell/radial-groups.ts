@@ -66,7 +66,7 @@ export const radialGroups: RadialGroupDef[] = [
     id: "finance",
     label: { ar: "المالية", en: "Finance" },
     icon: "Wallet",
-    items: ["/dashboard/finance", "/dashboard/payments", "/dashboard/billing"],
+    items: ["/dashboard/finance", "/dashboard/payments", "/dashboard/invoices", "/dashboard/billing"],
   },
   {
     id: "operations",
