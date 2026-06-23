@@ -57,7 +57,21 @@ export async function getTenantInvoice(documentId: string) {
 
   const doc = await db.tenantDocument.findFirst({
     where: { id: documentId, organizationId },
-    include: { lineItems: { orderBy: { sortOrder: "asc" } } },
+    include: {
+      lineItems: { orderBy: { sortOrder: "asc" } },
+      // Seller identity for the printed document — EGS public fields only (no key/secret material).
+      egsUnit: {
+        select: {
+          legalNameAr: true,
+          legalNameEn: true,
+          vatNumber: true,
+          crNumber: true,
+          nationalAddress: true,
+          environment: true,
+        },
+      },
+      organization: { select: { name: true, nameArabic: true, logoUrl: true } },
+    },
   });
   if (!doc) return null;
 
