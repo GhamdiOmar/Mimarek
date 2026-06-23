@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Eye, ReceiptText, RotateCw } from "lucide-react";
+import { BadgeCheck, Clock, Eye, ReceiptText, RotateCw } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import {
@@ -34,6 +34,22 @@ interface InvoicesViewProps {
   health: ReportingHealth;
 }
 
+// ─── ZATCA confirmation (derived — NOT a DB column) ───────────────────────────
+// A document is "confirmed by ZATCA" once ZATCA accepted it (CLEARED / REPORTED).
+// An e-invoice that should be confirmed but isn't yet is "awaiting". A RECEIPT is
+// out of scope — never an e-invoice — so it is neither confirmed nor awaiting.
+type ZatcaConfirmation = "confirmed" | "awaiting" | "not-applicable";
+
+function zatcaConfirmation(doc: {
+  zatcaStatus: string;
+  documentType: string;
+  needsBuyerData?: boolean;
+}): ZatcaConfirmation {
+  if (doc.zatcaStatus === "CLEARED" || doc.zatcaStatus === "REPORTED") return "confirmed";
+  if (doc.documentType === "RECEIPT") return "not-applicable";
+  return "awaiting"; // an e-invoice that should be confirmed but isn't yet
+}
+
 // Bilingual readable names for the missing-buyer-field keys returned by reissueHeldDocument.
 const MISSING_FIELD_LABEL: Record<string, { ar: string; en: string }> = {
   vatNumber: { ar: "الرقم الضريبي", en: "VAT" },
@@ -63,6 +79,26 @@ export default function InvoicesView({ documents, health }: InvoicesViewProps) {
       }),
     [lang],
   );
+
+  // ── Confirmation filter (segment pills, §6.6.8) ─────────────────────────────
+  const [confirmFilter, setConfirmFilter] = React.useState<"all" | "confirmed" | "awaiting">("all");
+
+  const counts = React.useMemo(() => {
+    let confirmed = 0;
+    let awaiting = 0;
+    for (const d of documents) {
+      const status = zatcaConfirmation(d);
+      if (status === "confirmed") confirmed += 1;
+      else if (status === "awaiting") awaiting += 1;
+    }
+    return { all: documents.length, confirmed, awaiting };
+  }, [documents]);
+
+  // Receipts are EXCLUDED from "awaiting" — only "all" shows them.
+  const filteredDocs = React.useMemo(() => {
+    if (confirmFilter === "all") return documents;
+    return documents.filter((d) => zatcaConfirmation(d) === confirmFilter);
+  }, [documents, confirmFilter]);
 
   const onReissue = React.useCallback(
     (id: string) => {
@@ -150,6 +186,32 @@ export default function InvoicesView({ documents, health }: InvoicesViewProps) {
             {sar.format(Number(row.original.total))}
           </span>
         ),
+      },
+      {
+        id: "confirmation",
+        header: t("التأكيد", "Confirmed"),
+        enableSorting: false,
+        cell: ({ row }) => {
+          const status = zatcaConfirmation(row.original);
+          if (status === "confirmed") {
+            const label = t("مؤكَّدة من هيئة الزكاة والضريبة", "Confirmed by ZATCA");
+            return (
+              <span className="flex items-center gap-1.5 text-primary" title={label} aria-label={label}>
+                <BadgeCheck className="h-4 w-4 shrink-0" aria-hidden="true" />
+                <span className="text-xs font-medium">{t("مؤكَّدة", "Confirmed")}</span>
+              </span>
+            );
+          }
+          if (status === "awaiting") {
+            const label = t("بانتظار التأكيد", "Awaiting confirmation");
+            return (
+              <span className="flex items-center gap-1.5 text-warning" title={label} aria-label={label}>
+                <Clock className="h-4 w-4 shrink-0" aria-hidden="true" />
+              </span>
+            );
+          }
+          return <span className="text-muted-foreground" aria-hidden="true">—</span>;
+        },
       },
       {
         accessorKey: "zatcaStatus",
@@ -258,6 +320,36 @@ export default function InvoicesView({ documents, health }: InvoicesViewProps) {
       {/* Health strip */}
       <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">{healthCells}</dl>
 
+      {/* Confirmation filter pills (§6.6.8) */}
+      {documents.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          {(
+            [
+              ["all", t("الكل", "All"), counts.all],
+              ["confirmed", t("مؤكَّدة", "Confirmed"), counts.confirmed],
+              ["awaiting", t("بانتظار التأكيد", "Awaiting"), counts.awaiting],
+            ] as const
+          ).map(([key, label, count]) => {
+            const isActive = confirmFilter === key;
+            return (
+              <Button
+                key={key}
+                size="sm"
+                variant={isActive ? "primary" : "subtle"}
+                className="rounded-full"
+                aria-pressed={isActive}
+                onClick={() => setConfirmFilter(key)}
+              >
+                {label}
+                <span dir="ltr" className="ms-1.5 tabular-nums opacity-70">
+                  {count}
+                </span>
+              </Button>
+            );
+          })}
+        </div>
+      )}
+
       {/* Documents table */}
       <Card className="overflow-hidden">
         {documents.length === 0 ? (
@@ -282,7 +374,7 @@ export default function InvoicesView({ documents, health }: InvoicesViewProps) {
         ) : (
           <DataTable
             columns={columns}
-            data={documents}
+            data={filteredDocs}
             locale={lang === "ar" ? "ar" : "en"}
             pagination
             pageSize={10}

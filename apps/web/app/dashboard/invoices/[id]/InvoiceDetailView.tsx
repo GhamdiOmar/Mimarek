@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ArrowLeft, Download, FileSignature, Loader2, AlertTriangle } from "lucide-react";
+import { ArrowLeft, BadgeCheck, Clock, Download, FileSignature, Loader2, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { Button, DirectionalIcon } from "@repo/ui";
@@ -28,6 +28,21 @@ type InvoiceDetail = any;
 
 interface InvoiceDetailViewProps {
   doc: InvoiceDetail;
+}
+
+// ─── ZATCA confirmation (derived — NOT a DB column; mirrors InvoicesView) ─────
+// Confirmed once ZATCA accepted it (CLEARED / REPORTED); an e-invoice that should
+// be confirmed but isn't yet is "awaiting"; a RECEIPT is out of scope (neither).
+type ZatcaConfirmation = "confirmed" | "awaiting" | "not-applicable";
+
+function zatcaConfirmation(doc: {
+  zatcaStatus: string;
+  documentType: string;
+  needsBuyerData?: boolean;
+}): ZatcaConfirmation {
+  if (doc.zatcaStatus === "CLEARED" || doc.zatcaStatus === "REPORTED") return "confirmed";
+  if (doc.documentType === "RECEIPT") return "not-applicable";
+  return "awaiting";
 }
 
 /** Build a single-line address string from the EGS `nationalAddress` JSON. */
@@ -97,6 +112,8 @@ export default function InvoiceDetailView({ doc }: InvoiceDetailViewProps) {
 
   const docStatus: "CLEARED" | "REPORTED" | null =
     doc.zatcaStatus === "CLEARED" ? "CLEARED" : doc.zatcaStatus === "REPORTED" ? "REPORTED" : null;
+
+  const confirmation = zatcaConfirmation(doc);
 
   // ── Download as a portrait A4 PDF (snapshot of the rendered ZatcaDocument). ──
   const onDownload = React.useCallback(async () => {
@@ -197,6 +214,18 @@ export default function InvoiceDetailView({ doc }: InvoiceDetailViewProps) {
           <p dir="ltr" className="font-mono text-xs tabular-nums text-muted-foreground">
             {doc.documentNumber}
           </p>
+          {confirmation === "confirmed" && (
+            <span className="mt-1 inline-flex items-center gap-1 text-primary text-xs">
+              <BadgeCheck className="h-4 w-4 shrink-0" aria-hidden="true" />
+              {t("مؤكَّدة من هيئة الزكاة والضريبة", "Confirmed by ZATCA")}
+            </span>
+          )}
+          {confirmation === "awaiting" && (
+            <span className="mt-1 inline-flex items-center gap-1 text-warning-strong text-xs">
+              <Clock className="h-4 w-4 shrink-0" aria-hidden="true" />
+              {t("بانتظار التأكيد من هيئة الزكاة والضريبة", "Awaiting ZATCA confirmation")}
+            </span>
+          )}
         </div>
         <Button onClick={onDownload} disabled={isDownloading} style={{ display: "inline-flex" }} className="gap-2">
           {isDownloading ? (
