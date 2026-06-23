@@ -39,7 +39,7 @@ const MISSING_FIELD_LABEL: Record<string, { ar: string; en: string }> = {
   vatNumber: { ar: "الرقم الضريبي", en: "VAT" },
   crNumber: { ar: "السجل التجاري", en: "CR" },
   address: { ar: "العنوان", en: "Address" },
-  name: { ar: "الاسم", en: "Name" },
+  companyName: { ar: "اسم المنشأة", en: "Company name" },
 };
 
 function formatDate(value: string | Date | null | undefined, lang: "ar" | "en"): string {

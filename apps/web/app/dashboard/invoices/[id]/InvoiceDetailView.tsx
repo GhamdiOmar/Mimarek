@@ -159,7 +159,7 @@ export default function InvoiceDetailView({ doc }: InvoiceDetailViewProps) {
             vatNumber: { ar: "الرقم الضريبي", en: "VAT" },
             crNumber: { ar: "السجل التجاري", en: "CR" },
             address: { ar: "العنوان", en: "Address" },
-            name: { ar: "الاسم", en: "Name" },
+            companyName: { ar: "اسم المنشأة", en: "Company name" },
           };
           const missing = (result.missing.length > 0 ? result.missing : ["—"])
             .map((key) => {
