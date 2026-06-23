@@ -1,5 +1,6 @@
 import { requireSystem } from "../../../../lib/auth-helpers";
 import { getPlatformEgsSummary } from "../../../actions/zatca/onboarding";
+import { getReportingHealth } from "../../../actions/zatca/reporting-sweep";
 import ZatcaAdminView from "./ZatcaAdminView";
 
 /**
@@ -13,6 +14,9 @@ import ZatcaAdminView from "./ZatcaAdminView";
  */
 export default async function ZatcaAdminPage() {
   await requireSystem();
-  const { egs, logs } = await getPlatformEgsSummary();
-  return <ZatcaAdminView egs={egs} logs={logs} />;
+  const [{ egs, logs }, reportingHealth] = await Promise.all([
+    getPlatformEgsSummary(),
+    getReportingHealth(),
+  ]);
+  return <ZatcaAdminView egs={egs} logs={logs} reportingHealth={reportingHealth} />;
 }

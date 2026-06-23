@@ -443,6 +443,51 @@ export async function issueDocumentForCharge(charge: ChargeInput): Promise<Issua
   return clearTenantDocumentInternal(doc.id);
 }
 
+// ─── HELD re-issue (R4b) ──────────────────────────────────────────────────────
+
+/**
+ * Re-issue a HELD document — a B2B company invoice whose buyer VAT/CR/address was incomplete at
+ * issuance and has since been completed on the Customer. Re-snapshots the buyer from the live
+ * Customer, re-validates, and on success clears `needsBuyerData` + submits via the engine.
+ * UNGUARDED (L26) — the tenant action guards + re-checks org ownership. Returns the still-missing
+ * fields when the buyer remains incomplete (the document stays HELD, no submission).
+ */
+export async function reissueHeldDocumentInternal(
+  documentId: string,
+): Promise<IssuanceResult & { missing?: string[] }> {
+  const doc = await db.tenantDocument.findUnique({
+    where: { id: documentId },
+    include: { customer: true },
+  });
+  if (!doc) throw new Error("Tenant document not found for re-issue.");
+  if (!doc.needsBuyerData) {
+    // Already released — just (re)submit if it is still pending.
+    return clearTenantDocumentInternal(documentId);
+  }
+
+  const customer = doc.customer;
+  if (!customer) return { outcome: "HELD", documentId, missing: ["customer"] };
+
+  const gate = validateBuyerForStandardClearance(customer);
+  if (!gate.valid) return { outcome: "HELD", documentId, missing: gate.missing };
+
+  const buyer = buildBuyerFromCustomer(customer);
+  await db.tenantDocument.update({
+    where: { id: documentId },
+    data: {
+      needsBuyerData: false,
+      status: "ISSUED",
+      buyerName: buyer.registrationName,
+      buyerNameAr: customer.nameArabic ?? null,
+      buyerVatNumber: buyer.vatNumber ?? null,
+      buyerCrNumber: buyer.crn ?? null,
+      buyerAddress: (customer.address ?? undefined) as Prisma.InputJsonValue | undefined,
+    },
+  });
+
+  return clearTenantDocumentInternal(documentId);
+}
+
 // ─── credit notes (D11 / D22b / L23) ──────────────────────────────────────────
 
 /**

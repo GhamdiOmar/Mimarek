@@ -90,9 +90,13 @@ Read off the golden signed XML + the reference `src/Helpers/InvoiceSignatureBuil
 CertDigest, X509IssuerName (`getFormattedIssuer()` e.g. `CN=TSZEINVOICE-SubCA-1, DC=extgazt, DC=gov, DC=local`),
 X509SerialNumber (decimal `tbsCertificate.serialNumber`). Reference-2 DigestValue = `base64(hex(sha256(templateString)))`.
 
-**SignedInfo / SignatureValue:** CanonicalizationMethod = c14n11, SignatureMethod = `ecdsa-sha256`; sign
-`c14n11(SignedInfo)` with the EGS secp256k1 private key → `ds:SignatureValue` = **base64(DER ECDSA sig)**
-(golden decodes to `30 44 02 20…` = DER). `ds:KeyInfo/X509Certificate` = base64 DER cert.
+**SignedInfo / SignatureValue:** the `<ds:SignedInfo>` block still carries CanonicalizationMethod = c14n11 +
+SignatureMethod = `ecdsa-sha256` (for a conformant XAdES envelope), BUT — the ZATCA quirk — `ds:SignatureValue`
+is **NOT** `sign(c14n11(SignedInfo))`. It is **`ECDSA-sign('sha256', invoiceHashBinary)`** — i.e. sign the raw
+bytes of the (base64-decoded) invoice digest with the EGS secp256k1 private key → **base64(DER ECDSA sig)**
+(golden decodes to `30 44 02 20…` = DER). Verified empirically: the golden `ds:SignatureValue` verifies against
+the invoice-hash bytes via `crypto.verify`, with no SignedInfo c14n in the signed payload (`src/xades.ts:224-225`).
+`ds:KeyInfo/X509Certificate` = base64 DER cert.
 
 **⚠ Verification strategy (NOT byte-match):** the SDK's golden signed XML uses ITS own SignedProperties
 serialization + `SigningTime`=now + ECDSA random-k → the full signed doc is **non-deterministic** and the

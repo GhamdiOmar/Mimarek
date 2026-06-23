@@ -57,6 +57,10 @@ export const ROUTE_GUARDS: Record<string, RouteGuard> = {
 
   // ── Operations (tenant) ────────────────────────────────────────────────────
   "/dashboard/payments": { permission: "payments:read", audience: "tenant" },
+  // Tenant ZATCA invoices & receipts (R4b — Track C). Reuses `payments:read`: these
+  // documents are issued off rent/installment payments, so the same audience that sees
+  // payments sees their issued documents (no separate `invoices:read` permission).
+  "/dashboard/invoices": { permission: "payments:read", audience: "tenant" },
   "/dashboard/maintenance": { permission: "maintenance:read", audience: "tenant" },
   "/dashboard/maintenance/tickets": { permission: "maintenance:read", audience: "tenant" },
   "/dashboard/maintenance/preventive": { permission: "maintenance:read", audience: "tenant" },

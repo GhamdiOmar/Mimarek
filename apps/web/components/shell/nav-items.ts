@@ -36,6 +36,7 @@ const navSeeds: NavSeed[] = [
 
   // Operations — tenant only
   { label: { ar: "المدفوعات", en: "Payments" }, icon: "CreditCard", href: "/dashboard/payments", section: "operations" },
+  { label: { ar: "الفواتير", en: "Invoices" }, icon: "ReceiptText", href: "/dashboard/invoices", section: "operations" },
   { label: { ar: "الصيانة", en: "Maintenance" }, icon: "Wrench", href: "/dashboard/maintenance", section: "operations" },
   { label: { ar: "التقارير", en: "Reports" }, icon: "BarChart3", href: "/dashboard/reports", section: "operations" },
   { label: { ar: "المستندات", en: "Documents" }, icon: "FileText", href: "/dashboard/documents", section: "operations" },

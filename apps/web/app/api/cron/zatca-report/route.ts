@@ -1,36 +1,30 @@
 import { NextResponse } from "next/server";
 import { isAuthorizedCronRequest } from "../../../../lib/cron-auth";
+import { runReportingSweepInternal } from "../../../../lib/zatca-reporting";
 
 /**
- * ZATCA B2C reporting-sweep endpoint (D24) — SCAFFOLD ONLY for R2.
+ * ZATCA B2C reporting-recovery sweep endpoint (D24, Track C / R4b).
  *
  * Vercel Cron sends:  Authorization: Bearer $CRON_SECRET
  * Manual trigger:     GET /api/cron/zatca-report?secret=$CRON_SECRET
  *
- * R2 ships Track A only: real-time CLEARANCE of standard tax invoices via
- * `clearInvoiceNow` (apps/web/app/actions/zatca/clearance.ts). Simplified (B2C)
- * documents are REPORTED to ZATCA after-the-fact, not cleared in-line — that is
- * Track C and lands in R4.
- *
- * R4 — the REAL sweep this stub stands in for — will:
- *   1. Find TenantDocuments with zatcaStatus = PENDING that are simplified/B2C,
- *   2. POST each to the ZATCA reporting endpoint via the network client,
- *   3. Persist the outcome (REPORTED / REJECTED) + ZatcaClearanceLog rows.
- *
- * Until then this handler authenticates the cron caller and returns a no-op
- * result. It performs NO database reads or writes.
+ * Documents are reported/cleared at issuance time; any that hit a transport error are parked at
+ * `zatcaStatus = PENDING` with their stored payload. This endpoint re-submits each parked
+ * document (idempotent re-POST). Cron-secret gated; never tenant-reachable.
  */
-function handle(request: Request) {
+async function handle(request: Request) {
   const auth = isAuthorizedCronRequest(request);
   if (!auth.ok) {
     return NextResponse.json({ error: auth.reason }, { status: auth.status });
   }
 
-  return NextResponse.json({
-    ok: true,
-    swept: 0,
-    note: "B2C reporting sweep lands with Track C (R4); Track A is real-time clearance.",
-  });
+  try {
+    const summary = await runReportingSweepInternal();
+    return NextResponse.json({ ok: true, ...summary });
+  } catch (e) {
+    console.error("[Cron] ZATCA reporting sweep failed", e);
+    return NextResponse.json({ ok: false, error: "Reporting sweep failed" }, { status: 500 });
+  }
 }
 
 export async function GET(request: Request) {

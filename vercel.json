@@ -24,6 +24,10 @@
     {
       "path": "/api/cron/expire-unverified-orgs",
       "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/cron/zatca-report",
+      "schedule": "0 */2 * * *"
     }
   ]
 }
