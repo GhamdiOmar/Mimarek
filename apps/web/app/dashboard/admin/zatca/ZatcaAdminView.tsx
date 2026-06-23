@@ -6,8 +6,10 @@ import {
   FileText,
   ReceiptText,
   RotateCcw,
+  RefreshCw,
   ShieldCheck,
   Radio,
+  AlertTriangle,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -38,16 +40,19 @@ import {
   onboardPlatformEgs,
   resetPlatformEgs,
 } from "../../../actions/zatca/onboarding";
+import { runReportingSweep, type getReportingHealth } from "../../../actions/zatca/reporting-sweep";
 import { PLATFORM_SELLER } from "../../../../lib/zatca-platform-config";
 
 // ─── Prop types (derived from the server action's serialized return) ──────────
 type Summary = Awaited<ReturnType<typeof getPlatformEgsSummary>>;
 type Egs = Summary["egs"];
 type ClearanceLog = Summary["logs"][number];
+type ReportingHealth = Awaited<ReturnType<typeof getReportingHealth>>;
 
 type ZatcaAdminViewProps = {
   egs: Egs;
   logs: ClearanceLog[];
+  reportingHealth: ReportingHealth;
 };
 
 function formatDate(value: string | Date | null | undefined, lang: "ar" | "en"): string {
@@ -72,11 +77,30 @@ function formatDateTime(value: string | Date | null | undefined, lang: "ar" | "e
   });
 }
 
-export default function ZatcaAdminView({ egs, logs }: ZatcaAdminViewProps) {
+export default function ZatcaAdminView({ egs, logs, reportingHealth }: ZatcaAdminViewProps) {
   const { t, lang } = useLanguage();
   const [isPending, startTransition] = React.useTransition();
+  const [isSweeping, startSweep] = React.useTransition();
 
   const isActive = egs != null && egs.status === "ACTIVE";
+
+  const onRunSweep = React.useCallback(() => {
+    startSweep(async () => {
+      try {
+        const r = await runReportingSweep();
+        toast.success(
+          t(
+            `اكتمل الرفع: ${r.reported + r.cleared} مُرسل، ${r.stillPending} قيد الانتظار.`,
+            `Sweep done: ${r.reported + r.cleared} submitted, ${r.stillPending} still pending.`,
+          ),
+        );
+      } catch (err) {
+        toast.error(
+          err instanceof Error ? err.message : t("تعذّر تشغيل الرفع.", "Could not run the sweep."),
+        );
+      }
+    });
+  }, [t]);
 
   // ── Onboard form state — VAT + OTP only; the company identity is fixed (PLATFORM_SELLER).
   const [vatNumber, setVatNumber] = React.useState("");
@@ -476,16 +500,79 @@ export default function ZatcaAdminView({ egs, logs }: ZatcaAdminViewProps) {
         </Card>
       </section>
 
-      {/* ─── Reporting note (Track A = real-time clearance) ───────────────── */}
-      <div className="flex items-start gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-        <Radio className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-        <span>
-          {t(
-            "المسار (أ) هو الاعتماد اللحظي لفواتير اشتراكات المنصة. أما رفع فواتير المبيعات للأفراد (B2C) دفعةً واحدة فيأتي مع المسار (ج).",
-            "Track A is real-time clearance of platform subscription invoices. The B2C reporting sweep arrives with Track C.",
-          )}
-        </span>
-      </div>
+      {/* ─── B2C reporting recovery (Track C) ────────────────────────────── */}
+      <section>
+        <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+          {t("رفع فواتير الأفراد (B2C)", "B2C reporting")}
+        </h2>
+        <Card>
+          <CardHeader>
+            <div className="flex items-start justify-between gap-4">
+              <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+                <Radio className="h-4 w-4 text-primary" aria-hidden="true" />
+                {t("حالة الرفع عبر المنصة", "Reporting health (platform-wide)")}
+              </CardTitle>
+              <Button
+                onClick={onRunSweep}
+                disabled={isSweeping}
+                style={{ display: "inline-flex" }}
+                className="gap-2"
+                size="sm"
+              >
+                <RefreshCw className={`h-4 w-4 ${isSweeping ? "animate-spin" : ""}`} aria-hidden="true" />
+                {isSweeping ? t("جارٍ الرفع…", "Running…") : t("تشغيل الرفع الآن", "Run sweep now")}
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {reportingHealth.stuckOver12h > 0 && (
+              <div className="mb-4 flex items-start gap-2 rounded-md border border-warning bg-warning/10 px-3 py-2 text-xs text-warning-strong">
+                <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                <span dir={lang === "ar" ? "rtl" : "ltr"}>
+                  {t(
+                    `${reportingHealth.stuckOver12h} مستند بقي قيد المعالجة أكثر من 12 ساعة — شغّل الرفع أو راجع سجل الاعتماد.`,
+                    `${reportingHealth.stuckOver12h} document(s) pending for over 12 hours — run the sweep or review the clearance log.`,
+                  )}
+                </span>
+              </div>
+            )}
+            <dl className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3 lg:grid-cols-6">
+              {(
+                [
+                  ["cleared", t("معتمدة", "Cleared")],
+                  ["reported", t("مُبلّغ عنها", "Reported")],
+                  ["pending", t("قيد المعالجة", "Pending")],
+                  ["rejected", t("مرفوضة", "Rejected")],
+                  ["held", t("بانتظار البيانات", "Held")],
+                  ["stuckOver12h", t("عالقة +12س", "Stuck >12h")],
+                ] as const
+              ).map(([key, label]) => (
+                <div key={key}>
+                  <dt className="text-xs text-muted-foreground">{label}</dt>
+                  <dd
+                    dir="ltr"
+                    className={`mt-0.5 text-2xl font-bold tabular-nums ${
+                      key === "rejected" && reportingHealth[key] > 0
+                        ? "text-destructive"
+                        : key === "stuckOver12h" && reportingHealth[key] > 0
+                          ? "text-warning-strong"
+                          : "text-foreground"
+                    }`}
+                  >
+                    {reportingHealth[key]}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+            <p className="mt-4 text-[11px] text-muted-foreground">
+              {t(
+                "المسار (أ) يعتمد فواتير الاشتراكات لحظيًا. مستندات الأفراد (B2C) تُرفع عند الإصدار، وهذا الرفع يعيد إرسال أي مستند تعذّر إرساله.",
+                "Track A clears subscription invoices in real time. B2C documents are reported at issuance; this sweep re-submits any that failed to send.",
+              )}
+            </p>
+          </CardContent>
+        </Card>
+      </section>
 
       {/* ─── Reset confirmation dialog ───────────────────────────────────── */}
       <ResponsiveDialog
