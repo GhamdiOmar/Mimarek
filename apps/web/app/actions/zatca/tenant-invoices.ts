@@ -2,8 +2,12 @@
 
 import { db } from "@repo/db";
 import { requireTenantPermission } from "../../../lib/auth-helpers";
+import { logAuditEvent } from "../../../lib/audit";
+import { revalidatePath } from "next/cache";
+import { ROUTES } from "../../../lib/routes";
 import { serialize } from "../../../lib/serialize";
 import { getReportingHealthInternal } from "../../../lib/zatca-reporting";
+import { reissueHeldDocumentInternal } from "../../../lib/zatca-issuance";
 
 /**
  * Tenant ZATCA documents surface (Track C / R4b) — `payments:read`, TENANT audience. Every
@@ -58,4 +62,39 @@ export async function getTenantInvoice(documentId: string) {
   if (!doc) return null;
 
   return serialize(doc);
+}
+
+/**
+ * Re-issue a HELD document after its buyer's VAT/CR/address have been completed. `finance:write`
+ * (a money/issuance mutation), org-ownership re-checked. Returns `{ ok, missing }` — when the
+ * buyer is still incomplete the document stays HELD and the missing fields are returned.
+ */
+export async function reissueHeldDocument(documentId: string) {
+  const session = await requireTenantPermission("finance:write");
+
+  const owned = await db.tenantDocument.findFirst({
+    where: { id: documentId, organizationId: session.organizationId },
+    select: { id: true },
+  });
+  if (!owned) throw new Error("Document not found.");
+
+  const result = await reissueHeldDocumentInternal(documentId);
+
+  logAuditEvent({
+    userId: session.userId,
+    userEmail: session.email,
+    userRole: session.role,
+    action: "UPDATE",
+    resource: "TenantDocument",
+    resourceId: documentId,
+    organizationId: session.organizationId,
+    metadata: { reissue: result.outcome, missing: result.missing ?? [] },
+  });
+
+  revalidatePath(ROUTES.invoices);
+  return {
+    ok: result.outcome !== "HELD",
+    outcome: result.outcome,
+    missing: result.missing ?? [],
+  };
 }

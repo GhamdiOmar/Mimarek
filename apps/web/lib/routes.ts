@@ -15,6 +15,7 @@ export const ROUTES = {
   reservations: "/dashboard/reservations",
   contracts: "/dashboard/contracts",
   payments: "/dashboard/payments",
+  invoices: "/dashboard/invoices",
   finance: "/dashboard/finance",
   documents: "/dashboard/documents",
   help: "/dashboard/help",
