@@ -10,6 +10,12 @@ import { generateCsr, createZatcaClient, ZatcaError } from "@repo/zatca";
 import { encryptZatca, encryptZatcaOptional } from "../../../lib/zatca-crypto";
 import { EGS_PUBLIC_SELECT, getPlatformEgs } from "../../../lib/zatca-server";
 import { PLATFORM_SELLER } from "../../../lib/zatca-platform-config";
+import {
+  resolveZatcaEnvironment,
+  resolveZatcaCsrEnvironment,
+  zatcaCommonName,
+  resolveZatcaOtp,
+} from "../../../lib/zatca-env";
 
 /**
  * Track-A platform-EGS onboarding (Mimarek PropTech Co. as the SaaS-billing seller).
@@ -52,9 +58,13 @@ export async function onboardPlatformEgs(rawInput: OnboardInput) {
   const crNumber = input.crNumber?.trim() || PLATFORM_SELLER.crNumber || null;
   const industryCategory = input.industryCategory?.trim() || PLATFORM_SELLER.industryCategory;
 
+  // The target environment for this onboarding (fail-safe SANDBOX, R5). Every paired lookup +
+  // the value persisted to the EGS row use the SAME resolved env so reads can never miss writes.
+  const env = resolveZatcaEnvironment();
+
   // Enforce a single platform EGS per environment (NULL-org rows are NULL-distinct,
   // so app logic owns this invariant). Reuse a DRAFT/RESET row; refuse to clobber ACTIVE.
-  const existing = await getPlatformEgs("SANDBOX");
+  const existing = await getPlatformEgs(env);
   if (existing && existing.status === "ACTIVE") {
     throw new Error("An active platform EGS already exists. Reset it before re-onboarding.");
   }
@@ -63,9 +73,9 @@ export async function onboardPlatformEgs(rawInput: OnboardInput) {
     input.egsSerialNumber?.trim() ||
     `${SANDBOX_BASE_SERIAL}${crypto.randomUUID()}`;
   const invoiceTypeFlags = input.invoiceTypeFlags?.trim() || PLATFORM_SELLER.invoiceTypeFlags;
-  const commonName = `TST-886431145-${input.vatNumber}`;
+  const commonName = zatcaCommonName(input.vatNumber);
 
-  // 1. CSR (sandbox template). secp256k1 keypair + PKCS#10.
+  // 1. CSR (env-specific template). secp256k1 keypair + PKCS#10.
   const { csrPem, privateKeyPem } = generateCsr({
     commonName,
     serialNumber: egsSerialNumber,
@@ -76,15 +86,15 @@ export async function onboardPlatformEgs(rawInput: OnboardInput) {
     invoiceType: invoiceTypeFlags,
     locationAddress: PLATFORM_SELLER.nationalAddress.city,
     industryBusinessCategory: industryCategory,
-    environment: "sandbox",
+    environment: resolveZatcaCsrEnvironment(),
   });
 
-  const client = createZatcaClient({ environment: "SANDBOX" });
+  const client = createZatcaClient({ environment: env });
 
-  // 2. Compliance CSID (CCSID). Sandbox does not validate the OTP.
+  // 2. Compliance CSID (CCSID). Sandbox does not validate the OTP; non-sandbox requires a real one.
   let compliance;
   try {
-    compliance = await client.requestComplianceCsid({ csrPem, otp: input.otp?.trim() || "123456" });
+    compliance = await client.requestComplianceCsid({ csrPem, otp: resolveZatcaOtp(input.otp) });
   } catch (err) {
     throw onboardError("compliance CSID", err);
   }
@@ -108,7 +118,7 @@ export async function onboardPlatformEgs(rawInput: OnboardInput) {
 
   const data = {
     organizationId: null,
-    environment: "SANDBOX" as const,
+    environment: env,
     status: "ACTIVE" as const,
     egsSerialNumber,
     commonName,
@@ -143,7 +153,7 @@ export async function onboardPlatformEgs(rawInput: OnboardInput) {
     resource: "ZatcaEgsUnit",
     resourceId: egs.id,
     organizationId: session.organizationId,
-    metadata: { environment: "SANDBOX", productionCsid: production != null, vatNumber: input.vatNumber },
+    metadata: { environment: env, productionCsid: production != null, vatNumber: input.vatNumber },
   });
 
   revalidatePath(ROUTES.adminZatca);
@@ -154,7 +164,7 @@ export async function onboardPlatformEgs(rawInput: OnboardInput) {
 export async function getPlatformEgsSummary() {
   await requirePermission("zatca:admin");
   const egs = await db.zatcaEgsUnit.findFirst({
-    where: { organizationId: null, environment: "SANDBOX" },
+    where: { organizationId: null, environment: resolveZatcaEnvironment() },
     select: EGS_PUBLIC_SELECT,
   });
   const logs = egs
@@ -173,7 +183,7 @@ export async function getPlatformEgsSummary() {
  */
 export async function resetPlatformEgs() {
   const session = await requirePermission("zatca:admin");
-  const egs = await getPlatformEgs("SANDBOX");
+  const egs = await getPlatformEgs(resolveZatcaEnvironment());
   if (!egs) throw new Error("No platform EGS to reset.");
 
   await db.zatcaEgsUnit.update({

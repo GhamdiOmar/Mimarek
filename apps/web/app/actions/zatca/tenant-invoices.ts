@@ -8,6 +8,7 @@ import { ROUTES } from "../../../lib/routes";
 import { serialize } from "../../../lib/serialize";
 import { getReportingHealthInternal } from "../../../lib/zatca-reporting";
 import { reissueHeldDocumentInternal } from "../../../lib/zatca-issuance";
+import { buildLegalPdfA3 } from "../../../lib/zatca-pdfa";
 
 /**
  * Tenant ZATCA documents surface (Track C / R4b) — `payments:read`, TENANT audience. Every
@@ -110,5 +111,21 @@ export async function reissueHeldDocument(documentId: string) {
     ok: result.outcome !== "HELD",
     outcome: result.outcome,
     missing: result.missing ?? [],
+  };
+}
+
+/**
+ * Build the ZATCA "legal copy" PDF (a human-readable A4 summary with the cleared/reported e-invoice
+ * UBL XML embedded — PDF/A-3 structure best-effort, see `zatca-pdfa.ts`). `payments:read`, TENANT
+ * audience; org-scoped inside `buildLegalPdfA3`. Returns the bytes base64-encoded for the client to
+ * trigger a download. Only CLEARED/REPORTED documents have legal XML — others throw.
+ */
+export async function downloadLegalPdf(documentId: string): Promise<{ base64: string; filename: string }> {
+  const session = await requireTenantPermission("payments:read");
+
+  const bytes = await buildLegalPdfA3(documentId, session.organizationId);
+  return {
+    base64: Buffer.from(bytes).toString("base64"),
+    filename: `${documentId}.pdf`,
   };
 }

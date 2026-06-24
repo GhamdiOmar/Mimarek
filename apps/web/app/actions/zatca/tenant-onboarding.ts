@@ -9,6 +9,12 @@ import { ROUTES } from "../../../lib/routes";
 import { generateCsr, createZatcaClient, ZatcaError } from "@repo/zatca";
 import { encryptZatca, encryptZatcaOptional } from "../../../lib/zatca-crypto";
 import { EGS_PUBLIC_SELECT, getTenantEgs } from "../../../lib/zatca-server";
+import {
+  resolveZatcaEnvironment,
+  resolveZatcaCsrEnvironment,
+  zatcaCommonName,
+  resolveZatcaOtp,
+} from "../../../lib/zatca-env";
 
 /**
  * Track-B tenant-EGS onboarding (R3). Each customer org onboards its OWN EGS
@@ -73,9 +79,13 @@ export async function onboardTenantEgs(rawInput: TenantOnboardInput) {
     );
   }
 
+  // The target environment for this onboarding (fail-safe SANDBOX, R5) — written to the EGS row
+  // and used by every paired lookup so reads can't miss writes.
+  const env = resolveZatcaEnvironment();
+
   // Per-org single-ACTIVE-EGS guard (DB-backed by zatca_egs_one_active_per_org_env).
   // Reuse a DRAFT/RESET row; refuse to clobber an ACTIVE one (D30 — locked).
-  const existing = await getTenantEgs(organizationId, "SANDBOX");
+  const existing = await getTenantEgs(organizationId, env);
   if (existing && existing.status === "ACTIVE") {
     throw new Error(
       "Your ZATCA connection is already active and locked. Contact support to reset it before re-onboarding.",
@@ -89,11 +99,11 @@ export async function onboardTenantEgs(rawInput: TenantOnboardInput) {
   const industryCategory = org.mainActivityNameAr?.trim() || "Real Estate";
   const invoiceTypeFlags = input.invoiceTypeFlags?.trim() || "1100";
   const egsSerialNumber = `${TENANT_BASE_SERIAL}${crypto.randomUUID()}`;
-  // SANDBOX test-CSID prefix; R5 switches the prefix by environment.
-  const commonName = `TST-886431145-${vatNumber}`;
+  // CN prefix is env-keyed (R5): TST- (sandbox) / PRE- (simulation) / prod format.
+  const commonName = zatcaCommonName(vatNumber);
   const city = addrField(org.nationalAddress, "city", "Riyadh");
 
-  // 1. CSR (sandbox template) — secp256k1 keypair + PKCS#10, per-org identity.
+  // 1. CSR (env-specific template) — secp256k1 keypair + PKCS#10, per-org identity.
   const { csrPem, privateKeyPem } = generateCsr({
     commonName,
     serialNumber: egsSerialNumber,
@@ -104,15 +114,15 @@ export async function onboardTenantEgs(rawInput: TenantOnboardInput) {
     invoiceType: invoiceTypeFlags,
     locationAddress: city,
     industryBusinessCategory: industryCategory,
-    environment: "sandbox",
+    environment: resolveZatcaCsrEnvironment(),
   });
 
-  const client = createZatcaClient({ environment: "SANDBOX" });
+  const client = createZatcaClient({ environment: env });
 
-  // 2. Compliance CSID (CCSID). Sandbox does not validate the OTP.
+  // 2. Compliance CSID (CCSID). Sandbox does not validate the OTP; non-sandbox requires a real one.
   let compliance;
   try {
-    compliance = await client.requestComplianceCsid({ csrPem, otp: input.otp?.trim() || "123456" });
+    compliance = await client.requestComplianceCsid({ csrPem, otp: resolveZatcaOtp(input.otp) });
   } catch (err) {
     throw onboardError("compliance CSID", err);
   }
@@ -133,7 +143,7 @@ export async function onboardTenantEgs(rawInput: TenantOnboardInput) {
 
   const data = {
     organizationId,
-    environment: "SANDBOX" as const,
+    environment: env,
     status: "ACTIVE" as const,
     egsSerialNumber,
     commonName,
@@ -168,7 +178,7 @@ export async function onboardTenantEgs(rawInput: TenantOnboardInput) {
     resource: "ZatcaEgsUnit",
     resourceId: egs.id,
     organizationId,
-    metadata: { environment: "SANDBOX", productionCsid: production != null, vatNumber },
+    metadata: { environment: env, productionCsid: production != null, vatNumber },
   });
 
   revalidatePath(ROUTES.settingsZatca);
@@ -187,7 +197,7 @@ export async function getTenantEgsSummary() {
 
   const [egs, org] = await Promise.all([
     db.zatcaEgsUnit.findFirst({
-      where: { organizationId, environment: "SANDBOX" },
+      where: { organizationId, environment: resolveZatcaEnvironment() },
       select: EGS_PUBLIC_SELECT,
     }),
     db.organization.findUnique({

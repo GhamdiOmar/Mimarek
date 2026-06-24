@@ -4,6 +4,7 @@ import { db, type ZatcaClearanceOutcome } from "@repo/db";
 import { ZatcaError } from "@repo/zatca";
 import { getNextSequenceValue, GLOBAL_SEQUENCE_SCOPE } from "./sequence";
 import { notifyPlatformStaff } from "./create-notification";
+import { resolveZatcaEnvironment } from "./zatca-env";
 import {
   getActivePlatformEgs,
   getEgsSigningContext,
@@ -75,7 +76,8 @@ export async function clearSubscriptionInvoiceInternal(
   invoiceId: string,
   opts?: { isRetry?: boolean },
 ): Promise<ClearanceResult> {
-  const egs = await getActivePlatformEgs("SANDBOX");
+  // The platform EGS for the configured target environment (fail-safe SANDBOX, R5).
+  const egs = await getActivePlatformEgs(resolveZatcaEnvironment());
   if (!egs) return { outcome: "SKIPPED" }; // no platform EGS onboarded → nothing to do
 
   const invoice = await db.invoice.findUnique({
@@ -91,7 +93,9 @@ export async function clearSubscriptionInvoiceInternal(
   if (invoice.zatcaStatus === "REPORTED") return { outcome: "REPORTED" };
 
   const ctx = getEgsSigningContext(egs);
-  const client = createZatcaClient({ environment: "SANDBOX" });
+  // Class A: clear against the environment the EGS was ONBOARDED under (egs.environment),
+  // NOT the resolver — a sandbox-onboarded EGS must never be routed to a prod gateway (R5).
+  const client = createZatcaClient({ environment: egs.environment });
 
   let signed: string;
   let invoiceHash: string;
@@ -170,13 +174,15 @@ export async function clearSubscriptionInvoiceInternal(
       if (e.kind === "business") {
         await db.invoice.update({ where: { id: invoiceId }, data: { zatcaStatus: "REJECTED" } });
         await writeLog(egs.id, invoiceId, "REJECTED", icvUsed, [...e.codes], e.message);
-        await alertRejected(invoice.invoiceNumber, e.codes);
+        // Best-effort: a notification failure must never mask the persisted REJECTED outcome.
+        await alertRejected(invoice.invoiceNumber, e.codes).catch(() => {});
         return { outcome: "REJECTED", codes: [...e.codes] };
       }
       if (e.kind === "transport") {
         await db.invoice.update({ where: { id: invoiceId }, data: { zatcaStatus: "PENDING" } });
         await writeLog(egs.id, invoiceId, "TRANSPORT_ERROR", icvUsed, [], "gateway transport error");
-        await alertTransport(invoice.invoiceNumber);
+        // Best-effort: a notification failure must never mask the persisted TRANSPORT_ERROR outcome.
+        await alertTransport(invoice.invoiceNumber).catch(() => {});
         return { outcome: "TRANSPORT_ERROR" };
       }
       throw e; // config — local misconfiguration; surface to the caller
