@@ -548,6 +548,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: UnitRow[] })
               placeholder={
                 t("ابحث برقم الوحدة أو المبنى...", "Search unit #, building, or city...")
               }
+              aria-label={t("ابحث برقم الوحدة أو المبنى أو المدينة", "Search unit #, building, or city")}
               className="w-full h-11 bg-card border border-border rounded-xl ps-10 pe-4 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring/30"
             />
           </div>
@@ -791,6 +792,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: UnitRow[] })
                   value={mobileMinPrice}
                   onChange={(e) => setMobileMinPrice(e.target.value)}
                   placeholder={t("الحد الأدنى", "Min")}
+                  aria-label={t("الحد الأدنى للسعر (ر.س)", "Minimum price (SAR)")}
                 />
                 <Input
                   type="number"
@@ -798,6 +800,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: UnitRow[] })
                   value={mobileMaxPrice}
                   onChange={(e) => setMobileMaxPrice(e.target.value)}
                   placeholder={t("الحد الأعلى", "Max")}
+                  aria-label={t("الحد الأعلى للسعر (ر.س)", "Maximum price (SAR)")}
                 />
               </div>
             </div>
@@ -996,6 +999,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: UnitRow[] })
                   value={unitSearch}
                   onChange={(e) => setUnitSearch(e.target.value)}
                   placeholder={t("ابحث برقم الوحدة أو المشروع أو المبنى...", "Search by unit #, project, or building...")}
+                  aria-label={t("ابحث برقم الوحدة أو المشروع أو المبنى", "Search by unit #, project, or building")}
                   className="w-full h-10 bg-background border border-input rounded-xl ps-10 pe-4 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring/30"
                 />
               </div>
@@ -1308,10 +1312,11 @@ export default function UnitsView({ initialUnits }: { initialUnits: UnitRow[] })
         }
       >
         <div className="space-y-1">
-          <label className="text-xs font-bold text-muted-foreground flex items-center gap-1">
+          <label htmlFor="unit-bulk-price" className="text-xs font-bold text-muted-foreground flex items-center gap-1">
             {t("السعر الجديد", "New Price")}
           </label>
           <Input
+            id="unit-bulk-price"
             type="number"
             value={bulkPrice}
             onChange={(e) => setBulkPrice(e.target.value)}

@@ -179,9 +179,9 @@ export default function TeamManagementPage() {
           </Button>
         </div>
       )}
-      <label className="space-y-2 text-sm font-medium">
+      <label htmlFor="team-invite-email-m" className="space-y-2 text-sm font-medium">
         {t("البريد الإلكتروني", "Email")}
-        <Input type="email" value={inviteEmail} onChange={(event) => setInviteEmail(event.target.value)} dir="ltr" placeholder="name@example.com" />
+        <Input id="team-invite-email-m" type="email" value={inviteEmail} onChange={(event) => setInviteEmail(event.target.value)} dir="ltr" placeholder="name@example.com" />
       </label>
       <label className="space-y-2 text-sm font-medium">
         {t("الدور", "Role")}
@@ -247,7 +247,7 @@ export default function TeamManagementPage() {
                 />
               </div>
               <div className="grid gap-4 md:grid-cols-[1fr_220px_auto]">
-                <Input type="email" value={inviteEmail} onChange={(event) => setInviteEmail(event.target.value)} placeholder="name@example.com" dir="ltr" />
+                <Input type="email" aria-label={t("البريد الإلكتروني", "Email")} value={inviteEmail} onChange={(event) => setInviteEmail(event.target.value)} placeholder="name@example.com" dir="ltr" />
                 <SelectField aria-label={t("الدور", "Role")} value={inviteRole} onChange={(event) => setInviteRole(event.target.value)}>
                   {inviteRoleOptions.map((option) => (
                     <option key={option.value} value={option.value}>

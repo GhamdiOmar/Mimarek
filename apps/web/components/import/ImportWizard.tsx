@@ -530,6 +530,7 @@ export function ImportWizard({
                 ref={fileInputRef}
                 type="file"
                 accept=".csv,.xlsx"
+                aria-label={T("اختر ملفاً", "Choose a file")}
                 className="sr-only"
                 onChange={(e) => {
                   const file = e.target.files?.[0];

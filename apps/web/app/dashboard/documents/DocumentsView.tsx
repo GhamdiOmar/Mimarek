@@ -201,6 +201,7 @@ export default function DocumentsView({ initialDocs }: DocumentsViewProps) {
             placeholder={
               t("ابحث باسم الملف...", "Search by file name...")
             }
+            aria-label={t("ابحث باسم الملف", "Search by file name")}
             className="h-10 ps-9"
           />
         </div>
@@ -464,6 +465,7 @@ export default function DocumentsView({ initialDocs }: DocumentsViewProps) {
                   value={desktopSearch}
                   onChange={(e) => setDesktopSearch(e.target.value)}
                   placeholder={t("بحث في الوثائق...", "Search documents...")}
+                  aria-label={t("بحث في الوثائق", "Search documents")}
                   className="w-full bg-muted/30 border-transparent rounded py-2 pe-10 ps-4 text-sm outline-none focus:bg-card focus:border-border transition-all"
                 />
              </div>

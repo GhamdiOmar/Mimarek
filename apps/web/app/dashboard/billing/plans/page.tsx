@@ -232,6 +232,7 @@ export default function PlansPage() {
               <Tag className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
               <input
                 type="text"
+                aria-label={t.couponPlaceholder}
                 value={couponCode}
                 onChange={(e) => {
                   setCouponCode(e.target.value.toUpperCase());
@@ -478,6 +479,7 @@ export default function PlansPage() {
               <Tag className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
                 type="text"
+                aria-label={t.couponPlaceholder}
                 value={couponCode}
                 onChange={(e) => {
                   setCouponCode(e.target.value.toUpperCase());

@@ -636,6 +636,7 @@ export default function CouponManagementPage() {
                 type="text"
                 value={mobileSearch}
                 onChange={(e) => setMobileSearch(e.target.value)}
+                aria-label={lang === "ar" ? "بحث بالكود..." : "Search by code..."}
                 placeholder={lang === "ar" ? "بحث بالكود..." : "Search by code..."}
                 className="h-11 w-full rounded-md border border-input bg-background ps-9 pe-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
@@ -857,10 +858,11 @@ export default function CouponManagementPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Code */}
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-1.5">
+                  <label htmlFor="cpn-code" className="block text-sm font-medium text-foreground mb-1.5">
                     {labels.couponCode} <span className="text-destructive">*</span>
                   </label>
                   <input
+                    id="cpn-code"
                     type="text"
                     value={formCode}
                     onChange={(e) =>
@@ -902,7 +904,7 @@ export default function CouponManagementPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Value */}
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-1.5">
+                  <label htmlFor="cpn-value" className="block text-sm font-medium text-foreground mb-1.5">
                     {labels.discountValue}{" "}
                     <span className="text-muted-foreground text-xs">
                       ({formType === "PERCENTAGE" ? "%" : labels.sar})
@@ -910,6 +912,7 @@ export default function CouponManagementPage() {
                     <span className="text-destructive">*</span>
                   </label>
                   <input
+                    id="cpn-value"
                     type="number"
                     value={formValue}
                     onChange={(e) => setFormValue(e.target.value)}
@@ -930,10 +933,11 @@ export default function CouponManagementPage() {
 
                 {/* Max Redemptions */}
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-1.5">
+                  <label htmlFor="cpn-max-redemptions" className="block text-sm font-medium text-foreground mb-1.5">
                     {labels.maxRedemptions}
                   </label>
                   <input
+                    id="cpn-max-redemptions"
                     type="number"
                     value={formMaxRedemptions}
                     onChange={(e) => setFormMaxRedemptions(e.target.value)}
@@ -948,10 +952,11 @@ export default function CouponManagementPage() {
               {/* Row: Valid From + Valid Until */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-1.5">
+                  <label htmlFor="cpn-valid-from" className="block text-sm font-medium text-foreground mb-1.5">
                     {labels.validFrom}
                   </label>
                   <HijriDatePicker
+                    id="cpn-valid-from"
                     value={formValidFrom ? new Date(formValidFrom) : null}
                     onChange={(d) =>
                       setFormValidFrom(d ? d.toISOString().slice(0, 10) : "")
@@ -959,10 +964,11 @@ export default function CouponManagementPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-1.5">
+                  <label htmlFor="cpn-valid-until" className="block text-sm font-medium text-foreground mb-1.5">
                     {labels.validUntilLabel}
                   </label>
                   <HijriDatePicker
+                    id="cpn-valid-until"
                     placeholder={labels.validUntilPlaceholder}
                     value={formValidUntil ? new Date(formValidUntil) : null}
                     onChange={(d) =>
@@ -974,10 +980,11 @@ export default function CouponManagementPage() {
 
               {/* Min Purchase */}
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1.5">
+                <label htmlFor="cpn-min-purchase" className="block text-sm font-medium text-foreground mb-1.5">
                   {labels.minPurchase}
                 </label>
                 <input
+                  id="cpn-min-purchase"
                   type="number"
                   value={formMinPurchase}
                   onChange={(e) => setFormMinPurchase(e.target.value)}
@@ -991,10 +998,11 @@ export default function CouponManagementPage() {
               {/* Descriptions */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-1.5">
+                  <label htmlFor="cpn-desc-en" className="block text-sm font-medium text-foreground mb-1.5">
                     {labels.descEn}
                   </label>
                   <textarea
+                    id="cpn-desc-en"
                     value={formDescEn}
                     onChange={(e) => setFormDescEn(e.target.value)}
                     rows={2}
@@ -1003,10 +1011,11 @@ export default function CouponManagementPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-1.5">
+                  <label htmlFor="cpn-desc-ar" className="block text-sm font-medium text-foreground mb-1.5">
                     {labels.descAr}
                   </label>
                   <textarea
+                    id="cpn-desc-ar"
                     value={formDescAr}
                     onChange={(e) => setFormDescAr(e.target.value)}
                     rows={2}

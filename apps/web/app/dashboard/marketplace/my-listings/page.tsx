@@ -1154,8 +1154,9 @@ export default function MyListingsPage() {
             <legend className="text-sm font-medium text-foreground">
               {t("Authorized to act as", "مخوّل للتصرف كـ")}
             </legend>
-            <label className="flex items-center gap-2 text-sm text-foreground min-h-[44px]">
+            <label htmlFor="mylist-rega-seller" className="flex items-center gap-2 text-sm text-foreground min-h-[44px]">
               <input
+                id="mylist-rega-seller"
                 type="checkbox"
                 checked={regaIsSeller}
                 onChange={(e) => setRegaIsSeller(e.target.checked)}
@@ -1163,8 +1164,9 @@ export default function MyListingsPage() {
               />
               {t("Seller (list & transfer out units)", "بائع (عرض ونقل الوحدات)")}
             </label>
-            <label className="flex items-center gap-2 text-sm text-foreground min-h-[44px]">
+            <label htmlFor="mylist-rega-buyer" className="flex items-center gap-2 text-sm text-foreground min-h-[44px]">
               <input
+                id="mylist-rega-buyer"
                 type="checkbox"
                 checked={regaIsBuyer}
                 onChange={(e) => setRegaIsBuyer(e.target.checked)}

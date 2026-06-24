@@ -339,6 +339,317 @@ const noInlineJsonSerialize = {
 };
 
 /**
+ * Custom rule: `mimaric/label-has-associated-control` (a11y label sweep — F-A11Y).
+ *
+ * Flags form-input controls that have NO programmatic label association — the
+ * WCAG 1.3.1 (Info and Relationships) / 4.1.2 (Name, Role, Value) gap that axe
+ * surfaces as `label`. The repo deliberately does NOT use eslint-plugin-jsx-a11y
+ * (see the NOTE block below), so this is a hand-written `mimaric/*` detector that
+ * matches the established rule style (closure state, Program/Program:exit pass).
+ *
+ * This was the DETECTOR for the label sweep (shipped at "warn"); the 196-violation
+ * backlog is now fully fixed (v5.6.3), so the rule is ratcheted to "error" — a NEW
+ * unlabelled control fails CI. No suppressions file is needed (the backlog is empty).
+ *
+ * A control is in scope if its JSX name is one of CONTROL_NAMES, OR it is a
+ * native `<input>` (except the non-text input types) / native `<textarea>`.
+ *
+ * A control is considered LABELLED (not flagged) if ANY of:
+ *   1. It carries `aria-label` / `aria-labelledby` (any value).
+ *   2. It carries a `label` prop (some primitives self-label).
+ *   3. Its `id` string-literal matches a `<label htmlFor="...">` string-literal
+ *      that appears ANYWHERE in the same file; OR (best-effort, non-literal)
+ *      its `id={expr}` and SOME label's `htmlFor={expr}` reference the same
+ *      identifier name (covers `id={fieldId}` + `htmlFor={fieldId}`).
+ *   4. It is a JSX descendant of a `<Field>` element (Field wires id+label via
+ *      its render-prop).
+ *   5. It is spread with a Field render-prop param (`{...field}` / `{...f}` /
+ *      `{...fieldProps}`).
+ *
+ * `<SelectField>` is governed and self-labelling — it is SKIPPED entirely (not a
+ * control we check), as are non-input controls (Button, IconButton, Switch,
+ * Checkbox, native select/option).
+ *
+ * Reporting is deferred to `Program:exit` so labels that appear AFTER the control
+ * in source order are still matched (order-independent).
+ */
+const CONTROL_NAMES = new Set([
+  "Input",
+  "Textarea",
+  "SaudiPhoneInput",
+  "CRInput",
+  "NationalIdInput",
+  "SARAmountInput",
+  "HijriDatePicker",
+]);
+
+// Native inputs of these types are not labellable text controls — skip them.
+const NON_TEXT_INPUT_TYPES = new Set([
+  "hidden",
+  "submit",
+  "button",
+  "image",
+  "reset",
+]);
+
+// Spread argument identifiers that signal a Field render-prop param.
+const FIELD_SPREAD_NAMES = new Set(["field", "f", "fieldProps"]);
+
+// Get a JSX attribute node by name from an opening element.
+const getJsxAttr = (openingElement, name) => {
+  for (const attr of openingElement.attributes || []) {
+    if (attr.type === "JSXAttribute" && attr.name && attr.name.name === name) {
+      return attr;
+    }
+  }
+  return undefined;
+};
+
+// Does the opening element have a (Field) render-prop spread, e.g. {...field}?
+const hasFieldSpread = (openingElement) => {
+  for (const attr of openingElement.attributes || []) {
+    if (
+      attr.type === "JSXSpreadAttribute" &&
+      attr.argument &&
+      attr.argument.type === "Identifier" &&
+      FIELD_SPREAD_NAMES.has(attr.argument.name)
+    ) {
+      return true;
+    }
+  }
+  return false;
+};
+
+// Resolve a JSX element's opening-element tag name (Identifier only; member
+// expressions like <Foo.Bar> are out of scope for our control/Field checks).
+const jsxName = (openingElement) => {
+  const n = openingElement && openingElement.name;
+  return n && n.type === "JSXIdentifier" ? n.name : undefined;
+};
+
+// Is this opening element an in-scope control we must check for a label?
+const isControlElement = (openingElement) => {
+  const name = jsxName(openingElement);
+  if (!name) return false;
+  if (CONTROL_NAMES.has(name)) return true;
+  if (name === "textarea") return true;
+  if (name === "input") {
+    // Native <input> — skip non-text types (hidden/submit/button/image/reset).
+    const typeAttr = getJsxAttr(openingElement, "type");
+    if (
+      typeAttr &&
+      typeAttr.value &&
+      typeAttr.value.type === "Literal" &&
+      typeof typeAttr.value.value === "string" &&
+      NON_TEXT_INPUT_TYPES.has(typeAttr.value.value)
+    ) {
+      return false;
+    }
+    return true;
+  }
+  return false;
+};
+
+// Walk up node.parent chain; true if any JSXElement ancestor is a <Field>.
+const isInsideField = (openingElement) => {
+  let cur = openingElement.parent; // the JSXElement for this control
+  while (cur) {
+    if (
+      cur.type === "JSXElement" &&
+      cur.openingElement &&
+      jsxName(cur.openingElement) === "Field"
+    ) {
+      return true;
+    }
+    cur = cur.parent;
+  }
+  return false;
+};
+
+// Walk up node.parent chain; true if any JSXElement ancestor is a <label>.
+// A control nested inside a <label> is implicitly associated per the HTML spec
+// (`<label>Name <input/></label>`), so it is labelled without an explicit htmlFor.
+const isInsideLabel = (openingElement) => {
+  let cur = openingElement.parent;
+  while (cur) {
+    if (
+      cur.type === "JSXElement" &&
+      cur.openingElement &&
+      jsxName(cur.openingElement) === "label"
+    ) {
+      return true;
+    }
+    cur = cur.parent;
+  }
+  return false;
+};
+
+// True if a naming attribute (aria-label / aria-labelledby / label) is present
+// AND carries a meaningful value — an empty-string literal (`aria-label=""`),
+// a bare boolean attribute, or `{undefined}`/`{""}` does NOT name the control.
+// Any non-literal expression is assumed meaningful (we can't evaluate it).
+const attrHasMeaningfulValue = (openingElement, name) => {
+  const a = getJsxAttr(openingElement, name);
+  if (!a || !a.value) return false; // missing or boolean-shorthand
+  const lit = (n) =>
+    n && n.type === "Literal"
+      ? typeof n.value === "string"
+        ? n.value.trim().length > 0
+        : !!n.value
+      : null;
+  if (a.value.type === "Literal") return lit(a.value) === true;
+  if (a.value.type === "JSXExpressionContainer") {
+    const e = a.value.expression;
+    const l = lit(e);
+    if (l !== null) return l; // {""} / {0} / {"x"}
+    if (e && e.type === "Identifier" && e.name === "undefined") return false;
+    return true; // any other expression — assume meaningful
+  }
+  return true;
+};
+
+// Canonicalise a TemplateLiteral (e.g. `sec-x-${suffix}`) into a stable key so an
+// id={`x-${s}`} can be matched against a <label htmlFor={`x-${s}`}>. Only Identifier
+// and Literal interpolations are canonicalised; any other (call/member/binary)
+// expression returns null so we never risk a false match on complex templates.
+const serializeTemplate = (tpl) => {
+  if (!tpl || tpl.type !== "TemplateLiteral") return null;
+  let out = "";
+  for (let i = 0; i < tpl.quasis.length; i++) {
+    out += tpl.quasis[i].value.cooked ?? "";
+    if (i < tpl.expressions.length) {
+      const e = tpl.expressions[i];
+      if (e && e.type === "Identifier") out += "${" + e.name + "}";
+      else if (e && e.type === "Literal") out += "${=" + String(e.value) + "}";
+      else return null;
+    }
+  }
+  return out;
+};
+
+const labelHasAssociatedControl = {
+  meta: {
+    type: "problem",
+    docs: {
+      description:
+        "Every form-input control must have a programmatic label association (id↔<label htmlFor>, a <Field> wrapper, or aria-label) — WCAG 1.3.1/4.1.2.",
+    },
+    messages: {
+      noLabel:
+        "Form control <{{name}}> has no associated label. Add an `id` matched by a " +
+        "`<label htmlFor>`, wrap it in `<Field label=…>`, or give it an `aria-label` " +
+        "so it has an accessible name (AGENTS.md §6.7 / WCAG 1.3.1 — fixes axe `label`).",
+    },
+    schema: [],
+  },
+  create(context) {
+    // Collected per file at Program; reset on each new Program node.
+    const labelHtmlForLiterals = new Set(); // <label htmlFor="literal">
+    const labelHtmlForIdentifiers = new Set(); // <label htmlFor={ident}>
+    const labelHtmlForTemplates = new Set(); // <label htmlFor={`x-${s}`}>
+    const candidates = []; // { node (openingElement), name }
+
+    const reset = () => {
+      labelHtmlForLiterals.clear();
+      labelHtmlForIdentifiers.clear();
+      labelHtmlForTemplates.clear();
+      candidates.length = 0;
+    };
+
+    // Does this control have a string-literal id matching a label htmlFor literal,
+    // or an identifier-expression id matching a label htmlFor identifier?
+    const idMatchesSomeLabel = (openingElement) => {
+      const idAttr = getJsxAttr(openingElement, "id");
+      if (!idAttr || !idAttr.value) return false;
+      // id="literal"
+      if (
+        idAttr.value.type === "Literal" &&
+        typeof idAttr.value.value === "string"
+      ) {
+        return labelHtmlForLiterals.has(idAttr.value.value);
+      }
+      // id={expr} — best-effort: a bare identifier expression `id={fieldId}` or a
+      // template literal `id={`x-${s}`}` matched against the same-shaped htmlFor.
+      if (idAttr.value.type === "JSXExpressionContainer") {
+        const expr = idAttr.value.expression;
+        if (expr && expr.type === "Identifier") {
+          return labelHtmlForIdentifiers.has(expr.name);
+        }
+        if (expr && expr.type === "TemplateLiteral") {
+          const key = serializeTemplate(expr);
+          return key !== null && labelHtmlForTemplates.has(key);
+        }
+      }
+      return false;
+    };
+
+    const isLabelled = (openingElement) => {
+      // 1. aria-label / aria-labelledby — must carry a meaningful value
+      //    (empty string / {undefined} / bare attr does NOT name the control).
+      if (
+        attrHasMeaningfulValue(openingElement, "aria-label") ||
+        attrHasMeaningfulValue(openingElement, "aria-labelledby")
+      ) {
+        return true;
+      }
+      // 2. self-labelling `label` prop (likewise must be non-empty).
+      if (attrHasMeaningfulValue(openingElement, "label")) return true;
+      // 5. Field render-prop spread ({...field}).
+      if (hasFieldSpread(openingElement)) return true;
+      // 4. descendant of <Field>.
+      if (isInsideField(openingElement)) return true;
+      // 4b. nested inside a <label> (implicit HTML association).
+      if (isInsideLabel(openingElement)) return true;
+      // 3. id ↔ <label htmlFor> association.
+      if (idMatchesSomeLabel(openingElement)) return true;
+      return false;
+    };
+
+    return {
+      Program() {
+        reset();
+      },
+      // Collect every <label>'s htmlFor target (literal value + identifier name).
+      "JSXOpeningElement"(node) {
+        const name = jsxName(node);
+        if (name === "label") {
+          const htmlFor = getJsxAttr(node, "htmlFor");
+          if (htmlFor && htmlFor.value) {
+            if (
+              htmlFor.value.type === "Literal" &&
+              typeof htmlFor.value.value === "string"
+            ) {
+              labelHtmlForLiterals.add(htmlFor.value.value);
+            } else if (htmlFor.value.type === "JSXExpressionContainer") {
+              const expr = htmlFor.value.expression;
+              if (expr && expr.type === "Identifier") {
+                labelHtmlForIdentifiers.add(expr.name);
+              } else if (expr && expr.type === "TemplateLiteral") {
+                const key = serializeTemplate(expr);
+                if (key !== null) labelHtmlForTemplates.add(key);
+              }
+            }
+          }
+          return;
+        }
+        // Defer the labelled-or-not decision to Program:exit, because labels may
+        // appear AFTER the control in source order. Collect candidate controls now.
+        if (isControlElement(node)) {
+          candidates.push({ node, name });
+        }
+      },
+      "Program:exit"() {
+        for (const { node, name } of candidates) {
+          if (!isLabelled(node)) {
+            context.report({ node, messageId: "noLabel", data: { name } });
+          }
+        }
+      },
+    };
+  },
+};
+
+/**
  * A custom ESLint configuration for libraries that use Next.js.
  *
  * @type {import("eslint").Linter.Config[]}
@@ -474,6 +785,10 @@ export const nextJsConfig = [
           // C1 shared-seam adoption: force ROUTES + serialize() in app/actions/**.
           "no-raw-revalidate-path": noRawRevalidatePath,
           "no-inline-json-serialize": noInlineJsonSerialize,
+          // F-A11Y: form controls must have a programmatic label (WCAG 1.3.1).
+          // Now at "error" (v5.6.3) — the 196-control backlog was fixed by the
+          // label sweep, so a new unlabelled control fails CI.
+          "label-has-associated-control": labelHasAssociatedControl,
         },
       },
     },
@@ -482,6 +797,7 @@ export const nextJsConfig = [
       "mimaric/require-action-guard": "error",
       "mimaric/no-raw-revalidate-path": "error",
       "mimaric/no-inline-json-serialize": "error",
+      "mimaric/label-has-associated-control": "error",
       "no-restricted-syntax": [
         "error",
         {

@@ -303,10 +303,11 @@ export default function OrgSettingsPage() {
                 <AccordionContent className="pb-4">
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                      <label htmlFor="settings-org-name-m" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                         {t("اسم المنظمة", "Organization Name")} *
                       </label>
                       <Input
+                        id="settings-org-name-m"
                         value={form.name}
                         onChange={(e) => set("name", e.target.value)}
                         className={`h-11 ${fieldErrors.name ? "border-destructive focus-visible:ring-destructive" : ""}`}
@@ -318,34 +319,34 @@ export default function OrgSettingsPage() {
                       )}
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                      <label htmlFor="settings-name-arabic-m" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                         {t("الاسم بالعربي", "Official Arabic Name")}
                       </label>
-                      <Input className="h-11" value={form.nameArabic} onChange={(e) => set("nameArabic", e.target.value)} dir="rtl" />
+                      <Input id="settings-name-arabic-m" className="h-11" value={form.nameArabic} onChange={(e) => set("nameArabic", e.target.value)} dir="rtl" />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                      <label htmlFor="settings-name-english-m" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                         {t("الاسم بالإنجليزي", "Official English Name")}
                       </label>
-                      <Input className="h-11" value={form.nameEnglish} onChange={(e) => set("nameEnglish", e.target.value)} dir="ltr" />
+                      <Input id="settings-name-english-m" className="h-11" value={form.nameEnglish} onChange={(e) => set("nameEnglish", e.target.value)} dir="ltr" />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                      <label htmlFor="settings-cr-number-m" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                         {t("رقم السجل التجاري", "Commercial Registration")}
                       </label>
-                      <CRInput className="h-11" placeholder="1010XXXXXX" value={form.crNumber} onChange={(raw) => set("crNumber", raw)} />
+                      <CRInput id="settings-cr-number-m" className="h-11" placeholder="1010XXXXXX" value={form.crNumber} onChange={(raw) => set("crNumber", raw)} />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                      <label htmlFor="settings-vat-number-m" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                         {t("الرقم الضريبي", "VAT Number")}
                       </label>
-                      <Input className="h-11 font-latin" placeholder="3000XXXXXX00003" value={form.vatNumber} onChange={(e) => set("vatNumber", e.target.value)} dir="ltr" />
+                      <Input id="settings-vat-number-m" className="h-11 font-latin" placeholder="3000XXXXXX00003" value={form.vatNumber} onChange={(e) => set("vatNumber", e.target.value)} dir="ltr" />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                      <label htmlFor="settings-unified-number-m" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                         {t("الرقم الموحد", "Unified Number")}
                       </label>
-                      <Input className="h-11 font-latin" placeholder="70XXXXXXXX" value={form.unifiedNumber} onChange={(e) => set("unifiedNumber", e.target.value)} dir="ltr" />
+                      <Input id="settings-unified-number-m" className="h-11 font-latin" placeholder="70XXXXXXXX" value={form.unifiedNumber} onChange={(e) => set("unifiedNumber", e.target.value)} dir="ltr" />
                     </div>
                   </div>
                 </AccordionContent>
@@ -404,27 +405,29 @@ export default function OrgSettingsPage() {
                       </SelectField>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                      <label htmlFor="settings-capital-m" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                         {t("رأس المال (ر.س)", "Capital (SAR)")}
                       </label>
-                      <Input className="h-11 tabular-nums" type="number" value={form.capitalAmountSar} onChange={(e) => set("capitalAmountSar", e.target.value)} dir="ltr" />
+                      <Input id="settings-capital-m" className="h-11 tabular-nums" type="number" value={form.capitalAmountSar} onChange={(e) => set("capitalAmountSar", e.target.value)} dir="ltr" />
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-2">
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                        <label htmlFor="settings-reg-date-m" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                           {t("تاريخ التسجيل", "Reg. Date")}
                         </label>
                         <HijriDatePicker
+                          id="settings-reg-date-m"
                           className="h-11"
                           value={form.registrationDate ? new Date(form.registrationDate) : null}
                           onChange={(d) => set("registrationDate", d ? d.toISOString().slice(0, 10) : "")}
                         />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                        <label htmlFor="settings-expiry-date-m" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                           {t("تاريخ الانتهاء", "Expiry")}
                         </label>
                         <HijriDatePicker
+                          id="settings-expiry-date-m"
                           className="h-11"
                           value={form.expiryDate ? new Date(form.expiryDate) : null}
                           onChange={(d) => set("expiryDate", d ? d.toISOString().slice(0, 10) : "")}
@@ -432,16 +435,16 @@ export default function OrgSettingsPage() {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                      <label htmlFor="settings-activity-code-m" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                         {t("رمز النشاط", "Activity Code")}
                       </label>
-                      <Input className="h-11" value={form.mainActivityCode} onChange={(e) => set("mainActivityCode", e.target.value)} dir="ltr" />
+                      <Input id="settings-activity-code-m" className="h-11" value={form.mainActivityCode} onChange={(e) => set("mainActivityCode", e.target.value)} dir="ltr" />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                      <label htmlFor="settings-activity-name-m" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                         {t("اسم النشاط", "Activity Name")}
                       </label>
-                      <Input className="h-11" value={form.mainActivityNameAr} onChange={(e) => set("mainActivityNameAr", e.target.value)} />
+                      <Input id="settings-activity-name-m" className="h-11" value={form.mainActivityNameAr} onChange={(e) => set("mainActivityNameAr", e.target.value)} />
                     </div>
                   </div>
                 </AccordionContent>
@@ -460,28 +463,28 @@ export default function OrgSettingsPage() {
                 <AccordionContent className="pb-4">
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                      <label htmlFor="settings-contact-mobile-m" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                         {t("رقم الجوال", "Mobile")}
                       </label>
-                      <SaudiPhoneInput className="h-11" placeholder="05XXXXXXXX" value={form.contactMobile} onChange={(e164) => set("contactMobile", e164)} />
+                      <SaudiPhoneInput id="settings-contact-mobile-m" className="h-11" placeholder="05XXXXXXXX" value={form.contactMobile} onChange={(e164) => set("contactMobile", e164)} />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                      <label htmlFor="settings-contact-phone-m" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                         {t("الهاتف الثابت", "Phone")}
                       </label>
-                      <SaudiPhoneInput className="h-11" placeholder="011XXXXXXX" value={form.contactPhone} onChange={(e164) => set("contactPhone", e164)} />
+                      <SaudiPhoneInput id="settings-contact-phone-m" className="h-11" placeholder="011XXXXXXX" value={form.contactPhone} onChange={(e164) => set("contactPhone", e164)} />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                      <label htmlFor="settings-contact-email-m" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                         {t("البريد الإلكتروني", "Email")}
                       </label>
-                      <Input className="h-11" type="email" placeholder="info@company.sa" value={form.contactEmail} onChange={(e) => set("contactEmail", e.target.value)} dir="ltr" />
+                      <Input id="settings-contact-email-m" className="h-11" type="email" placeholder="info@company.sa" value={form.contactEmail} onChange={(e) => set("contactEmail", e.target.value)} dir="ltr" />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                      <label htmlFor="settings-contact-website-m" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                         {t("الموقع الإلكتروني", "Website")}
                       </label>
-                      <Input className="h-11" type="url" placeholder="https://company.sa" value={form.contactWebsite} onChange={(e) => set("contactWebsite", e.target.value)} dir="ltr" />
+                      <Input id="settings-contact-website-m" className="h-11" type="url" placeholder="https://company.sa" value={form.contactWebsite} onChange={(e) => set("contactWebsite", e.target.value)} dir="ltr" />
                     </div>
                   </div>
                 </AccordionContent>
@@ -500,54 +503,54 @@ export default function OrgSettingsPage() {
                 <AccordionContent className="pb-4">
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                      <label htmlFor="settings-addr-region-m" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                         {t("المنطقة", "Region")}
                       </label>
-                      <Input className="h-11" value={form.addrRegion} onChange={(e) => set("addrRegion", e.target.value)} />
+                      <Input id="settings-addr-region-m" className="h-11" value={form.addrRegion} onChange={(e) => set("addrRegion", e.target.value)} />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                      <label htmlFor="settings-addr-city-m" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                         {t("المدينة", "City")}
                       </label>
-                      <Input className="h-11" value={form.addrCity} onChange={(e) => set("addrCity", e.target.value)} />
+                      <Input id="settings-addr-city-m" className="h-11" value={form.addrCity} onChange={(e) => set("addrCity", e.target.value)} />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                      <label htmlFor="settings-addr-district-m" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                         {t("الحي", "District")}
                       </label>
-                      <Input className="h-11" value={form.addrDistrict} onChange={(e) => set("addrDistrict", e.target.value)} />
+                      <Input id="settings-addr-district-m" className="h-11" value={form.addrDistrict} onChange={(e) => set("addrDistrict", e.target.value)} />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                      <label htmlFor="settings-addr-street-m" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                         {t("اسم الشارع", "Street")}
                       </label>
-                      <Input className="h-11" value={form.addrStreet} onChange={(e) => set("addrStreet", e.target.value)} />
+                      <Input id="settings-addr-street-m" className="h-11" value={form.addrStreet} onChange={(e) => set("addrStreet", e.target.value)} />
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-2">
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                        <label htmlFor="settings-addr-building-m" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                           {t("المبنى", "Building")}
                         </label>
-                        <Input className="h-11" value={form.addrBuilding} onChange={(e) => set("addrBuilding", e.target.value)} dir="ltr" maxLength={4} />
+                        <Input id="settings-addr-building-m" className="h-11" value={form.addrBuilding} onChange={(e) => set("addrBuilding", e.target.value)} dir="ltr" maxLength={4} />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                        <label htmlFor="settings-addr-postal-m" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                           {t("الرمز البريدي", "Postal")}
                         </label>
-                        <Input className="h-11" value={form.addrPostal} onChange={(e) => set("addrPostal", e.target.value)} dir="ltr" maxLength={5} />
+                        <Input id="settings-addr-postal-m" className="h-11" value={form.addrPostal} onChange={(e) => set("addrPostal", e.target.value)} dir="ltr" maxLength={5} />
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                      <label htmlFor="settings-addr-additional-m" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                         {t("الرقم الإضافي", "Additional No.")}
                       </label>
-                      <Input className="h-11" value={form.addrAdditional} onChange={(e) => set("addrAdditional", e.target.value)} dir="ltr" maxLength={4} />
+                      <Input id="settings-addr-additional-m" className="h-11" value={form.addrAdditional} onChange={(e) => set("addrAdditional", e.target.value)} dir="ltr" maxLength={4} />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                      <label htmlFor="settings-addr-short-m" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                         {t("العنوان المختصر", "Short Address")}
                       </label>
-                      <Input className="h-11" value={form.addrShort} onChange={(e) => set("addrShort", e.target.value)} dir="ltr" maxLength={8} />
+                      <Input id="settings-addr-short-m" className="h-11" value={form.addrShort} onChange={(e) => set("addrShort", e.target.value)} dir="ltr" maxLength={8} />
                     </div>
                   </div>
                 </AccordionContent>
@@ -812,10 +815,11 @@ export default function OrgSettingsPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground">
+                    <label htmlFor="settings-cr-number" className="text-xs font-medium text-muted-foreground">
                       {t("رقم السجل التجاري (CR)", "Commercial Registration")}
                     </label>
                     <CRInput
+                      id="settings-cr-number"
                       placeholder="1010XXXXXX"
                       className="text-sm"
                       value={form.crNumber}
@@ -823,7 +827,7 @@ export default function OrgSettingsPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground">
+                    <label htmlFor="settings-vat-number" className="text-xs font-medium text-muted-foreground">
                       {t("الرقم الضريبي (VAT)", "VAT Number")}
                     </label>
                     <div className="relative">
@@ -831,6 +835,7 @@ export default function OrgSettingsPage() {
                         className="h-4 w-4 absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
                       />
                       <Input
+                        id="settings-vat-number"
                         placeholder="3000XXXXXX00003"
                         className="pr-10 font-latin text-sm"
                         value={form.vatNumber}
@@ -842,10 +847,11 @@ export default function OrgSettingsPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-medium text-muted-foreground">
+                  <label htmlFor="settings-unified-number" className="text-xs font-medium text-muted-foreground">
                     {t("الرقم الموحد", "Unified Number")}
                   </label>
                   <Input
+                    id="settings-unified-number"
                     placeholder="70XXXXXXXX"
                     className="font-latin text-sm"
                     value={form.unifiedNumber}
@@ -952,10 +958,11 @@ export default function OrgSettingsPage() {
                     </SelectField>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground">
+                    <label htmlFor="settings-capital" className="text-xs font-medium text-muted-foreground">
                       {t("رأس المال (ر.س)", "Capital (SAR)")}
                     </label>
                     <Input
+                      id="settings-capital"
                       type="number"
                       value={form.capitalAmountSar}
                       onChange={(e) => set("capitalAmountSar", e.target.value)}
@@ -992,10 +999,11 @@ export default function OrgSettingsPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground">
+                    <label htmlFor="settings-activity-code" className="text-xs font-medium text-muted-foreground">
                       {t("رمز النشاط", "Activity Code")}
                     </label>
                     <Input
+                      id="settings-activity-code"
                       value={form.mainActivityCode}
                       onChange={(e) => set("mainActivityCode", e.target.value)}
                       placeholder="411001"
@@ -1003,10 +1011,11 @@ export default function OrgSettingsPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground">
+                    <label htmlFor="settings-activity-name" className="text-xs font-medium text-muted-foreground">
                       {t("اسم النشاط", "Activity Name")}
                     </label>
                     <Input
+                      id="settings-activity-name"
                       value={form.mainActivityNameAr}
                       onChange={(e) => set("mainActivityNameAr", e.target.value)}
                       placeholder={
@@ -1051,20 +1060,22 @@ export default function OrgSettingsPage() {
               >
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground">
+                    <label htmlFor="settings-contact-mobile" className="text-xs font-medium text-muted-foreground">
                       {t("رقم الجوال", "Mobile")}
                     </label>
                     <SaudiPhoneInput
+                      id="settings-contact-mobile"
                       value={form.contactMobile}
                       onChange={(e164) => set("contactMobile", e164)}
                       placeholder="05XXXXXXXX"
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground">
+                    <label htmlFor="settings-contact-phone" className="text-xs font-medium text-muted-foreground">
                       {t("الهاتف الثابت", "Phone")}
                     </label>
                     <SaudiPhoneInput
+                      id="settings-contact-phone"
                       value={form.contactPhone}
                       onChange={(e164) => set("contactPhone", e164)}
                       placeholder="011XXXXXXX"
@@ -1073,10 +1084,11 @@ export default function OrgSettingsPage() {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground">
+                    <label htmlFor="settings-contact-email" className="text-xs font-medium text-muted-foreground">
                       {t("البريد الإلكتروني", "Email")}
                     </label>
                     <Input
+                      id="settings-contact-email"
                       value={form.contactEmail}
                       onChange={(e) => set("contactEmail", e.target.value)}
                       placeholder="info@company.sa"
@@ -1084,10 +1096,11 @@ export default function OrgSettingsPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground">
+                    <label htmlFor="settings-contact-website" className="text-xs font-medium text-muted-foreground">
                       {t("الموقع الإلكتروني", "Website")}
                     </label>
                     <Input
+                      id="settings-contact-website"
                       value={form.contactWebsite}
                       onChange={(e) => set("contactWebsite", e.target.value)}
                       placeholder="https://company.sa"
@@ -1106,30 +1119,33 @@ export default function OrgSettingsPage() {
               >
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground">
+                    <label htmlFor="settings-addr-region" className="text-xs font-medium text-muted-foreground">
                       {t("المنطقة", "Region")}
                     </label>
                     <Input
+                      id="settings-addr-region"
                       value={form.addrRegion}
                       onChange={(e) => set("addrRegion", e.target.value)}
                       placeholder={t("منطقة الرياض", "Riyadh Region")}
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground">
+                    <label htmlFor="settings-addr-city" className="text-xs font-medium text-muted-foreground">
                       {t("المدينة", "City")}
                     </label>
                     <Input
+                      id="settings-addr-city"
                       value={form.addrCity}
                       onChange={(e) => set("addrCity", e.target.value)}
                       placeholder={t("الرياض", "Riyadh")}
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground">
+                    <label htmlFor="settings-addr-district" className="text-xs font-medium text-muted-foreground">
                       {t("الحي", "District")}
                     </label>
                     <Input
+                      id="settings-addr-district"
                       value={form.addrDistrict}
                       onChange={(e) => set("addrDistrict", e.target.value)}
                       placeholder={t("العليا", "Al Olaya")}
@@ -1148,10 +1164,11 @@ export default function OrgSettingsPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground">
+                    <label htmlFor="settings-addr-building" className="text-xs font-medium text-muted-foreground">
                       {t("رقم المبنى", "Building No.")}
                     </label>
                     <Input
+                      id="settings-addr-building"
                       value={form.addrBuilding}
                       onChange={(e) => set("addrBuilding", e.target.value)}
                       placeholder="1234"
@@ -1162,10 +1179,11 @@ export default function OrgSettingsPage() {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground">
+                    <label htmlFor="settings-addr-postal" className="text-xs font-medium text-muted-foreground">
                       {t("الرمز البريدي", "Postal Code")}
                     </label>
                     <Input
+                      id="settings-addr-postal"
                       value={form.addrPostal}
                       onChange={(e) => set("addrPostal", e.target.value)}
                       placeholder="12211"
@@ -1174,10 +1192,11 @@ export default function OrgSettingsPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground">
+                    <label htmlFor="settings-addr-additional" className="text-xs font-medium text-muted-foreground">
                       {t("الرقم الإضافي", "Additional No.")}
                     </label>
                     <Input
+                      id="settings-addr-additional"
                       value={form.addrAdditional}
                       onChange={(e) => set("addrAdditional", e.target.value)}
                       placeholder="5678"
@@ -1186,10 +1205,11 @@ export default function OrgSettingsPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground">
+                    <label htmlFor="settings-addr-short" className="text-xs font-medium text-muted-foreground">
                       {t("العنوان المختصر", "Short Address")}
                     </label>
                     <Input
+                      id="settings-addr-short"
                       value={form.addrShort}
                       onChange={(e) => set("addrShort", e.target.value)}
                       placeholder="ABCD1234"

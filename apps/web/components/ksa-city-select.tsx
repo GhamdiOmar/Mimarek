@@ -57,6 +57,7 @@ export function KsaCitySelect({ value, onChange, placeholder, className }: KsaCi
       <input
         ref={inputRef}
         type="text"
+        aria-label={placeholder ?? defaultPlaceholder}
         className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
         placeholder={placeholder ?? defaultPlaceholder}
         value={open ? search : selectedLabel}

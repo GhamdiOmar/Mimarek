@@ -758,10 +758,11 @@ function MaintenancePageInner() {
       >
         <div className="space-y-4 py-2">
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-muted-foreground">
+            <label htmlFor="mtkt-search" className="text-xs font-semibold text-muted-foreground">
               {t("بحث", "Search")}
             </label>
             <input
+              id="mtkt-search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className={inputClass}

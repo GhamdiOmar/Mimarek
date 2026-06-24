@@ -636,6 +636,7 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
             placeholder={
               t("ابحث باسم العميل أو رقم الوحدة...", "Search by client or unit...")
             }
+            aria-label={t("ابحث باسم العميل أو رقم الوحدة", "Search by client or unit")}
             className="h-10 ps-9"
           />
         </div>
@@ -898,6 +899,7 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t("البحث باسم العميل أو رقم الوحدة", "Search by client or unit number")}
+            aria-label={t("البحث باسم العميل أو رقم الوحدة", "Search by client or unit number")}
             className="ps-9"
           />
           {search && (
@@ -1144,11 +1146,12 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
             control={control}
             render={({ field, fieldState }) => (
               <div className="space-y-1">
-                <label className="text-sm font-medium text-foreground">
+                <label htmlFor="res-customer" className="text-sm font-medium text-foreground">
                   {t("العميل", "Customer")} *
                 </label>
                 <div className="relative">
                   <Input
+                    id="res-customer"
                     value={selectedCustomerName || customerSearch}
                     aria-invalid={!!fieldState.error}
                     onChange={(e) => {
@@ -1196,11 +1199,12 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
             control={control}
             render={({ field, fieldState }) => (
               <div className="space-y-1">
-                <label className="text-sm font-medium text-foreground">
+                <label htmlFor="res-unit" className="text-sm font-medium text-foreground">
                   {t("الوحدة", "Unit")} *
                 </label>
                 <div className="relative">
                   <Input
+                    id="res-unit"
                     value={selectedUnitNumber || unitSearch}
                     aria-invalid={!!fieldState.error}
                     onChange={(e) => {
@@ -1248,10 +1252,11 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
             control={control}
             render={({ field, fieldState }) => (
               <div className="space-y-1">
-                <label className="text-sm font-medium text-foreground">
+                <label htmlFor="res-amount" className="text-sm font-medium text-foreground">
                   {t("قيمة الحجز (ريال)", "Reservation Amount (SAR)")} *
                 </label>
                 <SARAmountInput
+                  id="res-amount"
                   value={field.value ?? null}
                   onChange={field.onChange}
                   onBlur={field.onBlur}
@@ -1274,10 +1279,11 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
             control={control}
             render={({ field, fieldState }) => (
               <div className="space-y-1">
-                <label className="text-sm font-medium text-foreground">
+                <label htmlFor="res-expiry" className="text-sm font-medium text-foreground">
                   {t("تاريخ الانتهاء", "Expiry Date")} *
                 </label>
                 <HijriDatePicker
+                  id="res-expiry"
                   locale={lang === "ar" ? "ar" : "en"}
                   value={field.value ? new Date(field.value) : null}
                   onChange={(d) =>
@@ -1299,10 +1305,11 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
             control={control}
             render={({ field }) => (
               <div className="space-y-1">
-                <label className="text-sm font-medium text-foreground">
+                <label htmlFor="res-notes" className="text-sm font-medium text-foreground">
                   {t("ملاحظات", "Notes")}
                 </label>
                 <textarea
+                  id="res-notes"
                   value={field.value ?? ""}
                   onChange={field.onChange}
                   onBlur={field.onBlur}

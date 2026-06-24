@@ -865,6 +865,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
             placeholder={
               t("ابحث برقم العقد أو العميل...", "Search by contract # or customer...")
             }
+            aria-label={t("ابحث برقم العقد أو العميل", "Search by contract # or customer")}
             className="h-10 ps-9"
           />
         </div>
@@ -1143,6 +1144,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t("بحث...", "Search...")}
+              aria-label={t("ابحث في العقود", "Search contracts")}
               className="ps-9 w-56"
             />
             {search && (
@@ -1608,11 +1610,12 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
             name="customerId"
             render={({ field, fieldState }) => (
               <div className="space-y-1">
-                <label className="text-sm font-medium text-foreground">
+                <label htmlFor="con-sale-customer" className="text-sm font-medium text-foreground">
                   {t("العميل", "Customer")} *
                 </label>
                 <div className="relative">
                   <Input
+                    id="con-sale-customer"
                     value={saleCustomerName || saleCustomerSearch}
                     onChange={(e) => {
                       setSaleCustomerSearch(e.target.value);
@@ -1658,11 +1661,12 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
             name="unitId"
             render={({ field, fieldState }) => (
               <div className="space-y-1">
-                <label className="text-sm font-medium text-foreground">
+                <label htmlFor="con-sale-unit" className="text-sm font-medium text-foreground">
                   {t("الوحدة", "Unit")} *
                 </label>
                 <div className="relative">
                   <Input
+                    id="con-sale-unit"
                     value={saleUnitNumber || saleUnitSearch}
                     onChange={(e) => {
                       setSaleUnitSearch(e.target.value);
@@ -1709,10 +1713,11 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
             name="amount"
             render={({ field, fieldState }) => (
               <div className="space-y-1">
-                <label className="text-sm font-medium text-foreground">
+                <label htmlFor="con-sale-amount" className="text-sm font-medium text-foreground">
                   {t("مبلغ العقد (ريال)", "Contract Amount (SAR)")} *
                 </label>
                 <SARAmountInput
+                  id="con-sale-amount"
                   value={field.value ?? null}
                   onChange={(n) => field.onChange(n ?? undefined)}
                   onBlur={field.onBlur}
@@ -1813,11 +1818,12 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
             name="customerId"
             render={({ field, fieldState }) => (
               <div className="space-y-1">
-                <label className="text-sm font-medium text-foreground">
+                <label htmlFor="con-lease-customer" className="text-sm font-medium text-foreground">
                   {t("المستأجر", "Tenant/Customer")} *
                 </label>
                 <div className="relative">
                   <Input
+                    id="con-lease-customer"
                     value={leaseCustomerName || leaseCustomerSearch}
                     onChange={(e) => {
                       setLeaseCustomerSearch(e.target.value);
@@ -1863,11 +1869,12 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
             name="unitId"
             render={({ field, fieldState }) => (
               <div className="space-y-1">
-                <label className="text-sm font-medium text-foreground">
+                <label htmlFor="con-lease-unit" className="text-sm font-medium text-foreground">
                   {t("الوحدة", "Unit")} *
                 </label>
                 <div className="relative">
                   <Input
+                    id="con-lease-unit"
                     value={leaseUnitNumber || leaseUnitSearch}
                     onChange={(e) => {
                       setLeaseUnitSearch(e.target.value);
@@ -1914,10 +1921,11 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
               name="startDate"
               render={({ field, fieldState }) => (
                 <div className="space-y-1">
-                  <label className="text-sm font-medium text-foreground">
+                  <label htmlFor="con-lease-start" className="text-sm font-medium text-foreground">
                     {t("تاريخ البداية", "Start Date")} *
                   </label>
                   <HijriDatePicker
+                    id="con-lease-start"
                     value={field.value ? new Date(field.value) : null}
                     onChange={(d) => {
                       field.onChange(d ? d.toISOString().slice(0, 10) : "");
@@ -1934,10 +1942,11 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
               name="endDate"
               render={({ field, fieldState }) => (
                 <div className="space-y-1">
-                  <label className="text-sm font-medium text-foreground">
+                  <label htmlFor="con-lease-end" className="text-sm font-medium text-foreground">
                     {t("تاريخ النهاية", "End Date")} *
                   </label>
                   <HijriDatePicker
+                    id="con-lease-end"
                     value={field.value ? new Date(field.value) : null}
                     onChange={(d) => {
                       field.onChange(d ? d.toISOString().slice(0, 10) : "");
@@ -1957,10 +1966,11 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
             name="amount"
             render={({ field, fieldState }) => (
               <div className="space-y-1">
-                <label className="text-sm font-medium text-foreground">
+                <label htmlFor="con-lease-amount" className="text-sm font-medium text-foreground">
                   {t("إجمالي الإيجار (ريال)", "Total Amount (SAR)")} *
                 </label>
                 <SARAmountInput
+                  id="con-lease-amount"
                   value={field.value ?? null}
                   onChange={(n) => field.onChange(n ?? undefined)}
                   onBlur={field.onBlur}

@@ -336,6 +336,7 @@ export default function PreventiveMaintenancePage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t("بحث باسم الخطة...", "Search by plan name...")}
+            aria-label={t("بحث باسم الخطة", "Search by plan name")}
             className="h-10 ps-9"
           />
         </div>
@@ -666,13 +667,13 @@ export default function PreventiveMaintenancePage() {
           className="space-y-4 py-4"
         >
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-muted-foreground">{t("العنوان *", "Title *")}</label>
-            <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className={inputClass} placeholder={t("مثال: فحص التكييف الشهري", "e.g. Monthly HVAC Inspection")} />
+            <label htmlFor="pm-title" className="text-xs font-bold text-muted-foreground">{t("العنوان *", "Title *")}</label>
+            <input id="pm-title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className={inputClass} placeholder={t("مثال: فحص التكييف الشهري", "e.g. Monthly HVAC Inspection")} />
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-muted-foreground">{t("الوصف", "Description")}</label>
-            <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className={`${inputClass} h-16 py-2`} />
+            <label htmlFor="pm-description" className="text-xs font-bold text-muted-foreground">{t("الوصف", "Description")}</label>
+            <textarea id="pm-description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className={`${inputClass} h-16 py-2`} />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -704,15 +705,16 @@ export default function PreventiveMaintenancePage() {
               </SelectField>
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-muted-foreground">{t("فترة التكرار", "Interval")}</label>
-              <input type="number" min="1" value={form.recurrenceInterval} onChange={(e) => setForm({ ...form, recurrenceInterval: e.target.value })} className={inputClass} />
+              <label htmlFor="pm-interval" className="text-xs font-bold text-muted-foreground">{t("فترة التكرار", "Interval")}</label>
+              <input id="pm-interval" type="number" min="1" value={form.recurrenceInterval} onChange={(e) => setForm({ ...form, recurrenceInterval: e.target.value })} className={inputClass} />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-muted-foreground">{t("تاريخ البدء *", "Start Date *")}</label>
+              <label htmlFor="pm-start-date" className="text-xs font-bold text-muted-foreground">{t("تاريخ البدء *", "Start Date *")}</label>
               <HijriDatePicker
+                id="pm-start-date"
                 locale={lang === "ar" ? "ar" : "en"}
                 value={form.startDate ? new Date(form.startDate) : null}
                 onChange={(d) =>
@@ -721,8 +723,9 @@ export default function PreventiveMaintenancePage() {
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-muted-foreground">{t("تاريخ الانتهاء", "End Date")}</label>
+              <label htmlFor="pm-end-date" className="text-xs font-bold text-muted-foreground">{t("تاريخ الانتهاء", "End Date")}</label>
               <HijriDatePicker
+                id="pm-end-date"
                 locale={lang === "ar" ? "ar" : "en"}
                 value={form.endDate ? new Date(form.endDate) : null}
                 onChange={(d) =>
@@ -754,12 +757,12 @@ export default function PreventiveMaintenancePage() {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-muted-foreground">{t("التكلفة التقديرية", "Est. Cost")}</label>
-              <input type="number" value={form.estimatedCost} onChange={(e) => setForm({ ...form, estimatedCost: e.target.value })} className={inputClass} placeholder="0.00" />
+              <label htmlFor="pm-est-cost" className="text-xs font-bold text-muted-foreground">{t("التكلفة التقديرية", "Est. Cost")}</label>
+              <input id="pm-est-cost" type="number" value={form.estimatedCost} onChange={(e) => setForm({ ...form, estimatedCost: e.target.value })} className={inputClass} placeholder="0.00" />
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-muted-foreground">{t("الساعات التقديرية", "Est. Hours")}</label>
-              <input type="number" value={form.estimatedHours} onChange={(e) => setForm({ ...form, estimatedHours: e.target.value })} className={inputClass} placeholder="0" />
+              <label htmlFor="pm-est-hours" className="text-xs font-bold text-muted-foreground">{t("الساعات التقديرية", "Est. Hours")}</label>
+              <input id="pm-est-hours" type="number" value={form.estimatedHours} onChange={(e) => setForm({ ...form, estimatedHours: e.target.value })} className={inputClass} placeholder="0" />
             </div>
           </div>
         </form>

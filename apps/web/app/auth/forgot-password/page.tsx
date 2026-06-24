@@ -105,10 +105,11 @@ export default function ForgotPasswordPage() {
 
               <div className="space-y-5">
                 <div className="space-y-2">
-                  <label className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">
+                  <label htmlFor="fgt-email" className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">
                     {lang === "ar" ? "البريد الإلكتروني" : "Email"}
                   </label>
                   <Input
+                    id="fgt-email"
                     type="email"
                     placeholder="name@example.com"
                     value={email}

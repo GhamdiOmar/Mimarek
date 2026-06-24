@@ -179,9 +179,9 @@ export default function PortalClient({ initialSummary }: { initialSummary: Porta
               <Card>
                 <CardContent className="space-y-4 p-5">
                   <h3 id="section-maintenance-form" className="flex items-center gap-2 font-semibold"><Wrench className="h-5 w-5 text-primary" />{t("طلب صيانة", "Maintenance request")}</h3>
-                  <label className="space-y-2 text-sm font-medium">
+                  <label htmlFor="portal-request-title" className="space-y-2 text-sm font-medium">
                     {t("عنوان الطلب", "Request title")}
-                    <Input value={title} onChange={(event) => setTitle(event.target.value)} placeholder={t("مثال: تسرب في المطبخ", "Example: Kitchen leak")} />
+                    <Input id="portal-request-title" value={title} onChange={(event) => setTitle(event.target.value)} placeholder={t("مثال: تسرب في المطبخ", "Example: Kitchen leak")} />
                   </label>
                   <label className="space-y-2 text-sm font-medium">
                     {t("وصف المشكلة", "Issue description")}

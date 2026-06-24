@@ -420,6 +420,7 @@ export default function AdminSubscriptionsPage() {
               <Search className="pointer-events-none absolute top-1/2 start-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
               <input
                 type="text"
+                aria-label={lang === "ar" ? "بحث باسم المنظمة..." : "Search by organization..."}
                 value={mobileSearch}
                 onChange={(e) => setMobileSearch(e.target.value)}
                 placeholder={lang === "ar" ? "بحث باسم المنظمة..." : "Search by organization..."}
