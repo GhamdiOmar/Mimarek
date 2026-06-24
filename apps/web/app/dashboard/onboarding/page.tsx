@@ -520,34 +520,34 @@ export default function OnboardingPage() {
             </div>
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                <label htmlFor="onb-name-ar-m" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                   {t("الاسم بالعربي", "Arabic Name")}
                 </label>
-                <Input value={orgForm.nameArabic} onChange={(e) => setOrg("nameArabic", e.target.value)} placeholder={t("مثال: شركة الأفق العقارية", "e.g. شركة الأفق العقارية")} dir="rtl" className="h-11" />
+                <Input id="onb-name-ar-m" value={orgForm.nameArabic} onChange={(e) => setOrg("nameArabic", e.target.value)} placeholder={t("مثال: شركة الأفق العقارية", "e.g. شركة الأفق العقارية")} dir="rtl" className="h-11" />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                <label htmlFor="onb-name-en-m" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                   {t("الاسم بالإنجليزي", "English Name")}
                 </label>
-                <Input value={orgForm.nameEnglish} onChange={(e) => setOrg("nameEnglish", e.target.value)} placeholder="e.g. Al Ufuq Real Estate" dir="ltr" className="h-11" />
+                <Input id="onb-name-en-m" value={orgForm.nameEnglish} onChange={(e) => setOrg("nameEnglish", e.target.value)} placeholder="e.g. Al Ufuq Real Estate" dir="ltr" className="h-11" />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                <label htmlFor="onb-cr-m" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                   {t("رقم السجل التجاري", "CR Number")}
                 </label>
-                <CRInput value={orgForm.crNumber} onChange={(raw) => setOrg("crNumber", raw)} placeholder="1010XXXXXX" className="h-11" />
+                <CRInput id="onb-cr-m" value={orgForm.crNumber} onChange={(raw) => setOrg("crNumber", raw)} placeholder="1010XXXXXX" className="h-11" />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                <label htmlFor="onb-vat-m" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                   {t("الرقم الضريبي", "VAT Number")}
                 </label>
-                <Input value={orgForm.vatNumber} onChange={(e) => setOrg("vatNumber", e.target.value)} placeholder="3000XXXXXX00003" dir="ltr" className="h-11 font-mono tabular-nums" />
+                <Input id="onb-vat-m" value={orgForm.vatNumber} onChange={(e) => setOrg("vatNumber", e.target.value)} placeholder="3000XXXXXX00003" dir="ltr" className="h-11 font-mono tabular-nums" />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                <label htmlFor="onb-entity-m" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                   {t("نوع المنشأة", "Entity Type")}
                 </label>
-                <SelectField aria-label={t("نوع المنشأة", "Entity Type")} value={orgForm.entityType} onChange={(e) => setOrg("entityType", e.target.value)} className={cn(selectClass, "h-11")}>
+                <SelectField id="onb-entity-m" aria-label={t("نوع المنشأة", "Entity Type")} value={orgForm.entityType} onChange={(e) => setOrg("entityType", e.target.value)} className={cn(selectClass, "h-11")}>
                   <option value="">{t("اختر...", "Select...")}</option>
                   {entityTypeOptions.map((o) => (
                     <option key={o.value} value={o.value}>{lang === "ar" ? o.ar : o.en}</option>
@@ -555,10 +555,10 @@ export default function OnboardingPage() {
                 </SelectField>
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                <label htmlFor="onb-legal-m" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                   {t("الشكل القانوني", "Legal Form")}
                 </label>
-                <SelectField aria-label={t("الشكل القانوني", "Legal Form")} value={orgForm.legalForm} onChange={(e) => setOrg("legalForm", e.target.value)} className={cn(selectClass, "h-11")}>
+                <SelectField id="onb-legal-m" aria-label={t("الشكل القانوني", "Legal Form")} value={orgForm.legalForm} onChange={(e) => setOrg("legalForm", e.target.value)} className={cn(selectClass, "h-11")}>
                   <option value="">{t("اختر...", "Select...")}</option>
                   {legalFormOptions.map((o) => (
                     <option key={o.value} value={o.value}>{lang === "ar" ? o.ar : o.en}</option>
@@ -585,16 +585,16 @@ export default function OnboardingPage() {
             </div>
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                <label htmlFor="onb-mobile-m" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                   {t("رقم الجوال", "Mobile Number")}
                 </label>
-                <SaudiPhoneInput value={contactForm.mobileNumber} onChange={(e164) => setContact("mobileNumber", e164)} placeholder="05XXXXXXXX" className="h-11" />
+                <SaudiPhoneInput id="onb-mobile-m" value={contactForm.mobileNumber} onChange={(e164) => setContact("mobileNumber", e164)} placeholder="05XXXXXXXX" className="h-11" />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                <label htmlFor="onb-city-m" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                   {t("المدينة", "City")}
                 </label>
-                <SelectField aria-label={t("المدينة", "City")} value={contactForm.city} onChange={(e) => setContact("city", e.target.value)} className={cn(selectClass, "h-11")}>
+                <SelectField id="onb-city-m" aria-label={t("المدينة", "City")} value={contactForm.city} onChange={(e) => setContact("city", e.target.value)} className={cn(selectClass, "h-11")}>
                   <option value="">{t("اختر المدينة...", "Select city...")}</option>
                   {KSA_CITIES.map((city) => (
                     <option key={city.value} value={city.value}>
@@ -604,10 +604,10 @@ export default function OnboardingPage() {
                 </SelectField>
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                <label htmlFor="onb-region-m" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                   {t("المنطقة", "Region")}
                 </label>
-                <Input value={contactForm.region} onChange={(e) => setContact("region", e.target.value)} placeholder={t("مثال: منطقة الرياض", "e.g. Riyadh Region")} className="h-11" />
+                <Input id="onb-region-m" value={contactForm.region} onChange={(e) => setContact("region", e.target.value)} placeholder={t("مثال: منطقة الرياض", "e.g. Riyadh Region")} className="h-11" />
               </div>
             </div>
             <Button type="button" variant="link" onClick={() => handleSaveContact(true)} disabled={loading} className="w-full min-h-11 text-sm text-muted-foreground hover:text-foreground">
@@ -646,14 +646,16 @@ export default function OnboardingPage() {
                     )}
                   </div>
                   <Input
+                    id={`onb-invite-email-m-${i}`}
                     type="email"
                     value={row.email}
                     onChange={(e) => setInviteRow(i, "email", e.target.value)}
                     placeholder="name@example.com"
+                    aria-label={lang === "ar" ? `البريد الإلكتروني للدعوة ${i + 1}` : `Invite ${i + 1} email`}
                     dir="ltr"
                     className="h-11"
                   />
-                  <SelectField aria-label={t("الدور", "Role")} value={row.role} onChange={(e) => setInviteRow(i, "role", e.target.value)} className={cn(selectClass, "h-11")}>
+                  <SelectField id={`onb-invite-role-m-${i}`} aria-label={t("الدور", "Role")} value={row.role} onChange={(e) => setInviteRow(i, "role", e.target.value)} className={cn(selectClass, "h-11")}>
                     {inviteRoleOptions.map((opt) => (
                       <option key={opt.value} value={opt.value}>{opt.label[lang]}</option>
                     ))}
@@ -979,34 +981,34 @@ export default function OnboardingPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground">
+                    <label htmlFor="onb-name-ar-d" className="text-xs font-medium text-muted-foreground">
                       {t("الاسم بالعربي", "Arabic Name")}
                     </label>
-                    <Input value={orgForm.nameArabic} onChange={(e) => setOrg("nameArabic", e.target.value)} placeholder={t("شركة الأفق العقارية", "شركة الأفق العقارية")} dir="rtl" />
+                    <Input id="onb-name-ar-d" value={orgForm.nameArabic} onChange={(e) => setOrg("nameArabic", e.target.value)} placeholder={t("شركة الأفق العقارية", "شركة الأفق العقارية")} dir="rtl" />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground">
+                    <label htmlFor="onb-name-en-d" className="text-xs font-medium text-muted-foreground">
                       {t("الاسم بالإنجليزي", "English Name")}
                     </label>
-                    <Input value={orgForm.nameEnglish} onChange={(e) => setOrg("nameEnglish", e.target.value)} placeholder="Al Ufuq Real Estate" dir="ltr" />
+                    <Input id="onb-name-en-d" value={orgForm.nameEnglish} onChange={(e) => setOrg("nameEnglish", e.target.value)} placeholder="Al Ufuq Real Estate" dir="ltr" />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground">
+                    <label htmlFor="onb-cr-d" className="text-xs font-medium text-muted-foreground">
                       {t("رقم السجل التجاري", "CR Number")}
                     </label>
-                    <CRInput value={orgForm.crNumber} onChange={(raw) => setOrg("crNumber", raw)} placeholder="1010XXXXXX" />
+                    <CRInput id="onb-cr-d" value={orgForm.crNumber} onChange={(raw) => setOrg("crNumber", raw)} placeholder="1010XXXXXX" />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground">
+                    <label htmlFor="onb-vat-d" className="text-xs font-medium text-muted-foreground">
                       {t("الرقم الضريبي", "VAT Number")}
                     </label>
-                    <Input value={orgForm.vatNumber} onChange={(e) => setOrg("vatNumber", e.target.value)} placeholder="3000XXXXXX00003" dir="ltr" className="font-mono tabular-nums" />
+                    <Input id="onb-vat-d" value={orgForm.vatNumber} onChange={(e) => setOrg("vatNumber", e.target.value)} placeholder="3000XXXXXX00003" dir="ltr" className="font-mono tabular-nums" />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground">
+                    <label htmlFor="onb-entity-d" className="text-xs font-medium text-muted-foreground">
                       {t("نوع المنشأة", "Entity Type")}
                     </label>
-                    <SelectField aria-label={t("نوع المنشأة", "Entity Type")} value={orgForm.entityType} onChange={(e) => setOrg("entityType", e.target.value)} className={selectClass}>
+                    <SelectField id="onb-entity-d" aria-label={t("نوع المنشأة", "Entity Type")} value={orgForm.entityType} onChange={(e) => setOrg("entityType", e.target.value)} className={selectClass}>
                       <option value="">{t("اختر...", "Select...")}</option>
                       {entityTypeOptions.map((o) => (
                         <option key={o.value} value={o.value}>{lang === "ar" ? o.ar : o.en}</option>
@@ -1014,10 +1016,10 @@ export default function OnboardingPage() {
                     </SelectField>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground">
+                    <label htmlFor="onb-legal-d" className="text-xs font-medium text-muted-foreground">
                       {t("الشكل القانوني", "Legal Form")}
                     </label>
-                    <SelectField aria-label={t("الشكل القانوني", "Legal Form")} value={orgForm.legalForm} onChange={(e) => setOrg("legalForm", e.target.value)} className={selectClass}>
+                    <SelectField id="onb-legal-d" aria-label={t("الشكل القانوني", "Legal Form")} value={orgForm.legalForm} onChange={(e) => setOrg("legalForm", e.target.value)} className={selectClass}>
                       <option value="">{t("اختر...", "Select...")}</option>
                       {legalFormOptions.map((o) => (
                         <option key={o.value} value={o.value}>{lang === "ar" ? o.ar : o.en}</option>
@@ -1075,22 +1077,22 @@ export default function OnboardingPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground">
+                    <label htmlFor="onb-mobile-d" className="text-xs font-medium text-muted-foreground">
                       {t("رقم الجوال", "Mobile Number")}
                     </label>
-                    <SaudiPhoneInput value={contactForm.mobileNumber} onChange={(e164) => setContact("mobileNumber", e164)} placeholder="05XXXXXXXX" />
+                    <SaudiPhoneInput id="onb-mobile-d" value={contactForm.mobileNumber} onChange={(e164) => setContact("mobileNumber", e164)} placeholder="05XXXXXXXX" />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground">
+                    <label htmlFor="onb-region-d" className="text-xs font-medium text-muted-foreground">
                       {t("المنطقة", "Region")}
                     </label>
-                    <Input value={contactForm.region} onChange={(e) => setContact("region", e.target.value)} placeholder={t("منطقة الرياض", "Riyadh Region")} />
+                    <Input id="onb-region-d" value={contactForm.region} onChange={(e) => setContact("region", e.target.value)} placeholder={t("منطقة الرياض", "Riyadh Region")} />
                   </div>
                   <div className="space-y-2 md:col-span-2">
-                    <label className="text-xs font-medium text-muted-foreground">
+                    <label htmlFor="onb-city-d" className="text-xs font-medium text-muted-foreground">
                       {t("المدينة", "City")}
                     </label>
-                    <SelectField aria-label={t("المدينة", "City")} value={contactForm.city} onChange={(e) => setContact("city", e.target.value)} className={selectClass}>
+                    <SelectField id="onb-city-d" aria-label={t("المدينة", "City")} value={contactForm.city} onChange={(e) => setContact("city", e.target.value)} className={selectClass}>
                       <option value="">{t("اختر المدينة...", "Select city...")}</option>
                       {KSA_CITIES.map((city) => (
                         <option key={city.value} value={city.value}>
@@ -1152,13 +1154,15 @@ export default function OnboardingPage() {
                   {inviteRows.map((row, i) => (
                     <div key={i} className="grid grid-cols-[1fr_180px_auto] gap-3 items-center">
                       <Input
+                        id={`onb-invite-email-d-${i}`}
                         type="email"
                         value={row.email}
                         onChange={(e) => setInviteRow(i, "email", e.target.value)}
                         placeholder="name@example.com"
+                        aria-label={lang === "ar" ? `البريد الإلكتروني للدعوة ${i + 1}` : `Invite ${i + 1} email`}
                         dir="ltr"
                       />
-                      <SelectField aria-label={t("الدور", "Role")} value={row.role} onChange={(e) => setInviteRow(i, "role", e.target.value)} className={selectClass}>
+                      <SelectField id={`onb-invite-role-d-${i}`} aria-label={t("الدور", "Role")} value={row.role} onChange={(e) => setInviteRow(i, "role", e.target.value)} className={selectClass}>
                         {inviteRoleOptions.map((opt) => (
                           <option key={opt.value} value={opt.value}>{opt.label[lang]}</option>
                         ))}

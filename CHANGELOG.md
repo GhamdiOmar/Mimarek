@@ -1,5 +1,18 @@
 # Changelog — Mimarek PropTech
 
+## [5.6.2] — 2026-06-24 — a11y fix: onboarding wizard input labels (WCAG 1.3.1)
+
+**Closes the onboarding-wizard label-association gap surfaced by the full-cycle E2E.** The org-profile + contact inputs had detached `<label>`s (no `htmlFor`) next to controls with no `id` — a screen reader announced each as "edit text, blank" and clicking a label didn't focus its field (WCAG 1.3.1 / 4.1.2 failure). This was also the **root cause of E2E "Issue #2"**: the apparent null VAT/CR was a test-automation artifact of the unlabeled, duplicated inputs, *not* a persistence bug — `updateOnboardingOrg` persists CR/VAT correctly (`onboarding.ts:230-231`) and the wizard blocks advance on save failure (`page.tsx:224`). No schema, logic, or visual change.
+
+### The fix
+- Every org-profile (Arabic/English name, CR, VAT, entity type, legal form) and contact (mobile, city, region) input now carries an `id`, and its visible `<label>` carries the matching `htmlFor`. Both layouts mount simultaneously (`md:hidden` / `hidden md:block`), so ids are layout-suffixed (`-m`/`-d`) to avoid duplicate-id; invite-row ids are index-suffixed. `CRInput`/`SaudiPhoneInput`/`SelectField` forward the `id` to their real `<input>`/`<select>`. Label styling unchanged.
+
+### Verify
+- `npm run build` green · `check-types` green · `eslint` 0 · `cspell` clean · **211 web tests** · **`/mimaric-qa` CLEAN — ship** (verified no `SelectField` `useId` id-collision; all primitives use the `{...rest}` path).
+- **§3.9 4-theme walk** on `/dashboard/onboarding` org step (`Desktop/v5.6.2-screenshots`): 0 console errors; all 18 inputs `labelled: true`; label→input focus association confirmed (clicking the VAT label focuses `#onb-vat-d`); no visual regression across light/dark × LTR/RTL.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimarek/compare/v5.6.1...v5.6.2
+
 ## [5.6.1] — 2026-06-24 — Hardening wave 1 (post-audit): ZATCA journey + safety + a11y/QA fixes
 
 **Closes the audit's #1 finding — the ZATCA e-invoicing journey is no longer silent — plus a batch of QA/security/data-integrity fixes from the full-repo `/mimaric-qa --full` + `/cx-audit`.** No new features; correctness, security, and journey-completeness only.
