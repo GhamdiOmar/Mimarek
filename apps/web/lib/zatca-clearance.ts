@@ -4,6 +4,7 @@ import { db, type ZatcaClearanceOutcome } from "@repo/db";
 import { ZatcaError } from "@repo/zatca";
 import { getNextSequenceValue, GLOBAL_SEQUENCE_SCOPE } from "./sequence";
 import { notifyPlatformStaff } from "./create-notification";
+import { resolveZatcaEnvironment } from "./zatca-env";
 import {
   getActivePlatformEgs,
   getEgsSigningContext,
@@ -75,7 +76,8 @@ export async function clearSubscriptionInvoiceInternal(
   invoiceId: string,
   opts?: { isRetry?: boolean },
 ): Promise<ClearanceResult> {
-  const egs = await getActivePlatformEgs("SANDBOX");
+  // The platform EGS for the configured target environment (fail-safe SANDBOX, R5).
+  const egs = await getActivePlatformEgs(resolveZatcaEnvironment());
   if (!egs) return { outcome: "SKIPPED" }; // no platform EGS onboarded → nothing to do
 
   const invoice = await db.invoice.findUnique({
@@ -91,7 +93,9 @@ export async function clearSubscriptionInvoiceInternal(
   if (invoice.zatcaStatus === "REPORTED") return { outcome: "REPORTED" };
 
   const ctx = getEgsSigningContext(egs);
-  const client = createZatcaClient({ environment: "SANDBOX" });
+  // Class A: clear against the environment the EGS was ONBOARDED under (egs.environment),
+  // NOT the resolver — a sandbox-onboarded EGS must never be routed to a prod gateway (R5).
+  const client = createZatcaClient({ environment: egs.environment });
 
   let signed: string;
   let invoiceHash: string;

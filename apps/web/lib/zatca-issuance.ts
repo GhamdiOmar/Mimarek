@@ -11,7 +11,8 @@ import {
 } from "@repo/db";
 import { ZatcaError } from "@repo/zatca";
 import { getNextSequenceValue } from "./sequence";
-import { notifyAdmins } from "./create-notification";
+import { notifyAdmins, notifyPlatformStaff } from "./create-notification";
+import { resolveZatcaEnvironment } from "./zatca-env";
 import {
   getTenantEgs,
   getEgsSigningContext,
@@ -46,6 +47,7 @@ import { isCompanyBuyer, validateBuyerForStandardClearance } from "./buyer-routi
 const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 const DEFAULT_VAT_RATE = 0.15;
 const TENANT_LINK = "/dashboard/settings/zatca";
+const ADMIN_LINK = "/dashboard/admin/zatca";
 
 export type IssuanceOutcome = ZatcaClearanceOutcome | "RECEIPT" | "HELD" | "SKIPPED";
 export interface IssuanceResult {
@@ -145,6 +147,31 @@ async function alertHeld(organizationId: string, documentNumber: string, buyerNa
   });
 }
 
+/**
+ * Transport-error alert (R5 — closes the gap vs the Track-A clearance path, which already
+ * notified). A gateway timeout leaves the document PENDING for the reporting sweep; tell the
+ * tenant it will retry, and surface it to platform staff (they own the gateway health).
+ */
+async function alertTransport(organizationId: string, documentNumber: string): Promise<void> {
+  await notifyAdmins({
+    type: "ZATCA_CLEARANCE",
+    title: `تعذّر الاتصال بهيئة الزكاة والضريبة للمستند ${documentNumber}`,
+    titleEn: `ZATCA gateway unreachable for document ${documentNumber}`,
+    message: "سيُعاد الإرسال تلقائيًا. لا يلزم أي إجراء.",
+    messageEn: "It will be re-submitted automatically — no action needed.",
+    link: TENANT_LINK,
+    organizationId,
+  });
+  await notifyPlatformStaff({
+    type: "ZATCA_CLEARANCE",
+    title: `تعذّر الاتصال ببوابة هيئة الزكاة والضريبة (${documentNumber})`,
+    titleEn: `ZATCA gateway transport error (${documentNumber})`,
+    message: "مستند مستأجر بقي قيد المعالجة بسبب خطأ في الاتصال — راجع صحة البوابة.",
+    messageEn: "A tenant document is pending due to a gateway transport error — check gateway health.",
+    link: ADMIN_LINK,
+  });
+}
+
 // ─── clearance / report engine (generalized from R2) ──────────────────────────
 
 /**
@@ -179,7 +206,9 @@ export async function clearTenantDocumentInternal(documentId: string, opts?: { i
   }
 
   const ctx = getEgsSigningContext(egs);
-  const client = createZatcaClient({ environment: "SANDBOX" });
+  // Class A: report/clear against the environment this tenant EGS was ONBOARDED under
+  // (egs.environment), never the resolver — a sandbox EGS must not hit a prod gateway (R5).
+  const client = createZatcaClient({ environment: egs.environment });
 
   let signed: string;
   let invoiceHash: string;
@@ -270,6 +299,7 @@ export async function clearTenantDocumentInternal(documentId: string, opts?: { i
       if (e.kind === "transport") {
         await db.tenantDocument.update({ where: { id: documentId }, data: { zatcaStatus: "PENDING" } });
         await writeLog(egs.id, documentId, "TRANSPORT_ERROR", icvUsed, [], "gateway transport error");
+        await alertTransport(doc.organizationId, doc.documentNumber);
         return { outcome: "TRANSPORT_ERROR", documentId };
       }
       throw e; // config — local misconfiguration; surface to the caller
@@ -328,7 +358,9 @@ export async function issueDocumentForCharge(charge: ChargeInput): Promise<Issua
   }
 
   // 2. The tenant's own EGS is required (numbering + signing). No EGS → not ZATCA-enabled yet.
-  const egs = await getTenantEgs(organizationId, "SANDBOX");
+  //    Resolve the target env for a NEW issuance (fail-safe SANDBOX, R5); existing docs re-clear
+  //    against egs.environment inside clearTenantDocumentInternal.
+  const egs = await getTenantEgs(organizationId, resolveZatcaEnvironment());
   if (!egs) return { outcome: "SKIPPED" };
 
   // 3. Tax classification — most-specific OrgZatcaTaxConfig match, else the safe defaults.

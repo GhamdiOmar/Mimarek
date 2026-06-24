@@ -7,6 +7,7 @@ import { serialize } from "../../../lib/serialize";
 import { revalidatePath } from "next/cache";
 import { ROUTES } from "../../../lib/routes";
 import { getTenantEgs } from "../../../lib/zatca-server";
+import { resolveZatcaEnvironment } from "../../../lib/zatca-env";
 
 /**
  * Track-B tenant ZATCA config (R3): branch metadata + tax mapping. Every exported
@@ -75,7 +76,7 @@ export async function createTenantBranch(input: BranchInput) {
   const name = input?.name?.trim();
   if (!name) throw new Error("A branch name is required.");
 
-  const egs = await getTenantEgs(organizationId, "SANDBOX");
+  const egs = await getTenantEgs(organizationId, resolveZatcaEnvironment());
   if (!egs) throw new Error("Connect your organization to ZATCA before adding branches.");
 
   const branch = await db.zatcaBranch.create({
