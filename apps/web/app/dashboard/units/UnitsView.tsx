@@ -1679,7 +1679,9 @@ export default function UnitsView({ initialUnits }: { initialUnits: UnitRow[] })
                       </Badge>
                     )}
                   </h3>
-                  <Link href={`/dashboard/maintenance`}>
+                  <Link
+                    href={`/dashboard/maintenance/tickets?new=1&unitId=${detailUnit.id}`}
+                  >
                     <Button
                       variant="secondary"
                       size="sm"

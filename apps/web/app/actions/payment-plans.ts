@@ -7,7 +7,7 @@ import { logAuditEvent } from "../../lib/audit";
 import { revalidatePath } from "next/cache";
 import { routeToContract } from "../../lib/routes";
 import { serialize } from "../../lib/serialize";
-import { issueForChargeBestEffort } from "../../lib/zatca-issuance";
+import { issueForChargeBestEffort, type IssuanceResult } from "../../lib/zatca-issuance";
 
 // ─── RED: Payment Plans ─────────────────────────────────────────────────────
 
@@ -296,8 +296,10 @@ export async function recordInstallmentPayment(
 
   // ZATCA Track C (R4 / H4): issue the tenant document for this sale/payment-plan installment
   // — best-effort, post-commit, NEVER blocks (L26). Sale → receipt; lease-by-config otherwise.
+  // The wrapper never throws (returns null on failure) — outcome is surfaced additively to the UI.
+  let issuance: IssuanceResult | null = null;
   if (!txResult.replayed && session.organizationId) {
-    await issueForChargeBestEffort({
+    issuance = await issueForChargeBestEffort({
       kind: "CONTRACT_INSTALLMENT",
       organizationId: session.organizationId,
       paymentPlanInstallmentId: installmentId,
@@ -306,7 +308,17 @@ export async function recordInstallmentPayment(
     });
   }
 
-  return serialize(txResult.row);
+  // Additive `zatca` field — every existing field of `serialize(row)` is preserved via spread.
+  return {
+    ...serialize(txResult.row),
+    zatca: issuance
+      ? {
+          outcome: issuance.outcome,
+          documentId: issuance.documentId ?? null,
+          documentNumber: issuance.documentNumber ?? null,
+        }
+      : null,
+  };
 }
 
 export async function getPaymentPlanSummary(contractId: string) {

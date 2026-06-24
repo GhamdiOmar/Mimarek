@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ArrowLeft, BadgeCheck, Clock, Download, FileDown, FileSignature, Loader2, AlertTriangle } from "lucide-react";
+import { ArrowLeft, BadgeCheck, Clock, Download, FileDown, FileSignature, Loader2, AlertTriangle, UserCog } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { Button, DirectionalIcon } from "@repo/ui";
@@ -283,7 +283,7 @@ export default function InvoiceDetailView({ doc }: InvoiceDetailViewProps) {
         </div>
       </div>
 
-      {/* HELD warning + re-issue */}
+      {/* HELD warning + complete-buyer-data + re-issue */}
       {doc.needsBuyerData && (
         <div className="flex flex-col gap-3 rounded-md border border-warning bg-warning/10 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-2 text-sm text-warning-strong">
@@ -295,16 +295,34 @@ export default function InvoiceDetailView({ doc }: InvoiceDetailViewProps) {
               )}
             </span>
           </div>
-          <Button
-            variant="secondary"
-            onClick={onReissue}
-            disabled={isReissuing}
-            style={{ display: "inline-flex" }}
-            className="shrink-0 gap-2"
-          >
-            <FileSignature className="h-4 w-4" aria-hidden="true" />
-            {isReissuing ? t("جارٍ الإصدار…", "Re-issuing…") : t("إعادة الإصدار", "Re-issue")}
-          </Button>
+          <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center">
+            {/* Step 1: fix the missing buyer data on the customer record. Deep-links to the CRM
+                with the customer pre-selected; the re-issue button below submits once completed. */}
+            {doc.customerId && (
+              <Button
+                asChild
+                variant="outline"
+                style={{ display: "inline-flex" }}
+                className="gap-2"
+              >
+                <Link href={`/dashboard/crm?customerId=${doc.customerId}`}>
+                  <UserCog className="h-4 w-4" aria-hidden="true" />
+                  {t("إكمال بيانات المشتري", "Complete buyer data")}
+                </Link>
+              </Button>
+            )}
+            {/* Step 2: re-issue after the data is completed. */}
+            <Button
+              variant="secondary"
+              onClick={onReissue}
+              disabled={isReissuing}
+              style={{ display: "inline-flex" }}
+              className="gap-2"
+            >
+              <FileSignature className="h-4 w-4" aria-hidden="true" />
+              {isReissuing ? t("جارٍ الإصدار…", "Re-issuing…") : t("إعادة الإصدار", "Re-issue")}
+            </Button>
+          </div>
         </div>
       )}
 

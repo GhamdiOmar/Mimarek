@@ -1303,7 +1303,9 @@ model PlanEntitlement {
 model Subscription {
   id                 String             @id @default(cuid())
   organizationId     String
-  organization       Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  // Restrict (financial parent, consistent with its Restrict children SubscriptionEvent /
+  // SubscriptionMrrSnapshot): a billing subtree is not silently cascade-deleted with an org.
+  organization       Organization       @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   planId             String
   plan               Plan               @relation(fields: [planId], references: [id])
   status             SubscriptionStatus @default(TRIALING)
@@ -1486,9 +1488,11 @@ enum TenantDocumentKind {
 model TenantDocument {
   id             String       @id @default(cuid())
   organizationId String
-  organization   Organization @relation("OrgTenantDocuments", fields: [organizationId], references: [id], onDelete: Cascade)
+  // Restrict (not Cascade): a ZATCA tax document is a legally-retained record (ZATCA + PDPL) —
+  // deleting its org/EGS must NOT silently destroy issued invoices. An EGS is RESET, never deleted.
+  organization   Organization @relation("OrgTenantDocuments", fields: [organizationId], references: [id], onDelete: Restrict)
   egsUnitId      String
-  egsUnit        ZatcaEgsUnit @relation("EgsTenantDocuments", fields: [egsUnitId], references: [id], onDelete: Cascade)
+  egsUnit        ZatcaEgsUnit @relation("EgsTenantDocuments", fields: [egsUnitId], references: [id], onDelete: Restrict)
 
   documentNumber String // per-EGS display number (sequence scope = egs:<egsUnitId>)
   uuid           String             @unique @default(uuid()) // stable per-document UUID (L24)
@@ -2179,7 +2183,10 @@ model ZatcaEgsUnit {
 model ZatcaClearanceLog {
   id          String                @id @default(cuid())
   egsUnitId   String
-  egsUnit     ZatcaEgsUnit          @relation(fields: [egsUnitId], references: [id], onDelete: Cascade)
+  // Restrict: the clearance/report attempt log is a retained audit trail — an EGS with logged
+  // ZATCA activity is never hard-deleted (it is RESET). The document link stays Cascade because
+  // the log is meaningless without its (itself Restrict-protected) parent document.
+  egsUnit     ZatcaEgsUnit          @relation(fields: [egsUnitId], references: [id], onDelete: Restrict)
   invoiceId   String? // Track A: the SaaS Invoice this attempt was for
   documentId  String? // Track C: the TenantDocument (R4)
   document    TenantDocument?       @relation(fields: [documentId], references: [id], onDelete: Cascade)

@@ -12,7 +12,9 @@ import {
   Plus,
   CheckCircle,
   Undo2,
+  FileText,
 } from "lucide-react";
+import Link from "next/link";
 import {
   Button,
   Badge,
@@ -38,6 +40,7 @@ import {
   HijriDatePicker,
   type ColumnDef,
 } from "@repo/ui";
+import { useRouter } from "next/navigation";
 import { useLanguage } from "../../../components/LanguageProvider";
 import { usePermissions } from "../../../hooks/usePermissions";
 import {
@@ -46,6 +49,7 @@ import {
   bulkMarkInstallmentsPaid,
   reverseRentPayment,
 } from "../../actions/installments";
+import { getInvoicesForInstallments } from "../../actions/zatca/tenant-invoices";
 import {
   getSavedViews,
   createSavedView,
@@ -90,6 +94,14 @@ type PaymentEntry = {
   dueDate: string;
   status: "PAID" | "UNPAID" | "OVERDUE" | "PARTIALLY_PAID";
   raw: RentInstallment;
+};
+
+// The additive `zatca` field returned by `recordPayment` (R4 issuance outcome). `outcome` is the
+// IssuanceOutcome string; we only branch on the values that change the toast copy.
+type PaymentZatcaOutcome = {
+  outcome: string;
+  documentId: string | null;
+  documentNumber: string | null;
 };
 
 // ─── Semantic row-tone helper (CLAUDE.md § 6.12 Finance colors) ─────────────
@@ -174,10 +186,17 @@ type PaymentsViewProps = { initialInstallments: RentInstallment[] };
 export default function PaymentsView({ initialInstallments }: PaymentsViewProps) {
   const { t, lang, dir } = useLanguage();
   const { can } = usePermissions();
+  const router = useRouter();
 
   const [rentInstallments, setRentInstallments] = React.useState<RentInstallment[]>(initialInstallments);
   const [loading, setLoading] = React.useState(false);
   const [loadError, setLoadError] = React.useState<string | null>(null);
+
+  // rentInstallmentId → its issued ZATCA document (when one exists). Cross-links a paid row to
+  // its tax invoice. Best-effort: a fetch failure just leaves rows without the link (no error).
+  const [invoiceMap, setInvoiceMap] = React.useState<
+    Record<string, { id: string; documentNumber: string; zatcaStatus: string; documentType: string }>
+  >({});
 
   // CX-014 — DataTable saved views (personal, DB-backed)
   const [savedViews, setSavedViews] = React.useState<SavedTableViewDTO[]>([]);
@@ -189,6 +208,37 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
   React.useEffect(() => {
     refreshSavedViews();
   }, [refreshSavedViews]);
+
+  // Resolve the per-installment invoice map whenever the installment set changes (one batched
+  // query — no N+1). Only PAID/PARTIALLY_PAID rows can have an issued document, so we scope the
+  // lookup to those ids. Best-effort: failures leave the map empty and the link simply hides.
+  const settledIdsKey = React.useMemo(
+    () =>
+      rentInstallments
+        .filter((i) => i.status === "PAID" || i.status === "PARTIALLY_PAID")
+        .map((i) => i.id)
+        .sort()
+        .join(","),
+    [rentInstallments],
+  );
+  React.useEffect(() => {
+    const ids = settledIdsKey ? settledIdsKey.split(",") : [];
+    if (ids.length === 0) {
+      setInvoiceMap({});
+      return;
+    }
+    let cancelled = false;
+    getInvoicesForInstallments(ids)
+      .then((map) => {
+        if (!cancelled) setInvoiceMap(map);
+      })
+      .catch(() => {
+        if (!cancelled) setInvoiceMap({});
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [settledIdsKey]);
 
   const [typeFilter, setTypeFilter] = React.useState<"ALL" | "SALE" | "RENT">("ALL");
   const [statusFilter, setStatusFilter] = React.useState("ALL");
@@ -225,8 +275,14 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
     setBulkWorking(true);
     try {
       const result = await bulkMarkInstallmentsPaid(bulkSelected.map((e) => e.id));
+      const issued = ("zatcaIssued" in result ? result.zatcaIssued : 0) ?? 0;
       toast.success(
-        t(`تم تسجيل ${result.updated} دفعة`, `${result.updated} payment(s) marked as paid`)
+        issued > 0
+          ? t(
+              `تم تسجيل ${result.updated} دفعة · ${issued} فاتورة ضريبية`,
+              `${result.updated} payment(s) marked as paid · ${issued} tax invoice(s) issued`,
+            )
+          : t(`تم تسجيل ${result.updated} دفعة`, `${result.updated} payment(s) marked as paid`),
       );
       setBulkMarkPaidOpen(false);
       setBulkSelected([]);
@@ -322,8 +378,9 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
     }
     setSubmitting(true);
     try {
+      let zatca: PaymentZatcaOutcome | null = null;
       if (paymentTarget.type === "rent") {
-        await recordPayment(paymentTarget.id, {
+        const result = await recordPayment(paymentTarget.id, {
           paymentMethod: payForm.paymentMethod,
           amount: parseFloat(payForm.amount),
           paymentDate: payForm.paymentDate,
@@ -331,19 +388,56 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
           notes: payForm.notes || undefined,
           paymentReference: paymentReferenceRef.current,
         });
+        zatca = (result as { zatca?: PaymentZatcaOutcome | null })?.zatca ?? null;
       }
       trackEvent(AnalyticsEvent.PaymentRecorded, {
         method: payForm.paymentMethod,
         amount: Number(parseFloat(payForm.amount)),
       });
-      toast.success(t("تم تسجيل الدفعة بنجاح", "Payment recorded successfully"));
       setPaymentTarget(null);
+      notifyPaymentOutcome(zatca);
       loadData();
     } catch (err: unknown) {
       toast.error(sanitizeError(err, lang));
     } finally {
       setSubmitting(false);
     }
+  }
+
+  // Outcome-aware confirmation toast — tells the user whether a tax invoice was issued and
+  // links straight to it. A residential/exempt receipt (or no e-invoice doc) keeps the plain
+  // success copy so we never imply a tax invoice exists when it doesn't.
+  function notifyPaymentOutcome(zatca: PaymentZatcaOutcome | null) {
+    const viewInvoice = (documentId: string) => ({
+      label: t("عرض الفاتورة", "View invoice"),
+      onClick: () => router.push(`/dashboard/invoices/${documentId}`),
+    });
+
+    if (zatca?.documentId) {
+      if (zatca.outcome === "CLEARED" || zatca.outcome === "REPORTED") {
+        toast.success(
+          t("تم التحصيل وإصدار الفاتورة الضريبية.", "Payment recorded · tax invoice issued."),
+          { action: viewInvoice(zatca.documentId) },
+        );
+        return;
+      }
+      if (zatca.outcome === "HELD") {
+        toast.warning(
+          t("تم التحصيل — الفاتورة بانتظار بيانات المشتري.", "Payment recorded · invoice awaiting buyer data."),
+          { action: viewInvoice(zatca.documentId) },
+        );
+        return;
+      }
+      if (zatca.outcome === "REJECTED") {
+        toast.error(
+          t("تم التحصيل — رُفضت الفاتورة من هيئة الزكاة.", "Payment recorded · invoice rejected by ZATCA."),
+          { action: viewInvoice(zatca.documentId) },
+        );
+        return;
+      }
+    }
+    // RECEIPT, no zatca field, or a documentId-less outcome → residential/exempt → no e-invoice.
+    toast.success(t("تم تسجيل الدفعة بنجاح.", "Payment recorded successfully."));
   }
 
   function openReverseModal(entry: PaymentEntry) {
@@ -540,18 +634,39 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
         enableHiding: false,
         cell: ({ row }) => {
           const entry = row.original;
+          // The issued tax invoice / receipt for this installment, when one exists (§4 cross-link).
+          const invoice = invoiceMap[entry.id];
+          const invoiceLink = invoice ? (
+            <Link
+              href={`/dashboard/invoices/${invoice.id}`}
+              tabIndex={-1}
+              aria-hidden="true"
+            >
+              <IconButton
+                icon={FileText}
+                aria-label={t("عرض الفاتورة الضريبية", "View tax invoice")}
+                variant="ghost"
+              />
+            </Link>
+          ) : null;
+
           if (!canWritePayments) {
+            // Read-only users still get the invoice cross-link; otherwise just the settled marker.
+            if (invoiceLink) {
+              return <div className="flex items-center justify-end gap-1">{invoiceLink}</div>;
+            }
             return entry.status === "PAID" ? (
               <span className="text-xs text-muted-foreground">{t("مُسدَّد", "Settled")}</span>
             ) : null;
           }
           // record-payment when anything is still owed; reverse when money has been
-          // collected (PAID or PARTIALLY_PAID). Forward action first, destructive last (§6.6.7).
+          // collected (PAID or PARTIALLY_PAID). View invoice → forward → destructive last (§6.6.7).
           const canRecord = entry.status !== "PAID";
           const canReverse = entry.status === "PAID" || entry.status === "PARTIALLY_PAID";
-          if (!canRecord && !canReverse) return null;
+          if (!canRecord && !canReverse && !invoiceLink) return null;
           return (
             <div className="flex items-center justify-end gap-1">
+              {invoiceLink}
               {canRecord && (
                 <IconButton
                   icon={CreditCard}
@@ -576,7 +691,7 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
       },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `t` is derived from `lang`, which is already a dep; listing `lang` covers every translation read here.
-    [lang, canWritePayments],
+    [lang, canWritePayments, invoiceMap],
   );
 
   // ─── DataTable mobileCard ─────────────────────────────────────────────────

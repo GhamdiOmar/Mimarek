@@ -14,6 +14,8 @@ import {
   CheckCircle,
   Clock,
   Circle,
+  Info,
+  X,
 } from "lucide-react";
 import {
   KPICard,
@@ -23,6 +25,8 @@ import {
   CardTitle,
   CardContent,
   Button,
+  ActionLink,
+  IconButton,
   AppBar,
   MobileKPICard,
   DataCard,
@@ -32,6 +36,7 @@ import {
   RoleTaskQueue,
   Badge,
 } from "@repo/ui";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useLanguage } from "../../components/LanguageProvider";
 import { useDateRangeQuery } from "../../lib/use-date-range-query";
@@ -137,6 +142,7 @@ export default function DashboardView({
   taskQueue,
   userName,
   loadedAt,
+  zatcaEgsActive,
 }: {
   stats: V3Stats;
   deals: Deal[];
@@ -151,6 +157,10 @@ export default function DashboardView({
   taskQueue: RoleTaskQueueResult;
   userName: string;
   loadedAt: string;
+  /** True when the tenant org has an ACTIVE ZATCA EGS. When false, the dashboard
+   *  shows a dismissible nudge to connect — a tenant's first taxable charge
+   *  silently issues a receipt-only doc until an EGS is onboarded. */
+  zatcaEgsActive: boolean;
 }) {
   const { lang, t } = useLanguage();
   const router = useRouter();
@@ -159,6 +169,25 @@ export default function DashboardView({
   const [isPending, startTransition] = React.useTransition();
 
   const lastLoaded = React.useMemo(() => new Date(loadedAt), [loadedAt]);
+
+  // ZATCA setup nudge — shown until the org onboards an ACTIVE EGS. Dismissal is
+  // persisted in localStorage so it doesn't nag on every load; it re-appears only
+  // if the user clears it. Read after mount to avoid an SSR/CSR hydration mismatch.
+  const ZATCA_NUDGE_KEY = "mimarek.zatca-nudge.dismissed";
+  const [zatcaNudgeDismissed, setZatcaNudgeDismissed] = React.useState(true);
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    setZatcaNudgeDismissed(window.localStorage.getItem(ZATCA_NUDGE_KEY) === "1");
+  }, []);
+  const dismissZatcaNudge = React.useCallback(() => {
+    setZatcaNudgeDismissed(true);
+    try {
+      window.localStorage.setItem(ZATCA_NUDGE_KEY, "1");
+    } catch {
+      // localStorage may be unavailable (private mode) — dismiss for this session only.
+    }
+  }, []);
+  const showZatcaNudge = !zatcaEgsActive && !zatcaNudgeDismissed;
 
   // Date change → push URL → the Server Component re-renders with new data.
   const onRangeChange = React.useCallback(
@@ -237,6 +266,34 @@ export default function DashboardView({
             </h1>
             <p className="mt-1 text-xs text-muted-foreground">{todayLabel}</p>
           </div>
+
+          {/* ZATCA setup nudge — until the org onboards an ACTIVE EGS */}
+          {showZatcaNudge && (
+            <div className="flex items-start gap-3 rounded-2xl border border-primary/20 bg-primary/5 p-4">
+              <Info className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm text-foreground">
+                  {t(
+                    "اربط حسابك بهيئة الزكاة والضريبة لإصدار الفواتير الضريبية.",
+                    "Connect to ZATCA to start issuing tax invoices.",
+                  )}
+                </p>
+                <ActionLink asChild className="mt-2 text-sm font-medium">
+                  <Link href="/dashboard/settings/zatca">
+                    {t("الربط الآن", "Connect now")}
+                  </Link>
+                </ActionLink>
+              </div>
+              <IconButton
+                icon={X}
+                aria-label={t("إغلاق", "Dismiss")}
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 shrink-0"
+                onClick={dismissZatcaNudge}
+              />
+            </div>
+          )}
 
           {/* KPIs — 2×2 with sparklines */}
           <div className="grid grid-cols-2 gap-3">

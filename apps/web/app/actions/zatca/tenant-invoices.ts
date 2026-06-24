@@ -52,6 +52,54 @@ export async function getTenantInvoices() {
   return { documents: serialize(documents), health };
 }
 
+/**
+ * Resolve the tenant document (tax invoice / receipt) issued for a given rent installment — used
+ * to cross-link a payment row to its invoice. `payments:read`, TENANT audience, strictly
+ * org-scoped. Returns `null` when no document exists (residential receipts and not-ZATCA-enabled
+ * orgs simply have none — the caller hides the link). Most recent issuance wins.
+ */
+export async function getInvoiceForInstallment(rentInstallmentId: string) {
+  const { organizationId } = await requireTenantPermission("payments:read");
+
+  const doc = await db.tenantDocument.findFirst({
+    where: { rentInstallmentId, organizationId },
+    select: { id: true, documentNumber: true, zatcaStatus: true, documentType: true, needsBuyerData: true },
+    orderBy: { issuedAt: "desc" },
+  });
+  return doc ? serialize(doc) : null;
+}
+
+/**
+ * Batch variant of `getInvoiceForInstallment` — resolve the issued document (id + number +
+ * status) for a set of rent installments in ONE query, so the payments table can show a "tax
+ * invoice" link per row without an N+1 fan-out. `payments:read`, TENANT audience, org-scoped.
+ * Returns a record keyed by `rentInstallmentId`; installments with no document are simply absent.
+ */
+export async function getInvoicesForInstallments(rentInstallmentIds: string[]) {
+  const { organizationId } = await requireTenantPermission("payments:read");
+  if (rentInstallmentIds.length === 0) return {};
+
+  const docs = await db.tenantDocument.findMany({
+    where: { organizationId, rentInstallmentId: { in: rentInstallmentIds } },
+    select: { id: true, documentNumber: true, zatcaStatus: true, documentType: true, rentInstallmentId: true },
+    orderBy: { issuedAt: "desc" },
+  });
+
+  // Most-recent-wins per installment (findMany is ordered desc; first seen is newest).
+  const map: Record<string, { id: string; documentNumber: string; zatcaStatus: string; documentType: string }> = {};
+  for (const d of docs) {
+    if (d.rentInstallmentId && !map[d.rentInstallmentId]) {
+      map[d.rentInstallmentId] = {
+        id: d.id,
+        documentNumber: d.documentNumber,
+        zatcaStatus: d.zatcaStatus,
+        documentType: d.documentType,
+      };
+    }
+  }
+  return map;
+}
+
 /** A single tenant document with its line items — org-ownership re-checked. */
 export async function getTenantInvoice(documentId: string) {
   const { organizationId } = await requireTenantPermission("payments:read");

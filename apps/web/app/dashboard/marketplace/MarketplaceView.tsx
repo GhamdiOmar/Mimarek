@@ -37,6 +37,10 @@ import {
   type ColumnDef,
 } from "@repo/ui";
 import { useLanguage } from "../../../components/LanguageProvider";
+import {
+  MARKETPLACE_INQUIRY_STATUS_LABEL as INQUIRY_STATUS_LABELS,
+  MARKETPLACE_INQUIRY_STATUS_VARIANT as INQUIRY_STATUS_VARIANT,
+} from "../../../lib/domain-labels";
 import { usePermissions } from "../../../hooks/usePermissions";
 import {
   browseMarketplaceListings,
@@ -77,21 +81,8 @@ const PROPERTY_TYPE_LABELS: Record<string, { ar: string; en: string }> = {
   PARKING: { ar: "موقف", en: "Parking" },
 };
 
-const INQUIRY_STATUS_VARIANT: Record<string, "info" | "default" | "success" | "error"> = {
-  OPEN: "info",
-  WITHDRAWN: "default",
-  CONVERTED_TO_DEAL: "success",
-  CLOSED_WON: "success",
-  CLOSED_LOST: "error",
-};
-
-const INQUIRY_STATUS_LABELS: Record<string, { ar: string; en: string }> = {
-  OPEN: { ar: "مفتوح", en: "Open" },
-  WITHDRAWN: { ar: "مسحوب", en: "Withdrawn" },
-  CONVERTED_TO_DEAL: { ar: "صفقة نشطة", en: "Active Deal" },
-  CLOSED_WON: { ar: "مكتمل", en: "Completed" },
-  CLOSED_LOST: { ar: "مغلق", en: "Closed" },
-};
+// Inquiry status labels/variants come from the canonical registry
+// (lib/domain-labels.ts) — imported above. Do not re-declare locally (§6.11.4).
 
 // ─── SAR formatter ────────────────────────────────────────────────────────────
 

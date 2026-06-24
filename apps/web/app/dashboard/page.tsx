@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getSessionOrThrow } from "../../lib/auth-helpers";
 import { isSystemRole } from "../../lib/permissions";
 import { parseRangeParams } from "../../lib/dashboard-range";
+import { getTenantEgs } from "../../lib/zatca-server";
 import {
   getDashboardV3Stats,
   getDashboardRecentDeals,
@@ -49,7 +50,7 @@ export default async function DashboardPage({
 
   // ── Data fetch (ADMIN / MANAGER / USER fall through here) ──────────
   const range = parseRangeParams(await searchParams);
-  const [stats, deals, payments, maintenance, occupancyTrend, pipelineTrend, collectionsTrend, ticketsTrend, taskQueue] =
+  const [stats, deals, payments, maintenance, occupancyTrend, pipelineTrend, collectionsTrend, ticketsTrend, taskQueue, egs] =
     await Promise.all([
       getDashboardV3Stats(range),
       getDashboardRecentDeals(),
@@ -60,6 +61,11 @@ export default async function DashboardPage({
       getCollectionsTrend(),
       getTicketsTrend(),
       getRoleTaskQueue(),
+      // Tenant-only ZATCA setup status — drives the dashboard "connect to ZATCA"
+      // nudge. System users never reach here (redirected above), so this is
+      // always a tenant org; `organizationId` is guaranteed non-null for the
+      // ADMIN/MANAGER/USER roles that fall through.
+      session.organizationId ? getTenantEgs(session.organizationId) : Promise.resolve(null),
     ]);
 
   return (
@@ -77,6 +83,7 @@ export default async function DashboardPage({
       taskQueue={taskQueue}
       userName={session.name ?? ""}
       loadedAt={new Date().toISOString()}
+      zatcaEgsActive={egs?.status === "ACTIVE"}
     />
   );
 }

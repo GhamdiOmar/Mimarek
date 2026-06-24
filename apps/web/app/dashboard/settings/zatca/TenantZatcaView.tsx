@@ -53,6 +53,7 @@ import {
   saveTenantTaxConfig,
 } from "../../../actions/zatca/tenant-config";
 import { createSupportTicket } from "../../../actions/support-tickets";
+import { sanitizeError } from "../../../../lib/error-sanitizer";
 import type { SaudiAddress } from "@repo/ui";
 
 // ─── Prop types (derived from server action return types) ─────────────────────
@@ -291,13 +292,13 @@ export default function TenantZatcaView({ summary, taxConfig, branches }: Tenant
           toast.success(t("تم الربط بنجاح.", "Connected to ZATCA successfully."));
           router.refresh();
         } catch (err) {
-          const message = err instanceof Error ? err.message : t("تعذّر الربط. حاول مرة أخرى.", "Connection failed. Please try again.");
+          const message = sanitizeError(err, lang);
           setFormError(message);
           toast.error(message);
         }
       });
     },
-    [vatNumber, otp, vatValid, t, router],
+    [vatNumber, otp, vatValid, t, lang, router],
   );
 
   // ── Reset-request dialog ───────────────────────────────────────────────────
@@ -317,11 +318,10 @@ export default function TenantZatcaView({ summary, taxConfig, branches }: Tenant
         setResetOpen(false);
         toast.success(t("تم إرسال طلبك. سيتواصل فريق الدعم معك قريبًا.", "Your request has been sent. Support will contact you soon."));
       } catch (err) {
-        const message = err instanceof Error ? err.message : t("تعذّر إرسال الطلب. حاول مرة أخرى.", "Failed to send the request. Please try again.");
-        toast.error(message);
+        toast.error(sanitizeError(err, lang));
       }
     });
-  }, [t]);
+  }, [t, lang]);
 
   // ── Branch dialog state ────────────────────────────────────────────────────
   const [branchDialogOpen, setBranchDialogOpen] = React.useState(false);
@@ -352,12 +352,11 @@ export default function TenantZatcaView({ summary, taxConfig, branches }: Tenant
           setBranchDialogOpen(false);
           router.refresh();
         } catch (err) {
-          const message = err instanceof Error ? err.message : t("تعذّر حفظ الفرع.", "Failed to save branch.");
-          toast.error(message);
+          toast.error(sanitizeError(err, lang));
         }
       });
     },
-    [editingBranch, t, router],
+    [editingBranch, t, lang, router],
   );
 
   const onBranchDelete = React.useCallback((id: string) => {
@@ -375,11 +374,10 @@ export default function TenantZatcaView({ summary, taxConfig, branches }: Tenant
         setDeletingBranchId(null);
         router.refresh();
       } catch (err) {
-        const message = err instanceof Error ? err.message : t("تعذّر حذف الفرع.", "Failed to delete branch.");
-        toast.error(message);
+        toast.error(sanitizeError(err, lang));
       }
     });
-  }, [deletingBranchId, t, router]);
+  }, [deletingBranchId, t, lang, router]);
 
   // ── Tax mapping state ──────────────────────────────────────────────────────
   const [taxRows, setTaxRows] = React.useState<TaxRow[]>(taxConfig.configs);
@@ -399,11 +397,10 @@ export default function TenantZatcaView({ summary, taxConfig, branches }: Tenant
         toast.success(t("تم حفظ إعدادات الضريبة.", "Tax mapping saved."));
         router.refresh();
       } catch (err) {
-        const message = err instanceof Error ? err.message : t("تعذّر حفظ الإعدادات.", "Failed to save settings.");
-        toast.error(message);
+        toast.error(sanitizeError(err, lang));
       }
     });
-  }, [taxRows, t, router]);
+  }, [taxRows, t, lang, router]);
 
   // ── Branch table columns ───────────────────────────────────────────────────
   const branchColumns = React.useMemo<ColumnDef<Branch>[]>(

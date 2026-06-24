@@ -26,6 +26,7 @@ import type {
   MaintenancePriority,
   MaintenanceCategory,
   MarketplaceListingStatus,
+  MarketplaceInquiryStatus,
   UnitStatus,
   UnitType,
   ZatcaStatus,
@@ -233,6 +234,32 @@ export const MARKETPLACE_LISTING_STATUS_VARIANT = {
   REJECTED: "error",  // added — not in original page map; same tone as SUSPENDED
   SUSPENDED: "error",
 } satisfies Record<MarketplaceListingStatus, BadgeVariant> as Record<string, BadgeVariant>;
+
+// ─── MarketplaceInquiryStatus ─────────────────────────────────────────────────
+// Canonical bilingual labels for a cross-org buyer inquiry's lifecycle. Previously
+// duplicated (and drifted — missing DECLINED) as local maps in my-listings/page.tsx
+// and MarketplaceView.tsx. Native Saudi-Arabic, native-reviewed.
+
+export const MARKETPLACE_INQUIRY_STATUS_LABEL = {
+  OPEN: { ar: "مفتوح", en: "Open" },
+  CONVERTED_TO_DEAL: { ar: "صفقة نشطة", en: "Active Deal" },
+  WITHDRAWN: { ar: "مسحوب", en: "Withdrawn" },
+  DECLINED: { ar: "مرفوض", en: "Declined" },
+  CLOSED_WON: { ar: "مكتمل", en: "Completed" },
+  CLOSED_LOST: { ar: "مغلق", en: "Closed" },
+} satisfies Record<MarketplaceInquiryStatus, { ar: string; en: string }> as Record<
+  string,
+  { ar: string; en: string }
+>;
+
+export const MARKETPLACE_INQUIRY_STATUS_VARIANT = {
+  OPEN: "info",
+  CONVERTED_TO_DEAL: "success",
+  WITHDRAWN: "default",
+  DECLINED: "error",
+  CLOSED_WON: "success",
+  CLOSED_LOST: "error",
+} satisfies Record<MarketplaceInquiryStatus, BadgeVariant> as Record<string, BadgeVariant>;
 
 // ─── ZATCA document lifecycle status (R2) ─────────────────────────────────────
 
