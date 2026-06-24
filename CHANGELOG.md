@@ -1,5 +1,33 @@
 # Changelog — Mimarek PropTech
 
+## [5.6.0] — 2026-06-24 — ZATCA Phase-2 (R5 — production readiness)
+
+**Makes Mimarek production-*capable* while production stays *blocked* on external prerequisites.** R5 ships the codeable slice of the final release: the SANDBOX-only hardcodes are threaded onto a configurable environment, the legal-copy PDF embeds the cleared e-invoice XML, the 6-sample compliance harness is in place, and the issuance transport-error notification gap is closed. The genuinely external go-live steps (a real production CSID, tax-advisor signoff, Mimarek's real CR + national address, a deployed scheduler) are named in the cutover runbook, not skipped. **No schema change.**
+
+### PROD environment threading (fail-safe SANDBOX)
+- New **`lib/zatca-env.ts`** `resolveZatcaEnvironment()` — the single source that decides the ZATCA target for **new** onboardings. **Production is opt-in by an exact `ZATCA_ENVIRONMENT=PRODUCTION` (or `SIMULATION`) match;** anything else (unset, empty, whitespace, a typo) resolves to **SANDBOX** — there is no path by which a missing/garbled value routes real documents to ZATCA.
+- The ~20 hardcoded `"SANDBOX"` caller sites are threaded: **clearance + issuance read `egs.environment`** (an EGS keeps clearing against the environment it was onboarded under — a sandbox EGS never hits a prod gateway); **onboarding + paired lookups use the resolver** (the written env equals the lookup env so reads can't miss writes). The CSR template + Common-Name prefix + real-OTP enforcement become environment-conditional (the `123456` fallback is rejected off-sandbox). `ZATCA_ENVIRONMENT` added to `turbo.json` globalEnv + CI env. The engine (`@repo/zatca`) was already environment-driven — no engine change.
+
+### Legal-copy PDF (embedded e-invoice XML)
+- New **`lib/zatca-pdfa.ts`** (`pdf-lib`) `buildLegalPdfA3` — a human-readable A4 summary (seller / buyer / totals / QR) with the **cleared/reported UBL XML embedded** as an associated file (`AFRelationship = Source`) + a `pdfaid:part=3`/`conformance=B` XMP packet, so the machine-readable e-invoice travels inside the PDF. A **"Download legal copy"** action + button on `/dashboard/invoices/[id]` (shown only for CLEARED/REPORTED; `payments:read`, org-scoped, **public-column allow-list — no secret leak**). **Honest scope:** this is embedded-XML legal copy, **not** veraPDF-certified PDF/A-3b — strict conformance (ICC OutputIntent, embedded/subsetted fonts, veraPDF pass) is a documented follow-up.
+
+### Compliance harness + notifications
+- New gated **6-sample PCSID harness** (`packages/zatca/test/compliance-pcsid.live.test.ts`, `ZATCA_LIVE=1`, skipped in CI): one CSID → all 6 document types (standard/simplified × invoice/credit/debit) through build→sign→hash(signed)→compliance-check, ICV 1→6 + PIH-chained, asserting **all-6-SUCCESS** (ZATCA's real PCSID criterion). Code-ready; passes only against a VAT-bound production CSID.
+- Closed the **issuance transport-error notification gap** — a gateway timeout now notifies the tenant ("will retry") + platform staff (gateway health), matching the Track-A clearance path.
+- New **production cutover runbook** (`future-plans/zatca-production-cutover-runbook.md`): the prerequisite checklist, the SANDBOX→SIMULATION→PRODUCTION staging, the cutover sequence, and rollback posture.
+
+### Verify
+- `npm run build` green (`--webpack`) · `check-types` green · `lint` 0 errors · `turbo test:unit` green (web incl. 7 fail-safe env-resolution tests + 6 PDF/A-3 structural tests; engine 65 + the gated harness skipped) · **`/mimaric-qa`** gate · **§3.9 4-theme walk** on `/dashboard/invoices/[id]` (the new legal-copy button), `/dashboard/admin/zatca`, `/dashboard/settings/zatca` — zero console errors, screenshots → `Desktop/v5.6.0-screenshots/`.
+- **§3.8 verified before trust:** the env site list + classification, the issuance transport-notify gap, the PDF/A-3 secret-leak boundary (invoices read **zero** secret EGS columns), and the no-schema-change claim (`ZatcaEnvironment` enum + `ZatcaEgsUnit.environment` already exist).
+
+### External blockers — production go-live (Omar must provide)
+- **Production CSID onboarding** (real OTP, VAT-bound cert — resolves the R4a `certificate-permissions` reject) · **licensed tax-advisor signoff** of the tax-treatment table · **Mimarek's real CR + national address** (replacing the sandbox `1010010000` placeholder) · **a deployed scheduler** (the app is local-only; the reporting cron only fires on a live host). All are gated by the cutover runbook. RETT 5% filing stays permanently out of scope.
+
+### Deferred
+- Strict **PDF/A-3b certification** (ICC OutputIntent + font embedding + veraPDF) · the platform **`resetTenantEgs`** admin surface · the contract-signing / reservation-deposit issuance hooks (no payment charge-site).
+
+**Full diff:** https://github.com/GhamdiOmar/Mimarek/compare/v5.5.0...v5.6.0
+
 ## [5.5.0] — 2026-06-23 — ZATCA Phase-2 (R4b — Track C): reporting recovery + Invoices surface
 
 **The recovery + surfacing layer around R4a's issuance core.** R4a wired issuance into every money path; R4b closes the loop: a B2C reporting **recovery sweep** for documents that failed their first submission, a tenant-facing **Invoices & Receipts** page, the previously-orphaned printable `ZatcaDocument` wired in with a real scannable QR + a portrait PDF, and the **re-issue** action for held B2B invoices. No schema change — R4b is pure recovery + UI on the R4a tables. SANDBOX-only.
