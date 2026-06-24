@@ -1,5 +1,30 @@
 # Changelog — Mimarek PropTech
 
+## [5.6.1] — 2026-06-24 — Hardening wave 1 (post-audit): ZATCA journey + safety + a11y/QA fixes
+
+**Closes the audit's #1 finding — the ZATCA e-invoicing journey is no longer silent — plus a batch of QA/security/data-integrity fixes from the full-repo `/mimaric-qa --full` + `/cx-audit`.** No new features; correctness, security, and journey-completeness only.
+
+### ZATCA journey loop (the CX #1 fix)
+- **Recording a payment now surfaces the issued invoice.** The best-effort issuance wrappers return their result (still never throw into the money path), and `recordPayment`/`recordInstallmentPayment` add it additively — so the payment-success toast reports the outcome (cleared/reported → **"View invoice"** link; held; rejected) instead of a silent "Payment recorded." Receipts keep the plain toast (no e-invoice implied). Bulk pay returns a `zatcaIssued` count.
+- A row **"View tax invoice"** cross-link (the new `getInvoiceForInstallment` action) ends the "Invoices is an island" gap.
+- A **dashboard ZATCA-setup nudge** (until an EGS is ACTIVE) so a first taxable payment doesn't silently no-op against a missing EGS; the previously-**dead `#zatca` help link** now resolves to a real ZATCA FAQ category.
+- The **HELD invoice** detail gains a "Complete buyer data" path (CRM deep-link); all ZATCA error toasts go through `sanitizeError` (no raw code/internal leak).
+
+### Data-integrity + security
+- **`onDelete: Restrict`** on the ZATCA tax records (`TenantDocument` → org/EGS, `ZatcaClearanceLog` → EGS) and `Subscription` → org — legally-retained tax/financial records are no longer Cascade-destroyable by an org/EGS delete (ZATCA/PDPL retention). Applied to the live DB; no new tables → RLS unchanged.
+- **Org-ownership re-check** on `createPreventivePlan`/`updatePreventivePlan` `unitId`/`assignToId` — closes a cross-org FK-injection vector reachable via direct RPC (the maintenance siblings already guarded it).
+- **§8 audience-rejection test** — locks the headline B2B invariant at runtime: `SYSTEM_ADMIN` (who holds ALL permissions) is rejected from tenant-scoped actions by the audience branch, not just by permission presence.
+
+### QA/CX cleanups
+- **README deploy-model corrected** — `prisma db push` (no migration history), not the non-existent `prisma migrate`/`migrations/` it documented (an operational hazard against the shared DB).
+- `my-listings` domain-label drift fixed (canonical registry; new `MARKETPLACE_INQUIRY_STATUS_LABEL`); raising a maintenance ticket **from a unit** now carries the unit context (no more wrong-unit default).
+
+### Verify
+- `npm run build` green (`--webpack`) · `check-types` green · `lint` 0 errors · **211 web tests** (+8 §8 audience) + 65 engine · **`/mimaric-qa` GO** (no correctness/security regressions; the money path is provably never blocked by issuance) · **§3.9 4-theme walk 0 console errors** (`Desktop/v5.6.1-screenshots`).
+- **Full-cycle mobile E2E** (new business → onboarding → ZATCA EGS ACTIVE → payment → invoice, against the live sandbox, 0 console errors): confirmed the journey works end-to-end and the issuance routes correctly (commercial → tax invoice, residential → receipt). The B2B clearance returns `certificate-permissions` — the **R5 production-CSID external blocker**, not a code defect.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimarek/compare/v5.6.0...v5.6.1
+
 ## [5.6.0] — 2026-06-24 — ZATCA Phase-2 (R5 — production readiness)
 
 **Makes Mimarek production-*capable* while production stays *blocked* on external prerequisites.** R5 ships the codeable slice of the final release: the SANDBOX-only hardcodes are threaded onto a configurable environment, the legal-copy PDF embeds the cleared e-invoice XML, the 6-sample compliance harness is in place, and the issuance transport-error notification gap is closed. The genuinely external go-live steps (a real production CSID, tax-advisor signoff, Mimarek's real CR + national address, a deployed scheduler) are named in the cutover runbook, not skipped. **No schema change.**
