@@ -892,8 +892,9 @@ export default function MaintenanceDetailPage() {
               <div className="pt-3 border-t border-border space-y-3">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-muted-foreground">{t("التكلفة الفعلية", "Actual Cost")}</label>
+                    <label htmlFor="mtkt-actual-cost" className="text-[10px] font-bold text-muted-foreground">{t("التكلفة الفعلية", "Actual Cost")}</label>
                     <input
+                      id="mtkt-actual-cost"
                       type="number"
                       value={actualCost}
                       onChange={(e) => { setActualCost(e.target.value); setCostErrors((prev) => { const n = { ...prev }; delete n.actualCost; return n; }); }}
@@ -903,8 +904,9 @@ export default function MaintenanceDetailPage() {
                     {costErrors.actualCost && <p className="text-xs text-destructive">{costErrors.actualCost}</p>}
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-muted-foreground">{t("ساعات العمل", "Labor Hours")}</label>
+                    <label htmlFor="mtkt-labor-hours" className="text-[10px] font-bold text-muted-foreground">{t("ساعات العمل", "Labor Hours")}</label>
                     <input
+                      id="mtkt-labor-hours"
                       type="number"
                       value={laborHours}
                       onChange={(e) => { setLaborHours(e.target.value); setCostErrors((prev) => { const n = { ...prev }; delete n.laborHours; return n; }); }}
@@ -915,8 +917,8 @@ export default function MaintenanceDetailPage() {
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-muted-foreground">{t("ملاحظات", "Notes")}</label>
-                  <textarea value={notes} onChange={(e) => setNotes(e.target.value)} className={`${inputClass} h-16 py-2`} />
+                  <label htmlFor="mtkt-notes" className="text-[10px] font-bold text-muted-foreground">{t("ملاحظات", "Notes")}</label>
+                  <textarea id="mtkt-notes" value={notes} onChange={(e) => setNotes(e.target.value)} className={`${inputClass} h-16 py-2`} />
                 </div>
                 <Button size="sm" onClick={handleSaveCost} disabled={saving} className="gap-2" style={{ display: "inline-flex" }}>
                   {saving && <Loader2 className="h-3 w-3 animate-spin" />}

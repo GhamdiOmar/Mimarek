@@ -1,5 +1,26 @@
 # Changelog — Mimarek PropTech
 
+## [5.6.3] — 2026-06-25 — Hardening Wave 2a: repo-wide a11y label sweep (196 controls) + ESLint guard
+
+**Closes the form-control label-association backlog across the whole app and mechanizes it so it can't regress.** Following the v5.6.2 onboarding fix, an audit-grade sweep found **196 form-input controls across 34 files** with no programmatic label — a screen reader announced each as "edit text, blank" and label-clicks didn't focus (WCAG 1.3.1 / 4.1.2). All 196 are now wired, and a new custom ESLint rule fails CI on any new one. No schema, no logic, no visual change.
+
+### The custom detector (no jsx-a11y)
+- New **`mimaric/label-has-associated-control`** ESLint rule (`packages/eslint-config/next.js`) — a hand-written `mimaric/*` rule in the repo's established style (the repo deliberately does **not** use `eslint-plugin-jsx-a11y`). A control is labelled if it has `aria-label`/`aria-labelledby`, a `label` prop, an `id` matching an in-file `<label htmlFor>`, a `<Field>` render-prop spread, or a `<Field>` ancestor; `SelectField` and non-input controls are skipped. Order-independent (`Program:exit`). Shipped as the work-list detector at `warn`, then **ratcheted to `error`** now that the backlog is empty — a NEW unlabelled control fails CI (no suppressions file needed).
+
+### The sweep (196 controls / 34 files)
+- Each flagged control got either an `id` + a matching `htmlFor` on its visible `<label>` (preserving all existing styling — pure-additive, the v5.6.2 pattern), or, where there was no visible label (toolbar search/filter inputs), a descriptive bilingual `aria-label` via each file's existing `t(...)` convention.
+- Dual-layout files (a mobile `md:hidden` block + a desktop `hidden md:block` block both mounted — e.g. settings, SEO, onboarding join-flow) use layout-suffixed ids (`-m`/`-d`) to avoid duplicate-id.
+- Heaviest files: settings (40), admin/SEO (35), the list-view toolbars + create modals (contracts/payments/reservations/units, 30), admin billing forms (coupons/email/plans, 27), CRM + help (21), maintenance + onboarding-join (18), auth + settings-tail (25).
+
+### Known follow-up (honest)
+- `HijriDatePicker` renders a `<button>` trigger (not an `<input>`) and doesn't forward `aria-label`; its sites use `id`+`htmlFor` (the id reaches the DOM and clears the rule), but a genuinely robust fix is an `aria-label` passthrough on the `@repo/ui` primitive — deferred.
+
+### Verify
+- `npm run build` green · `check-types` green · **`lint` 0 errors** (the rule passes at `error`; 0 of 196 remain) · `cspell` clean · **211 web tests**.
+- **`/mimaric-qa`** on the change-set · **§3.9 4-theme walk** on the top touched forms (settings, register, CRM, payments) — 0 console errors, no visual regression (`Desktop/v5.6.3-screenshots`).
+
+**Full diff:** https://github.com/GhamdiOmar/Mimarek/compare/v5.6.2...v5.6.3
+
 ## [5.6.2] — 2026-06-24 — a11y fix: onboarding wizard input labels (WCAG 1.3.1)
 
 **Closes the onboarding-wizard label-association gap surfaced by the full-cycle E2E.** The org-profile + contact inputs had detached `<label>`s (no `htmlFor`) next to controls with no `id` — a screen reader announced each as "edit text, blank" and clicking a label didn't focus its field (WCAG 1.3.1 / 4.1.2 failure). This was also the **root cause of E2E "Issue #2"**: the apparent null VAT/CR was a test-automation artifact of the unlabeled, duplicated inputs, *not* a persistence bug — `updateOnboardingOrg` persists CR/VAT correctly (`onboarding.ts:230-231`) and the wizard blocks advance on save failure (`page.tsx:224`). No schema, logic, or visual change.

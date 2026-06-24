@@ -448,11 +448,12 @@ export default function OnboardingPage() {
             {joinChoice === "join" && (
               <div className="space-y-4 animate-in fade-in duration-200">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                  <label htmlFor="onb-join-cr-m" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                     {t("رقم السجل التجاري", "Commercial Registration No.")}
                   </label>
                   <div className="flex gap-2">
                     <CRInput
+                      id="onb-join-cr-m"
                       value={crSearch}
                       onChange={(raw) => { setCrSearch(raw); setCrSearchResult(null); }}
                       placeholder="1010XXXXXX"
@@ -487,10 +488,11 @@ export default function OnboardingPage() {
                       <p className="text-sm font-semibold text-foreground font-mono">{crSearchResult.maskedName}</p>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                      <label htmlFor="onb-join-reason-m" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                         {t("سبب الطلب (اختياري)", "Reason for joining (optional)")}
                       </label>
                       <textarea
+                        id="onb-join-reason-m"
                         value={joinReason}
                         onChange={(e) => setJoinReason(e.target.value)}
                         rows={3}
@@ -883,11 +885,12 @@ export default function OnboardingPage() {
                 {joinChoice === "join" && (
                   <div className="space-y-4 animate-in fade-in duration-200 pt-2">
                     <div className="space-y-2">
-                      <label className="text-xs font-medium text-muted-foreground">
+                      <label htmlFor="onb-join-cr-d" className="text-xs font-medium text-muted-foreground">
                         {t("رقم السجل التجاري", "Commercial Registration No.")}
                       </label>
                       <div className="flex gap-2">
                         <CRInput
+                          id="onb-join-cr-d"
                           value={crSearch}
                           onChange={(raw) => { setCrSearch(raw); setCrSearchResult(null); }}
                           placeholder="1010XXXXXX"
@@ -922,10 +925,11 @@ export default function OnboardingPage() {
                           <p className="text-sm font-semibold text-foreground font-mono">{crSearchResult.maskedName}</p>
                         </div>
                         <div className="space-y-2">
-                          <label className="text-xs font-medium text-muted-foreground">
+                          <label htmlFor="onb-join-reason-d" className="text-xs font-medium text-muted-foreground">
                             {t("سبب الطلب (اختياري)", "Reason for joining (optional)")}
                           </label>
                           <textarea
+                            id="onb-join-reason-d"
                             value={joinReason}
                             onChange={(e) => setJoinReason(e.target.value)}
                             rows={3}

@@ -261,10 +261,11 @@ export default function InviteAcceptPage() {
                 )}
 
                 <div className="space-y-2">
-                  <label className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">
+                  <label htmlFor="inv-name" className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">
                     {lang === "ar" ? "الاسم الكامل" : "Full Name"}
                   </label>
                   <Input
+                    id="inv-name"
                     placeholder={
                       lang === "ar" ? "عمر الغامدي" : "Omar Alghamdi"
                     }
@@ -275,10 +276,11 @@ export default function InviteAcceptPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">
+                  <label htmlFor="inv-email" className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">
                     {lang === "ar" ? "البريد الإلكتروني" : "Email"}
                   </label>
                   <Input
+                    id="inv-email"
                     type="email"
                     value={invitation.email}
                     disabled
@@ -287,11 +289,12 @@ export default function InviteAcceptPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">
+                  <label htmlFor="inv-password" className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">
                     {lang === "ar" ? "كلمة المرور" : "Password"}
                   </label>
                   <div className="relative">
                     <Input
+                      id="inv-password"
                       type={showPassword ? "text" : "password"}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}

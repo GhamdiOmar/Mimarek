@@ -160,10 +160,11 @@ export default function RegisterPage() {
               )}
 
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-foreground">
+                <label htmlFor="reg-name" className="text-sm font-medium text-foreground">
                   {lang === "ar" ? (userType === "company" ? "اسم الشركة" : "الاسم الكامل") : (userType === "company" ? "Company Name" : "Full Name")}
                 </label>
                 <Input
+                  id="reg-name"
                   placeholder={lang === "ar" ? (userType === "company" ? "اسم المؤسسة" : "عمر الغامدي") : (userType === "company" ? "Company name" : "Omar Alghamdi")}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -172,10 +173,11 @@ export default function RegisterPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-foreground">
+                <label htmlFor="reg-email" className="text-sm font-medium text-foreground">
                   {lang === "ar" ? "البريد الإلكتروني" : "Email"}
                 </label>
                 <Input
+                  id="reg-email"
                   type="email"
                   placeholder="name@example.com"
                   value={email}
@@ -185,11 +187,12 @@ export default function RegisterPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-foreground">
+                <label htmlFor="reg-password" className="text-sm font-medium text-foreground">
                   {lang === "ar" ? "كلمة المرور" : "Password"}
                 </label>
                 <div className="relative">
                   <Input
+                    id="reg-password"
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}

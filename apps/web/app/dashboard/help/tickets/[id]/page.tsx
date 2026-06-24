@@ -582,6 +582,7 @@ export default function TicketDetailPage() {
           <div className="p-4 border-t border-border">
             <div className="flex gap-2">
               <textarea
+                aria-label={t("اكتب ردك هنا", "Type your reply")}
                 className="flex-1 border border-border rounded-xl px-4 py-2.5 text-sm focus:ring-1 focus:ring-primary/20 focus:border-primary resize-none"
                 rows={2}
                 placeholder={t("اكتب ردك هنا...", "Type your reply...")}

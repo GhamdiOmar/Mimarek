@@ -246,21 +246,22 @@ export default function AdminEmailSettingsPage() {
           </CardHeader>
           <CardContent className="space-y-5">
             <div className="grid gap-4 md:grid-cols-2">
-              <label className="space-y-2 text-sm font-medium">
+              <label htmlFor="eml-provider" className="space-y-2 text-sm font-medium">
                 {t.provider}
-                <Input value="Hostinger SMTP" disabled />
+                <Input id="eml-provider" value="Hostinger SMTP" disabled />
               </label>
               <label className="flex items-center justify-between gap-3 rounded-md border border-border p-3 text-sm font-medium">
                 <span>{t.enabled}</span>
                 <Switch checked={form.emailEnabled} onCheckedChange={(checked) => update("emailEnabled", checked)} />
               </label>
-              <label className="space-y-2 text-sm font-medium">
+              <label htmlFor="eml-host" className="space-y-2 text-sm font-medium">
                 {t.host}
-                <Input value={form.smtpHost} onChange={(e) => update("smtpHost", e.target.value)} />
+                <Input id="eml-host" value={form.smtpHost} onChange={(e) => update("smtpHost", e.target.value)} />
               </label>
-              <label className="space-y-2 text-sm font-medium">
+              <label htmlFor="eml-port" className="space-y-2 text-sm font-medium">
                 {t.port}
                 <Input
+                  id="eml-port"
                   type="number"
                   value={form.smtpPort}
                   onChange={(e) => {
@@ -285,30 +286,30 @@ export default function AdminEmailSettingsPage() {
                   <option value="starttls">STARTTLS (587)</option>
                 </SelectField>
               </label>
-              <label className="space-y-2 text-sm font-medium">
+              <label htmlFor="eml-username" className="space-y-2 text-sm font-medium">
                 {t.username}
-                <Input value={form.smtpUsername} placeholder="noreply@yourdomain.com" onChange={(e) => update("smtpUsername", e.target.value)} />
+                <Input id="eml-username" value={form.smtpUsername} placeholder="noreply@yourdomain.com" onChange={(e) => update("smtpUsername", e.target.value)} />
               </label>
-              <label className="space-y-2 text-sm font-medium">
+              <label htmlFor="eml-password" className="space-y-2 text-sm font-medium">
                 {t.password}
-                <Input type="password" value={smtpPassword} placeholder={form.hasSmtpPassword ? `Saved password ending ${form.smtpPasswordLast4 ?? ""}` : ""} onChange={(e) => setSmtpPassword(e.target.value)} />
+                <Input id="eml-password" type="password" value={smtpPassword} placeholder={form.hasSmtpPassword ? `Saved password ending ${form.smtpPasswordLast4 ?? ""}` : ""} onChange={(e) => setSmtpPassword(e.target.value)} />
                 <span className="block text-xs font-normal text-muted-foreground">{t.passwordHint}</span>
               </label>
-              <label className="space-y-2 text-sm font-medium">
+              <label htmlFor="eml-from-name" className="space-y-2 text-sm font-medium">
                 {t.fromName}
-                <Input value={form.emailFromName} onChange={(e) => update("emailFromName", e.target.value)} />
+                <Input id="eml-from-name" value={form.emailFromName} onChange={(e) => update("emailFromName", e.target.value)} />
               </label>
-              <label className="space-y-2 text-sm font-medium">
+              <label htmlFor="eml-from-email" className="space-y-2 text-sm font-medium">
                 {t.fromEmail}
-                <Input type="email" value={form.emailFromAddress} placeholder="noreply@yourdomain.com" onChange={(e) => update("emailFromAddress", e.target.value)} />
+                <Input id="eml-from-email" type="email" value={form.emailFromAddress} placeholder="noreply@yourdomain.com" onChange={(e) => update("emailFromAddress", e.target.value)} />
               </label>
-              <label className="space-y-2 text-sm font-medium">
+              <label htmlFor="eml-reply-to" className="space-y-2 text-sm font-medium">
                 {t.replyTo}
-                <Input type="email" value={form.emailReplyTo} placeholder="support@yourdomain.com" onChange={(e) => update("emailReplyTo", e.target.value)} />
+                <Input id="eml-reply-to" type="email" value={form.emailReplyTo} placeholder="support@yourdomain.com" onChange={(e) => update("emailReplyTo", e.target.value)} />
               </label>
-              <label className="space-y-2 text-sm font-medium md:col-span-2">
+              <label htmlFor="eml-recipient" className="space-y-2 text-sm font-medium md:col-span-2">
                 {t.recipient}
-                <Input type="email" value={form.emailTestRecipient} placeholder="omar@example.com" onChange={(e) => update("emailTestRecipient", e.target.value)} />
+                <Input id="eml-recipient" type="email" value={form.emailTestRecipient} placeholder="omar@example.com" onChange={(e) => update("emailTestRecipient", e.target.value)} />
               </label>
             </div>
 

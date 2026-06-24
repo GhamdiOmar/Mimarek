@@ -485,6 +485,7 @@ export default function ReportsView({ loadedAt }: { loadedAt: string }) {
             <path d="m21 21-4.3-4.3" />
           </svg>
           <Input
+            aria-label={t("ابحث في التقارير...", "Search reports...")}
             value={mobileSearch}
             onChange={(e) => setMobileSearch(e.target.value)}
             placeholder={t("ابحث في التقارير...", "Search reports...")}

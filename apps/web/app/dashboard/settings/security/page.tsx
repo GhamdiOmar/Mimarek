@@ -83,10 +83,11 @@ export default function SecuritySettingsPage() {
       )}
 
       <div className="space-y-2">
-        <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+        <label htmlFor="sec-current-password" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
           {t("كلمة المرور الحالية", "Current Password")}
         </label>
         <Input
+          id="sec-current-password"
           type="password"
           value={currentPassword}
           onChange={(e) => setCurrentPassword(e.target.value)}
@@ -96,10 +97,11 @@ export default function SecuritySettingsPage() {
       </div>
 
       <div className="space-y-2">
-        <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+        <label htmlFor="sec-new-password" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
           {t("كلمة المرور الجديدة", "New Password")}
         </label>
         <Input
+          id="sec-new-password"
           type="password"
           value={newPassword}
           onChange={(e) => setNewPassword(e.target.value)}
@@ -114,10 +116,11 @@ export default function SecuritySettingsPage() {
       </div>
 
       <div className="space-y-2">
-        <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+        <label htmlFor="sec-confirm-password" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
           {t("تأكيد كلمة المرور الجديدة", "Confirm New Password")}
         </label>
         <Input
+          id="sec-confirm-password"
           type="password"
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}

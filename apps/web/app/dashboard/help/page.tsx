@@ -634,6 +634,7 @@ export default function HelpPage() {
             <div className="space-y-2">
               <input
                 type="text"
+                aria-label={t("ملاحظة المراجعة (اختياري)", "Review note (optional)")}
                 value={reviewNote}
                 onChange={(e) => setReviewNote(e.target.value)}
                 placeholder={t("ملاحظة (اختياري)", "Note (optional)")}
@@ -709,6 +710,7 @@ export default function HelpPage() {
             <div className="space-y-2">
               <input
                 type="text"
+                aria-label={t("ملاحظة مراجعة طلب الانضمام (اختياري)", "Join request review note (optional)")}
                 value={joinReviewNote}
                 onChange={(e) => setJoinReviewNote(e.target.value)}
                 placeholder={t("ملاحظة (اختياري)", "Note (optional)")}
@@ -1138,6 +1140,7 @@ export default function HelpPage() {
             <Search className="h-[18px] w-[18px] absolute end-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
+              aria-label={t("ابحث في الأسئلة الشائعة", "Search FAQs")}
               value={faqSearch}
               onChange={(e) => setFaqSearch(e.target.value)}
               placeholder={t("ابحث في الأسئلة الشائعة...", "Search FAQs...")}
@@ -1282,6 +1285,7 @@ export default function HelpPage() {
               <div>
                 <input
                   type="text"
+                  aria-label={t("الموضوع", "Subject")}
                   value={ticketForm.subject}
                   onChange={(e) => { setTicketForm({ ...ticketForm, subject: e.target.value }); if (ticketErrors.subject) setTicketErrors((prev) => ({ ...prev, subject: false })); }}
                   placeholder={t("الموضوع", "Subject")}
@@ -1301,6 +1305,7 @@ export default function HelpPage() {
               </div>
               <div>
                 <textarea
+                  aria-label={t("وصف المشكلة أو الطلب", "Describe the issue or request")}
                   value={ticketForm.description}
                   onChange={(e) => { setTicketForm({ ...ticketForm, description: e.target.value }); if (ticketErrors.description) setTicketErrors((prev) => ({ ...prev, description: false })); }}
                   placeholder={t("وصف المشكلة أو الطلب...", "Describe the issue or request...")}
@@ -1370,6 +1375,7 @@ export default function HelpPage() {
               {ROLE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label[lang]} ({o.value})</option>)}
             </SelectField>
             <textarea
+              aria-label={t("سبب الطلب", "Reason for request")}
               value={permForm.reason}
               onChange={(e) => setPermForm({ ...permForm, reason: e.target.value })}
               placeholder={t("سبب الطلب...", "Reason for request...")}
@@ -1558,6 +1564,7 @@ export default function HelpPage() {
                       <div className="space-y-2">
                         <input
                           type="text"
+                          aria-label={t("ملاحظة المراجعة (اختياري)", "Review note (optional)")}
                           value={reviewNote}
                           onChange={(e) => setReviewNote(e.target.value)}
                           placeholder={t("ملاحظة (اختياري)", "Note (optional)")}
@@ -1614,6 +1621,7 @@ export default function HelpPage() {
                       <div className="space-y-2">
                         <input
                           type="text"
+                          aria-label={t("ملاحظة مراجعة طلب الانضمام (اختياري)", "Join request review note (optional)")}
                           value={joinReviewNote}
                           onChange={(e) => setJoinReviewNote(e.target.value)}
                           placeholder={t("ملاحظة (اختياري)", "Note (optional)")}

@@ -622,8 +622,10 @@ export default function AdminPlansPage() {
 
           {/* Row: Name EN / Name AR */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <FieldGroup label={t.nameEn} required>
+            <FieldGroup label={t.nameEn} required htmlFor="pln-name-en">
               <input
+                id="pln-name-en"
+                aria-label={t.nameEn}
                 type="text"
                 value={form.nameEn}
                 onChange={(e) => updateField("nameEn", e.target.value)}
@@ -632,8 +634,10 @@ export default function AdminPlansPage() {
                 dir="ltr"
               />
             </FieldGroup>
-            <FieldGroup label={t.nameAr} required>
+            <FieldGroup label={t.nameAr} required htmlFor="pln-name-ar">
               <input
+                id="pln-name-ar"
+                aria-label={t.nameAr}
                 type="text"
                 value={form.nameAr}
                 onChange={(e) => updateField("nameAr", e.target.value)}
@@ -645,8 +649,10 @@ export default function AdminPlansPage() {
           </div>
 
           {/* Slug */}
-          <FieldGroup label={t.slug} required>
+          <FieldGroup label={t.slug} required htmlFor="pln-slug">
             <input
+              id="pln-slug"
+              aria-label={t.slug}
               type="text"
               value={form.slug}
               onChange={(e) =>
@@ -666,8 +672,10 @@ export default function AdminPlansPage() {
 
           {/* Row: Description EN / Description AR */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <FieldGroup label={t.descriptionEn}>
+            <FieldGroup label={t.descriptionEn} htmlFor="pln-description-en">
               <textarea
+                id="pln-description-en"
+                aria-label={t.descriptionEn}
                 value={form.descriptionEn}
                 onChange={(e) =>
                   updateField("descriptionEn", e.target.value)
@@ -678,8 +686,10 @@ export default function AdminPlansPage() {
                 dir="ltr"
               />
             </FieldGroup>
-            <FieldGroup label={t.descriptionAr}>
+            <FieldGroup label={t.descriptionAr} htmlFor="pln-description-ar">
               <textarea
+                id="pln-description-ar"
+                aria-label={t.descriptionAr}
                 value={form.descriptionAr}
                 onChange={(e) =>
                   updateField("descriptionAr", e.target.value)
@@ -694,10 +704,12 @@ export default function AdminPlansPage() {
 
           {/* Row: Monthly / Annual Price */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <FieldGroup label={`${t.monthlyPrice} (${t.sar})`}>
+            <FieldGroup label={`${t.monthlyPrice} (${t.sar})`} htmlFor="pln-price-monthly">
               <div className="relative">
                 <CircleDollarSign className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <input
+                  id="pln-price-monthly"
+                  aria-label={`${t.monthlyPrice} (${t.sar})`}
                   type="number"
                   min="0"
                   step="0.01"
@@ -710,10 +722,12 @@ export default function AdminPlansPage() {
                 />
               </div>
             </FieldGroup>
-            <FieldGroup label={`${t.annualPrice} (${t.sar})`}>
+            <FieldGroup label={`${t.annualPrice} (${t.sar})`} htmlFor="pln-price-annual">
               <div className="relative">
                 <CircleDollarSign className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <input
+                  id="pln-price-annual"
+                  aria-label={`${t.annualPrice} (${t.sar})`}
                   type="number"
                   min="0"
                   step="0.01"
@@ -730,8 +744,10 @@ export default function AdminPlansPage() {
 
           {/* Row: Trial Days / Sort Order */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <FieldGroup label={t.trialDays}>
+            <FieldGroup label={t.trialDays} htmlFor="pln-trial-days">
               <input
+                id="pln-trial-days"
+                aria-label={t.trialDays}
                 type="number"
                 min="0"
                 value={form.trialDays}
@@ -740,10 +756,12 @@ export default function AdminPlansPage() {
                 dir="ltr"
               />
             </FieldGroup>
-            <FieldGroup label={t.sortOrder}>
+            <FieldGroup label={t.sortOrder} htmlFor="pln-sort-order">
               <div className="relative">
                 <ArrowUpDown className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <input
+                  id="pln-sort-order"
+                  aria-label={t.sortOrder}
                   type="number"
                   min="0"
                   value={form.sortOrder}
@@ -793,15 +811,20 @@ export default function AdminPlansPage() {
 function FieldGroup({
   label,
   required,
+  htmlFor,
   children,
 }: {
   label: string;
   required?: boolean;
+  htmlFor?: string;
   children: React.ReactNode;
 }) {
   return (
     <div className="space-y-1.5">
-      <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+      <label
+        htmlFor={htmlFor}
+        className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide"
+      >
         {label}
         {required && <span className="text-destructive ms-0.5">*</span>}
       </label>

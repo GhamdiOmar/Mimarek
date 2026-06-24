@@ -335,6 +335,7 @@ export default function AdminTicketsPage() {
               <Search className="pointer-events-none absolute top-1/2 start-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
               <input
                 type="text"
+                aria-label={t("بحث...", "Search...")}
                 value={search}
                 onChange={(e) => handleSearchChange(e.target.value)}
                 placeholder={t("بحث...", "Search...")}
@@ -504,6 +505,7 @@ export default function AdminTicketsPage() {
           <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
           <input
             type="text"
+            aria-label={t("بحث بالموضوع أو الرقم أو البريد...", "Search subject, number, or email…")}
             placeholder={t("بحث بالموضوع أو الرقم أو البريد...", "Search subject, number, or email…")}
             value={search}
             onChange={(e) => handleSearchChange(e.target.value)}

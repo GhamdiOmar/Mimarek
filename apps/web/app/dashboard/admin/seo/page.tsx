@@ -309,22 +309,23 @@ export default function SeoSettingsPage() {
                 {t("ميتاداتا", "Metadata")}
               </h2>
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">
+                <label htmlFor="seo-site-title-m" className="text-xs font-medium text-muted-foreground">
                   {t("عنوان الموقع", "Site title")}
                 </label>
-                <Input value={siteTitle} onChange={(e) => setSiteTitle(e.target.value)} />
+                <Input id="seo-site-title-m" value={siteTitle} onChange={(e) => setSiteTitle(e.target.value)} />
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">
+                <label htmlFor="seo-title-template-m" className="text-xs font-medium text-muted-foreground">
                   {t("قالب العنوان", "Title template")}
                 </label>
-                <Input value={siteTitleTemplate} onChange={(e) => setSiteTitleTemplate(e.target.value)} />
+                <Input id="seo-title-template-m" value={siteTitleTemplate} onChange={(e) => setSiteTitleTemplate(e.target.value)} />
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">
+                <label htmlFor="seo-description-ar-m" className="text-xs font-medium text-muted-foreground">
                   {t("الوصف (عربي)", "Description (AR)")}
                 </label>
                 <textarea
+                  id="seo-description-ar-m"
                   className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"
                   rows={3}
                   dir="rtl"
@@ -333,10 +334,11 @@ export default function SeoSettingsPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">
+                <label htmlFor="seo-description-en-m" className="text-xs font-medium text-muted-foreground">
                   {t("الوصف (إنجليزي)", "Description (EN)")}
                 </label>
                 <textarea
+                  id="seo-description-en-m"
                   className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"
                   rows={3}
                   dir="ltr"
@@ -345,10 +347,10 @@ export default function SeoSettingsPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">
+                <label htmlFor="seo-canonical-url-m" className="text-xs font-medium text-muted-foreground">
                   {t("الرابط الأساسي", "Canonical URL")}
                 </label>
-                <Input dir="ltr" value={canonicalUrl} onChange={(e) => setCanonicalUrl(e.target.value)} />
+                <Input id="seo-canonical-url-m" dir="ltr" value={canonicalUrl} onChange={(e) => setCanonicalUrl(e.target.value)} />
               </div>
             </section>
 
@@ -357,8 +359,9 @@ export default function SeoSettingsPage() {
                 {t("التحليلات", "Analytics")}
               </h2>
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">GTM Container ID</label>
+                <label htmlFor="seo-gtm-container-id-m" className="text-xs font-medium text-muted-foreground">GTM Container ID</label>
                 <Input
+                  id="seo-gtm-container-id-m"
                   dir="ltr"
                   value={gtmContainerId}
                   onChange={(e) => setGtmContainerId(e.target.value.toUpperCase())}
@@ -366,8 +369,9 @@ export default function SeoSettingsPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">GA4 Measurement ID</label>
+                <label htmlFor="seo-ga4-measurement-id-m" className="text-xs font-medium text-muted-foreground">GA4 Measurement ID</label>
                 <Input
+                  id="seo-ga4-measurement-id-m"
                   dir="ltr"
                   value={ga4MeasurementId}
                   onChange={(e) => setGa4MeasurementId(e.target.value.toUpperCase())}
@@ -376,8 +380,9 @@ export default function SeoSettingsPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">Google Ads Conversion ID</label>
+                <label htmlFor="seo-gads-conversion-id-m" className="text-xs font-medium text-muted-foreground">Google Ads Conversion ID</label>
                 <Input
+                  id="seo-gads-conversion-id-m"
                   dir="ltr"
                   value={gadsConversionId}
                   onChange={(e) => setGadsConversionId(e.target.value.toUpperCase())}
@@ -391,12 +396,12 @@ export default function SeoSettingsPage() {
                 {t("التحقق", "Verification")}
               </h2>
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">Google Search Console</label>
-                <Input dir="ltr" value={gscVerificationCode} onChange={(e) => setGscVerificationCode(e.target.value)} />
+                <label htmlFor="seo-gsc-verification-m" className="text-xs font-medium text-muted-foreground">Google Search Console</label>
+                <Input id="seo-gsc-verification-m" dir="ltr" value={gscVerificationCode} onChange={(e) => setGscVerificationCode(e.target.value)} />
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">Bing Webmaster</label>
-                <Input dir="ltr" value={bingVerificationCode} onChange={(e) => setBingVerificationCode(e.target.value)} />
+                <label htmlFor="seo-bing-verification-m" className="text-xs font-medium text-muted-foreground">Bing Webmaster</label>
+                <Input id="seo-bing-verification-m" dir="ltr" value={bingVerificationCode} onChange={(e) => setBingVerificationCode(e.target.value)} />
               </div>
             </section>
 
@@ -405,28 +410,28 @@ export default function SeoSettingsPage() {
                 Schema.org
               </h2>
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">
+                <label htmlFor="seo-schema-org-name-m" className="text-xs font-medium text-muted-foreground">
                   {t("اسم المنظمة", "Organization name")}
                 </label>
-                <Input value={schemaOrgName} onChange={(e) => setSchemaOrgName(e.target.value)} />
+                <Input id="seo-schema-org-name-m" value={schemaOrgName} onChange={(e) => setSchemaOrgName(e.target.value)} />
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">
+                <label htmlFor="seo-schema-logo-url-m" className="text-xs font-medium text-muted-foreground">
                   {t("رابط الشعار", "Logo URL")}
                 </label>
-                <Input dir="ltr" value={schemaOrgLogoUrl} onChange={(e) => setSchemaOrgLogoUrl(e.target.value)} />
+                <Input id="seo-schema-logo-url-m" dir="ltr" value={schemaOrgLogoUrl} onChange={(e) => setSchemaOrgLogoUrl(e.target.value)} />
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">Twitter / X</label>
-                <Input dir="ltr" value={schemaOrgTwitter} onChange={(e) => setSchemaOrgTwitter(e.target.value)} />
+                <label htmlFor="seo-schema-twitter-m" className="text-xs font-medium text-muted-foreground">Twitter / X</label>
+                <Input id="seo-schema-twitter-m" dir="ltr" value={schemaOrgTwitter} onChange={(e) => setSchemaOrgTwitter(e.target.value)} />
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">LinkedIn</label>
-                <Input dir="ltr" value={schemaOrgLinkedIn} onChange={(e) => setSchemaOrgLinkedIn(e.target.value)} />
+                <label htmlFor="seo-schema-linkedin-m" className="text-xs font-medium text-muted-foreground">LinkedIn</label>
+                <Input id="seo-schema-linkedin-m" dir="ltr" value={schemaOrgLinkedIn} onChange={(e) => setSchemaOrgLinkedIn(e.target.value)} />
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">Instagram</label>
-                <Input dir="ltr" value={schemaOrgInstagram} onChange={(e) => setSchemaOrgInstagram(e.target.value)} />
+                <label htmlFor="seo-schema-instagram-m" className="text-xs font-medium text-muted-foreground">Instagram</label>
+                <Input id="seo-schema-instagram-m" dir="ltr" value={schemaOrgInstagram} onChange={(e) => setSchemaOrgInstagram(e.target.value)} />
               </div>
             </section>
 
@@ -435,10 +440,11 @@ export default function SeoSettingsPage() {
                 {t("رخصة المنصة (فال)", "REGA Platform License")}
               </h2>
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">
+                <label htmlFor="seo-rega-fal-license-m" className="text-xs font-medium text-muted-foreground">
                   {t("رقم رخصة فال للمنصة", "REGA FAL License Number")}
                 </label>
                 <Input
+                  id="seo-rega-fal-license-m"
                   dir="ltr"
                   value={regaPlatformFalLicense}
                   onChange={(e) => setRegaPlatformFalLicense(e.target.value)}
@@ -528,18 +534,19 @@ export default function SeoSettingsPage() {
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">{t("عنوان الموقع (افتراضي)", "Site Title (default)")}</label>
-                <Input value={siteTitle} onChange={(e) => setSiteTitle(e.target.value)} placeholder="Mimarek | منصة إدارة العقارات" />
+                <label htmlFor="seo-site-title-d" className="text-sm font-medium">{t("عنوان الموقع (افتراضي)", "Site Title (default)")}</label>
+                <Input id="seo-site-title-d" value={siteTitle} onChange={(e) => setSiteTitle(e.target.value)} placeholder="Mimarek | منصة إدارة العقارات" />
               </div>
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">{t("قالب العنوان", "Title Template")}</label>
-                <Input value={siteTitleTemplate} onChange={(e) => setSiteTitleTemplate(e.target.value)} placeholder="%s | Mimarek" />
+                <label htmlFor="seo-title-template-d" className="text-sm font-medium">{t("قالب العنوان", "Title Template")}</label>
+                <Input id="seo-title-template-d" value={siteTitleTemplate} onChange={(e) => setSiteTitleTemplate(e.target.value)} placeholder="%s | Mimarek" />
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">{t("الوصف (عربي)", "Description (Arabic)")}</label>
+              <label htmlFor="seo-description-ar-d" className="text-sm font-medium">{t("الوصف (عربي)", "Description (Arabic)")}</label>
               <textarea
+                id="seo-description-ar-d"
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-primary"
                 rows={3}
                 value={siteDescriptionAr}
@@ -550,8 +557,9 @@ export default function SeoSettingsPage() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">{t("الوصف (إنجليزي)", "Description (English)")}</label>
+              <label htmlFor="seo-description-en-d" className="text-sm font-medium">{t("الوصف (إنجليزي)", "Description (English)")}</label>
               <textarea
+                id="seo-description-en-d"
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-primary"
                 rows={3}
                 value={siteDescriptionEn}
@@ -563,8 +571,8 @@ export default function SeoSettingsPage() {
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">{t("الرابط الأساسي (Canonical)", "Canonical Base URL")}</label>
-                <Input value={canonicalUrl} onChange={(e) => setCanonicalUrl(e.target.value)} placeholder="https://mimarek.sa" dir="ltr" />
+                <label htmlFor="seo-canonical-url-d" className="text-sm font-medium">{t("الرابط الأساسي (Canonical)", "Canonical Base URL")}</label>
+                <Input id="seo-canonical-url-d" value={canonicalUrl} onChange={(e) => setCanonicalUrl(e.target.value)} placeholder="https://mimarek.sa" dir="ltr" />
               </div>
               <div className="space-y-1.5">
                 <label className="text-sm font-medium">{t("لغة Open Graph", "OG Locale")}</label>
@@ -578,8 +586,8 @@ export default function SeoSettingsPage() {
                 </SelectField>
               </div>
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">{t("حساب Twitter/X", "Twitter/X Handle")}</label>
-                <Input value={twitterHandle} onChange={(e) => setTwitterHandle(e.target.value)} placeholder="@mimarek_sa" dir="ltr" />
+                <label htmlFor="seo-twitter-handle" className="text-sm font-medium">{t("حساب Twitter/X", "Twitter/X Handle")}</label>
+                <Input id="seo-twitter-handle" value={twitterHandle} onChange={(e) => setTwitterHandle(e.target.value)} placeholder="@mimarek_sa" dir="ltr" />
               </div>
               <div className="space-y-1.5">
                 <label className="text-sm font-medium">{t("نوع Twitter Card", "Twitter Card Type")}</label>
@@ -675,12 +683,13 @@ export default function SeoSettingsPage() {
             <div className="space-y-4">
               <div className="space-y-1.5">
                 <div className="flex items-center gap-2">
-                  <label className="text-sm font-medium">
+                  <label htmlFor="seo-gtm-container-id-d" className="text-sm font-medium">
                     {t("معرّف GTM Container", "GTM Container ID")}
                   </label>
                   <Badge>{t("موصى به", "Recommended")}</Badge>
                 </div>
                 <Input
+                  id="seo-gtm-container-id-d"
                   value={gtmContainerId}
                   onChange={(e) => setGtmContainerId(e.target.value.toUpperCase())}
                   placeholder="GTM-XXXXXXX"
@@ -690,10 +699,11 @@ export default function SeoSettingsPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">
+                <label htmlFor="seo-ga4-measurement-id-d" className="text-sm font-medium">
                   {t("معرّف GA4 (بدون GTM فقط)", "GA4 Measurement ID (only if not using GTM)")}
                 </label>
                 <Input
+                  id="seo-ga4-measurement-id-d"
                   value={ga4MeasurementId}
                   onChange={(e) => setGa4MeasurementId(e.target.value.toUpperCase())}
                   placeholder="G-XXXXXXXXXX"
@@ -706,10 +716,11 @@ export default function SeoSettingsPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">
+                <label htmlFor="seo-gads-conversion-id-d" className="text-sm font-medium">
                   {t("معرّف تحويلات Google Ads", "Google Ads Conversion ID")}
                 </label>
                 <Input
+                  id="seo-gads-conversion-id-d"
                   value={gadsConversionId}
                   onChange={(e) => setGadsConversionId(e.target.value.toUpperCase())}
                   placeholder="AW-XXXXXXXXX"
@@ -743,10 +754,11 @@ export default function SeoSettingsPage() {
 
             <div className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">
+                <label htmlFor="seo-gsc-verification-d" className="text-sm font-medium">
                   {t("كود التحقق من Google Search Console", "Google Search Console Verification")}
                 </label>
                 <Input
+                  id="seo-gsc-verification-d"
                   value={gscVerificationCode}
                   onChange={(e) => setGscVerificationCode(e.target.value)}
                   placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
@@ -757,10 +769,11 @@ export default function SeoSettingsPage() {
                 </p>
               </div>
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">
+                <label htmlFor="seo-bing-verification-d" className="text-sm font-medium">
                   {t("كود التحقق من Bing Webmaster", "Bing Webmaster Verification")}
                 </label>
                 <Input
+                  id="seo-bing-verification-d"
                   value={bingVerificationCode}
                   onChange={(e) => setBingVerificationCode(e.target.value)}
                   placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
@@ -805,8 +818,10 @@ export default function SeoSettingsPage() {
               {robotsRules.map((rule, ri) => (
                 <div key={ri} className="rounded-md border border-border p-4 space-y-3">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">User-agent</label>
+                    <label htmlFor={`seo-robots-useragent-${ri}`} className="text-xs font-medium text-muted-foreground uppercase tracking-wide">User-agent</label>
                     <Input
+                      id={`seo-robots-useragent-${ri}`}
+                      aria-label={t("وكيل المستخدم", "User-agent")}
                       value={rule.userAgent}
                       onChange={(e) => setRobotsRules((prev) => prev.map((r, i) => i === ri ? { ...r, userAgent: e.target.value } : r))}
                       placeholder="*"
@@ -830,7 +845,7 @@ export default function SeoSettingsPage() {
                     </div>
                     {rule.allow.map((p, pi) => (
                       <div key={pi} className="flex gap-2">
-                        <Input value={p} onChange={(e) => updatePath(ri, "allow", pi, e.target.value)} dir="ltr" className="flex-1" />
+                        <Input value={p} onChange={(e) => updatePath(ri, "allow", pi, e.target.value)} dir="ltr" className="flex-1" aria-label={t("مسار مسموح به", "Allowed path")} />
                         <IconButton
                           icon={Trash2}
                           onClick={() => removePath(ri, "allow", pi)}
@@ -859,7 +874,7 @@ export default function SeoSettingsPage() {
                     </div>
                     {rule.disallow.map((p, pi) => (
                       <div key={pi} className="flex gap-2">
-                        <Input value={p} onChange={(e) => updatePath(ri, "disallow", pi, e.target.value)} dir="ltr" className="flex-1" />
+                        <Input value={p} onChange={(e) => updatePath(ri, "disallow", pi, e.target.value)} dir="ltr" className="flex-1" aria-label={t("مسار محظور", "Disallowed path")} />
                         <IconButton
                           icon={Trash2}
                           onClick={() => removePath(ri, "disallow", pi)}
@@ -911,24 +926,24 @@ export default function SeoSettingsPage() {
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">{t("اسم المنظمة", "Organization Name")}</label>
-                <Input value={schemaOrgName} onChange={(e) => setSchemaOrgName(e.target.value)} placeholder="Mimarek" />
+                <label htmlFor="seo-schema-org-name-d" className="text-sm font-medium">{t("اسم المنظمة", "Organization Name")}</label>
+                <Input id="seo-schema-org-name-d" value={schemaOrgName} onChange={(e) => setSchemaOrgName(e.target.value)} placeholder="Mimarek" />
               </div>
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">{t("رابط الشعار", "Logo URL")}</label>
-                <Input value={schemaOrgLogoUrl} onChange={(e) => setSchemaOrgLogoUrl(e.target.value)} placeholder="https://mimarek.sa/assets/brand/mimarek-primary-light.svg" dir="ltr" />
+                <label htmlFor="seo-schema-logo-url-d" className="text-sm font-medium">{t("رابط الشعار", "Logo URL")}</label>
+                <Input id="seo-schema-logo-url-d" value={schemaOrgLogoUrl} onChange={(e) => setSchemaOrgLogoUrl(e.target.value)} placeholder="https://mimarek.sa/assets/brand/mimarek-primary-light.svg" dir="ltr" />
               </div>
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">Twitter/X</label>
-                <Input value={schemaOrgTwitter} onChange={(e) => setSchemaOrgTwitter(e.target.value)} placeholder="https://x.com/mimarek_sa" dir="ltr" />
+                <label htmlFor="seo-schema-twitter-d" className="text-sm font-medium">Twitter/X</label>
+                <Input id="seo-schema-twitter-d" value={schemaOrgTwitter} onChange={(e) => setSchemaOrgTwitter(e.target.value)} placeholder="https://x.com/mimarek_sa" dir="ltr" />
               </div>
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">LinkedIn</label>
-                <Input value={schemaOrgLinkedIn} onChange={(e) => setSchemaOrgLinkedIn(e.target.value)} placeholder="https://linkedin.com/company/mimarek" dir="ltr" />
+                <label htmlFor="seo-schema-linkedin-d" className="text-sm font-medium">LinkedIn</label>
+                <Input id="seo-schema-linkedin-d" value={schemaOrgLinkedIn} onChange={(e) => setSchemaOrgLinkedIn(e.target.value)} placeholder="https://linkedin.com/company/mimarek" dir="ltr" />
               </div>
               <div className="space-y-1.5 sm:col-span-2">
-                <label className="text-sm font-medium">Instagram</label>
-                <Input value={schemaOrgInstagram} onChange={(e) => setSchemaOrgInstagram(e.target.value)} placeholder="https://instagram.com/mimarek_sa" dir="ltr" />
+                <label htmlFor="seo-schema-instagram-d" className="text-sm font-medium">Instagram</label>
+                <Input id="seo-schema-instagram-d" value={schemaOrgInstagram} onChange={(e) => setSchemaOrgInstagram(e.target.value)} placeholder="https://instagram.com/mimarek_sa" dir="ltr" />
               </div>
             </div>
 

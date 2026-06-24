@@ -132,18 +132,18 @@ function ResetPasswordInner() {
                 )}
 
                 <div className="space-y-2">
-                  <label className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">
+                  <label htmlFor="rst-password" className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">
                     {lang === "ar" ? "كلمة المرور الجديدة" : "New Password"}
                   </label>
-                  <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} disabled={loading} />
+                  <Input id="rst-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} disabled={loading} />
                   <PasswordStrengthHint password={password} lang={lang} />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">
+                  <label htmlFor="rst-confirm" className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">
                     {lang === "ar" ? "تأكيد كلمة المرور" : "Confirm Password"}
                   </label>
-                  <Input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} disabled={loading} />
+                  <Input id="rst-confirm" type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} disabled={loading} />
                 </div>
 
                 <Button className="w-full" onClick={handleReset} disabled={loading || !password || !confirm}>

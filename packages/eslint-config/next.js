@@ -347,8 +347,9 @@ const noInlineJsonSerialize = {
  * (see the NOTE block below), so this is a hand-written `mimaric/*` detector that
  * matches the established rule style (closure state, Program/Program:exit pass).
  *
- * This is the DETECTOR for the label sweep; its WARN output is the work-list.
- * Ratchet to "error" only after the backlog is fixed in batches.
+ * This was the DETECTOR for the label sweep (shipped at "warn"); the 196-violation
+ * backlog is now fully fixed (v5.6.3), so the rule is ratcheted to "error" — a NEW
+ * unlabelled control fails CI. No suppressions file is needed (the backlog is empty).
  *
  * A control is in scope if its JSX name is one of CONTROL_NAMES, OR it is a
  * native `<input>` (except the non-text input types) / native `<textarea>`.
@@ -710,8 +711,8 @@ export const nextJsConfig = [
           "no-raw-revalidate-path": noRawRevalidatePath,
           "no-inline-json-serialize": noInlineJsonSerialize,
           // F-A11Y: form controls must have a programmatic label (WCAG 1.3.1).
-          // WARN (not error) — surface the backlog first, fix in batches, then
-          // ratchet to "error".
+          // Now at "error" (v5.6.3) — the 196-control backlog was fixed by the
+          // label sweep, so a new unlabelled control fails CI.
           "label-has-associated-control": labelHasAssociatedControl,
         },
       },
@@ -721,7 +722,7 @@ export const nextJsConfig = [
       "mimaric/require-action-guard": "error",
       "mimaric/no-raw-revalidate-path": "error",
       "mimaric/no-inline-json-serialize": "error",
-      "mimaric/label-has-associated-control": "warn",
+      "mimaric/label-has-associated-control": "error",
       "no-restricted-syntax": [
         "error",
         {

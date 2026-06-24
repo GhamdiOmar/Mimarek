@@ -1073,40 +1073,44 @@ export function CustomerDrawer({
         >
           <div className="grid grid-cols-2 gap-4 py-2">
             <div className="col-span-2 space-y-1">
-              <label className="text-xs font-bold text-muted-foreground">
+              <label htmlFor="cust-edit-name" className="text-xs font-bold text-muted-foreground">
                 {lang === "ar" ? "الاسم الكامل *" : "Full Name *"}
               </label>
               <Input
+                id="cust-edit-name"
                 value={editForm.name}
                 onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
                 placeholder={lang === "ar" ? "الاسم بالكامل" : "Full name"}
               />
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-bold text-muted-foreground">
+              <label htmlFor="cust-edit-name-ar" className="text-xs font-bold text-muted-foreground">
                 {lang === "ar" ? "الاسم بالعربية" : "Arabic Name"}
               </label>
               <Input
+                id="cust-edit-name-ar"
                 value={editForm.nameArabic}
                 onChange={(e) => setEditForm({ ...editForm, nameArabic: e.target.value })}
                 placeholder="الاسم بالعربية"
               />
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-bold text-muted-foreground">
+              <label htmlFor="cust-edit-phone" className="text-xs font-bold text-muted-foreground">
                 {lang === "ar" ? "رقم الجوال" : "Phone"}
               </label>
               <SaudiPhoneInput
+                id="cust-edit-phone"
                 value={editForm.phone}
                 onChange={(e164) => setEditForm({ ...editForm, phone: e164 })}
                 placeholder="+966 5x xxx xxxx"
               />
             </div>
             <div className="col-span-2 space-y-1">
-              <label className="text-xs font-bold text-muted-foreground">
+              <label htmlFor="cust-edit-email" className="text-xs font-bold text-muted-foreground">
                 {lang === "ar" ? "البريد الإلكتروني" : "Email"}
               </label>
               <Input
+                id="cust-edit-email"
                 type="email"
                 value={editForm.email}
                 onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
@@ -1125,10 +1129,11 @@ export function CustomerDrawer({
               ))}
             </SelectField>
             <div className="space-y-1">
-              <label className="text-xs font-bold text-muted-foreground">
+              <label htmlFor="cust-edit-budget" className="text-xs font-bold text-muted-foreground">
                 {lang === "ar" ? "الميزانية (ريال)" : "Budget (SAR)"}
               </label>
               <Input
+                id="cust-edit-budget"
                 type="number"
                 value={editForm.budget}
                 onChange={(e) => setEditForm({ ...editForm, budget: e.target.value })}
@@ -1215,6 +1220,7 @@ export function CustomerDrawer({
               <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <input
                 type="text"
+                aria-label={lang === "ar" ? "ابحث برقم الوحدة أو المدينة" : "Search by unit number or city"}
                 value={linkUnitSearch}
                 onChange={(e) => setLinkUnitSearch(e.target.value)}
                 placeholder={lang === "ar" ? "ابحث برقم الوحدة أو المدينة..." : "Search by unit number or city..."}
@@ -1402,10 +1408,11 @@ export function CustomerDrawer({
 
           <div className="space-y-4 py-2">
             <div className="space-y-1">
-              <label className="text-xs font-bold text-muted-foreground">
+              <label htmlFor="cust-convert-amount" className="text-xs font-bold text-muted-foreground">
                 {lang === "ar" ? "المبلغ (ريال)" : "Amount (SAR)"}
               </label>
               <Input
+                id="cust-convert-amount"
                 type="number"
                 value={convertAmount}
                 onChange={(e) => setConvertAmount(e.target.value)}
@@ -1415,10 +1422,11 @@ export function CustomerDrawer({
               />
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-bold text-muted-foreground">
+              <label htmlFor="cust-convert-expiry" className="text-xs font-bold text-muted-foreground">
                 {lang === "ar" ? "تاريخ انتهاء الحجز *" : "Reservation Expiry Date *"}
               </label>
               <HijriDatePicker
+                id="cust-convert-expiry"
                 locale={lang}
                 value={convertExpiry ? new Date(convertExpiry) : null}
                 onChange={(d) => setConvertExpiry(d ? d.toISOString().slice(0, 10) : "")}

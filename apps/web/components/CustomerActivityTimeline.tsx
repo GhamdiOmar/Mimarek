@@ -211,6 +211,7 @@ export default function CustomerActivityTimeline({ customerId }: CustomerActivit
 
           {/* Note textarea */}
           <textarea
+            aria-label={t("اكتب ملاحظاتك هنا", "Write your notes here")}
             value={note}
             onChange={(e) => setNote(e.target.value)}
             rows={3}

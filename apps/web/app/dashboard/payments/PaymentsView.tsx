@@ -777,6 +777,7 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
             placeholder={
               t("بحث بالاسم أو العقار...", "Search by client or property...")
             }
+            aria-label={t("ابحث بالاسم أو العقار", "Search by client or property")}
             className="h-10 ps-9"
           />
         </div>
@@ -990,6 +991,7 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t("بحث بالاسم أو العقار...", "Search by client or property...")}
+              aria-label={t("ابحث بالاسم أو العقار", "Search by client or property")}
               className="ps-9 w-56"
             />
             {search && (
@@ -1152,10 +1154,11 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
 
             {/* Amount */}
             <div className="space-y-1">
-              <label className="text-sm font-medium text-foreground">
+              <label htmlFor="pay-amount" className="text-sm font-medium text-foreground">
                 {t("المبلغ المدفوع (ريال)", "Payment Amount (SAR)")} *
               </label>
               <SARAmountInput
+                id="pay-amount"
                 value={payForm.amount === "" ? null : Number(payForm.amount)}
                 onChange={(n) => setPayForm((f) => ({ ...f, amount: n == null ? "" : String(n) }))}
                 placeholder="0.00"
@@ -1164,10 +1167,11 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
 
             {/* Payment Date */}
             <div className="space-y-1">
-              <label className="text-sm font-medium text-foreground">
+              <label htmlFor="pay-date" className="text-sm font-medium text-foreground">
                 {t("تاريخ الدفع", "Payment Date")} *
               </label>
               <HijriDatePicker
+                id="pay-date"
                 locale={lang === "ar" ? "ar" : "en"}
                 value={payForm.paymentDate ? new Date(payForm.paymentDate) : null}
                 onChange={(d) =>
@@ -1200,10 +1204,11 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
 
             {/* Reference Number */}
             <div className="space-y-1">
-              <label className="text-sm font-medium text-foreground">
+              <label htmlFor="pay-reference" className="text-sm font-medium text-foreground">
                 {t("رقم المرجع", "Reference Number")}
               </label>
               <Input
+                id="pay-reference"
                 value={payForm.referenceNumber}
                 onChange={(e) => setPayForm((f) => ({ ...f, referenceNumber: e.target.value }))}
                 placeholder={t("رقم التحويل أو الشيك...", "Transfer or check number...")}
@@ -1212,10 +1217,11 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
 
             {/* Notes */}
             <div className="space-y-1">
-              <label className="text-sm font-medium text-foreground">
+              <label htmlFor="pay-notes" className="text-sm font-medium text-foreground">
                 {t("ملاحظات", "Notes")}
               </label>
               <textarea
+                id="pay-notes"
                 value={payForm.notes}
                 onChange={(e) => setPayForm((f) => ({ ...f, notes: e.target.value }))}
                 rows={2}
@@ -1295,10 +1301,11 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
 
             {/* Reversal amount */}
             <div className="space-y-1">
-              <label className="text-sm font-medium text-foreground">
+              <label htmlFor="pay-reverse-amount" className="text-sm font-medium text-foreground">
                 {t("مبلغ العكس (ريال)", "Reversal Amount (SAR)")} *
               </label>
               <SARAmountInput
+                id="pay-reverse-amount"
                 value={reverseForm.amount === "" ? null : Number(reverseForm.amount)}
                 onChange={(n) =>
                   setReverseForm((f) => ({ ...f, amount: n == null ? "" : String(n) }))
@@ -1309,10 +1316,11 @@ export default function PaymentsView({ initialInstallments }: PaymentsViewProps)
 
             {/* Reason (required) */}
             <div className="space-y-1">
-              <label className="text-sm font-medium text-foreground">
+              <label htmlFor="pay-reverse-reason" className="text-sm font-medium text-foreground">
                 {t("سبب العكس", "Reason for reversal")} *
               </label>
               <textarea
+                id="pay-reverse-reason"
                 value={reverseForm.reason}
                 onChange={(e) => setReverseForm((f) => ({ ...f, reason: e.target.value }))}
                 rows={2}

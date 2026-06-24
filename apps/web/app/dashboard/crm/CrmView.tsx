@@ -762,6 +762,7 @@ export default function CrmView({
             aria-hidden="true"
           />
           <Input
+            aria-label={t("بحث بالاسم أو الهاتف", "Search by name or phone")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t("بحث بالاسم أو الهاتف...", "Search by name or phone...")}
@@ -1196,6 +1197,7 @@ export default function CrmView({
           <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <input
             type="text"
+            aria-label={t("ابحث بالاسم أو رقم الهاتف", "Search by name or phone")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={
