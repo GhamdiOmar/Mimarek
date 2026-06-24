@@ -341,6 +341,7 @@ export default function TicketDetailPage() {
         >
           <div className="flex items-end gap-2">
             <Textarea
+              aria-label={t("اكتب ردك هنا", "Type your reply")}
               value={replyText}
               onChange={(e) => setReplyText(e.target.value)}
               placeholder={t("اكتب ردك هنا...", "Type your reply...")}

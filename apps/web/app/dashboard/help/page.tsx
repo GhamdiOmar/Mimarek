@@ -997,11 +997,12 @@ export default function HelpPage() {
           </div>
 
           <div>
-            <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+            <label htmlFor="help-ticket-description" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
               {t("الوصف", "Description")}
               <span className="text-destructive ms-1">*</span>
             </label>
             <Textarea
+              id="help-ticket-description"
               value={ticketForm.description}
               onChange={(e) => {
                 setTicketForm({ ...ticketForm, description: e.target.value });

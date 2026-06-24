@@ -12,12 +12,19 @@
 - Dual-layout files (a mobile `md:hidden` block + a desktop `hidden md:block` block both mounted — e.g. settings, SEO, onboarding join-flow) use layout-suffixed ids (`-m`/`-d`) to avoid duplicate-id.
 - Heaviest files: settings (40), admin/SEO (35), the list-view toolbars + create modals (contracts/payments/reservations/units, 30), admin billing forms (coupons/email/plans, 27), CRM + help (21), maintenance + onboarding-join (18), auth + settings-tail (25).
 
+### Post-audit hardening (a 7-dimension adversarial audit found gaps the first pass missed)
+- **Detector coverage gap closed:** the rule was blind to the **`<Textarea>`** primitive (only native lowercase `textarea` was recognised), so 2 genuinely-unlabelled controls had slipped through — the **required ticket Description** field (`help`) and the **mobile reply composer** (`help/tickets/[id]`). `Textarea` is now in the rule's control set and both sites are labelled.
+- **Duplicate-id regression fixed:** `settings/security` rendered a shared `passwordForm` fragment in **both** the mobile dialog and the desktop card (both mount), so its 3 hardcoded ids collided in the DOM — clicking a sheet label focused the hidden desktop input. The fragment is now suffix-parametrised (`-m`/`-d`); verified live (each id unique, the sheet label focuses the correct input).
+- **`<AddressPicker>` (packages/ui) labelled:** its district `<input>` had no accessible name and its region/city labels no association; now `useId`-wired (`htmlFor`/`id` + `aria-labelledby`). (The rule isn't registered on `packages/ui`, so this was double-blind — fixed at the source.)
+- **Rule made more accurate:** now recognises implicit `<label>` nesting (so a control wrapped in `<label>` isn't false-flagged), matches **template-literal** `id`↔`htmlFor` (`{\`x-${s}\`}`), and rejects empty/`undefined` `aria-label`/`label` values (a value-blind acceptance that could have let a future control slip the `error` gate).
+
 ### Known follow-up (honest)
 - `HijriDatePicker` renders a `<button>` trigger (not an `<input>`) and doesn't forward `aria-label`; its sites use `id`+`htmlFor` (the id reaches the DOM and clears the rule), but a genuinely robust fix is an `aria-label` passthrough on the `@repo/ui` primitive — deferred.
+- The rule is registered only for `apps/web` (Next config), not `packages/ui` (react-internal config); primitives are not yet swept. And error-state fields (`aria-invalid`/`aria-describedby`) are a separate WCAG 3.3.1 concern not covered by this label sweep — both tracked as follow-ups.
 
 ### Verify
-- `npm run build` green · `check-types` green · **`lint` 0 errors** (the rule passes at `error`; 0 of 196 remain) · `cspell` clean · **211 web tests**.
-- **`/mimaric-qa`** on the change-set · **§3.9 4-theme walk** on the top touched forms (settings, register, CRM, payments) — 0 console errors, no visual regression (`Desktop/v5.6.3-screenshots`).
+- `npm run build` green · `check-types` green (apps/web + @repo/ui + eslint-config) · **`lint` 0 errors** (the rule passes at `error`; 0 unlabelled remain *including* `<Textarea>` now in scope) · `cspell` clean · **211 web tests**.
+- **`/mimaric-qa`** + a **7-dimension adversarial audit** (detector false-negatives, fix-correctness, regression, duplicate-id, Arabic quality, rule soundness, claims) — every confirmed finding fixed; false positives dismissed with evidence. **§3.9** walks (`Desktop/v5.6.3-screenshots`, `Desktop/v5.6.3-audit-screenshots`): 0 console errors, label→input focus verified, settings/security duplicate-id fix proven live.
 
 **Full diff:** https://github.com/GhamdiOmar/Mimarek/compare/v5.6.2...v5.6.3
 

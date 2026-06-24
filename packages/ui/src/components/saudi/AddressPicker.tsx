@@ -70,10 +70,16 @@ export function AddressPicker({
     ? { region: "المنطقة", city: "المدينة", district: "الحي", pickRegion: "اختر المنطقة", pickCity: "اختر المدينة", districtPh: "اسم الحي" }
     : { region: "Region", city: "City", district: "District", pickRegion: "Select region", pickCity: "Select city", districtPh: "Neighborhood name" };
 
+  // Stable per-instance ids so each label names its control (WCAG 1.3.1 / 4.1.2).
+  const fieldId = React.useId();
+  const regionLabelId = `${fieldId}-region`;
+  const cityLabelId = `${fieldId}-city`;
+  const districtId = `${fieldId}-district`;
+
   return (
     <div className={cn("grid gap-3 sm:grid-cols-2", className)}>
       <div className="space-y-1.5">
-        <label className="text-xs font-medium text-muted-foreground">
+        <label id={regionLabelId} className="text-xs font-medium text-muted-foreground">
           {t.region}
         </label>
         <Select
@@ -83,7 +89,7 @@ export function AddressPicker({
           }
           disabled={disabled}
         >
-          <SelectTrigger>
+          <SelectTrigger aria-labelledby={regionLabelId}>
             <SelectValue placeholder={t.pickRegion} />
           </SelectTrigger>
           <SelectContent>
@@ -97,7 +103,7 @@ export function AddressPicker({
       </div>
 
       <div className="space-y-1.5">
-        <label className="text-xs font-medium text-muted-foreground">
+        <label id={cityLabelId} className="text-xs font-medium text-muted-foreground">
           {t.city}
         </label>
         <Select
@@ -111,7 +117,7 @@ export function AddressPicker({
           }
           disabled={disabled || !region}
         >
-          <SelectTrigger>
+          <SelectTrigger aria-labelledby={cityLabelId}>
             <SelectValue placeholder={t.pickCity} />
           </SelectTrigger>
           <SelectContent>
@@ -126,10 +132,11 @@ export function AddressPicker({
 
       {showDistrict && (
         <div className="space-y-1.5 sm:col-span-2">
-          <label className="text-xs font-medium text-muted-foreground">
+          <label htmlFor={districtId} className="text-xs font-medium text-muted-foreground">
             {t.district}
           </label>
           <input
+            id={districtId}
             type="text"
             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:border-ring disabled:cursor-not-allowed disabled:opacity-50"
             placeholder={t.districtPh}

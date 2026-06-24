@@ -68,7 +68,10 @@ export default function SecuritySettingsPage() {
     }
   };
 
-  const passwordForm = (
+  // Rendered in BOTH the mobile dialog and the desktop card (both mount to the
+  // DOM), so the ids are suffixed per render to avoid duplicate-id collisions
+  // that would break the <label htmlFor> association.
+  const passwordForm = (suffix: string) => (
     <div className="space-y-5">
       {error && (
         <div className="p-3 bg-destructive/10 border border-destructive/30 text-destructive text-sm rounded-lg">
@@ -83,11 +86,11 @@ export default function SecuritySettingsPage() {
       )}
 
       <div className="space-y-2">
-        <label htmlFor="sec-current-password" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+        <label htmlFor={`sec-current-password-${suffix}`} className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
           {t("كلمة المرور الحالية", "Current Password")}
         </label>
         <Input
-          id="sec-current-password"
+          id={`sec-current-password-${suffix}`}
           type="password"
           value={currentPassword}
           onChange={(e) => setCurrentPassword(e.target.value)}
@@ -97,11 +100,11 @@ export default function SecuritySettingsPage() {
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="sec-new-password" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+        <label htmlFor={`sec-new-password-${suffix}`} className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
           {t("كلمة المرور الجديدة", "New Password")}
         </label>
         <Input
-          id="sec-new-password"
+          id={`sec-new-password-${suffix}`}
           type="password"
           value={newPassword}
           onChange={(e) => setNewPassword(e.target.value)}
@@ -116,11 +119,11 @@ export default function SecuritySettingsPage() {
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="sec-confirm-password" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+        <label htmlFor={`sec-confirm-password-${suffix}`} className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
           {t("تأكيد كلمة المرور الجديدة", "Confirm New Password")}
         </label>
         <Input
-          id="sec-confirm-password"
+          id={`sec-confirm-password-${suffix}`}
           type="password"
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
@@ -230,7 +233,7 @@ export default function SecuritySettingsPage() {
             t("استخدم عبارة من 3+ كلمات عشوائية", "Use a passphrase of 3+ random words")
           }
         >
-          {passwordForm}
+          {passwordForm("m")}
         </ResponsiveDialog>
       </div>
 
@@ -267,7 +270,7 @@ export default function SecuritySettingsPage() {
             </div>
 
             <div className="p-6">
-              {passwordForm}
+              {passwordForm("d")}
             </div>
           </div>
         </div>

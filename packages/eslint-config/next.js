@@ -375,6 +375,7 @@ const noInlineJsonSerialize = {
  */
 const CONTROL_NAMES = new Set([
   "Input",
+  "Textarea",
   "SaudiPhoneInput",
   "CRInput",
   "NationalIdInput",
@@ -465,6 +466,67 @@ const isInsideField = (openingElement) => {
   return false;
 };
 
+// Walk up node.parent chain; true if any JSXElement ancestor is a <label>.
+// A control nested inside a <label> is implicitly associated per the HTML spec
+// (`<label>Name <input/></label>`), so it is labelled without an explicit htmlFor.
+const isInsideLabel = (openingElement) => {
+  let cur = openingElement.parent;
+  while (cur) {
+    if (
+      cur.type === "JSXElement" &&
+      cur.openingElement &&
+      jsxName(cur.openingElement) === "label"
+    ) {
+      return true;
+    }
+    cur = cur.parent;
+  }
+  return false;
+};
+
+// True if a naming attribute (aria-label / aria-labelledby / label) is present
+// AND carries a meaningful value — an empty-string literal (`aria-label=""`),
+// a bare boolean attribute, or `{undefined}`/`{""}` does NOT name the control.
+// Any non-literal expression is assumed meaningful (we can't evaluate it).
+const attrHasMeaningfulValue = (openingElement, name) => {
+  const a = getJsxAttr(openingElement, name);
+  if (!a || !a.value) return false; // missing or boolean-shorthand
+  const lit = (n) =>
+    n && n.type === "Literal"
+      ? typeof n.value === "string"
+        ? n.value.trim().length > 0
+        : !!n.value
+      : null;
+  if (a.value.type === "Literal") return lit(a.value) === true;
+  if (a.value.type === "JSXExpressionContainer") {
+    const e = a.value.expression;
+    const l = lit(e);
+    if (l !== null) return l; // {""} / {0} / {"x"}
+    if (e && e.type === "Identifier" && e.name === "undefined") return false;
+    return true; // any other expression — assume meaningful
+  }
+  return true;
+};
+
+// Canonicalise a TemplateLiteral (e.g. `sec-x-${suffix}`) into a stable key so an
+// id={`x-${s}`} can be matched against a <label htmlFor={`x-${s}`}>. Only Identifier
+// and Literal interpolations are canonicalised; any other (call/member/binary)
+// expression returns null so we never risk a false match on complex templates.
+const serializeTemplate = (tpl) => {
+  if (!tpl || tpl.type !== "TemplateLiteral") return null;
+  let out = "";
+  for (let i = 0; i < tpl.quasis.length; i++) {
+    out += tpl.quasis[i].value.cooked ?? "";
+    if (i < tpl.expressions.length) {
+      const e = tpl.expressions[i];
+      if (e && e.type === "Identifier") out += "${" + e.name + "}";
+      else if (e && e.type === "Literal") out += "${=" + String(e.value) + "}";
+      else return null;
+    }
+  }
+  return out;
+};
+
 const labelHasAssociatedControl = {
   meta: {
     type: "problem",
@@ -484,11 +546,13 @@ const labelHasAssociatedControl = {
     // Collected per file at Program; reset on each new Program node.
     const labelHtmlForLiterals = new Set(); // <label htmlFor="literal">
     const labelHtmlForIdentifiers = new Set(); // <label htmlFor={ident}>
+    const labelHtmlForTemplates = new Set(); // <label htmlFor={`x-${s}`}>
     const candidates = []; // { node (openingElement), name }
 
     const reset = () => {
       labelHtmlForLiterals.clear();
       labelHtmlForIdentifiers.clear();
+      labelHtmlForTemplates.clear();
       candidates.length = 0;
     };
 
@@ -504,30 +568,38 @@ const labelHasAssociatedControl = {
       ) {
         return labelHtmlForLiterals.has(idAttr.value.value);
       }
-      // id={expr} — best-effort: a bare identifier expression `id={fieldId}`.
+      // id={expr} — best-effort: a bare identifier expression `id={fieldId}` or a
+      // template literal `id={`x-${s}`}` matched against the same-shaped htmlFor.
       if (idAttr.value.type === "JSXExpressionContainer") {
         const expr = idAttr.value.expression;
         if (expr && expr.type === "Identifier") {
           return labelHtmlForIdentifiers.has(expr.name);
+        }
+        if (expr && expr.type === "TemplateLiteral") {
+          const key = serializeTemplate(expr);
+          return key !== null && labelHtmlForTemplates.has(key);
         }
       }
       return false;
     };
 
     const isLabelled = (openingElement) => {
-      // 1. aria-label / aria-labelledby (any value).
+      // 1. aria-label / aria-labelledby — must carry a meaningful value
+      //    (empty string / {undefined} / bare attr does NOT name the control).
       if (
-        getJsxAttr(openingElement, "aria-label") ||
-        getJsxAttr(openingElement, "aria-labelledby")
+        attrHasMeaningfulValue(openingElement, "aria-label") ||
+        attrHasMeaningfulValue(openingElement, "aria-labelledby")
       ) {
         return true;
       }
-      // 2. self-labelling `label` prop.
-      if (getJsxAttr(openingElement, "label")) return true;
+      // 2. self-labelling `label` prop (likewise must be non-empty).
+      if (attrHasMeaningfulValue(openingElement, "label")) return true;
       // 5. Field render-prop spread ({...field}).
       if (hasFieldSpread(openingElement)) return true;
       // 4. descendant of <Field>.
       if (isInsideField(openingElement)) return true;
+      // 4b. nested inside a <label> (implicit HTML association).
+      if (isInsideLabel(openingElement)) return true;
       // 3. id ↔ <label htmlFor> association.
       if (idMatchesSomeLabel(openingElement)) return true;
       return false;
@@ -552,6 +624,9 @@ const labelHasAssociatedControl = {
               const expr = htmlFor.value.expression;
               if (expr && expr.type === "Identifier") {
                 labelHtmlForIdentifiers.add(expr.name);
+              } else if (expr && expr.type === "TemplateLiteral") {
+                const key = serializeTemplate(expr);
+                if (key !== null) labelHtmlForTemplates.add(key);
               }
             }
           }
