@@ -102,6 +102,8 @@ const HASH_TO_CATEGORY: Record<string, FAQCategory> = {
   marketplace: "marketplace",
   payments: "finance",
   coupons: "finance",
+  zatca: "zatca",
+  invoices: "zatca",
   notifications: "account_notifications",
   search: "account_notifications",
   security: "security_privacy",

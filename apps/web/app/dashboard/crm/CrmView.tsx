@@ -1,6 +1,7 @@
 "use client";
 
 import { useLanguage } from "../../../components/LanguageProvider";
+import { useSearchParams } from "next/navigation";
 import * as React from "react";
 import {
   Users,
@@ -135,6 +136,7 @@ export default function CrmView({
 }) {
   const { t, lang } = useLanguage();
   const { can } = usePermissions();
+  const searchParams = useSearchParams();
 
   // Seeded from the Server Component's masked getCustomers() result — no
   // client mount-time fetch for the initial paint. `loadData()` below stays as
@@ -207,6 +209,20 @@ export default function CrmView({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on the drawer customer id only; the stable loadAssignments closure refetches whenever a different customer opens, and re-running on the full object would refetch on every unrelated re-render
   }, [drawerCustomer?.id]);
+
+  // Deep-link: `?customerId=<id>` opens that customer's drawer (the HELD-invoice
+  // recovery path links here to complete a buyer's ZATCA data). Limitation: this
+  // only opens customers already in the initial server-rendered list; the drawer
+  // does not fetch by id, so a customer outside the loaded set is a no-op.
+  React.useEffect(() => {
+    const id = searchParams.get("customerId");
+    if (!id) return;
+    const target = customers.find((c) => c.id === id);
+    if (target) setDrawerCustomer(target);
+    // Run once on mount / when the param changes; opening a stale row is avoided
+    // by re-resolving from the current `customers` snapshot.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally keyed on the param only; `customers` is the initial server-rendered set and re-running on every list mutation would re-open the drawer after the user closes it
+  }, [searchParams]);
 
   async function loadAssignments(customerId: string) {
     setLoadingAssignments(true);

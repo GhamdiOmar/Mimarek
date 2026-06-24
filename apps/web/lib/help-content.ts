@@ -4,6 +4,7 @@ export type FAQCategory =
   | "property_management"
   | "marketplace"
   | "finance"
+  | "zatca"
   | "security_privacy"
   | "account_notifications"
   | "technical";
@@ -29,6 +30,7 @@ export const FAQ_CATEGORIES: { key: FAQCategory; label: { ar: string; en: string
   { key: "property_management", label: { ar: "إدارة العقارات", en: "Property Management" } },
   { key: "marketplace", label: { ar: "السوق العقاري", en: "Marketplace" } },
   { key: "finance", label: { ar: "المالية", en: "Finance" } },
+  { key: "zatca", label: { ar: "الفوترة الإلكترونية (زاتكا)", en: "E-Invoicing (ZATCA)" } },
   { key: "security_privacy", label: { ar: "الأمان والخصوصية", en: "Security & Privacy" } },
   { key: "account_notifications", label: { ar: "الحساب والتنبيهات", en: "Account & Notifications" } },
   { key: "technical", label: { ar: "الدعم الفني", en: "Technical" } },
@@ -319,6 +321,43 @@ export const FAQ_ITEMS: FAQItem[] = [
     question: { ar: "ماذا يمكنني إدارته من الإعدادات؟", en: "What can I manage in Settings?" },
     answer: { ar: "تضم الإعدادات أربعة أقسام: المنشأة (اسم منشأتك، والسجل التجاري، والرقم الضريبي، وبيانات التواصل، والعنوان الوطني، والصفحة الافتتاحية الافتراضية)، والفريق (دعوة الأعضاء وتعيين الأدوار)، والأمان (تغيير كلمة المرور)، وسجل التدقيق (سجل بكل عملية — إنشاء، واطلاع، وتعديل، وحذف، ووصول للبيانات الشخصية، وتسجيل دخول — قابل للتصفية حسب العملية والمورد، ومتاح للمديرين).", en: "Settings has four areas: Organization (your org's name, commercial registration, VAT, contact details, national address, and default landing page), Team (invite members and assign roles), Security (change your password), and Audit Trail (a log of every action: create, view, update, delete, PII access, and login, filterable by action and resource, available to admins)." },
     category: "technical",
+  },
+  // E-Invoicing (ZATCA)
+  {
+    id: "za-1",
+    question: { ar: "ما هي الفوترة الإلكترونية من هيئة الزكاة والضريبة؟", en: "What is ZATCA e-invoicing?" },
+    answer: { ar: "الفوترة الإلكترونية نظام تفرضه هيئة الزكاة والضريبة والجمارك يُلزم المنشآت بإصدار الفواتير إلكترونياً وإرسالها للهيئة. يصدر معمارك الفاتورة الضريبية مختومة ومرسلة للهيئة تلقائياً عند تحصيل دفعة خاضعة للضريبة (إيجار تجاري أو رسوم)، بضريبة قيمة مضافة 15% ورمز QR. لا تحتاج إلى إصدار يدوي.", en: "ZATCA e-invoicing is a requirement from the Zakat, Tax and Customs Authority that businesses issue invoices electronically and submit them to the Authority. Mimarek issues the tax invoice — stamped and submitted to ZATCA automatically — when you collect a taxable payment (a commercial lease or fees), at 15% VAT and with a QR code. There's no manual issuing on your side." },
+    category: "zatca",
+  },
+  {
+    id: "za-2",
+    question: { ar: "كيف أربط منشأتي بهيئة الزكاة والضريبة؟", en: "How do I connect my organization to ZATCA?" },
+    answer: { ar: "اذهب إلى الإعدادات ← الفوترة الإلكترونية (زاتكا). يستخدم معمارك بيانات منشأتك المسجّلة (الاسم والسجل التجاري والعنوان الوطني)، فتُدخل الرقم الضريبي ورمز التحقق (OTP) من بوابة فاتورة، ثم ينشئ النظام شهادة التوقيع ويفعّل الربط. بعد ظهور الحالة 'نشط'، تبدأ الفواتير الضريبية بالصدور تلقائياً عند تحصيل الدفعات الخاضعة للضريبة.", en: "Go to Settings → E-Invoicing (ZATCA). Mimarek uses your registered organization details (name, CR number, national address), so you enter your VAT number and the OTP from the Fatoora portal, and the system generates the signing certificate and activates the link. Once the status reads 'Active', tax invoices start issuing automatically as you collect taxable payments." },
+    category: "zatca",
+  },
+  {
+    id: "za-3",
+    question: { ar: "متى تصدر فاتورة ضريبية ومتى يصدر سند قبض؟", en: "When is a tax invoice issued vs. a receipt?" },
+    answer: { ar: "الفاتورة الضريبية تصدر للدفعات الخاضعة لضريبة القيمة المضافة فقط: الإيجار التجاري والرسوم. أما الإيجار السكني وعقود البيع والتأمين (العربون) فلا تخضع للضريبة، فيصدر لها سند قبض (إيصال) لا يُرسل للهيئة. يحدد النظام النوع الصحيح تلقائياً حسب نوع الدفعة وإعدادات الضريبة لديك.", en: "A tax invoice is issued only for VAT-taxable payments: commercial leases and fees. Residential leases, sale contracts, and deposits aren't taxable, so they get a receipt instead — which is not submitted to ZATCA. The system picks the right type for you based on the payment type and your tax configuration." },
+    category: "zatca",
+  },
+  {
+    id: "za-4",
+    question: { ar: "ماذا تعني حالات 'معتمد من زاتكا' و'مُخلّص' و'مُبلّغ' و'معلّق'؟", en: "What do 'Confirmed by ZATCA', Cleared, Reported, and Held mean?" },
+    answer: { ar: "'مُخلّص' (Cleared): تم اعتماد الفاتورة الضريبية القياسية من الهيئة قبل تسليمها للمشتري. 'مُبلّغ' (Reported): تم إبلاغ الهيئة بالسند المبسّط (B2C) بعد إصداره. وكلاهما يظهر بشارة 'معتمد من زاتكا'. 'معلّق' (Held): الفاتورة تنتظر إكمال بيانات المشتري قبل اعتمادها. وسند القبض غير الضريبي لا تنطبق عليه هذه الحالات.", en: "Cleared: a standard tax invoice was approved by ZATCA before it's handed to the buyer. Reported: a simplified (B2C) document was reported to ZATCA after it was issued. Both show the 'Confirmed by ZATCA' badge. Held: the invoice is waiting on the buyer's data before it can be cleared. A non-taxable receipt doesn't go through any of these states." },
+    category: "zatca",
+  },
+  {
+    id: "za-5",
+    question: { ar: "فاتورتي في حالة 'معلّق' — ماذا أفعل؟", en: "My invoice is 'Held' — what do I do?" },
+    answer: { ar: "تظهر حالة 'معلّق' عندما تكون الفاتورة بحاجة إلى بيانات المشتري الضريبية قبل اعتمادها من الهيئة. افتح الفاتورة من قسم الفواتير، وانقر 'إكمال بيانات المشتري' لتنتقل إلى ملف العميل، ثم أدخل الرقم الضريبي ورقم السجل التجاري والعنوان الوطني للمشتري. بعد حفظ البيانات، ارجع إلى الفاتورة وانقر إعادة الإصدار لإرسالها للهيئة.", en: "An invoice goes 'Held' when it needs the buyer's tax data before ZATCA can clear it. Open the invoice from the Invoices section and click 'Complete buyer data' to jump to the customer's profile, then enter the buyer's VAT number, CR number, and national address. Once you save, return to the invoice and re-issue it to submit it to ZATCA." },
+    category: "zatca",
+  },
+  {
+    id: "za-6",
+    question: { ar: "أين أجد فواتيري الإلكترونية ورمز QR؟", en: "Where do I find my e-invoices and the QR code?" },
+    answer: { ar: "من قسم الفواتير تجد كل فاتورة ضريبية وسند قبض صدر تلقائياً. صفِّ القائمة حسب 'معتمد من زاتكا' أو 'بانتظار الاعتماد'، وافتح أي فاتورة لعرض تفاصيلها ورمز QR وتنزيلها بصيغة PDF.", en: "The Invoices section lists every tax invoice and receipt issued automatically. Filter the list by 'Confirmed by ZATCA' or 'Awaiting confirmation', and open any invoice to see its details, its QR code, and download it as a PDF." },
+    category: "zatca",
   },
 ];
 
