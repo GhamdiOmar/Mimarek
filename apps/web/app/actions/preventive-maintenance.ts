@@ -35,6 +35,29 @@ export async function createPreventivePlan(data: {
   const startDate = new Date(data.startDate);
   const nextRunDate = computeNextRunDate(data.recurrenceType, interval, startDate);
 
+  // Validate referenced FKs belong to the caller's org before writing them.
+  // Without this, a direct Server-Action RPC could attach a unit or assignee
+  // from another org to the plan (and the materialized tickets) — OWASP API1:2023.
+  if (data.unitId) {
+    const unit = await db.unit.findFirst({
+      where: { id: data.unitId, organizationId: session.organizationId },
+      select: { id: true },
+    });
+    if (!unit) {
+      throw new Error("Unit not found or you don't have access. Please verify the unit exists in your organization.");
+    }
+  }
+
+  if (data.assignToId) {
+    const assignee = await db.user.findFirst({
+      where: { id: data.assignToId, organizationId: session.organizationId },
+      select: { id: true },
+    });
+    if (!assignee) {
+      throw new Error("Assigned user not found or does not belong to your organization.");
+    }
+  }
+
   const plan = await db.preventiveMaintenancePlan.create({
     data: {
       title: data.title,
@@ -109,6 +132,29 @@ export async function updatePreventivePlan(
     where: { id: planId, organizationId: session.organizationId },
   });
   if (!plan) throw new Error("The selected plan was not found. Please refresh and try again.");
+
+  // Re-validate any changed FK against the caller's org before writing it.
+  // Mirrors the create-path guard; without it, updatePreventivePlan would write
+  // an arbitrary cross-org unitId/assignToId via a direct RPC (OWASP API1:2023).
+  if (data.unitId) {
+    const unit = await db.unit.findFirst({
+      where: { id: data.unitId, organizationId: session.organizationId },
+      select: { id: true },
+    });
+    if (!unit) {
+      throw new Error("Unit not found or you don't have access. Please verify the unit exists in your organization.");
+    }
+  }
+
+  if (data.assignToId) {
+    const assignee = await db.user.findFirst({
+      where: { id: data.assignToId, organizationId: session.organizationId },
+      select: { id: true },
+    });
+    if (!assignee) {
+      throw new Error("Assigned user not found or does not belong to your organization.");
+    }
+  }
 
   const updateData: Prisma.PreventiveMaintenancePlanUncheckedUpdateInput = {};
   if (data.title !== undefined) updateData.title = data.title;
