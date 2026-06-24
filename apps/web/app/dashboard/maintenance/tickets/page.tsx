@@ -56,6 +56,7 @@ import {
   getUnitsForMaintenance,
 } from "../../../actions/maintenance";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   MAINTENANCE_CATEGORY_LABEL as categoryLabels,
   MAINTENANCE_PRIORITY_LABEL as priorityLabels,
@@ -119,8 +120,13 @@ type MaintenanceStats = {
   completedThisMonth: number;
 };
 
-export default function MaintenancePage() {
+function MaintenancePageInner() {
   const { t, lang } = useLanguage();
+  const searchParams = useSearchParams();
+  // When arriving from a unit's "New Request" action: prefill + lock the unit so a
+  // ticket can never be filed against the wrong unit (was defaulting to units[0]).
+  const presetUnitId = searchParams.get("unitId");
+  const autoOpenNew = searchParams.get("new") === "1";
   const [requests, setRequests] = React.useState<MaintenanceRequestVM[]>([]);
   const [stats, setStats] = React.useState<MaintenanceStats | null>(null);
   const [loading, setLoading] = React.useState(true);
@@ -248,15 +254,31 @@ export default function MaintenancePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally re-runs only when a filter/search input changes; `load` is recreated each render and reads the latest filter state via closure.
   }, [search, filterStatus, filterPriority, filterCategory]);
 
-  function openCreate() {
+  function openCreate(lockedUnitId?: string) {
     setEditingId(null);
     setSaveError(null);
     reset({
       ...EMPTY_DEFAULTS,
-      unitId: units[0]?.id ?? "",
+      // When launched from a unit, pin that unit; otherwise no default (force the
+      // user to pick) rather than silently picking units[0] — that was how a ticket
+      // could be filed against the wrong unit.
+      unitId: lockedUnitId ?? "",
     });
     setShowModal(true);
   }
+
+  // Auto-open the create form when arriving from a unit's "New Request" action
+  // (?new=1&unitId=…). Runs once units are loaded so the locked unit resolves; a
+  // ref guard makes it fire a single time even though `units` changes by reference.
+  const autoOpenedRef = React.useRef(false);
+  React.useEffect(() => {
+    if (autoOpenedRef.current) return;
+    if (!autoOpenNew) return;
+    if (units.length === 0) return; // wait for refs so the locked unit is selectable
+    autoOpenedRef.current = true;
+    openCreate(presetUnitId ?? undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot launcher guarded by autoOpenedRef; intentionally keyed to units readiness, not openCreate identity.
+  }, [autoOpenNew, presetUnitId, units]);
 
   function openEdit(req: MaintenanceRequestVM) {
     setEditingId(req.id);
@@ -654,7 +676,7 @@ export default function MaintenancePage() {
                 t("أنشئ طلبات صيانة وتابع حالتها حتى الإغلاق.", "Log maintenance requests and track them through to resolution.")
               }
               action={
-                <Button size="sm" onClick={openCreate} style={{ display: "inline-flex" }}>
+                <Button size="sm" onClick={() => openCreate()} style={{ display: "inline-flex" }}>
                   <Plus className="h-4 w-4 me-1.5" />
                   {t("طلب جديد", "New request")}
                 </Button>
@@ -703,7 +725,7 @@ export default function MaintenancePage() {
       <FAB
         icon={Plus}
         label={t("طلب جديد", "New ticket")}
-        onClick={openCreate}
+        onClick={() => openCreate()}
       />
 
       <BottomSheet
@@ -851,7 +873,7 @@ export default function MaintenancePage() {
         }
         actions={
           <>
-            <Button size="sm" className="gap-2" onClick={openCreate} style={{ display: "inline-flex" }}>
+            <Button size="sm" className="gap-2" onClick={() => openCreate()} style={{ display: "inline-flex" }}>
               <Plus className="h-4 w-4" />
               {t("طلب جديد", "New Request")}
             </Button>
@@ -1144,23 +1166,36 @@ export default function MaintenancePage() {
             <Controller
               name="unitId"
               control={control}
-              render={({ field, fieldState }) => (
-                <SelectField
-                  label={t("الوحدة", "Unit")}
-                  requiredMark
-                  error={fieldState.error?.message}
-                  value={field.value ?? ""}
-                  onChange={field.onChange}
-                  onBlur={field.onBlur}
-                >
-                  <option value="">{t("اختر الوحدة", "Select Unit")}</option>
-                  {units.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.number}
-                    </option>
-                  ))}
-                </SelectField>
-              )}
+              render={({ field, fieldState }) => {
+                // Lock the unit when this ticket was launched from a specific unit
+                // (?unitId=…) and the form is still pinned to it — prevents filing
+                // against the wrong unit.
+                const unitLocked =
+                  !!presetUnitId && field.value === presetUnitId;
+                return (
+                  <SelectField
+                    label={t("الوحدة", "Unit")}
+                    requiredMark
+                    error={fieldState.error?.message}
+                    value={field.value ?? ""}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    disabled={unitLocked}
+                    hint={
+                      unitLocked
+                        ? t("محددة من الوحدة المختارة", "Set from the selected unit")
+                        : undefined
+                    }
+                  >
+                    <option value="">{t("اختر الوحدة", "Select Unit")}</option>
+                    {units.map((u) => (
+                      <option key={u.id} value={u.id}>
+                        {u.number}
+                      </option>
+                    ))}
+                  </SelectField>
+                );
+              }}
             />
           )}
 
@@ -1259,5 +1294,15 @@ export default function MaintenancePage() {
         variant="destructive"
       />
     </>
+  );
+}
+
+// `useSearchParams` (read inside MaintenancePageInner) requires a Suspense
+// boundary in Next.js App Router — wrap the page so static rendering can bail out.
+export default function MaintenancePage() {
+  return (
+    <React.Suspense fallback={null}>
+      <MaintenancePageInner />
+    </React.Suspense>
   );
 }

@@ -34,6 +34,11 @@ import {
 } from "@repo/ui";
 import { useLanguage } from "../../../../components/LanguageProvider";
 import {
+  MARKETPLACE_LISTING_STATUS_LABEL as LISTING_STATUS_LABELS,
+  MARKETPLACE_LISTING_STATUS_VARIANT as LISTING_STATUS_BADGE,
+  MARKETPLACE_INQUIRY_STATUS_LABEL as INQUIRY_STATUS_LABELS,
+} from "../../../../lib/domain-labels";
+import {
   listMyMarketplaceListings,
   updateMarketplaceListing,
   unpublishMarketplaceListing,
@@ -85,37 +90,8 @@ type OrgRega = {
 } | null;
 
 // ─── Status config ────────────────────────────────────────────────────────────
-
-const LISTING_STATUS_LABELS: Record<string, { ar: string; en: string }> = {
-  DRAFT: { ar: "مسودة", en: "Draft" },
-  PUBLISHED: { ar: "منشور", en: "Published" },
-  UNDER_CONTRACT: { ar: "تحت التعاقد", en: "Under Contract" },
-  SOLD_TRANSFERRED: { ar: "مُنقل", en: "Transferred" },
-  UNPUBLISHED: { ar: "مُلغى النشر", en: "Unpublished" },
-  EXPIRED: { ar: "منتهي الصلاحية", en: "Expired" },
-  SUSPENDED: { ar: "موقوف", en: "Suspended" },
-};
-
-// Listing status → Badge variant mapping
-//   PUBLISHED  → success  (active/live)
-//   DRAFT      → draft    (dormant, muted)
-//   UNDER_CONTRACT → info (informational interim state)
-//   SOLD_TRANSFERRED → sold (primary-tinted completion)
-//   UNPUBLISHED → warning (reversible deactivation)
-//   EXPIRED    → error   (terminal negative)
-//   SUSPENDED  → error   (terminal negative)
-const LISTING_STATUS_BADGE: Record<
-  string,
-  React.ComponentProps<typeof Badge>["variant"]
-> = {
-  DRAFT: "draft",
-  PUBLISHED: "success",
-  UNDER_CONTRACT: "info",
-  SOLD_TRANSFERRED: "sold",
-  UNPUBLISHED: "warning",
-  EXPIRED: "error",
-  SUSPENDED: "error",
-};
+// Listing + inquiry status labels/variants come from the canonical registry
+// (lib/domain-labels.ts) — imported above. Do not re-declare locally (§6.11.4).
 
 const INQUIRY_STATUS_STYLES: Record<string, string> = {
   OPEN: "bg-info/15 text-info-strong",
@@ -123,14 +99,6 @@ const INQUIRY_STATUS_STYLES: Record<string, string> = {
   CONVERTED_TO_DEAL: "bg-success/15 text-success-strong",
   CLOSED_WON: "bg-success/15 text-success-strong",
   CLOSED_LOST: "bg-destructive/15 text-destructive",
-};
-
-const INQUIRY_STATUS_LABELS: Record<string, { ar: string; en: string }> = {
-  OPEN: { ar: "مفتوح", en: "Open" },
-  WITHDRAWN: { ar: "مسحوب", en: "Withdrawn" },
-  CONVERTED_TO_DEAL: { ar: "صفقة نشطة", en: "Active Deal" },
-  CLOSED_WON: { ar: "مكتمل", en: "Completed" },
-  CLOSED_LOST: { ar: "مغلق", en: "Closed" },
 };
 
 const DEED_PROOF_STATUS_LABELS: Record<string, { ar: string; en: string }> = {

@@ -82,7 +82,7 @@ Separation is enforced in three layers: navigation filter, route guard, and serv
 │   ├── web/              # Next.js app — dashboards, auth, server actions
 │   └── portal/           # Customer-facing portal (WIP)
 └── packages/
-    ├── db/               # Prisma schema, client, seed, migrations
+    ├── db/               # Prisma schema, client, seed, hand-applied SQL (sql/)
     ├── ui/               # Design system — primitives + Saudi inputs + KPICard
     ├── types/            # Shared TypeScript types
     ├── eslint-config/    # Shared ESLint config
@@ -119,17 +119,17 @@ cp .env.example .env.local
 
 `AUTH_SECRET` can be generated with `openssl rand -base64 32`.
 
-### 3. Apply migrations & seed
+### 3. Apply schema & seed
 
 ```bash
 npx turbo run db:generate         # generate Prisma client
 cd packages/db
-npx prisma migrate dev            # apply all pending migrations (creates baseline on first run)
-npx prisma db seed                # seed test users + sample tenant data
+npx prisma db push                # apply schema.prisma to the database
+npx tsx prisma/seed.ts            # seed test users + sample tenant data
 cd ../..
 ```
 
-> **Note:** The repo tracks a full migration history under `packages/db/prisma/migrations/`. Always use `prisma migrate dev` (local) or `prisma migrate deploy` (CI/prod) — never `db push`, which bypasses migration tracking.
+> **Note:** This repo has **no migration history** — there is no `packages/db/prisma/migrations/` directory. Schema changes are applied with `prisma db push` (the same command CI runs). **Never run `prisma migrate dev` or `prisma migrate deploy`** — there is no migration baseline to apply, and a `migrate` reset would be destructive against a shared database. After a `db push`, any DDL that `db push` can't express (partial indexes, backfills, Row-Level Security) lives as hand-applied SQL in [`packages/db/sql/`](packages/db/sql/); run those scripts in the Supabase SQL Editor on each long-lived environment. RLS coverage is generated, not hand-edited — regenerate it with `npm run rls:generate` whenever you add a model (CI fails on drift via `rls:check`).
 
 The seed script (`packages/db/prisma/seed.ts`) creates one account per role for local development. Credentials are local-only and not documented here; read the seed file if you need them.
 
@@ -191,7 +191,7 @@ See [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
 ## Project conventions
 
 - **Server Actions, not REST.** All data operations are Next.js Server Actions with `organizationId` scoping.
-- **`prisma migrate dev/deploy`, not `db push`.** Schema changes are tracked as versioned migrations under `packages/db/prisma/migrations/`. Use `prisma migrate dev` locally and `prisma migrate deploy` in CI/prod.
+- **`prisma db push`, not `prisma migrate`.** This repo has no migration history. Schema changes are applied with `npx turbo run db:generate` then `cd packages/db && npx prisma db push` (the same command CI runs) — never `prisma migrate dev/deploy`. Post-push DDL that `db push` can't express (partial indexes, backfills, RLS) is tracked as hand-applied SQL in `packages/db/sql/`.
 - **Decimal handling.** Prisma `Decimal` is serialized via `JSON.parse(JSON.stringify(…))` before crossing the Server Action boundary.
 - **UI-first principle.** Every feature, CRUD action, and server action must be reachable from a nav link or button — no orphan URLs.
 - **Commits.** Single author (Omar Alghamdi). No Co-Authored-By attribution.
