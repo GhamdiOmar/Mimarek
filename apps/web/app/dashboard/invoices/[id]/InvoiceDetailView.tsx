@@ -1,14 +1,14 @@
 "use client";
 
 import * as React from "react";
-import { ArrowLeft, BadgeCheck, Clock, Download, FileSignature, Loader2, AlertTriangle } from "lucide-react";
+import { ArrowLeft, BadgeCheck, Clock, Download, FileDown, FileSignature, Loader2, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { Button, DirectionalIcon } from "@repo/ui";
 import { ZatcaDocument, type ZatcaDocumentLine } from "../../../../components/zatca/ZatcaDocument";
 import { useLanguage } from "../../../../components/LanguageProvider";
 import { ZATCA_DOCUMENT_TYPE_LABEL } from "../../../../lib/domain-labels";
-import { reissueHeldDocument } from "../../../actions/zatca/tenant-invoices";
+import { downloadLegalPdf, reissueHeldDocument } from "../../../actions/zatca/tenant-invoices";
 
 // `getTenantInvoice` returns `serialize(...)` which is typed `any` (Decimal→string,
 // Date→string at the RSC boundary). We narrow the bits we render with local shapes.
@@ -71,6 +71,7 @@ export default function InvoiceDetailView({ doc }: InvoiceDetailViewProps) {
   const printRef = React.useRef<HTMLDivElement>(null);
   const [qrPng, setQrPng] = React.useState<string | null>(null);
   const [isDownloading, setIsDownloading] = React.useState(false);
+  const [isDownloadingLegal, setIsDownloadingLegal] = React.useState(false);
   const [isReissuing, startReissue] = React.useTransition();
 
   const egs = doc.egsUnit;
@@ -164,6 +165,31 @@ export default function InvoiceDetailView({ doc }: InvoiceDetailViewProps) {
     }
   }, [doc.documentNumber, t]);
 
+  // ── Download the ZATCA "legal copy" PDF (embedded cleared e-invoice UBL XML). ──
+  // Server-built (pdf-lib) so the machine-readable e-invoice travels inside the PDF.
+  const onDownloadLegal = React.useCallback(async () => {
+    setIsDownloadingLegal(true);
+    try {
+      const { base64, filename } = await downloadLegalPdf(doc.id);
+      const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+      const blob = new Blob([bytes], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = doc.documentNumber ? `${doc.documentNumber}.pdf` : filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast.error(
+        t("تعذّر إنشاء النسخة القانونية. حاول مرة أخرى.", "Could not generate the legal copy. Please try again."),
+      );
+    } finally {
+      setIsDownloadingLegal(false);
+    }
+  }, [doc.id, doc.documentNumber, t]);
+
   // ── Re-issue a HELD document after buyer data is completed. ─────────────────
   const onReissue = React.useCallback(() => {
     startReissue(async () => {
@@ -227,14 +253,34 @@ export default function InvoiceDetailView({ doc }: InvoiceDetailViewProps) {
             </span>
           )}
         </div>
-        <Button onClick={onDownload} disabled={isDownloading} style={{ display: "inline-flex" }} className="gap-2">
-          {isDownloading ? (
-            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-          ) : (
-            <Download className="h-4 w-4" aria-hidden="true" />
+        <div className="flex flex-wrap items-center gap-2">
+          {(doc.zatcaStatus === "CLEARED" || doc.zatcaStatus === "REPORTED") && (
+            <Button
+              variant="secondary"
+              onClick={onDownloadLegal}
+              disabled={isDownloadingLegal}
+              style={{ display: "inline-flex" }}
+              className="gap-2"
+            >
+              {isDownloadingLegal ? (
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+              ) : (
+                <FileDown className="h-4 w-4" aria-hidden="true" />
+              )}
+              {isDownloadingLegal
+                ? t("جارٍ التحضير…", "Preparing…")
+                : t("تنزيل النسخة القانونية", "Download legal copy")}
+            </Button>
           )}
-          {isDownloading ? t("جارٍ التحضير…", "Preparing…") : t("تنزيل PDF", "Download PDF")}
-        </Button>
+          <Button onClick={onDownload} disabled={isDownloading} style={{ display: "inline-flex" }} className="gap-2">
+            {isDownloading ? (
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+            ) : (
+              <Download className="h-4 w-4" aria-hidden="true" />
+            )}
+            {isDownloading ? t("جارٍ التحضير…", "Preparing…") : t("تنزيل PDF", "Download PDF")}
+          </Button>
+        </div>
       </div>
 
       {/* HELD warning + re-issue */}
