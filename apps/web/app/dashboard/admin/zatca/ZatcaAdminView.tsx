@@ -42,6 +42,7 @@ import {
 } from "../../../actions/zatca/onboarding";
 import { runReportingSweep, type getReportingHealth } from "../../../actions/zatca/reporting-sweep";
 import { PLATFORM_SELLER } from "../../../../lib/zatca-platform-config";
+import { sanitizeError } from "../../../../lib/error-sanitizer";
 
 // ─── Prop types (derived from the server action's serialized return) ──────────
 type Summary = Awaited<ReturnType<typeof getPlatformEgsSummary>>;
@@ -95,12 +96,10 @@ export default function ZatcaAdminView({ egs, logs, reportingHealth }: ZatcaAdmi
           ),
         );
       } catch (err) {
-        toast.error(
-          err instanceof Error ? err.message : t("تعذّر تشغيل الرفع.", "Could not run the sweep."),
-        );
+        toast.error(sanitizeError(err, lang));
       }
     });
-  }, [t]);
+  }, [t, lang]);
 
   // ── Onboard form state — VAT + OTP only; the company identity is fixed (PLATFORM_SELLER).
   const [vatNumber, setVatNumber] = React.useState("");
@@ -126,16 +125,13 @@ export default function ZatcaAdminView({ egs, logs, reportingHealth }: ZatcaAdmi
           await onboardPlatformEgs({ vatNumber: vatNumber.trim(), otp: otp.trim() || undefined });
           toast.success(t("تم الربط بنجاح.", "Connected to ZATCA successfully."));
         } catch (err) {
-          const message =
-            err instanceof Error
-              ? err.message
-              : t("تعذّر الربط. حاول مرة أخرى.", "Connection failed. Please try again.");
+          const message = sanitizeError(err, lang);
           setFormError(message);
           toast.error(message);
         }
       });
     },
-    [vatNumber, otp, t],
+    [vatNumber, otp, t, lang],
   );
 
   const onReset = React.useCallback(() => {
@@ -145,14 +141,10 @@ export default function ZatcaAdminView({ egs, logs, reportingHealth }: ZatcaAdmi
         setResetOpen(false);
         toast.success(t("تم إعادة ضبط جهاز إصدار الفواتير.", "EGS has been reset."));
       } catch (err) {
-        const message =
-          err instanceof Error
-            ? err.message
-            : t("تعذّرت إعادة الضبط. حاول مرة أخرى.", "Reset failed. Please try again.");
-        toast.error(message);
+        toast.error(sanitizeError(err, lang));
       }
     });
-  }, [t]);
+  }, [t, lang]);
 
   // ── Clearance-log table columns ───────────────────────────────────────
   const columns = React.useMemo<ColumnDef<ClearanceLog>[]>(

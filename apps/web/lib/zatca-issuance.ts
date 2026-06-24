@@ -53,6 +53,7 @@ export type IssuanceOutcome = ZatcaClearanceOutcome | "RECEIPT" | "HELD" | "SKIP
 export interface IssuanceResult {
   outcome: IssuanceOutcome;
   documentId?: string;
+  documentNumber?: string;
   codes?: string[];
 }
 
@@ -188,12 +189,13 @@ export async function clearTenantDocumentInternal(documentId: string, opts?: { i
     include: { lineItems: { orderBy: { sortOrder: "asc" } } },
   });
   if (!doc) throw new Error("Tenant document not found for clearance.");
-  if (doc.documentType === "RECEIPT") return { outcome: "RECEIPT", documentId };
-  if (doc.zatcaStatus === "CLEARED") return { outcome: "CLEARED", documentId };
-  if (doc.zatcaStatus === "REPORTED") return { outcome: "REPORTED", documentId };
+  const documentNumber = doc.documentNumber;
+  if (doc.documentType === "RECEIPT") return { outcome: "RECEIPT", documentId, documentNumber };
+  if (doc.zatcaStatus === "CLEARED") return { outcome: "CLEARED", documentId, documentNumber };
+  if (doc.zatcaStatus === "REPORTED") return { outcome: "REPORTED", documentId, documentNumber };
 
   const egs = await db.zatcaEgsUnit.findUnique({ where: { id: doc.egsUnitId } });
-  if (!egs) return { outcome: "SKIPPED", documentId };
+  if (!egs) return { outcome: "SKIPPED", documentId, documentNumber };
 
   const isCredit = doc.documentType === "CREDIT_NOTE";
   // B2C simplified docs report; B2B standard clear. A credit note inherits its original's mode.
@@ -290,7 +292,7 @@ export async function clearTenantDocumentInternal(documentId: string, opts?: { i
       },
     });
     await writeLog(egs.id, documentId, res.outcome, icvUsed, [], null);
-    return { outcome: res.outcome, documentId };
+    return { outcome: res.outcome, documentId, documentNumber };
   } catch (e) {
     if (e instanceof ZatcaError) {
       if (e.kind === "business") {
@@ -298,14 +300,14 @@ export async function clearTenantDocumentInternal(documentId: string, opts?: { i
         await writeLog(egs.id, documentId, "REJECTED", icvUsed, [...e.codes], e.message);
         // Best-effort: a notification failure must never mask the persisted REJECTED outcome.
         await alertTenant(doc.organizationId, doc.documentNumber, "REJECTED", e.codes).catch(() => {});
-        return { outcome: "REJECTED", documentId, codes: [...e.codes] };
+        return { outcome: "REJECTED", documentId, documentNumber, codes: [...e.codes] };
       }
       if (e.kind === "transport") {
         await db.tenantDocument.update({ where: { id: documentId }, data: { zatcaStatus: "PENDING" } });
         await writeLog(egs.id, documentId, "TRANSPORT_ERROR", icvUsed, [], "gateway transport error");
         // Best-effort: a notification failure must never mask the persisted TRANSPORT_ERROR outcome.
         await alertTransport(doc.organizationId, doc.documentNumber).catch(() => {});
-        return { outcome: "TRANSPORT_ERROR", documentId };
+        return { outcome: "TRANSPORT_ERROR", documentId, documentNumber };
       }
       throw e; // config — local misconfiguration; surface to the caller
     }
@@ -393,7 +395,7 @@ export async function issueDocumentForCharge(charge: ChargeInput): Promise<Issua
       ? { organizationId, rentInstallmentId: charge.rentInstallmentId, sourceKey: charge.sourceKey, documentType: { not: "CREDIT_NOTE" } }
       : { organizationId, paymentPlanInstallmentId: charge.paymentPlanInstallmentId, sourceKey: charge.sourceKey, documentType: { not: "CREDIT_NOTE" } };
   const existing = await db.tenantDocument.findFirst({ where: idemWhere });
-  if (existing) return { outcome: outcomeFromStatus(existing), documentId: existing.id };
+  if (existing) return { outcome: outcomeFromStatus(existing), documentId: existing.id, documentNumber: existing.documentNumber };
 
   // 5. Buyer snapshot (immutable at issuance).
   const buyerParty = cx.customer ? buildBuyerFromCustomer(cx.customer) : null;
@@ -464,7 +466,7 @@ export async function issueDocumentForCharge(charge: ChargeInput): Promise<Issua
   } catch (e) {
     if (isP2002(e)) {
       const dup = await db.tenantDocument.findFirst({ where: idemWhere });
-      if (dup) return { outcome: outcomeFromStatus(dup), documentId: dup.id };
+      if (dup) return { outcome: outcomeFromStatus(dup), documentId: dup.id, documentNumber: dup.documentNumber };
     }
     throw e;
   }
@@ -472,9 +474,9 @@ export async function issueDocumentForCharge(charge: ChargeInput): Promise<Issua
   // 9. Held / receipt → never reach the engine.
   if (needsBuyerData) {
     await alertHeld(organizationId, doc.documentNumber, buyerParty?.registrationName ?? "the buyer");
-    return { outcome: "HELD", documentId: doc.id };
+    return { outcome: "HELD", documentId: doc.id, documentNumber: doc.documentNumber };
   }
-  if (documentType === "RECEIPT") return { outcome: "RECEIPT", documentId: doc.id };
+  if (documentType === "RECEIPT") return { outcome: "RECEIPT", documentId: doc.id, documentNumber: doc.documentNumber };
 
   // 10. Taxable → clear (B2B) or report (B2C), best-effort.
   return clearTenantDocumentInternal(doc.id);
@@ -638,11 +640,12 @@ export async function issueCreditNoteForRentReversal(
 // the billing.ts best-effort precedent). The money movement already committed; issuance
 // is a follow-on side effect. Failures are logged (no key material) and swept later (R4b).
 
-export async function issueForChargeBestEffort(charge: ChargeInput): Promise<void> {
+export async function issueForChargeBestEffort(charge: ChargeInput): Promise<IssuanceResult | null> {
   try {
-    await issueDocumentForCharge(charge);
+    return await issueDocumentForCharge(charge);
   } catch (e) {
     console.error("[zatca] issuance failed (non-blocking)", charge.kind, e instanceof Error ? e.message : String(e));
+    return null;
   }
 }
 
@@ -650,10 +653,11 @@ export async function issueCreditNoteForRentReversalBestEffort(
   organizationId: string,
   rentInstallmentId: string,
   reason: string,
-): Promise<void> {
+): Promise<IssuanceResult | null> {
   try {
-    await issueCreditNoteForRentReversal(organizationId, rentInstallmentId, reason);
+    return await issueCreditNoteForRentReversal(organizationId, rentInstallmentId, reason);
   } catch (e) {
     console.error("[zatca] reversal credit-note failed (non-blocking)", e instanceof Error ? e.message : String(e));
+    return null;
   }
 }

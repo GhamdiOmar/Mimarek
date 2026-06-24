@@ -10,7 +10,11 @@ import { decidePaymentApplication } from "../../lib/payments/recording";
 import { appendRentPayment } from "../../lib/payments/ledger";
 import { ROUTES } from "../../lib/routes";
 import { serialize } from "../../lib/serialize";
-import { issueForChargeBestEffort, issueCreditNoteForRentReversalBestEffort } from "../../lib/zatca-issuance";
+import {
+  issueForChargeBestEffort,
+  issueCreditNoteForRentReversalBestEffort,
+  type IssuanceResult,
+} from "../../lib/zatca-issuance";
 
 const RecordPaymentSchema = z.object({
   paymentMethod: z.string().min(1),
@@ -267,8 +271,11 @@ export async function recordPayment(
 
   // ZATCA Track C (R4 / H1): issue the tenant document for this rent payment — best-effort,
   // post-commit, NEVER blocks the payment (L26). Residential → receipt; commercial → invoice.
+  // The wrapper never throws (returns null on failure), so the outcome is surfaced additively
+  // to the UI without ever gating the money movement.
+  let issuance: IssuanceResult | null = null;
   if (!txResult.replayed && session.organizationId) {
-    await issueForChargeBestEffort({
+    issuance = await issueForChargeBestEffort({
       kind: "RENT_INSTALLMENT",
       organizationId: session.organizationId,
       rentInstallmentId: installmentId,
@@ -279,7 +286,17 @@ export async function recordPayment(
 
   revalidatePath(ROUTES.payments);
   revalidatePath(ROUTES.finance);
-  return serialize(txResult.row);
+  // Additive `zatca` field — every existing field of `serialize(row)` is preserved via spread.
+  return {
+    ...serialize(txResult.row),
+    zatca: issuance
+      ? {
+          outcome: issuance.outcome,
+          documentId: issuance.documentId ?? null,
+          documentNumber: issuance.documentNumber ?? null,
+        }
+      : null,
+  };
 }
 
 // ─── CX-010: Bulk Operations ────────────────────────────────────────────────
@@ -405,9 +422,10 @@ export async function bulkMarkInstallmentsPaid(ids: string[]) {
   // ZATCA Track C (R4 / H2): issue a tenant document for EACH bulk-collected installment —
   // no skip. Best-effort; never blocks (L26). Parallel (allSettled — the wrappers never throw)
   // so a large batch doesn't serialize N ZATCA round-trips. Same sourceKey as the ledger dedup.
+  let zatcaIssued = 0;
   if (session.organizationId) {
     const orgId = session.organizationId;
-    await Promise.allSettled(
+    const settled = await Promise.allSettled(
       applied.map((a) =>
         issueForChargeBestEffort({
           kind: "RENT_INSTALLMENT",
@@ -418,11 +436,22 @@ export async function bulkMarkInstallmentsPaid(ids: string[]) {
         }),
       ),
     );
+    // Count only rows that produced an actual e-invoice document (documentId present and not a
+    // plain receipt / skip) — residential receipts and not-ZATCA-enabled orgs don't count.
+    zatcaIssued = settled.filter(
+      (r) =>
+        r.status === "fulfilled" &&
+        r.value != null &&
+        r.value.documentId != null &&
+        r.value.outcome !== "RECEIPT" &&
+        r.value.outcome !== "SKIPPED",
+    ).length;
   }
 
   revalidatePath(ROUTES.payments);
   revalidatePath(ROUTES.finance);
-  return { updated: applied.length };
+  // Additive `zatcaIssued` count — `{ updated }` shape is preserved for existing consumers.
+  return { updated: applied.length, zatcaIssued };
 }
 
 // ─── I2: Reversal / Refund ──────────────────────────────────────────────────
