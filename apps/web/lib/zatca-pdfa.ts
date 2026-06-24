@@ -62,6 +62,7 @@ function buildXmpPacket(documentNumber: string, uuid: string): string {
   const docId = esc(uuid);
   // The XMP packet header begins with a UTF-8 BOM (U+FEFF) by spec — built via fromCharCode so the
   // raw BOM never appears as an "irregular whitespace" literal in source.
+  // cspell:ignore Cehi Hzre Tczkc — the fixed Adobe XMP packet-id constant below.
   const bom = String.fromCharCode(0xfeff);
   return `<?xpacket begin="${bom}" id="W5M0MpCehiHzreSzNTczkc9d"?>
 <x:xmpmeta xmlns:x="adobe:ns:meta/">

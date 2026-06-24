@@ -40,6 +40,7 @@ describe("resolveZatcaEnvironment — fail-safe default (the safety rule)", () =
   });
 
   it("unset / empty / whitespace / typo / unknown ALL resolve to SANDBOX (never PRODUCTION)", () => {
+    // cspell:ignore produciton — a deliberate misspelling of "production" (the fail-safe case).
     for (const v of [undefined, "", "   ", "prod", "PROD", "live", "produciton", "0", "true", "sandbox"]) {
       setEnv(v);
       expect(resolveZatcaEnvironment(), `value=${JSON.stringify(v)}`).toBe("SANDBOX");
