@@ -174,13 +174,15 @@ export async function clearSubscriptionInvoiceInternal(
       if (e.kind === "business") {
         await db.invoice.update({ where: { id: invoiceId }, data: { zatcaStatus: "REJECTED" } });
         await writeLog(egs.id, invoiceId, "REJECTED", icvUsed, [...e.codes], e.message);
-        await alertRejected(invoice.invoiceNumber, e.codes);
+        // Best-effort: a notification failure must never mask the persisted REJECTED outcome.
+        await alertRejected(invoice.invoiceNumber, e.codes).catch(() => {});
         return { outcome: "REJECTED", codes: [...e.codes] };
       }
       if (e.kind === "transport") {
         await db.invoice.update({ where: { id: invoiceId }, data: { zatcaStatus: "PENDING" } });
         await writeLog(egs.id, invoiceId, "TRANSPORT_ERROR", icvUsed, [], "gateway transport error");
-        await alertTransport(invoice.invoiceNumber);
+        // Best-effort: a notification failure must never mask the persisted TRANSPORT_ERROR outcome.
+        await alertTransport(invoice.invoiceNumber).catch(() => {});
         return { outcome: "TRANSPORT_ERROR" };
       }
       throw e; // config — local misconfiguration; surface to the caller

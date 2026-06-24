@@ -153,23 +153,26 @@ async function alertHeld(organizationId: string, documentNumber: string, buyerNa
  * tenant it will retry, and surface it to platform staff (they own the gateway health).
  */
 async function alertTransport(organizationId: string, documentNumber: string): Promise<void> {
-  await notifyAdmins({
-    type: "ZATCA_CLEARANCE",
-    title: `تعذّر الاتصال بهيئة الزكاة والضريبة للمستند ${documentNumber}`,
-    titleEn: `ZATCA gateway unreachable for document ${documentNumber}`,
-    message: "سيُعاد الإرسال تلقائيًا. لا يلزم أي إجراء.",
-    messageEn: "It will be re-submitted automatically — no action needed.",
-    link: TENANT_LINK,
-    organizationId,
-  });
-  await notifyPlatformStaff({
-    type: "ZATCA_CLEARANCE",
-    title: `تعذّر الاتصال ببوابة هيئة الزكاة والضريبة (${documentNumber})`,
-    titleEn: `ZATCA gateway transport error (${documentNumber})`,
-    message: "مستند مستأجر بقي قيد المعالجة بسبب خطأ في الاتصال — راجع صحة البوابة.",
-    messageEn: "A tenant document is pending due to a gateway transport error — check gateway health.",
-    link: ADMIN_LINK,
-  });
+  // Independent (allSettled) so a tenant-notify failure never drops the platform-staff alert.
+  await Promise.allSettled([
+    notifyAdmins({
+      type: "ZATCA_CLEARANCE",
+      title: `تعذّر الاتصال بهيئة الزكاة والضريبة للمستند ${documentNumber}`,
+      titleEn: `ZATCA gateway unreachable for document ${documentNumber}`,
+      message: "سيُعاد الإرسال تلقائيًا. لا يلزم أي إجراء.",
+      messageEn: "It will be re-submitted automatically — no action needed.",
+      link: TENANT_LINK,
+      organizationId,
+    }),
+    notifyPlatformStaff({
+      type: "ZATCA_CLEARANCE",
+      title: `تعذّر الاتصال ببوابة هيئة الزكاة والضريبة (${documentNumber})`,
+      titleEn: `ZATCA gateway transport error (${documentNumber})`,
+      message: "مستند مستأجر بقي قيد المعالجة بسبب خطأ في الاتصال — راجع صحة البوابة.",
+      messageEn: "A tenant document is pending due to a gateway transport error — check gateway health.",
+      link: ADMIN_LINK,
+    }),
+  ]);
 }
 
 // ─── clearance / report engine (generalized from R2) ──────────────────────────
@@ -293,13 +296,15 @@ export async function clearTenantDocumentInternal(documentId: string, opts?: { i
       if (e.kind === "business") {
         await db.tenantDocument.update({ where: { id: documentId }, data: { zatcaStatus: "REJECTED" } });
         await writeLog(egs.id, documentId, "REJECTED", icvUsed, [...e.codes], e.message);
-        await alertTenant(doc.organizationId, doc.documentNumber, "REJECTED", e.codes);
+        // Best-effort: a notification failure must never mask the persisted REJECTED outcome.
+        await alertTenant(doc.organizationId, doc.documentNumber, "REJECTED", e.codes).catch(() => {});
         return { outcome: "REJECTED", documentId, codes: [...e.codes] };
       }
       if (e.kind === "transport") {
         await db.tenantDocument.update({ where: { id: documentId }, data: { zatcaStatus: "PENDING" } });
         await writeLog(egs.id, documentId, "TRANSPORT_ERROR", icvUsed, [], "gateway transport error");
-        await alertTransport(doc.organizationId, doc.documentNumber);
+        // Best-effort: a notification failure must never mask the persisted TRANSPORT_ERROR outcome.
+        await alertTransport(doc.organizationId, doc.documentNumber).catch(() => {});
         return { outcome: "TRANSPORT_ERROR", documentId };
       }
       throw e; // config — local misconfiguration; surface to the caller
