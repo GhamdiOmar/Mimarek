@@ -1,5 +1,20 @@
 # Changelog — Mimarek PropTech
 
+## [5.13.0] — 2026-06-27 — Optimistic UI for payments + reservations
+
+**Ships the parked `feat/optimistic-rendering` branch** (rebased onto current main, conflicts hand-resolved to preserve the v5.x ZATCA-invoice feedback). `/mimaric-qa` GATE = GO. Implements the AGENTS.md §6.7 "optimistic UI update, revert-with-toast on failure" pattern.
+
+### What's new
+- **`hooks/useOptimisticAction.ts`** — a reusable primitive over React 19's `useOptimistic` + `useTransition`. `run(patch, action, reconcile)` applies the patch INSTANTLY, runs the server action (resolves as soon as the server confirms — so a caller can close its modal without waiting), holds the optimistic value through a SILENT reconcile refetch (no flash of stale data), and **auto-reverts with a sanitized toast** if the action throws (the base state is never touched, so `useOptimistic` discards the patch — no manual snapshot/restore).
+- **Payments** (`PaymentsView` bulk mark-paid + record-payment): rows flip to PAID/PARTIALLY_PAID immediately. The optimistic `paymentReducer` reuses the server's own `decidePaymentApplication`, so a partial payment optimistically shows `PARTIALLY_PAID` (never a fleeting "PAID" lie), and an overpay/already-paid is not optimistically flipped. The ZATCA invoice-aware confirmation (`notifyPaymentOutcome` / issued-count toast) from the v5.x work is preserved.
+- **Reservations** (`ReservationsView` confirm + cancel): status updates render instantly, reconciled by the post-action refetch.
+
+### Verify
+- `npm run build` green · `check-types` green · `lint` 0 errors · **300 web unit tests** (12 new `optimistic-reducers` cases proving the markPaid/applyPayment/reservation projections + the partial-pay and overpay guards) · CI green.
+- **§3.9 preview walk:** `/dashboard/payments` + `/dashboard/reservations` in light/dark × LTR/RTL — **0 console errors**; both render cleanly over their optimistic projections.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimarek/compare/v5.12.0...v5.13.0
+
 ## [5.12.0] — 2026-06-27 — Shared crypto package + SEC-016 deed-proof upload (closes the v5.11.0 deferrals)
 
 **Closes the two items deferred from v5.11.0** — the `seed-demo` plaintext-PII gap and SEC-016's full "require upload" closure — fully, no deferrals. `/mimaric-qa` GATE = GO (one P3 found + fixed: a client-trusted deed fileKey, now server-authoritative).
