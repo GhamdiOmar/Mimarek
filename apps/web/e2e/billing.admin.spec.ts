@@ -406,4 +406,36 @@ test.describe('Billing Dashboard — Admin', () => {
       ).toBeVisible();
     });
   });
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 11. SECURITY — hidden plans (SEC-007) & coupon validation (SEC-008)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  test.describe('Security — hidden plans & coupon validation', () => {
+    test('non-public ("hidden") plan is never offered on the plans page (SEC-007)', async () => {
+      await billing.gotoPlans();
+      await billing.expectPlansPageLoaded();
+      // billing-seed seeds an isPublic=false "Hidden Beta Plan". getPublicPlans
+      // filters isPublic, so it must never render anywhere on the page.
+      await expect(
+        billing.page.getByText(/Hidden Beta Plan|خطة بيتا المخفية/i)
+      ).toHaveCount(0);
+    });
+
+    test('expired coupon is rejected at apply (SEC-008)', async () => {
+      await billing.gotoPlans();
+      // EXPIRED2024 is seeded with validUntil in 2024 → must be rejected on apply.
+      await billing.enterCouponCode('EXPIRED2024');
+      await billing.clickApplyCoupon();
+      await billing.expectCouponError();
+    });
+
+    test('inactive coupon is rejected at apply (SEC-008)', async () => {
+      await billing.gotoPlans();
+      // INACTIVE50 is seeded with isActive=false → must be rejected on apply.
+      await billing.enterCouponCode('INACTIVE50');
+      await billing.clickApplyCoupon();
+      await billing.expectCouponError();
+    });
+  });
 });

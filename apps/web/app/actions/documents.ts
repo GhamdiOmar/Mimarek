@@ -8,41 +8,11 @@ import { ROUTES } from "../../lib/routes";
 import { requirePermission } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
 import { serialize } from "../../lib/serialize";
-
-// UploadThing serves every file at `<origin>/f/<fileKey>` (both the legacy
-// utfs.io CDN and the app-scoped *.ufs.sh CDN — see UPLOADTHING_ALLOWED_ORIGINS).
-// `UTApi.deleteFiles` in v7 takes the fileKey (NOT the URL — keyType only accepts
-// "fileKey" | "customId"), so we extract the last path segment of the stored URL.
-// Returns null for any non-UploadThing / malformed URL so the caller can skip the
-// remote delete without throwing.
-function uploadThingFileKeyFromUrl(raw: string): string | null {
-  try {
-    const segments = new URL(raw).pathname.split("/").filter(Boolean);
-    const key = segments[segments.length - 1];
-    return key && key.length > 0 ? decodeURIComponent(key) : null;
-  } catch {
-    return null;
-  }
-}
-
-// UploadThing CDN origins for this app (app ID: c5k2lwc5ws).
-// utfs.io  — legacy shared CDN (still serves files from v6 era and older uploads)
-// *.ufs.sh — new app-scoped CDN introduced in UploadThing v6+ (app-specific subdomain)
-// Source: UPLOADTHING_APP_ID env var + UploadThing v7 SDK behavior confirmed via package.json
-// Module-private — NOT exported (this is a "use server" file)
-const UPLOADTHING_ALLOWED_ORIGINS = new Set([
-  "https://utfs.io",
-  "https://c5k2lwc5ws.ufs.sh",
-]);
-
-function isAllowedUploadThingUrl(raw: string): boolean {
-  try {
-    const { origin } = new URL(raw);
-    return UPLOADTHING_ALLOWED_ORIGINS.has(origin);
-  } catch {
-    return false;
-  }
-}
+// SEC-006: the UploadThing URL helpers (fileKey extraction + CDN-origin allowlist)
+// live in one shared module so the server action, the dashboard download route,
+// and the portal download route can't drift apart. "use server" forbids re-exporting
+// them from here, which is the other reason they're external.
+import { uploadThingFileKeyFromUrl, isAllowedUploadThingUrl } from "../../lib/uploadthing-url";
 
 // Module-private — NOT exported
 const RegisterFileSchema = z.object({

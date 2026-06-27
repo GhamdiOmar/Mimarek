@@ -4,8 +4,7 @@ import { db, MaintenanceCategory, MaintenancePriority } from "@repo/db";
 import { revalidatePath } from "next/cache";
 import { ROUTES } from "../../lib/routes";
 import { serialize } from "../../lib/serialize";
-import { auth } from "../../auth";
-import { searchHashCandidates } from "../../lib/pii-crypto";
+import { resolvePortalIdentity } from "../../lib/server/portal-access";
 
 const MAINTENANCE_CATEGORIES = new Set([
   "HVAC",
@@ -21,35 +20,9 @@ const MAINTENANCE_CATEGORIES = new Set([
 ]);
 const MAINTENANCE_PRIORITIES = new Set(["LOW", "MEDIUM", "HIGH", "URGENT"]);
 
-async function getPortalIdentity() {
-  const session = await auth();
-  if (!session?.user?.id || !session.user.email) throw new Error("Unauthorized");
-  if (session.user.role !== "USER") throw new Error("Forbidden");
-
-  const user = await db.user.findUnique({
-    where: { id: session.user.id },
-    select: { id: true, email: true, organizationId: true },
-  });
-  if (!user?.organizationId) throw new Error("Missing organization");
-
-  const customer = await db.customer.findFirst({
-    where: {
-      organizationId: user.organizationId,
-      OR: [
-        { emailHash: { in: searchHashCandidates(user.email, user.organizationId) } },
-        { email: user.email },
-      ],
-    },
-    select: { id: true, name: true, organizationId: true },
-  });
-  if (!customer) throw new Error("No tenant customer profile found");
-
-  return { user, customer };
-}
-
-// eslint-disable-next-line mimaric/require-action-guard -- guarded via getPortalIdentity() (auth() + role==="USER" check + org-scoped customer resolution) above.
+// eslint-disable-next-line mimaric/require-action-guard -- guarded via resolvePortalIdentity() (auth() + role==="USER" check + org-scoped customer resolution).
 export async function getTenantPortalSummary() {
-  const { customer } = await getPortalIdentity();
+  const { customer } = await resolvePortalIdentity();
   const activeLease = await db.lease.findFirst({
     where: { customerId: customer.id, status: { in: ["ACTIVE", "PENDING_SIGNATURE"] } },
     include: {
@@ -59,6 +32,11 @@ export async function getTenantPortalSummary() {
     orderBy: { startDate: "desc" },
   });
 
+  // SEC-006 (portal residual): never serialize the raw UploadThing object URL into
+  // the portal client/DOM — it was a permanent public bearer credential. Select
+  // metadata only; downloads go through the ownership-scoped, authorized route
+  // `/api/portal/documents/[id]` (portal identity → customer/active-lease scope →
+  // short-lived signed URL). Mirrors the dashboard fix in `getDocuments`.
   const documents = await db.document.findMany({
     where: {
       organizationId: customer.organizationId,
@@ -66,6 +44,7 @@ export async function getTenantPortalSummary() {
     },
     orderBy: { createdAt: "desc" },
     take: 12,
+    select: { id: true, name: true, category: true, createdAt: true },
   });
 
   const maintenance = activeLease
@@ -79,14 +58,14 @@ export async function getTenantPortalSummary() {
   return serialize({ customer, activeLease, documents, maintenance });
 }
 
-// eslint-disable-next-line mimaric/require-action-guard -- guarded via getPortalIdentity() (auth() + role==="USER" + org-scoped customer/lease) before any write.
+// eslint-disable-next-line mimaric/require-action-guard -- guarded via resolvePortalIdentity() (auth() + role==="USER" + org-scoped customer/lease) before any write.
 export async function createTenantMaintenanceRequest(data: {
   title: string;
   description?: string;
   category: string;
   priority: string;
 }) {
-  const { customer } = await getPortalIdentity();
+  const { customer } = await resolvePortalIdentity();
   const activeLease = await db.lease.findFirst({
     where: { customerId: customer.id, status: "ACTIVE" },
     select: { unitId: true },

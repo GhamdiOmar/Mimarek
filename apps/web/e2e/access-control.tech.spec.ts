@@ -19,4 +19,14 @@ test.describe('Access Control — Technician (Negative)', () => {
     await expect(page).toHaveURL(/maintenance/);
   });
 
+  test('cannot read CRM customer data — sees AccessDenied (SEC-004)', async ({ page }) => {
+    await page.goto('/dashboard/crm');
+    await page.waitForLoadState('networkidle');
+    // TECHNICIAN lacks crm:read → the in-shell 403 (AccessDenied) renders instead
+    // of the customer table. Matches either UI language (RTL-first default = AR).
+    await expect(
+      page.getByText(/access to this page|ليس لديك صلاحية الوصول/i).first()
+    ).toBeVisible();
+  });
+
 });
