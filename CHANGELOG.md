@@ -1,5 +1,31 @@
 # Changelog — Mimarek PropTech
 
+## [5.11.0] — 2026-06-27 — Mid/Low audit remediation + Documents-dashboard removal
+
+**Closes the Medium/Low tier of the 2026-06-25 audits (9 SEC + 2 of mine) and removes the broken-by-design Documents dashboard.** `/mimaric-qa` GATE = GO (one P1 found + fixed: a ZATCA buyer-address snapshot that read the pre-encryption value). One schema change (drop 2 tables, add 1 column).
+
+### Security — Mid/Low findings
+- **SEC-009 (Med)** — customer `dateOfBirth` / `address` / `documentInfo` are now **encrypted at rest** (AES-256-GCM), joining `phone`/`email`/`nationalId`. DOB moves to a new `dateOfBirthEnc` column (plaintext column nulled); address/documentInfo hold ciphertext strings. `decryptCustomerData` reconstructs them and strips the internal column so ciphertext never reaches the client; it degrades to `null` (not `JSON.parse("")`) on a bad row. The ZATCA buyer party decrypts the customer before reading the national address (both issuance sites).
+- **SEC-014 (Med)** — invitation tokens are **hashed at rest** (`sha256Hex`); the raw token lives only in the emailed link (mirrors password-reset).
+- **SEC-012 (Med)** — marketplace inquiry now applies the full `buyerVisibleWhere` predicate (PUBLISHED + compliance-APPROVED + not-expired + not-self) — no inquiring on an unapproved/expired listing.
+- **SEC-015 (Med)** — `logAuditEventAwait` (fail-closed) added for security-critical mutations (billing changes, conveyance kill-switch); deed verification keeps its stronger transactional audit; reads stay fire-and-forget.
+- **SEC-016 (Med)** — seller deed-proof URLs must be `https:`; the admin review surface shows an "external, seller-supplied" warning. (Full "require an upload" closure folds into the upcoming upload rebuild.)
+- **SEC-010 (Med)** — `getCustomers` no longer logs the raw search term to audit metadata.
+- **SEC-017 (Low)** — tenant dashboard actions (17 sites) use `requireTenantPermission` so org-less system users are rejected (audience gate).
+- **SEC-018 (Low)** — reports page guards on `reports:read` (was `dashboard:read`).
+- **SEC-019 (Low)** — password reset adds a per-IP throttle before the per-email one.
+- **Pagination** — `getAuditLogs` + `adminGetAllTickets` clamp `pageSize` to ≤100.
+- **QA-M2** — a real **Deactivate user** control (team settings): org-scoped, blocks self-deactivation, bumps `tokenVersion` (revokes the target's session via the SEC-003 path), audited — no more hard-delete-to-revoke.
+
+### Documents dashboard — fully removed
+The vault was a hub with no spokes: no module ever wrote `Document.customerId/unitId/contractId`, the only writer hardcoded `category:"GENERAL"`, two UploadThing routers had zero callers, and the contract "missing required docs" banner was an always-on blocker that could never be cleared through the UI (ZATCA e-invoices use a separate `TenantDocument` model — untouched). Removed: the Documents UI, actions, both authorized-download routes, `lib/uploadthing-url.ts`, the `documents:*` permissions, the dead uploaders (`blueprintUploader`/`contractUploader`/`projectDocumentUploader`; `seoAssetUploader` kept), the portal Documents card, the global-search document entity, and the contract missing-docs banner. Schema dropped `Document` / `DocumentVersion` / `DocCategory` + their back-relations (RLS regenerated). A complete pre-removal **upload inventory** is captured in `Future-plans/document-upload-inventory.md` for the new upload strategy.
+
+### Verify
+- `npm run build` green · `check-types` green · `npm run lint` 0 errors · **279 web unit tests** (regression locks per fix + a SEC-009 round-trip suite + a ZATCA buyer-address source guard) · `rls:check` green · live DB pushed (drop 2 tables + add `dateOfBirthEnc`) + re-seeded.
+- **§3.9 preview walk:** team-settings (new Deactivate control + Status badge) in light/dark × LTR/RTL + mobile, dashboard / CRM / reports / portal — **0 console errors**; `/dashboard/documents` → 404 (removal proof).
+
+**Full diff:** https://github.com/GhamdiOmar/Mimarek/compare/v5.10.0...v5.11.0
+
 ## [5.10.0] — 2026-06-27 — Hardening follow-up: SEC-006 portal residual + abuse-test/coverage closure
 
 **Closes the deferred items from Hardening Waves A–C** — the portal document-access residual the [5.9.0] notes flagged, the attacker-simulation tests the audit plan called for, and the retroactive QA gate on Wave B. No schema change, no new features. `/mimaric-qa` GATE = GO (two cosmetic P3s fixed).
