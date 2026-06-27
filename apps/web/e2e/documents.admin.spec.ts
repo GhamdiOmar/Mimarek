@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, request } from '@playwright/test';
 
 /**
  * SEC-006 — authorized document download (browser proof).
@@ -25,20 +25,25 @@ test.describe('Documents — SEC-006 authorized download (Admin)', () => {
     // of how many documents render. This is the real security property.
     await expect(page.locator('a[href*="ufs.sh"], a[href*="utfs.io"]')).toHaveCount(0);
 
-    // Bonus (when documents are present): download anchors go through the route.
+    // Document download anchors go through the authorized app route. The page
+    // renders BOTH a desktop and a mobile tree (one hidden per viewport), so we
+    // assert presence by count — visibility is viewport-dependent and irrelevant
+    // to the security property (the href is what matters).
     const authorized = page.locator('a[href^="/api/documents/"]');
-    if ((await authorized.count()) > 0) {
-      await expect(authorized.first()).toBeVisible();
-    }
+    expect(await authorized.count(), 'download links must target /api/documents/').toBeGreaterThan(0);
   });
 
-  test('unauthenticated request to a document route is bounced to login (no file served)', async ({ browser, baseURL }) => {
-    // Fresh context with NO storageState → genuinely unauthenticated.
-    const anon = await browser.newContext();
-    const res = await anon.request.get(`${baseURL}/api/documents/any-document-id`);
-    // Must end on the login page, never on a signed CDN object URL.
-    expect(res.url()).toContain('/auth/login');
-    expect(res.url()).not.toContain('ufs.sh');
-    await anon.close();
+  test('unauthenticated request to a document route is bounced to login (no file served)', async ({ baseURL }) => {
+    // Explicit EMPTY storageState forces a genuinely anonymous request — the
+    // admin-tests project's storageState propagates even to request.newContext()
+    // and browser.newContext(), so it must be overridden here. maxRedirects:0
+    // inspects the route's OWN 307 (Playwright's APIResponse.url() reports the
+    // pre-redirect URL, so asserting the followed URL is unreliable).
+    const anon = await request.newContext({ storageState: { cookies: [], origins: [] } });
+    const res = await anon.get(`${baseURL}/api/documents/any-document-id`, { maxRedirects: 0 });
+    // Unauthenticated must be redirected to login — never served a 200 (the file).
+    expect(res.status(), 'unauth must be redirected, not served the file').toBe(307);
+    expect(res.headers()['location'] ?? '').toContain('/auth/login');
+    await anon.dispose();
   });
 });
