@@ -3,20 +3,7 @@ import { db } from "@repo/db";
 import { UTApi } from "uploadthing/server";
 import { getSessionOrThrow } from "../../../../lib/auth-helpers";
 import { hasPermission } from "../../../../lib/permissions";
-
-/**
- * UploadThing serves files at `<origin>/f/<fileKey>`. Extract the last path
- * segment of the stored URL to get the key (same helper as documents.ts).
- */
-function fileKeyFromUrl(raw: string): string | null {
-  try {
-    const segments = new URL(raw).pathname.split("/").filter(Boolean);
-    const key = segments[segments.length - 1];
-    return key && key.length > 0 ? decodeURIComponent(key) : null;
-  } catch {
-    return null;
-  }
-}
+import { uploadThingFileKeyFromUrl } from "../../../../lib/uploadthing-url";
 
 /**
  * Authorized document download (SEC-006).
@@ -56,7 +43,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const key = fileKeyFromUrl(doc.url);
+  const key = uploadThingFileKeyFromUrl(doc.url);
   if (!key) {
     return NextResponse.json({ error: "File unavailable" }, { status: 404 });
   }

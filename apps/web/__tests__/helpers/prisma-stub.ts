@@ -29,10 +29,11 @@
 export type Row = Record<string, any> & { id: string };
 
 type WhereLeaf =
-  | { equals?: unknown; in?: unknown[]; lt?: number; gt?: number; not?: unknown }
+  | { equals?: unknown; in?: unknown[]; lt?: number | Date; gt?: number | Date; not?: unknown }
   | string
   | number
   | boolean
+  | Date
   | null;
 
 interface Where {
@@ -50,14 +51,32 @@ export class StubP2025Error extends Error {
   }
 }
 
+/** Coerce numbers and Dates to a comparable number; everything else → NaN. */
+function asComparable(v: unknown): number {
+  if (typeof v === "number") return v;
+  if (v instanceof Date) return v.getTime();
+  return NaN;
+}
+
 function matchLeaf(actual: unknown, cond: WhereLeaf): boolean {
   if (cond === null || typeof cond !== "object") {
     return actual === cond;
   }
+  if (cond instanceof Date) return actual instanceof Date && actual.getTime() === cond.getTime();
   if ("equals" in cond && cond.equals !== undefined) return actual === cond.equals;
   if ("in" in cond && Array.isArray(cond.in)) return cond.in.includes(actual);
-  if ("lt" in cond && typeof cond.lt === "number") return typeof actual === "number" && actual < cond.lt;
-  if ("gt" in cond && typeof cond.gt === "number") return typeof actual === "number" && actual > cond.gt;
+  // `lt`/`gt` support both numbers and Dates (date-range sweeps like
+  // `dueDate: { lt: new Date() }`), comparing on epoch-ms.
+  if ("lt" in cond && cond.lt !== undefined) {
+    const a = asComparable(actual);
+    const b = asComparable(cond.lt);
+    return !Number.isNaN(a) && !Number.isNaN(b) && a < b;
+  }
+  if ("gt" in cond && cond.gt !== undefined) {
+    const a = asComparable(actual);
+    const b = asComparable(cond.gt);
+    return !Number.isNaN(a) && !Number.isNaN(b) && a > b;
+  }
   if ("not" in cond) return actual !== cond.not;
   throw new Error(`prisma-stub: unsupported where-leaf operator in ${JSON.stringify(cond)}`);
 }

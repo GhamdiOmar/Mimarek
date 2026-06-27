@@ -1,5 +1,28 @@
 # Changelog — Mimarek PropTech
 
+## [5.10.0] — 2026-06-27 — Hardening follow-up: SEC-006 portal residual + abuse-test/coverage closure
+
+**Closes the deferred items from Hardening Waves A–C** — the portal document-access residual the [5.9.0] notes flagged, the attacker-simulation tests the audit plan called for, and the retroactive QA gate on Wave B. No schema change, no new features. `/mimaric-qa` GATE = GO (two cosmetic P3s fixed).
+
+### SEC-006 — portal document access (the documented [5.9.0] follow-up)
+- The dashboard vault was closed in v5.9.0, but the **tenant portal** still served raw UploadThing CDN URLs: `getTenantPortalSummary` returned the full `Document` row (incl. `url`) and `PortalClient` linked straight at it. That URL was a permanent public bearer credential — the same class of leak the dashboard fix closed.
+- Portal users are role `USER`, which does **not** hold `documents:read` — so the dashboard `/api/documents/[id]` route can't serve them. New **ownership-scoped `/api/portal/documents/[id]`** route authorizes by **portal identity + ownership**: the requester must be a signed-in `USER` whose customer profile (or active/pending-lease unit) owns the document — exactly the scope `getTenantPortalSummary` lists — then redirects to a 15-min signed URL. A document outside that scope (another customer, another org) is `404`, never enumerable by id.
+- `getTenantPortalSummary` now `select`s metadata only (no `url`); `PortalClient` drops `url` from its type and links through the route (`rel="noopener noreferrer"`). The portal-identity resolution is extracted to shared `lib/server/portal-access.ts` so the action and the route can't drift.
+
+### De-duplication
+- The UploadThing fileKey/origin helpers (copied in `documents.ts` and the dashboard route, and about to be a third time) are unified in **`lib/uploadthing-url.ts`** (a plain, dependency-free module — distinct from the client `lib/uploadthing.ts` that pulls `@uploadthing/react`).
+
+### Attacker-simulation tests + E2E (the audit plan's "simulating User" requirement)
+- **`__tests__/documents-route.test.ts`** (10) — drives the real route handlers through the full authorization matrix: dashboard route (unauth → login, no-perm → 403, org-less system user → 403, cross-org id → 404, owner → 307 signed URL) and portal route (non-`USER` → login, owner-by-customer / owner-by-lease-unit → 307, cross-customer / cross-org → 404). The raw object URL never leaves the server.
+- **`__tests__/installment-overdue.test.ts`** (3) — runtime proof for the Wave B sweep: `markOverdueInstallmentsInternal` flips only past-due `UNPAID`/`PARTIALLY_PAID` rows, leaves PAID / not-yet-due / already-OVERDUE untouched, and is idempotent. (Closes the Wave B `/mimaric-qa` retro gap.)
+- **E2E (Playwright):** new `documents.admin.spec.ts` (DOM carries no raw CDN url; download links go through the route; unauthenticated request bounced to login); `access-control.tech.spec.ts` extended (TECHNICIAN → CRM = in-shell AccessDenied, SEC-004); `billing.admin.spec.ts` extended (hidden `isPublic:false` plan never offered — SEC-007; expired + inactive coupons rejected at apply — SEC-008). `billing-seed.ts` adds the hidden plan + a document fixture.
+
+### Verify
+- `npm run build` green · `check-types` green · `npm run lint` 0 errors · **255 web unit tests** (13 new) · `check-e2e-coverage` (all 8 specs selected) + `check-cron-coverage` green.
+- **§3.9 preview walk:** `/dashboard/documents` + `/portal` in light/dark × LTR/RTL (8 shots, **0 console errors**); mobile 375×812 (table→card holds); live DOM confirms document links resolve to `/api/documents/…` with **zero** `ufs.sh`/`utfs.io` URLs in the page.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimarek/compare/v5.9.0...v5.10.0
+
 ## [5.9.0] — 2026-06-27 — Hardening Wave C: supply-chain (SEC-002) + document access (SEC-006)
 
 **Closes SEC-002 (Critical) and the tenant surface of SEC-006 (High) from the 2026-06-25 audit.**

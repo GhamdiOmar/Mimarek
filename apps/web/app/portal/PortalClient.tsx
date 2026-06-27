@@ -12,7 +12,7 @@ import { createTenantMaintenanceRequest } from "../actions/portal";
 type PortalSummary = {
   customer: { name: string };
   activeLease: PortalLease | null;
-  documents: Array<{ id: string; name: string; url: string; category: string; createdAt: string }>;
+  documents: Array<{ id: string; name: string; category: string; createdAt: string }>;
   maintenance: Array<{ id: string; title: string; status: string; priority: string; createdAt: string }>;
 };
 
@@ -161,10 +161,10 @@ export default function PortalClient({ initialSummary }: { initialSummary: Porta
                       {summary.documents.map((document) => (
                         <a
                           key={document.id}
-                          href={document.url}
+                          href={`/api/portal/documents/${document.id}`}
                           className="flex items-center justify-between rounded-md border border-border p-3 text-sm hover:bg-muted/50"
                           target="_blank"
-                          rel="noreferrer"
+                          rel="noopener noreferrer"
                           aria-label={t(`تنزيل ${document.name}`, `Download ${document.name}`)}
                         >
                           <span>{document.name}</span>
