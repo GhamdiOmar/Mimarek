@@ -146,16 +146,18 @@ export async function getDocuments(filters?: {
   const pageSize = Math.min(100, Math.max(1, filters?.pageSize ?? 50));
   const skip = (page - 1) * pageSize;
 
-  // serialize() so the rows are plain JSON — safe to pass as RSC props from the
-  // documents server shell (consistent with the other list actions / the seam).
-  return serialize(
-    await db.document.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-      skip,
-      take: pageSize,
-    }),
-  );
+  const rows = await db.document.findMany({
+    where,
+    orderBy: { createdAt: "desc" },
+    skip,
+    take: pageSize,
+  });
+
+  // SEC-006: never serialize the raw UploadThing object URL into the client/DOM —
+  // it was a permanent public bearer credential. Strip it; downloads go through the
+  // authorized `/api/documents/[id]` route (session + documents:read + org-scope →
+  // short-lived signed URL). serialize() keeps the rows plain JSON for RSC props.
+  return serialize(rows.map(({ url: _url, ...rest }) => rest));
 }
 
 export async function deleteDocument(documentId: string) {
