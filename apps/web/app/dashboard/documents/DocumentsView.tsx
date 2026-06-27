@@ -46,7 +46,6 @@ import { exportToExcel } from "../../../lib/export";
 type DocumentRow = {
   id: string;
   name: string;
-  url: string;
   type?: string | null;
   category?: string | null;
   size?: number | null;
@@ -331,7 +330,7 @@ export default function DocumentsView({ initialDocs }: DocumentsViewProps) {
                     uploader,
                     date,
                   ]}
-                  href={doc.url}
+                  href={`/api/documents/${doc.id}`}
                 />
               );
             })}
@@ -573,7 +572,7 @@ export default function DocumentsView({ initialDocs }: DocumentsViewProps) {
                         aria-label={t(`تنزيل ${doc.name}`, `Download ${doc.name}`)}
                         className="h-11 w-11 sm:h-8 sm:w-8 rounded-full hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-secondary transition-all no-underline hover:no-underline"
                       >
-                        <a href={doc.url} target="_blank" rel="noopener noreferrer">
+                        <a href={`/api/documents/${doc.id}`} target="_blank" rel="noopener noreferrer">
                           <Download className="h-[18px] w-[18px]" aria-hidden="true" />
                         </a>
                       </ActionLink>

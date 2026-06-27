@@ -1,5 +1,24 @@
 # Changelog — Mimarek PropTech
 
+## [5.9.0] — 2026-06-27 — Hardening Wave C: supply-chain (SEC-002) + document access (SEC-006)
+
+**Closes SEC-002 (Critical) and the tenant surface of SEC-006 (High) from the 2026-06-25 audit.**
+
+### Supply-chain (SEC-002)
+- **next `16.1.5 → 16.2.9`** — clears the production **critical** (CVE-2026-23869 RSC DoS) + the App-Router/proxy/Server-Action advisory cluster; non-breaking minor.
+- **jspdf → `4.2.1`** — the path-traversal critical was already moot (≥4.0.0) and our usage is app-controlled (no user HTML); bumped to clear newer lows.
+- **nodemailer — risk-accepted** (kept at `7.0.13`, documented): the advisory requires the message-level `raw`/path/href option; our send-only `lib/email.ts` (`sendMail` with html/text/subject/from/to/replyTo only) never uses it, so it is not exploitable. The audit-clean fix is a 7→9 major.
+- New **CI production-audit gate** (`npm audit --omit=dev --audit-level=critical`) — blocks any new production critical (would have caught the jspdf one). The remaining high-severity findings are upstream-unfixable transitives (prisma dev-server `hono`/`effect`, uploadthing `effect`, `lodash`/`path-to-regexp`/`tmp`/`defu`) plus the accepted nodemailer — tracked here, not gated, to keep CI signal honest rather than permanently red.
+
+### Document access (SEC-006 — tenant vault)
+- Documents were served as **permanent public UploadThing CDN URLs** — anyone who obtained one (DOM scrape, logs, referrer, chat) could fetch the file outside tenant/permission checks. The tenant document vault is now access-controlled: new **`/api/documents/[id]`** route authorizes by session + `documents:read` + org-scope, then redirects to a **short-lived signed URL** (`UTApi.generateSignedURL`, 15 min). `getDocuments` no longer returns the raw `url` (stripped from the DTO), and `DocumentsView` links go through the route. **Verified:** an unauthenticated request 307-redirects to `/auth/login`.
+- **Follow-ups (documented, scoped separately):** (1) the **portal** document link (`PortalClient`) needs a portal-ownership download route. (2) **Full private-object closure** is one activation step away: set `acl:"private"` on the document routers (`core.ts`), enable per-request ACL override in the UploadThing dashboard, and run an `updateACL` backfill — the signed-URL path already works for private objects, so no further code change is needed (gated on the dashboard toggle, like ZATCA's production CSID).
+
+### Verify
+- `npm run build` green · `check-types` green · `npm run lint` 0 errors · `cspell` clean · **242 web unit tests** · the new audit-critical gate green. SEC-006 route authz verified at runtime (unauthenticated → 307 `/auth/login`).
+
+**Full diff:** https://github.com/GhamdiOmar/Mimarek/compare/v5.8.0...v5.9.0
+
 ## [5.8.0] — 2026-06-27 — Hardening Wave B: money-correctness (orphaned sweeps wired · effectivePaid single-homed · ZATCA VAT extracted)
 
 **Closes the three P1 money-correctness findings from the 2026-06-25 audit.** Backend / cron / lib only — no UI and no schema change.

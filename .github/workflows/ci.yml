@@ -84,6 +84,14 @@ jobs:
       - name: Spell Check (cspell)
         run: npx --yes cspell --no-progress --no-summary "**/*.{ts,tsx,md,mdx,json}"
 
+      # SEC-002 supply-chain gate. Blocks on any NEW production CRITICAL advisory
+      # (would have caught the jspdf path-traversal critical). High-severity findings
+      # are predominantly unfixable upstream transitives (prisma dev-server hono/effect,
+      # uploadthing effect, lodash/path-to-regexp/tmp) and the risk-accepted nodemailer
+      # send-only advisory — tracked in CHANGELOG, not gated, to keep CI signal honest.
+      - name: Production dependency audit (no new criticals)
+        run: npm audit --omit=dev --audit-level=critical
+
       - name: Install Playwright Browsers
         run: cd apps/web && npx playwright install --with-deps
 
