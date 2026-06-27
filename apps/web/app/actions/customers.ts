@@ -195,12 +195,16 @@ export async function createCustomer(data: {
     if (!agent) throw new Error("The selected agent is not part of your organization.");
   }
 
-  // Encrypt PII fields before saving (per-tenant blind-index hashes, keyed by org)
+  // Encrypt PII fields before saving (per-tenant blind-index hashes, keyed by org).
+  // SEC-009: dateOfBirth/address/documentInfo are also encrypted-at-rest here.
   const encryptedData = encryptCustomerData(
     {
       nationalId: data.nationalId,
       phone: data.phone,
       email: data.email,
+      dateOfBirth: data.dateOfBirth,
+      address: data.address,
+      documentInfo: data.documentInfo,
     },
     session.organizationId,
   );
@@ -219,13 +223,16 @@ export async function createCustomer(data: {
       nameArabic: data.nameArabic || undefined,
       personType: (data.personType || undefined) as PersonType | undefined,
       gender: (data.gender || undefined) as Gender | undefined,
-      dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : undefined,
+      // SEC-009: DOB stored only as ciphertext (dateOfBirthEnc); plaintext column nulled.
+      dateOfBirth: null,
+      dateOfBirthEnc: data.dateOfBirth ? encryptedData.dateOfBirthEnc : undefined,
       dateOfBirthHijri: data.dateOfBirthHijri || undefined,
       nationality: data.nationality || undefined,
       nationalityCode: data.nationalityCode || undefined,
       maritalStatus: data.maritalStatus || undefined,
-      address: data.address || undefined,
-      documentInfo: data.documentInfo || undefined,
+      // SEC-009: address/documentInfo stored as ciphertext strings in their Json columns.
+      address: data.address ? (encryptedData.address as Prisma.InputJsonValue) : undefined,
+      documentInfo: data.documentInfo ? (encryptedData.documentInfo as Prisma.InputJsonValue) : undefined,
       budget: data.budget ?? undefined,
       propertyTypeInterest: data.propertyTypeInterest || undefined,
       agentId: data.agentId || undefined,
@@ -326,7 +333,22 @@ export async function updateCustomer(
   const updateData = Object.fromEntries(
     Object.entries(input).map(([k, v]) => [k, v === "" ? undefined : v])
   ) as Prisma.CustomerUpdateInput;
-  if (input.dateOfBirth) updateData.dateOfBirth = new Date(input.dateOfBirth);
+
+  // SEC-009: encrypt dateOfBirth/address/documentInfo if being updated — these
+  // OVERRIDE the plaintext values the allowlist spread above placed into updateData.
+  if (input.dateOfBirth) {
+    const enc = encryptCustomerData({ dateOfBirth: input.dateOfBirth }, session.organizationId);
+    updateData.dateOfBirth = null;
+    updateData.dateOfBirthEnc = enc.dateOfBirthEnc;
+  }
+  if (input.address) {
+    const enc = encryptCustomerData({ address: input.address }, session.organizationId);
+    updateData.address = enc.address as Prisma.InputJsonValue;
+  }
+  if (input.documentInfo) {
+    const enc = encryptCustomerData({ documentInfo: input.documentInfo }, session.organizationId);
+    updateData.documentInfo = enc.documentInfo as Prisma.InputJsonValue;
+  }
 
   // Encrypt PII fields if being updated
   if (input.nationalId) {

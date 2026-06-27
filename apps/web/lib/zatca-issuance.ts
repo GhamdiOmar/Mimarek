@@ -28,6 +28,7 @@ import {
 } from "./zatca-server";
 import { isCompanyBuyer, validateBuyerForStandardClearance } from "./buyer-routing";
 import { computeInclusiveBreakdown } from "./zatca-amounts";
+import { decryptCustomerData } from "./pii-crypto";
 
 /**
  * ZATCA Track C (R4) tenant issuance — the single `issueDocumentForCharge` classifier that
@@ -398,16 +399,19 @@ export async function issueDocumentForCharge(charge: ChargeInput): Promise<Issua
   const existing = await db.tenantDocument.findFirst({ where: idemWhere });
   if (existing) return { outcome: outcomeFromStatus(existing), documentId: existing.id, documentNumber: existing.documentNumber };
 
-  // 5. Buyer snapshot (immutable at issuance).
-  const buyerParty = cx.customer ? buildBuyerFromCustomer(cx.customer) : null;
+  // 5. Buyer snapshot (immutable at issuance). SEC-009: decrypt the customer first —
+  // address/DOB/documentInfo are now ciphertext at rest, so the ZATCA buyer party
+  // (which reads the national address) must read the decrypted form.
+  const buyerCustomer = cx.customer ? decryptCustomerData(cx.customer) : null;
+  const buyerParty = buyerCustomer ? buildBuyerFromCustomer(buyerCustomer) : null;
 
   // 6. Route: RECEIPT (exempt / out-of-scope / disabled) | TAX_INVOICE (B2B) | SIMPLIFIED (B2C) | HELD.
   const isReceipt = tax.vatCategory === "EXEMPT" || tax.vatCategory === "OUT_OF_SCOPE" || !tax.eInvoiceEnabled;
   let documentType: "RECEIPT" | "TAX_INVOICE" | "SIMPLIFIED" = "RECEIPT";
   let needsBuyerData = false;
   if (!isReceipt) {
-    if (cx.customer && isCompanyBuyer(cx.customer)) {
-      const gate = validateBuyerForStandardClearance(cx.customer);
+    if (buyerCustomer && isCompanyBuyer(buyerCustomer)) {
+      const gate = validateBuyerForStandardClearance(buyerCustomer);
       documentType = "TAX_INVOICE";
       needsBuyerData = !gate.valid; // held: a B2B company missing VAT/CR/address (Omar's decision)
     } else {
@@ -502,7 +506,8 @@ export async function reissueHeldDocumentInternal(
     return clearTenantDocumentInternal(documentId);
   }
 
-  const customer = doc.customer;
+  // SEC-009: decrypt before reading the national address (now ciphertext at rest).
+  const customer = doc.customer ? decryptCustomerData(doc.customer) : null;
   if (!customer) return { outcome: "HELD", documentId, missing: ["customer"] };
 
   const gate = validateBuyerForStandardClearance(customer);

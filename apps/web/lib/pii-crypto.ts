@@ -101,6 +101,13 @@ interface EncryptedCustomerData {
   phoneHash: string;
   email: string;
   emailHash: string;
+  // SEC-009 — encrypted-at-rest, no blind index. `dateOfBirth` is nulled (plaintext
+  // never stored); its ciphertext lives in `dateOfBirthEnc`. address/documentInfo
+  // hold their own ciphertext string (typed unknown — they were JSON on input).
+  dateOfBirth: Date | string | null;
+  dateOfBirthEnc: string;
+  address: unknown;
+  documentInfo: unknown;
   [key: string]: unknown;
 }
 
@@ -131,6 +138,21 @@ export function encryptCustomerData(
     encrypted.emailHash = hashForSearch(data.email, orgId);
   }
 
+  // SEC-009: encrypt the remaining sensitive-at-rest fields. None are searched, so
+  // they carry NO blind index. JSON fields (address/documentInfo) are stringified
+  // then encrypted; the Gregorian DOB is encrypted into `dateOfBirthEnc` and the
+  // plaintext `dateOfBirth` column is nulled so no DOB is ever stored in the clear.
+  if (data.dateOfBirth) {
+    encrypted.dateOfBirthEnc = encrypt(new Date(data.dateOfBirth as string | Date).toISOString());
+    encrypted.dateOfBirth = null;
+  }
+  if (data.address != null) {
+    encrypted.address = encrypt(JSON.stringify(data.address));
+  }
+  if (data.documentInfo != null) {
+    encrypted.documentInfo = encrypt(JSON.stringify(data.documentInfo));
+  }
+
   return encrypted;
 }
 
@@ -143,6 +165,28 @@ interface DecryptableCustomer {
   nationalId?: string | null;
   phone?: string | null;
   email?: string | null;
+  // SEC-009 encrypted-at-rest fields
+  dateOfBirth?: Date | string | null;
+  dateOfBirthEnc?: string | null;
+  address?: unknown;
+  documentInfo?: unknown;
+}
+
+/**
+ * Decrypt a JSON field stored as a ciphertext string (SEC-009: address/documentInfo).
+ * A non-string value is a legacy/unencrypted object (or null) → returned as-is. On a
+ * decrypt failure `safeDecryptField` returns "" — we degrade to null rather than
+ * `JSON.parse("")`-ing (which would throw and defeat the per-row graceful degrade).
+ */
+function decryptJsonField(value: unknown, field: string): unknown {
+  if (typeof value !== "string") return value;
+  const plain = safeDecryptField(value, field);
+  if (!plain) return null;
+  try {
+    return JSON.parse(plain);
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -151,11 +195,19 @@ interface DecryptableCustomer {
 export function decryptCustomerData<T extends DecryptableCustomer>(customer: T): T {
   if (!customer) return customer;
 
+  // SEC-009: repopulate `dateOfBirth` (as a Date) from its ciphertext and DROP the
+  // internal `dateOfBirthEnc` column so ciphertext never leaves the server.
+  const { dateOfBirthEnc, ...rest } = customer as DecryptableCustomer;
+  const dobPlain = dateOfBirthEnc ? safeDecryptField(dateOfBirthEnc, "dateOfBirth") : "";
+
   return {
-    ...customer,
+    ...(rest as T),
     nationalId: customer.nationalId ? safeDecryptField(customer.nationalId, "nationalId") : customer.nationalId,
     phone: customer.phone ? safeDecryptField(customer.phone, "phone") : customer.phone,
     email: customer.email ? safeDecryptField(customer.email, "email") : customer.email,
+    dateOfBirth: dateOfBirthEnc ? (dobPlain ? new Date(dobPlain) : null) : customer.dateOfBirth,
+    address: decryptJsonField(customer.address, "address"),
+    documentInfo: decryptJsonField(customer.documentInfo, "documentInfo"),
   } as T;
 }
 

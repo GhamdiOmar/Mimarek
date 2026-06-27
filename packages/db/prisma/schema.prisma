@@ -263,13 +263,14 @@ model Customer {
   nationalId           String? // Saudi ID / Iqama (10 digits, starts with 1 or 2)
   personType           PersonType? // saudi_citizen, resident, gcc_citizen, etc.
   gender               Gender?
-  dateOfBirth          DateTime? // Gregorian DOB
+  dateOfBirth          DateTime? // Gregorian DOB — SEC-009: NOT persisted in plaintext; encrypted form lives in dateOfBirthEnc. Repopulated (as a Date) by decryptCustomerData on read.
+  dateOfBirthEnc       String? // SEC-009: AES-256-GCM ciphertext of the Gregorian DOB ISO string (no blind index — DOB is never searched). decryptCustomerData decrypts this back into dateOfBirth.
   dateOfBirthHijri     String? // Hijri date as text (e.g. 1410-10-19)
   nationality          String? // e.g. "Saudi Arabian"
   nationalityCode      String? // ISO code e.g. "SA"
   maritalStatus        String? // single, married, divorced, widowed
-  address              Json? // National address {region, city, district, streetName, buildingNumber, postalCode, additionalNumber, shortAddress}
-  documentInfo         Json? // ID document {documentType, documentNumber, issueDate, expiryDate, issuingAuthority}
+  address              Json? // National address {region, city, district, …}. SEC-009: stored as an AES-256-GCM ciphertext STRING (encrypt(JSON.stringify(addr))); decryptCustomerData parses it back to the object. Never searched → no blind index.
+  documentInfo         Json? // ID document {documentType, documentNumber, …}. SEC-009: stored as an AES-256-GCM ciphertext STRING (same as address).
   nationalIdHash       String? // HMAC-SHA256 blind index (lib/encryption.ts hashForSearch) for exact search on encrypted nationalId
   phoneHash            String? // HMAC-SHA256 blind index (lib/encryption.ts hashForSearch) for exact search on encrypted phone (E.164-normalized)
   emailHash            String? // HMAC-SHA256 blind index (lib/encryption.ts hashForSearch) for exact search on encrypted email
