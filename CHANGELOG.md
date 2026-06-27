@@ -1,5 +1,33 @@
 # Changelog — Mimarek PropTech
 
+## [5.7.0] — 2026-06-27 — Hardening Wave A: High/Critical security fixes (mass-assignment, authz, stale-JWT revocation)
+
+**Closes every High + Critical finding from the 2026-06-25 dual audit** (my repo-level arch+security audit + the independent `/security-review`). No new features — authorization, tenancy, and account-revocation hardening only. No data-shape change beyond two additive `User` columns. `/mimaric-qa` GATE = GO; its three "incomplete remediation" follow-ups (sibling mass-assignment actions) were folded into this wave so the class is fully closed, not partially.
+
+### Mass-assignment closed (SEC-001 / SEC-005 + 3 siblings)
+- **SEC-001 (Critical)** — `updateTeamMember` (`team.ts`) no longer passes the raw Server Action payload to `db.user.update`. It is validated against a strict `zod` allowlist (`{ name?, role? }`) and written via an **org-scoped `updateMany` asserting `count === 1`**, so a caller can never smuggle `organizationId`/`password`/`emailVerified` or move a user across tenants. A role change bumps `tokenVersion` (see revocation).
+- **SEC-005 (High)** — `updateCustomer` (`customers.ts`) replaces the `Object.entries(data)` spread with an `UpdateCustomerSchema` allowlist (unknown keys stripped).
+- **SEC-011 (Medium)** — `agentId` is now verified to belong to the caller's org on both customer create and update (no cross-org FK injection).
+- **Sibling actions hardened** (same class, found by the QA gate): `updateOrganization` (`organization.ts`), `updateContractTemplate` (`contract-templates.ts`), and `upsertSeoConfig` (`seo-config.ts`) now use `zod` allowlists. The SEO allowlist deliberately **excludes** the non-SEO columns that share the `SystemConfig` singleton — the irreversible `marketplaceConveyanceEnabled` kill-switch, the legal sign-off fields, and the email config — so the SEO admin action can never flip them.
+
+### Authorization
+- **SEC-004 (High)** — `getCustomer`/`getCustomers` now require `customers:read` (via `requirePermission`) instead of any tenant session; PII access still gated on `customers:read_pii`. A role without `customers:read` (e.g. `TECHNICIAN`) is rejected.
+- **SEC-007 (High)** — `getPlanBySlug`/`subscribeToPlan`/`changePlan` (`billing.ts`) filter `isPublic: true`, so a hidden/non-public plan can no longer be discovered by slug or selected by id.
+- **SEC-008 (High)** — `applyCoupon` (`coupons.ts`) re-validates `isActive`, the validity window, plan restriction, and `applicableCycles` at apply-time (the atomic max-redemption race-guard is unchanged).
+
+### Stale-JWT revocation (SEC-003)
+- `User` gains `tokenVersion Int @default(0)` and `isActive Boolean @default(true)` (additive; both carry defaults → `db push` backfills existing rows safely, no §4 NOT-NULL hazard).
+- `getSessionOrThrow` — the single choke point every server-action guard flows through — now **re-reads the user on every action**: it returns the **fresh** role/org (a demotion takes effect immediately), and rejects a **deleted**, **deactivated** (`isActive = false`), or **revoked** (`tokenVersion` mismatch) user. `tokenVersion` is bumped on password change, password reset, role change, and "sign out everywhere". The route guards `requireSystem`/`requireTenant` re-validate through the same path (revoked users are bounced at the page layer too).
+- New **"Sign out of all devices"** control on `settings/security` (both layouts, behind a confirm dialog) → new `signOutEverywhere` action bumps `tokenVersion` (invalidating every outstanding session, including the current one) then signs the user out and returns to login.
+- *Forward-seam:* `isActive` is enforced (login + `getSessionOrThrow`) but has no in-app setter yet — it enables manual/incident deactivation via the DB today; a deactivate-member admin action is a future follow-up.
+
+### Verify
+- `npm run build` green · `check-types` green · `npm run lint` 0 errors · `cspell` clean · **235 web unit tests** (24 new adversarial regression locks in `__tests__/hardening-wave-a.test.ts` — each fix asserts the *negative*: smuggled keys stripped, cross-org rejected, hidden plan unselectable, stale/deactivated/deleted session rejected, fresh role on demotion).
+- `/mimaric-qa` GATE = **GO** (0 Critical; 3 High follow-ups folded in + regression-locked). Live `prisma db push` applied (additive); `rls:check` OK (no new table).
+- **§3.9** 4-theme walk on the touched routes (team / CRM / billing / billing-plans / settings-security — the new Sessions card): `Desktop/v5.7.0-screenshots`.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimarek/compare/v5.6.3...v5.7.0
+
 ## [5.6.3] — 2026-06-25 — Hardening Wave 2a: repo-wide a11y label sweep (196 controls) + ESLint guard
 
 **Closes the form-control label-association backlog across the whole app and mechanizes it so it can't regress.** Following the v5.6.2 onboarding fix, an audit-grade sweep found **196 form-input controls across 34 files** with no programmatic label — a screen reader announced each as "edit text, blank" and label-clicks didn't focus (WCAG 1.3.1 / 4.1.2). All 196 are now wired, and a new custom ESLint rule fails CI on any new one. No schema, no logic, no visual change.

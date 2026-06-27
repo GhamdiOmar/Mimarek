@@ -3,7 +3,8 @@
 import { db, CustomerStatus, PersonType, Gender, ActivityType, CustomerKind, Prisma } from "@repo/db";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { requirePermission, getSessionWithPermissions } from "../../lib/auth-helpers";
+import { requirePermission } from "../../lib/auth-helpers";
+import { hasPermission } from "../../lib/permissions";
 import { logAuditEvent } from "../../lib/audit";
 import {
   encryptCustomerData,
@@ -43,6 +44,37 @@ const CreateCustomerSchema = z.object({
   propertyTypeInterest: z.string().optional(),
   agentId: z.string().optional(),
   // ZATCA Track C buyer party (D18) — plaintext business identifiers, not encrypted.
+  customerKind: z.string().optional(),
+  vatNumber: z.string().optional(),
+  crNumber: z.string().optional(),
+  companyNameAr: z.string().optional(),
+  companyNameEn: z.string().optional(),
+});
+
+// SEC-005: strict allowlist for updateCustomer — exactly the editable fields and
+// nothing else. zod strips every unknown key, so a direct invocation can no longer
+// smuggle organizationId / *Hash / createdAt into db.customer.update. Value rules
+// are intentionally loose (matching the prior pass-through behaviour); the security
+// property is the key allowlist, not per-field validation.
+const UpdateCustomerSchema = z.object({
+  name: z.string().optional(),
+  phone: z.string().optional(),
+  email: z.string().optional(),
+  nationalId: z.string().optional(),
+  nameArabic: z.string().optional(),
+  personType: z.string().optional(),
+  gender: z.string().optional(),
+  dateOfBirth: z.string().optional(),
+  dateOfBirthHijri: z.string().optional(),
+  nationality: z.string().optional(),
+  nationalityCode: z.string().optional(),
+  maritalStatus: z.string().optional(),
+  address: z.any().optional(),
+  documentInfo: z.any().optional(),
+  source: z.string().optional(),
+  agentId: z.string().optional(),
+  budget: z.number().optional(),
+  propertyTypeInterest: z.string().optional(),
   customerKind: z.string().optional(),
   vatNumber: z.string().optional(),
   crNumber: z.string().optional(),
@@ -154,6 +186,15 @@ export async function createCustomer(data: {
 
   const session = await requirePermission("customers:write");
 
+  // SEC-011: an assigned agent must belong to the caller's org (no cross-org FK injection).
+  if (data.agentId) {
+    const agent = await db.user.findFirst({
+      where: { id: data.agentId, organizationId: session.organizationId },
+      select: { id: true },
+    });
+    if (!agent) throw new Error("The selected agent is not part of your organization.");
+  }
+
   // Encrypt PII fields before saving (per-tenant blind-index hashes, keyed by org)
   const encryptedData = encryptCustomerData(
     {
@@ -205,8 +246,8 @@ export async function createCustomer(data: {
 }
 
 export async function getCustomer(customerId: string) {
-  const session = await getSessionWithPermissions();
-  const hasPiiAccess = session.can("customers:read_pii");
+  const session = await requirePermission("customers:read");
+  const hasPiiAccess = hasPermission(session.role, "customers:read_pii");
 
   const customer = await db.customer.findFirst({
     where: { id: customerId, organizationId: session.organizationId },
@@ -263,27 +304,43 @@ export async function updateCustomer(
 ) {
   const session = await requirePermission("customers:write");
 
-  // Sanitize empty strings to undefined for enum/optional fields.
-  // Built dynamically from a partial-string input then narrowed to the Prisma
-  // update shape — the validated string values are valid enum members at runtime.
+  // SEC-005: validate against the strict allowlist. zod strips every key not in
+  // UpdateCustomerSchema, closing the old Object.entries(data) mass-assignment that
+  // let organizationId / *Hash / createdAt reach db.customer.update.
+  const parsed = UpdateCustomerSchema.safeParse(data);
+  if (!parsed.success) {
+    throw new Error("Invalid input: " + parsed.error.issues.map((i) => i.message).join(", "));
+  }
+  const input = parsed.data;
+
+  // SEC-011: an assigned agent must belong to the caller's org (no cross-org FK injection).
+  if (input.agentId) {
+    const agent = await db.user.findFirst({
+      where: { id: input.agentId, organizationId: session.organizationId },
+      select: { id: true },
+    });
+    if (!agent) throw new Error("The selected agent is not part of your organization.");
+  }
+
+  // Sanitize empty strings to undefined; only allowlisted keys remain in `input`.
   const updateData = Object.fromEntries(
-    Object.entries(data).map(([k, v]) => [k, v === "" ? undefined : v])
+    Object.entries(input).map(([k, v]) => [k, v === "" ? undefined : v])
   ) as Prisma.CustomerUpdateInput;
-  if (data.dateOfBirth) updateData.dateOfBirth = new Date(data.dateOfBirth);
+  if (input.dateOfBirth) updateData.dateOfBirth = new Date(input.dateOfBirth);
 
   // Encrypt PII fields if being updated
-  if (data.nationalId) {
-    const enc = encryptCustomerData({ nationalId: data.nationalId }, session.organizationId);
+  if (input.nationalId) {
+    const enc = encryptCustomerData({ nationalId: input.nationalId }, session.organizationId);
     updateData.nationalId = enc.nationalId;
     updateData.nationalIdHash = enc.nationalIdHash;
   }
-  if (data.phone) {
-    const enc = encryptCustomerData({ phone: data.phone }, session.organizationId);
+  if (input.phone) {
+    const enc = encryptCustomerData({ phone: input.phone }, session.organizationId);
     updateData.phone = enc.phone;
     updateData.phoneHash = enc.phoneHash;
   }
-  if (data.email) {
-    const enc = encryptCustomerData({ email: data.email }, session.organizationId);
+  if (input.email) {
+    const enc = encryptCustomerData({ email: input.email }, session.organizationId);
     updateData.email = enc.email;
     updateData.emailHash = enc.emailHash;
   }
@@ -293,7 +350,7 @@ export async function updateCustomer(
     data: updateData,
   });
 
-  logAuditEvent({ userId: session.userId, userEmail: session.email, userRole: session.role, action: "UPDATE", resource: "Customer", resourceId: customerId, metadata: { fields: Object.keys(data) }, organizationId: session.organizationId });
+  logAuditEvent({ userId: session.userId, userEmail: session.email, userRole: session.role, action: "UPDATE", resource: "Customer", resourceId: customerId, metadata: { fields: Object.keys(input) }, organizationId: session.organizationId });
 
   revalidatePath(ROUTES.crm);
   return serialize(customer);
@@ -305,8 +362,8 @@ export async function getCustomers(filters?: {
   page?: number;
   pageSize?: number;
 }) {
-  const session = await getSessionWithPermissions();
-  const hasPiiAccess = session.can("customers:read_pii");
+  const session = await requirePermission("customers:read");
+  const hasPiiAccess = hasPermission(session.role, "customers:read_pii");
 
   const where: Prisma.CustomerWhereInput = { organizationId: session.organizationId };
 

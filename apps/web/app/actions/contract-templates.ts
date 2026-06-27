@@ -1,9 +1,19 @@
 "use server";
 
 import { db, Prisma, ContractType } from "@repo/db";
+import { z } from "zod";
 import { requirePermission } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
 import { serialize } from "../../lib/serialize";
+
+// Mass-assignment allowlist (same class as SEC-001/005). Ownership is already
+// verified via findFirst below; this stops a direct call smuggling extra columns.
+const UpdateContractTemplateSchema = z.object({
+  name: z.string().optional(),
+  nameArabic: z.string().optional(),
+  content: z.string().optional(),
+  isActive: z.boolean().optional(),
+});
 
 // ─── RED: Contract Templates ────────────────────────────────────────────────
 
@@ -46,18 +56,24 @@ export async function updateContractTemplate(
 ) {
   const session = await requirePermission("contracts:write");
 
+  const parsed = UpdateContractTemplateSchema.safeParse(data);
+  if (!parsed.success) {
+    throw new Error("Invalid input: " + parsed.error.issues.map((i) => i.message).join(", "));
+  }
+  const input = parsed.data;
+
   const existing = await db.contractTemplate.findFirst({
     where: { id: templateId, organizationId: session.organizationId },
   });
   if (!existing) throw new Error("Contract template not found. Please refresh and try again.");
 
   // If content changed, increment version
-  const versionBump = data.content && data.content !== existing.content;
+  const versionBump = input.content && input.content !== existing.content;
 
   const updated = await db.contractTemplate.update({
     where: { id: templateId },
     data: {
-      ...data,
+      ...input,
       version: versionBump ? existing.version + 1 : undefined,
     },
   });

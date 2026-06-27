@@ -70,6 +70,8 @@ function freshSeed(maxRedemptions: number | null) {
           validFrom: new Date(0),
           validUntil: null,
           minPurchaseAmount: null,
+          // SEC-008 re-validation reads coupon.plans (Prisma include → always an array).
+          plans: [],
         },
       ] as Row[],
       invoice: orgs.map((org, i) => ({
@@ -79,6 +81,15 @@ function freshSeed(maxRedemptions: number | null) {
         vatRate: 0.15,
       })) as Row[],
       couponRedemption: [] as Row[],
+      // SEC-003: getSessionOrThrow re-reads the acting user — one per org.
+      user: orgs.map((org) => ({
+        id: `user_${org}`,
+        role: "ADMIN",
+        organizationId: org,
+        name: "Test Admin",
+        isActive: true,
+        tokenVersion: 0,
+      })) as Row[],
     },
   };
 }

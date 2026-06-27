@@ -24,6 +24,10 @@ export type MockUser = {
   name: string | null;
   role: string;
   organizationId: string | null;
+  // SEC-003 revocation: getSessionOrThrow now re-reads the user from the DB and
+  // compares tokenVersion / isActive. Tests default both to the "valid" values.
+  tokenVersion?: number;
+  isActive?: boolean;
 };
 
 let current: { user: MockUser } | null = null;
@@ -48,6 +52,32 @@ export function tenantAdmin(organizationId: string, overrides: Partial<MockUser>
 /** The mocked NextAuth `auth()` — returns the session set via setSession(). */
 export async function auth() {
   return current;
+}
+
+/**
+ * The DB row that `getSessionOrThrow` re-reads for SEC-003 revocation, mirroring
+ * the current session. Inert-`db` tests wire `db.user.findUnique` to this; stub-`db`
+ * tests can instead seed matching `user` rows. Defaults isActive=true / tokenVersion=0
+ * so a normally-set session passes the revocation check.
+ */
+export function currentUserRow(): {
+  id: string;
+  role: string;
+  organizationId: string | null;
+  name: string | null;
+  isActive: boolean;
+  tokenVersion: number;
+} | null {
+  if (!current) return null;
+  const u = current.user;
+  return {
+    id: u.id,
+    role: u.role,
+    organizationId: u.organizationId,
+    name: u.name,
+    isActive: u.isActive ?? true,
+    tokenVersion: u.tokenVersion ?? 0,
+  };
 }
 
 // Stubs so a `import { signIn } from "../auth"` elsewhere doesn't explode if pulled in.

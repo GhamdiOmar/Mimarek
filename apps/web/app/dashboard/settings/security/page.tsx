@@ -8,13 +8,16 @@ import {
   AppBar,
   DataCard,
   ResponsiveDialog,
+  ConfirmDialog,
   DirectionalIcon,
 } from "@repo/ui";
-import { Lock, CheckCircle2, ArrowLeft, KeyRound, ShieldCheck } from "lucide-react";
+import { Lock, CheckCircle2, ArrowLeft, KeyRound, ShieldCheck, LogOut } from "lucide-react";
 import Link from "next/link";
+import { signOut as nextAuthSignOut } from "next-auth/react";
 import { useSession } from "../../../../components/SimpleSessionProvider";
 import { PasswordStrengthHint } from "../../../../components/PasswordStrengthHint";
 import { changePassword } from "../../../actions/password";
+import { signOutEverywhere } from "../../../actions/sessions";
 
 export default function SecuritySettingsPage() {
   const { t, lang } = useLanguage();
@@ -26,6 +29,8 @@ export default function SecuritySettingsPage() {
   const [error, setError] = React.useState<string | null>(null);
   const [success, setSuccess] = React.useState(false);
   const [mobileDialogOpen, setMobileDialogOpen] = React.useState(false);
+  const [signOutConfirmOpen, setSignOutConfirmOpen] = React.useState(false);
+  const [signOutLoading, setSignOutLoading] = React.useState(false);
 
   const errorMessages: Record<string, { ar: string; en: string }> = {
     WRONG_PASSWORD: { ar: "كلمة المرور الحالية غير صحيحة.", en: "Current password is incorrect." },
@@ -65,6 +70,17 @@ export default function SecuritySettingsPage() {
       setError(t("حدث خطأ في النظام.", "System error."));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSignOutEverywhere = async () => {
+    setSignOutLoading(true);
+    try {
+      await signOutEverywhere();
+    } catch {
+      // Even if the tokenVersion bump fails, still clear the local session below.
+    } finally {
+      await nextAuthSignOut({ callbackUrl: "/auth/login" });
     }
   };
 
@@ -193,6 +209,19 @@ export default function SecuritySettingsPage() {
             />
           </div>
 
+          {/* Sign out of all devices */}
+          <div className="rounded-lg border border-border bg-card px-4">
+            <DataCard
+              icon={LogOut}
+              iconTone="primary"
+              title={t("تسجيل الخروج من كل الأجهزة", "Sign out of all devices")}
+              subtitle={t("إنهاء جميع الجلسات النشطة", "End every active session")}
+              trailing={<span className="text-muted-foreground">›</span>}
+              onClick={() => setSignOutConfirmOpen(true)}
+              divider={false}
+            />
+          </div>
+
           {/* Security tips */}
           <div className="pt-4">
             <h2 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-1">
@@ -274,7 +303,51 @@ export default function SecuritySettingsPage() {
             </div>
           </div>
         </div>
+
+        <div className="max-w-lg">
+          <div className="bg-card rounded-md shadow-card border border-border overflow-hidden">
+            <div className="p-6 border-b border-border bg-muted/5">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-primary/5 rounded-md text-primary">
+                  <LogOut className="h-6 w-6" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-bold text-foreground">{t("الجلسات", "Sessions")}</h2>
+                  <p className="text-[10px] text-muted-foreground">{t("إدارة الجلسات النشطة على جميع أجهزتك", "Manage active sessions across your devices")}</p>
+                </div>
+              </div>
+            </div>
+            <div className="p-6 space-y-4">
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {t("سيؤدي هذا إلى تسجيل خروجك من جميع الأجهزة، بما في ذلك هذا الجهاز. ستحتاج إلى تسجيل الدخول مجددًا.", "This signs you out on every device, including this one. You'll need to sign in again.")}
+              </p>
+              <Button
+                variant="outline"
+                className="gap-2 min-h-[44px] text-destructive border-destructive/30 hover:bg-destructive/10"
+                onClick={() => setSignOutConfirmOpen(true)}
+                disabled={signOutLoading}
+                style={{ display: "inline-flex" }}
+              >
+                <LogOut className="h-[18px] w-[18px]" />
+                {signOutLoading
+                  ? (t("جارٍ تسجيل الخروج...", "Signing out..."))
+                  : (t("تسجيل الخروج من كل الأجهزة", "Sign out of all devices"))}
+              </Button>
+            </div>
+          </div>
+        </div>
       </div>
+
+      <ConfirmDialog
+        open={signOutConfirmOpen}
+        onOpenChange={setSignOutConfirmOpen}
+        title={t("تسجيل الخروج من كل الأجهزة؟", "Sign out of all devices?")}
+        description={t("سيتم إنهاء جميع جلساتك، بما في ذلك هذا الجهاز. ستحتاج إلى تسجيل الدخول مجددًا.", "All your sessions will end, including this device. You'll need to sign in again.")}
+        confirmLabel={t("تسجيل الخروج", "Sign out")}
+        cancelLabel={t("إلغاء", "Cancel")}
+        onConfirm={handleSignOutEverywhere}
+        variant="destructive"
+      />
     </>
   );
 }

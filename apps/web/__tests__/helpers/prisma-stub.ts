@@ -84,6 +84,7 @@ function matchWhere(row: Row, where: Where | undefined): boolean {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test stub: write payload duck-types arbitrary columns
 function applyData(row: Row, data: Record<string, any>): void {
   for (const [key, val] of Object.entries(data)) {
+    if (val === undefined) continue; // Prisma treats `undefined` as "leave this field unchanged"
     if (val && typeof val === "object" && "increment" in val) {
       row[key] = (row[key] ?? 0) + (val as { increment: number }).increment;
     } else if (val && typeof val === "object" && "decrement" in val) {
@@ -132,6 +133,18 @@ export function makeDelegate(model: string, rows: Row[]) {
       if (!row) throw new StubP2025Error(model);
       applyData(row, data);
       return row;
+    },
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test stub: upsert payloads duck-type arbitrary columns
+    upsert: async ({ where, update, create }: { where?: Where; update: Record<string, any>; create: Record<string, any> }) => {
+      const row = rows.find((r) => matchWhere(r, where));
+      if (row) {
+        applyData(row, update);
+        return row;
+      }
+      const created: Row = { id: create.id ?? `${model}_${++seq}`, ...create };
+      rows.push(created);
+      return created;
     },
 
     // The atomic compare-and-set used by the coupon race-guard. Runs fully

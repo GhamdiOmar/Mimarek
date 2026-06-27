@@ -159,6 +159,8 @@ model User {
   customerActivities      CustomerActivity[]       @relation("ActivityCreator")
   savedTableViews         SavedTableView[]
   lastActiveAt            DateTime? // Debounced sign-in / authed-request timestamp — powers admin-no-login KPIs
+  isActive                Boolean                  @default(true) // false = deactivated → rejected at login + by getSessionOrThrow (SEC-003 revocation)
+  tokenVersion            Int                      @default(0) // bumped on password reset/change + "sign out everywhere" → invalidates existing JWTs (SEC-003)
   createdAt               DateTime                 @default(now())
   updatedAt               DateTime                 @updatedAt
 

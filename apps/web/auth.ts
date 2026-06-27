@@ -92,7 +92,7 @@ const result = NextAuth({
               id: true, email: true, name: true, password: true,
               role: true, organizationId: true,
               onboardingCompleted: true, accountType: true,
-              emailVerified: true,
+              emailVerified: true, isActive: true, tokenVersion: true,
               organization: { select: { appStatus: true } },
             },
           });
@@ -119,6 +119,12 @@ const result = NextAuth({
           // is null for unverified users; existing rows were backfilled to now().
           if (!user.emailVerified) {
             throw new Error("EMAIL_NOT_VERIFIED");
+          }
+
+          // SEC-003: a deactivated account cannot log in. Placed after the bcrypt
+          // compare so it cannot be used to enumerate accounts.
+          if (!user.isActive) {
+            throw new Error("ACCOUNT_DEACTIVATED");
           }
 
           // E1: block login for orgs that expired before email verification.
@@ -149,12 +155,14 @@ const result = NextAuth({
             organizationId: user.organizationId,
             onboardingCompleted: user.onboardingCompleted ?? true,
             accountType: user.accountType ?? null,
+            tokenVersion: user.tokenVersion,
           };
         } catch (error) {
           const message = error instanceof Error ? error.message : "";
           if (
             message === "INVALID_CREDENTIALS" ||
             message === "EMAIL_NOT_VERIFIED" ||
+            message === "ACCOUNT_DEACTIVATED" ||
             message === "ORG_EXPIRED" ||
             message.startsWith("RATE_LIMITED")
           ) {

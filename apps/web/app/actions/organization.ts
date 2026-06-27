@@ -6,6 +6,32 @@ import { ROUTES } from "../../lib/routes";
 import { serialize } from "../../lib/serialize";
 import { requirePermission, getTenantSessionOrThrow, getSessionOrThrow } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
+import { z } from "zod";
+
+// Mass-assignment allowlist (same class as SEC-001/005) — the runtime payload is
+// validated, so a direct call can't smuggle non-listed Organization columns into
+// the update. WHERE is already org-scoped, so this is in-org integrity hardening.
+const UpdateOrganizationSchema = z.object({
+  name: z.string().optional(),
+  nameArabic: z.string().optional(),
+  nameEnglish: z.string().optional(),
+  tradeNameArabic: z.string().optional(),
+  tradeNameEnglish: z.string().optional(),
+  crNumber: z.string().optional(),
+  unifiedNumber: z.string().optional(),
+  vatNumber: z.string().optional(),
+  entityType: z.string().optional(),
+  legalForm: z.string().optional(),
+  registrationStatus: z.string().optional(),
+  registrationDate: z.string().optional(),
+  expiryDate: z.string().optional(),
+  capitalAmountSar: z.number().optional(),
+  mainActivityCode: z.string().optional(),
+  mainActivityNameAr: z.string().optional(),
+  contactInfo: z.any().optional(),
+  nationalAddress: z.any().optional(),
+  managerInfo: z.any().optional(),
+});
 
 /**
  * Lightweight org name lookup — any authenticated user can see their own org name.
@@ -56,23 +82,29 @@ export async function updateOrganization(data: {
 }) {
   const session = await requirePermission("organization:write");
 
+  const parsed = UpdateOrganizationSchema.safeParse(data);
+  if (!parsed.success) {
+    throw new Error("Invalid input: " + parsed.error.issues.map((i) => i.message).join(", "));
+  }
+  const input = parsed.data;
+
   // Callers pass the enum fields as plain strings (form state); cast at the write
   // boundary so the params stay caller-compatible while the Prisma input stays typed.
   const updateData: Prisma.OrganizationUpdateInput = {
-    ...data,
-    entityType: data.entityType as EntityType | undefined,
-    legalForm: data.legalForm as LegalForm | undefined,
-    registrationStatus: data.registrationStatus as RegistrationStatus | undefined,
+    ...input,
+    entityType: input.entityType as EntityType | undefined,
+    legalForm: input.legalForm as LegalForm | undefined,
+    registrationStatus: input.registrationStatus as RegistrationStatus | undefined,
   };
-  if (data.registrationDate) updateData.registrationDate = new Date(data.registrationDate);
-  if (data.expiryDate) updateData.expiryDate = new Date(data.expiryDate);
+  if (input.registrationDate) updateData.registrationDate = new Date(input.registrationDate);
+  if (input.expiryDate) updateData.expiryDate = new Date(input.expiryDate);
 
   const org = await db.organization.update({
     where: { id: session.organizationId },
     data: updateData,
   });
 
-  logAuditEvent({ userId: session.userId, userEmail: session.email, userRole: session.role, action: "UPDATE", resource: "Organization", resourceId: session.organizationId, metadata: { fields: Object.keys(data) }, organizationId: session.organizationId });
+  logAuditEvent({ userId: session.userId, userEmail: session.email, userRole: session.role, action: "UPDATE", resource: "Organization", resourceId: session.organizationId, metadata: { fields: Object.keys(input) }, organizationId: session.organizationId });
 
   revalidatePath(ROUTES.settings);
   return serialize(org);
