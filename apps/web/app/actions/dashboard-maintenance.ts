@@ -2,7 +2,7 @@
 
 import { db } from "@repo/db";
 import { startOfMonth, endOfMonth } from "date-fns";
-import { requirePermission } from "../../lib/auth-helpers";
+import { requireTenantPermission } from "../../lib/auth-helpers";
 
 export type MaintenanceStats = {
   openTickets: number;
@@ -27,7 +27,7 @@ export async function getMaintenanceStats(range?: {
   from: Date;
   to: Date;
 }): Promise<MaintenanceStats> {
-  const session = await requirePermission("dashboard:read");
+  const session = await requireTenantPermission("dashboard:read");
   const orgId = session.organizationId;
 
   const now = new Date();

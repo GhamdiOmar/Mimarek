@@ -1,12 +1,12 @@
 "use server";
 
 import { db } from "@repo/db";
-import { requirePermission } from "../../../lib/auth-helpers";
+import { requireTenantPermission } from "../../../lib/auth-helpers";
 import { subWeeks, startOfWeek } from "date-fns";
 
 /** Last 12 weeks of active pipeline value (PENDING reservation amounts). */
 export async function getPipelineTrend(): Promise<number[]> {
-  const session = await requirePermission("dashboard:read");
+  const session = await requireTenantPermission("dashboard:read");
   const orgId = session.organizationId;
 
   const today = new Date();

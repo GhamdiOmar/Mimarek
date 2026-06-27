@@ -1,12 +1,12 @@
 "use server";
 
 import { db } from "@repo/db";
-import { requirePermission } from "../../../lib/auth-helpers";
+import { requireTenantPermission } from "../../../lib/auth-helpers";
 import { dayBuckets, dayIndex } from "./shared";
 
 /** Last 30 days of paid rent-installment amounts, bucketed daily by paidAt. */
 export async function getRevenueTrend(): Promise<number[]> {
-  const session = await requirePermission("dashboard:read");
+  const session = await requireTenantPermission("dashboard:read");
   const orgId = session.organizationId;
   const buckets = dayBuckets(30);
   const start = buckets[0]!;

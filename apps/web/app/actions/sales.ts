@@ -1,10 +1,10 @@
 "use server";
 
 import { db } from "@repo/db";
-import { requirePermission } from "../../lib/auth-helpers";
+import { requireTenantPermission } from "../../lib/auth-helpers";
 
 export async function getSalesStats() {
-  const session = await requirePermission("dashboard:read");
+  const session = await requireTenantPermission("dashboard:read");
   const orgId = session.organizationId;
 
   const [customerCount, reservationCount, contractCount] = await Promise.all([

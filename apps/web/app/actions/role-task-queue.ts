@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@repo/db";
-import { requirePermission } from "../../lib/auth-helpers";
+import { requireTenantPermission } from "../../lib/auth-helpers";
 import { serialize } from "../../lib/serialize";
 import { getLeasingStats } from "./dashboard-leasing";
 import { getFinanceStats } from "./dashboard-finance";
@@ -44,7 +44,7 @@ export type RoleTaskQueueResult = {
 };
 
 export async function getRoleTaskQueue(): Promise<RoleTaskQueueResult> {
-  const session = await requirePermission("dashboard:read");
+  const session = await requireTenantPermission("dashboard:read");
   const orgId = session.organizationId;
 
   // Fetch all sources in parallel to minimise round-trips

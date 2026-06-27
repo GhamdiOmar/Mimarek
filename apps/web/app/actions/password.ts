@@ -1,6 +1,7 @@
 ﻿"use server";
 
 import { db, Prisma } from "@repo/db";
+import { headers } from "next/headers";
 import { hash as bcryptHash, compare as bcryptCompare } from "@node-rs/bcrypt";
 import { randomBytes } from "crypto";
 import { getSessionOrThrow } from "../../lib/auth-helpers";
@@ -65,6 +66,17 @@ export async function changePassword(data: {
 // eslint-disable-next-line mimaric/require-action-guard -- public pre-auth: a locked-out user requests a reset; responds uniformly to avoid account enumeration.
 export async function requestPasswordReset(email: string) {
   const normalizedEmail = email.toLowerCase().trim();
+
+  // SEC-019: per-IP throttle BEFORE the per-email check, so a single source can't
+  // pivot across many emails to brute the enumeration/email-flood surface. Reply
+  // uniformly with success to avoid enumeration. failClosed:false so a rate-limit
+  // store hiccup never blocks all password resets globally.
+  const h = await headers();
+  const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? h.get("x-real-ip") ?? "unknown";
+  const ipRl = await checkRateLimit(`password-reset-ip:${ip}`, 20, 60 * 60 * 1000, { failClosed: false });
+  if (!ipRl.allowed) {
+    return { success: true };
+  }
 
   // Rate limit check (before DB lookup to prevent timing-based enumeration)
   const rl = await checkRateLimit(`password-reset:${normalizedEmail}`, 3, 60 * 60 * 1000, { failClosed: true });

@@ -10,6 +10,7 @@ import {
   listPublishedListingsForBuyer,
   getPublishedListingForBuyer,
   listSellerOrgsWithListings,
+  buyerVisibleWhere,
   type MarketplaceListingFilters,
 } from "../../lib/marketplace/listing-view";
 import { encryptCustomerData, safeDecryptField } from "../../lib/pii-crypto";
@@ -503,13 +504,15 @@ export async function confirmMarketplaceInterest(
   }
 
   const result = await db.$transaction(async (tx) => {
+    // buyerVisibleWhere enforces the full buyer-visibility predicate
+    // (PUBLISHED + complianceStatus=APPROVED + not-expired + not-self) — the
+    // single visibility chokepoint shared with the read layer. A non-approved,
+    // expired, or self-owned listing returns null → "no longer available", so
+    // there is no separate self-check to run here.
     const listing = await tx.marketplaceListing.findFirst({
-      where: { id: listingId, status: "PUBLISHED" },
+      where: { id: listingId, ...buyerVisibleWhere(session.organizationId) },
     });
     if (!listing) throw new Error("This listing is no longer available.");
-    if (listing.sellerOrgId === session.organizationId) {
-      throw new Error("You cannot express interest in your own organization's listing.");
-    }
 
     // Encrypt the normalized phone for the seller-side CRM customer. The blind-index
     // hash is keyed to the SELLER org (the customer's owning org) — H8 per-tenant.

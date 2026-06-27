@@ -1,13 +1,13 @@
 "use server";
 
 import { db } from "@repo/db";
-import { requirePermission } from "../../../lib/auth-helpers";
+import { requireTenantPermission } from "../../../lib/auth-helpers";
 import { effectivePaid } from "../../../lib/money";
 import { subWeeks, startOfWeek } from "date-fns";
 
 /** Last 12 weeks of AR collection % (effectivePaid / scheduled). */
 export async function getCollectionsTrend(): Promise<number[]> {
-  const session = await requirePermission("dashboard:read");
+  const session = await requireTenantPermission("dashboard:read");
   const orgId = session.organizationId;
 
   const today = new Date();

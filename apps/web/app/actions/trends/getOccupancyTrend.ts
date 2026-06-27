@@ -1,12 +1,12 @@
 "use server";
 
 import { db } from "@repo/db";
-import { requirePermission } from "../../../lib/auth-helpers";
+import { requireTenantPermission } from "../../../lib/auth-helpers";
 import { subWeeks, startOfWeek } from "date-fns";
 
 /** Last 12 weeks of occupancy % — derived from lease start/end dates. */
 export async function getOccupancyTrend(): Promise<number[]> {
-  const session = await requirePermission("dashboard:read");
+  const session = await requireTenantPermission("dashboard:read");
   const orgId = session.organizationId;
 
   const totalUnits = await db.unit.count({ where: { organizationId: orgId } });

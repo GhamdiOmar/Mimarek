@@ -57,8 +57,8 @@ export async function adminGetAllTickets(filters?: {
 }) {
   await requirePermission("billing:admin");
 
-  const page = filters?.page ?? 1;
-  const pageSize = filters?.pageSize ?? 30;
+  const page = Math.max(1, filters?.page ?? 1);
+  const pageSize = Math.min(100, Math.max(1, filters?.pageSize ?? 30));
 
   const where: Record<string, unknown> = {};
   if (filters?.status) where.status = filters.status;

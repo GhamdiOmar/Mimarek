@@ -24,7 +24,7 @@ import ReportsView from "./ReportsView";
  * Audience: tenant-only (dashboard/layout.tsx → requireTenant + this gate).
  */
 export default async function ReportsDashboardPage() {
-  await requirePermission("dashboard:read");
+  await requirePermission("reports:read");
 
   return <ReportsView loadedAt={new Date().toISOString()} />;
 }

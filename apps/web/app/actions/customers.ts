@@ -410,7 +410,10 @@ export async function getCustomers(filters?: {
     return { ...masked, contactPhoneE164 };
   });
 
-  logAuditEvent({ userId: session.userId, userEmail: session.email, userRole: session.role, action: hasPiiAccess ? "READ_PII" : "READ", resource: "Customer", metadata: { filters, count: results.length }, organizationId: session.organizationId });
+  // SEC-010: never log the raw search term or raw filter values — `filters.search`
+  // can be a phone/email/nationalId. Record only that a search happened + which
+  // non-search filter keys were used, plus the result count.
+  logAuditEvent({ userId: session.userId, userEmail: session.email, userRole: session.role, action: hasPiiAccess ? "READ_PII" : "READ", resource: "Customer", metadata: { hasSearch: Boolean(filters?.search), filterKeys: Object.keys(filters ?? {}).filter((k) => k !== "search"), count: results.length }, organizationId: session.organizationId });
 
   return serialize(maskedList);
 }

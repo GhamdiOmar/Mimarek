@@ -16,6 +16,7 @@ import { sendTransactionalEmail } from "../../lib/email";
 import { invitationEmail } from "../../lib/email-templates";
 import { checkLimit, FEATURE_KEYS } from "../../lib/entitlements";
 import { checkRateLimit, peekRateLimit } from "../../lib/rate-limit";
+import { sha256Hex } from "../../lib/token-hash";
 
 // ─── Error helper ─────────────────────────────────────────────────────────────
 
@@ -104,13 +105,17 @@ export async function createInvitation(data: { email: string; role?: string }) {
       return { success: false, error: "An invitation has already been sent to this email" };
     }
 
-    const token = crypto.randomUUID();
+    // The RAW token (random UUID) goes ONLY in the emailed invite URL below; the
+    // DB `token` column now stores ONLY its SHA-256 hash (OWASP: hash-at-rest),
+    // mirroring passwordResetToken.tokenHash. A DB read therefore cannot forge a
+    // redeemable invite link.
+    const rawToken = crypto.randomUUID();
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
     const invitation = await db.invitation.create({
       data: {
         email,
-        token,
+        token: sha256Hex(rawToken),
         role: (data.role || "USER") as UserRole,
         organizationId: session.organizationId,
         invitedById: session.userId,
@@ -124,7 +129,7 @@ export async function createInvitation(data: { email: string; role?: string }) {
     });
 
     await recordInviteAttempt(session.organizationId);
-    const inviteUrl = `${getAppUrl()}/auth/invite/${token}`;
+    const inviteUrl = `${getAppUrl()}/auth/invite/${rawToken}`;
     const template = invitationEmail({
       inviteUrl,
       organizationName: invitation.organization.name,
@@ -172,9 +177,9 @@ export async function acceptInvitation(data: {
   password: string;
 }) {
   try {
-    // Find invitation by token (read-only, outside transaction)
+    // Find invitation by HASH of the incoming token — only the hash is stored at rest.
     const invitation = await db.invitation.findFirst({
-      where: { token: data.token, status: "PENDING_INVITE" },
+      where: { token: sha256Hex(data.token), status: "PENDING_INVITE" },
       include: {
         organization: { select: { id: true, name: true } },
         invitedBy: { select: { id: true, name: true } },
@@ -306,8 +311,9 @@ export async function acceptInvitation(data: {
 // eslint-disable-next-line mimaric/require-action-guard -- token-gated pre-auth read: the invite token IS the credential (invitee has no session yet).
 export async function getInvitationByToken(token: string) {
   try {
+    // Look up by HASH of the incoming token — only the hash is stored at rest.
     const invitation = await db.invitation.findFirst({
-      where: { token },
+      where: { token: sha256Hex(token) },
       include: {
         organization: { select: { name: true } },
         invitedBy: { select: { name: true } },
@@ -428,20 +434,22 @@ export async function resendInvitation(invitationId: string) {
       return { success: false, error: "Invitation not found" };
     }
 
-    const newToken = crypto.randomUUID();
+    // Fresh raw token for the new emailed link; persist ONLY its SHA-256 hash
+    // (OWASP: hash-at-rest), same as the create path above.
+    const newRawToken = crypto.randomUUID();
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
     const updatedInvitation = await db.invitation.update({
       where: { id: invitationId },
       data: {
-        token: newToken,
+        token: sha256Hex(newRawToken),
         expiresAt,
         status: invitation.status === "EXPIRED_INVITE" ? "PENDING_INVITE" : invitation.status,
       },
     });
 
     await recordInviteAttempt(session.organizationId);
-    const inviteUrl = `${getAppUrl()}/auth/invite/${newToken}`;
+    const inviteUrl = `${getAppUrl()}/auth/invite/${newRawToken}`;
     const template = invitationEmail({
       inviteUrl,
       organizationName: invitation.organization.name,
