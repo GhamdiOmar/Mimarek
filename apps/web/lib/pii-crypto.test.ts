@@ -2,7 +2,11 @@ import { describe, it, expect, beforeAll, afterAll, vi, beforeEach } from "vites
 
 // Mock the security-log module boundary so we can assert the A2 plaintext-detection
 // branch fires logSecurityEvent without touching real telemetry/console plumbing.
-vi.mock("./security-log", () => ({
+// safeDecryptField now lives in @repo/crypto and calls logSecurityEvent via the
+// package-internal security-log module, so the mock must target that resolved module
+// (the ./security-log shim only re-exports it; mocking the shim wouldn't intercept the
+// package's own internal import). Mirrors how the suites mock the @repo/db boundary.
+vi.mock("@repo/crypto/src/security-log", () => ({
   logSecurityEvent: vi.fn(),
 }));
 
@@ -27,7 +31,10 @@ afterAll(() => {
 // decrypt(), so beforeAll() still wins.
 import { encrypt } from "./encryption";
 import { safeDecryptField } from "./pii-crypto";
-import { logSecurityEvent } from "./security-log";
+// Pull the spy handle from the SAME module that was mocked above, so vi.mocked()
+// returns the mock the @repo/crypto implementation actually calls. The ./security-log
+// shim re-exports the package barrel, which would yield a different (unmocked) binding.
+import { logSecurityEvent } from "@repo/crypto/src/security-log";
 
 const logSpy = vi.mocked(logSecurityEvent);
 
