@@ -33,25 +33,30 @@ export async function getSessionOrThrow(): Promise<AuthSession> {
     throw new Error("Unauthorized");
   }
 
-  // If session already has organizationId (from JWT), use it directly
-  if (session.user.role) {
-    return {
-      userId: session.user.id,
-      email: session.user.email!,
-      name: session.user.name ?? null,
-      role: session.user.role,
-      organizationId: session.user.organizationId ?? null,
-    };
-  }
-
-  // Fallback: fetch from DB (shouldn't happen if JWT callbacks are working)
+  // SEC-003 revocation. NextAuth pins role/organizationId into the JWT at login
+  // and never re-validates them during the 7-day token lifetime. Re-read the user
+  // from the DB on every action — the single choke point every guard flows through
+  // (requirePermission / getTenantSessionOrThrow / getSessionWithPermissions /
+  // getTenantPageAccess all call this) — so that:
+  //   • a demoted user picks up the new role immediately (we return the FRESH role),
+  //   • a removed user is rejected (row gone),
+  //   • a deactivated user is rejected (isActive = false),
+  //   • a password reset / change / "sign out everywhere" invalidates outstanding
+  //     tokens (tokenVersion bump → the JWT's tokenVersion no longer matches).
+  // The edge middleware (auth.config.ts) still routes on the stale JWT claims —
+  // that is UX-only; this DB-backed check is the real authorization gate.
   const user = await db.user.findUnique({
     where: { id: session.user.id },
-    select: { organizationId: true, role: true, name: true },
+    select: { role: true, organizationId: true, name: true, isActive: true, tokenVersion: true },
   });
 
-  if (!user) {
-    throw new Error("User not found");
+  if (!user || !user.isActive) {
+    throw new Error("Unauthorized");
+  }
+
+  const sessionTokenVersion = session.user.tokenVersion ?? 0;
+  if (user.tokenVersion !== sessionTokenVersion) {
+    throw new Error("Unauthorized");
   }
 
   return {
@@ -181,6 +186,13 @@ export async function getSessionWithPermissions(): Promise<TenantAuthSession & {
 export async function requireSystem() {
   const session = await auth();
   if (!session?.user) redirect("/auth/login");
+  // SEC-003: re-validate against the DB so a revoked / deactivated / deleted user
+  // is bounced at the page layer too (getSessionOrThrow throws Unauthorized on those).
+  try {
+    await getSessionOrThrow();
+  } catch {
+    redirect("/auth/login");
+  }
   if (!isSystemRole(session.user.role ?? "")) redirect("/dashboard");
   return session;
 }
@@ -195,6 +207,13 @@ export async function requireSystem() {
 export async function requireTenant() {
   const session = await auth();
   if (!session?.user) redirect("/auth/login");
+  // SEC-003: re-validate against the DB so a revoked / deactivated / deleted user
+  // is bounced at the page layer too (getSessionOrThrow throws Unauthorized on those).
+  try {
+    await getSessionOrThrow();
+  } catch {
+    redirect("/auth/login");
+  }
   if (isSystemRole(session.user.role ?? "")) redirect("/dashboard/admin");
   if (!session.user.organizationId) redirect("/auth/login");
   return session;

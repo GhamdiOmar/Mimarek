@@ -41,9 +41,14 @@ export async function changePassword(data: {
     return { error: "WEAK_PASSWORD", details: validation.errors };
   }
 
-  // Hash and save
+  // Hash and save. Bump tokenVersion so every existing JWT for this user is
+  // invalidated on its next action (SEC-003 — a password change signs out other
+  // sessions, the standard account-security behaviour).
   const hashed = await bcryptHash(data.newPassword, 12);
-  await db.user.update({ where: { id: user.id }, data: { password: hashed } });
+  await db.user.update({
+    where: { id: user.id },
+    data: { password: hashed, tokenVersion: { increment: 1 } },
+  });
 
   logAuditEvent({
     userId: user.id,
@@ -156,7 +161,9 @@ export async function resetPassword(token: string, newPassword: string) {
     }
     await tx.user.update({
       where: { id: row.userId },
-      data: { password: await bcryptHash(newPassword, 12) },
+      // Bump tokenVersion so any outstanding JWT for this account is invalidated
+      // after a reset (SEC-003 — a stolen session cannot survive a password reset).
+      data: { password: await bcryptHash(newPassword, 12), tokenVersion: { increment: 1 } },
     });
     return { success: true as const };
   });

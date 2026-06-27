@@ -34,8 +34,8 @@ export async function getPlans() {
  */
 // eslint-disable-next-line mimaric/require-action-guard -- public plan lookup by slug (pricing page); no tenant data or PII, read-only.
 export async function getPlanBySlug(slug: string) {
-  const plan = await db.plan.findUnique({
-    where: { slug },
+  const plan = await db.plan.findFirst({
+    where: { slug, isPublic: true },
     include: { entitlements: true },
   });
   return plan ? serialize(plan) : null;
@@ -87,6 +87,14 @@ export async function subscribeToPlan(data: {
     throw new Error("Your organization already has an active subscription. To change plans, please use the upgrade or downgrade option instead.");
   }
 
+  const plan = await db.plan.findFirst({
+    where: { id: data.planId, isPublic: true },
+    select: { id: true },
+  });
+  if (!plan) {
+    throw new Error("The selected plan is not available. Please choose a plan from the pricing page.");
+  }
+
   const subscriptionId = await createSubscription({
     organizationId: session.organizationId,
     planId: data.planId,
@@ -127,7 +135,7 @@ export async function changePlan(data: {
     throw new Error("There is no active subscription to change. Please subscribe to a plan first.");
   }
 
-  const newPlan = await db.plan.findUnique({ where: { id: data.newPlanId } });
+  const newPlan = await db.plan.findFirst({ where: { id: data.newPlanId, isPublic: true } });
   if (!newPlan) throw new Error("The selected plan was not found. Please refresh and try again.");
 
   const billingCycle = data.billingCycle ?? current.billingCycle;

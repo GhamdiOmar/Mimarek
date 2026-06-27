@@ -13,6 +13,7 @@ type SessionUserExtras = {
   onboardingCompleted?: boolean;
   accountType?: string | null;
   subscriptionStatus?: string | null;
+  tokenVersion?: number;
 };
 
 /** The `user` object passed to the `jwt` callback, including the app's extra fields. */
@@ -119,6 +120,7 @@ export const authConfig = {
         token.onboardingCompleted = user.onboardingCompleted ?? true;
         token.accountType = user.accountType ?? null;
         token.subscriptionStatus = user.subscriptionStatus ?? null;
+        token.tokenVersion = user.tokenVersion ?? 0;
       }
       // Backward compatibility — map deprecated roles (remove after full migration)
       if (token.role === "SUPER_ADMIN") token.role = "COMPANY_ADMIN";
@@ -143,6 +145,7 @@ export const authConfig = {
         sessionUser.onboardingCompleted = token.onboardingCompleted ?? true;
         sessionUser.accountType = token.accountType ?? null;
         sessionUser.subscriptionStatus = token.subscriptionStatus ?? null;
+        sessionUser.tokenVersion = token.tokenVersion ?? 0;
       }
       return session;
     },

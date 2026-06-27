@@ -76,9 +76,10 @@ export async function applyCoupon(couponId: string, invoiceId: string) {
   const session = await requireTenantPermission("billing:write");
 
   const [coupon, invoice] = await Promise.all([
-    db.coupon.findUnique({ where: { id: couponId } }),
+    db.coupon.findUnique({ where: { id: couponId }, include: { plans: { select: { id: true } } } }),
     db.invoice.findFirst({
       where: { id: invoiceId, organizationId: session.organizationId },
+      include: { subscription: { select: { planId: true, billingCycle: true } } },
     }),
   ]);
 
@@ -90,6 +91,23 @@ export async function applyCoupon(couponId: string, invoiceId: string) {
     where: { couponId, organizationId: session.organizationId },
   });
   if (existing) throw new Error("This coupon has already been used by your organization.");
+
+  // SEC-008: re-validate the coupon at apply-time (not just at the validateCoupon
+  // pre-check). A known coupon id must not be applicable when expired, inactive,
+  // restricted to other plans, or restricted to other billing cycles.
+  const now = new Date();
+  if (!coupon.isActive) throw new Error("This coupon is no longer active.");
+  if (coupon.validFrom > now) throw new Error("This coupon is not yet valid.");
+  if (coupon.validUntil && coupon.validUntil < now) throw new Error("This coupon has expired.");
+  const planId = invoice.subscription?.planId ?? null;
+  if (coupon.plans.length > 0 && (!planId || !coupon.plans.some((p) => p.id === planId))) {
+    throw new Error("This coupon is not valid for the selected plan.");
+  }
+  const cycle = (invoice.billingCycle ?? invoice.subscription?.billingCycle) ?? null;
+  const cycles = Array.isArray(coupon.applicableCycles) ? (coupon.applicableCycles as string[]) : null;
+  if (cycles && cycles.length > 0 && cycle && !cycles.includes(cycle)) {
+    throw new Error("This coupon is not valid for this billing cycle.");
+  }
 
   // Calculate discount
   const subtotal = Number(invoice.subtotal);

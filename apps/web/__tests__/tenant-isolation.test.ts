@@ -66,11 +66,17 @@ function freshSeed(): Record<string, Row[]> {
     // Every row belongs to ORG_B — the session will be ORG_A.
     customer: [{ id: "cust_1", organizationId: ORG_B, name: "enc", status: "ACTIVE" }],
     unit: [{ id: "unit_1", organizationId: ORG_B, number: "101", status: "AVAILABLE", price: 100 }],
-    coupon: [{ id: "coup_1", code: "SAVE", isActive: true, type: "PERCENTAGE", value: 10, currentUses: 0, maxRedemptions: null, validFrom: new Date(0), validUntil: null, minPurchaseAmount: null }],
+    coupon: [{ id: "coup_1", code: "SAVE", isActive: true, type: "PERCENTAGE", value: 10, currentUses: 0, maxRedemptions: null, validFrom: new Date(0), validUntil: null, minPurchaseAmount: null, plans: [] }],
     invoice: [{ id: "inv_1", organizationId: ORG_B, subtotal: 1000, vatRate: 0.15 }],
     couponRedemption: [],
     reservation: [],
     customerPropertyInterest: [],
+    // SEC-003: getSessionOrThrow re-reads the acting user. Seed both org admins so
+    // the revocation check (isActive + tokenVersion) passes for whichever session is set.
+    user: [
+      { id: "user_org_aaaa", role: "ADMIN", organizationId: ORG_A, name: "Test Admin", isActive: true, tokenVersion: 0 },
+      { id: "user_org_bbbb", role: "ADMIN", organizationId: ORG_B, name: "Test Admin", isActive: true, tokenVersion: 0 },
+    ],
   };
 }
 

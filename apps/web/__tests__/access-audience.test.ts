@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { setSession, tenantAdmin, auth, signIn, signOut } from "./helpers/session-mock";
+import { setSession, tenantAdmin, auth, signIn, signOut, currentUserRow } from "./helpers/session-mock";
 
 /**
  * §8 ACCESS-MODEL AUDIENCE REJECTION — runtime regression lock.
@@ -20,7 +20,10 @@ import { setSession, tenantAdmin, auth, signIn, signOut } from "./helpers/sessio
 // query before they throw, so `db` is unused here). Mirrors tenant-isolation.test.ts.
 vi.mock("@repo/db", async () => {
   const prisma = await vi.importActual<typeof import("@prisma/client")>("@prisma/client");
-  return { ...prisma, db: {} };
+  // getSessionOrThrow re-reads the user for SEC-003 revocation — return the row
+  // mirroring the session under test. The guards still throw on audience/permission
+  // mismatch (the assertions below), this just lets the DB recheck pass.
+  return { ...prisma, db: { user: { findUnique: async () => currentUserRow() } } };
 });
 vi.mock("../auth", () => ({ auth, signIn, signOut, handlers: {} }));
 vi.mock("next/cache", () => ({ revalidatePath: () => {}, revalidateTag: () => {}, unstable_cache: (fn: unknown) => fn }));
