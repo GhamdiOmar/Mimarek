@@ -374,7 +374,6 @@ export default function MyListingsPage() {
       await submitDeedTransferProof(proofTarget.transfer.id, {
         deedNumber: deedNumber.trim() || undefined,
         ownerNationalId: ownerNationalId.trim() || undefined,
-        deedDocKey: deedDocKey.trim() || undefined,
         rettCertRef: rettCertRef.trim() || undefined,
       });
       // Reflect the now-PENDING proof on the matching inquiry.
@@ -1278,7 +1277,10 @@ export default function MyListingsPage() {
                 <div className="space-y-1.5">
                   <UploadDropzone
                     endpoint="deedProofUploader"
+                    input={{ transferId: proofTarget?.transfer?.id ?? "" }}
                     onClientUploadComplete={(res) => {
+                      // The key is written server-side (bound to the verified-owned
+                      // transfer) in onUploadComplete; this only drives the "uploaded" UI.
                       const fileKey = res?.[0]?.serverData?.fileKey ?? "";
                       setDeedDocKey(fileKey);
                       setDeedDocName(res?.[0]?.name ?? "");

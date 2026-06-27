@@ -1354,8 +1354,9 @@ export async function listOrgRegaAuthorizations() {
 export type DeedProofSubmitPayload = {
   deedNumber?: string;
   ownerNationalId?: string;
-  /** SEC-016: UploadThing fileKey of the uploaded deed (preferred — downloaded via the authorized signed-URL route). */
-  deedDocKey?: string;
+  // SEC-016: the deed fileKey is NO LONGER accepted here — it is written
+  // server-side by the `deedProofUploader` onUploadComplete (bound to a
+  // verified-owned transfer), so a client can never attach a foreign key.
   deedDocUrl?: string;
   deedDocHash?: string;
   rettCertRef?: string;
@@ -1395,15 +1396,6 @@ export async function submitDeedTransferProof(
     }
   }
 
-  // SEC-016: the UI now uploads the deed (UploadThing `deedProofUploader`) and
-  // submits its fileKey. We download it later via the authorized signed-URL route,
-  // never a raw bearer link. Validate length so a malformed/oversized value can't
-  // be persisted (a real fileKey is well under 256 chars).
-  const deedDocKey = payload.deedDocKey?.trim() || null;
-  if (deedDocKey && deedDocKey.length > 256) {
-    throw new Error("Invalid deed document reference.");
-  }
-
   // Encrypt the two highly-sensitive PII fields — NEVER store/log plaintext.
   const deedNumberEnc = payload.deedNumber?.trim()
     ? encrypt(payload.deedNumber.trim())
@@ -1418,7 +1410,6 @@ export async function submitDeedTransferProof(
       transferId,
       deedNumberEnc,
       ownerNationalIdEnc,
-      deedDocKey,
       deedDocUrl,
       deedDocHash: payload.deedDocHash?.trim() || null,
       rettCertRef: payload.rettCertRef?.trim() || null,
@@ -1429,7 +1420,6 @@ export async function submitDeedTransferProof(
     update: {
       deedNumberEnc,
       ownerNationalIdEnc,
-      deedDocKey,
       deedDocUrl,
       deedDocHash: payload.deedDocHash?.trim() || null,
       rettCertRef: payload.rettCertRef?.trim() || null,

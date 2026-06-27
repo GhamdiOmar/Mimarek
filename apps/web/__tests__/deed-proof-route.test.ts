@@ -163,3 +163,33 @@ describe("SEC-016 — deed-document download authz matrix", () => {
     expect(generateSignedURL).not.toHaveBeenCalled();
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SEC-016 (P3-1) — the deed fileKey is SERVER-AUTHORITATIVE: the uploader binds it
+// to a verified-owned transfer, and the submit action no longer trusts a client key.
+// Source-level lock (the UploadThing middleware can't be unit-invoked without the
+// UT runtime), mirroring the zatca-issuance-hooks source-assertion pattern.
+// ─────────────────────────────────────────────────────────────────────────────
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
+describe("SEC-016 P3-1 — upload binds the deed key to a verified-owned transfer", () => {
+  const core = readFileSync(resolve(process.cwd(), "app/api/uploadthing/core.ts"), "utf8");
+  const action = readFileSync(resolve(process.cwd(), "app/actions/marketplace.ts"), "utf8");
+
+  it("deedProofUploader middleware verifies the transfer belongs to the seller org", () => {
+    expect(core).toMatch(/\.input\(z\.object\(\{ transferId/);
+    // ownership check: findFirst on the transfer scoped by sellerOrgId === caller's org
+    expect(core).toMatch(/unitTransferTransaction\.findFirst[\s\S]*sellerOrgId: organizationId/);
+  });
+
+  it("deedProofUploader writes the key server-side (onUploadComplete upsert)", () => {
+    expect(core).toMatch(/onUploadComplete[\s\S]*marketplaceDeedProof\.upsert[\s\S]*deedDocKey: fileKey/);
+  });
+
+  it("submitDeedTransferProof no longer reads a client-supplied deedDocKey", () => {
+    // The submit action must never touch a caller-supplied key — the upload writes it.
+    expect(action).not.toMatch(/payload\.deedDocKey/);
+    expect(action).not.toMatch(/DeedProofSubmitPayload[\s\S]*deedDocKey\?/);
+  });
+});
