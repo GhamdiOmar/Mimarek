@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { AlertTriangle, Download, FileText, Home, Send, Wrench } from "lucide-react";
+import { AlertTriangle, Home, Send, Wrench } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Badge, Button, Card, CardContent, Input, SelectField, Textarea } from "@repo/ui";
@@ -12,7 +12,6 @@ import { createTenantMaintenanceRequest } from "../actions/portal";
 type PortalSummary = {
   customer: { name: string };
   activeLease: PortalLease | null;
-  documents: Array<{ id: string; name: string; category: string; createdAt: string }>;
   maintenance: Array<{ id: string; title: string; status: string; priority: string; createdAt: string }>;
 };
 
@@ -150,32 +149,7 @@ export default function PortalClient({ initialSummary }: { initialSummary: Porta
               </Card>
             </section>
 
-            <section aria-labelledby="section-docs" className="grid gap-4 lg:grid-cols-2">
-              <Card>
-                <CardContent className="space-y-4 p-5">
-                  <h3 id="section-docs" className="flex items-center gap-2 font-semibold"><FileText className="h-5 w-5 text-primary" />{t("المستندات", "Documents")}</h3>
-                  {summary.documents.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">{t("لا توجد مستندات متاحة.", "No documents are available.")}</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {summary.documents.map((document) => (
-                        <a
-                          key={document.id}
-                          href={`/api/portal/documents/${document.id}`}
-                          className="flex items-center justify-between rounded-md border border-border p-3 text-sm hover:bg-muted/50"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          aria-label={t(`تنزيل ${document.name}`, `Download ${document.name}`)}
-                        >
-                          <span>{document.name}</span>
-                          <Download className="h-4 w-4 text-primary" />
-                        </a>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
+            <section aria-labelledby="section-maintenance-form" className="grid gap-4 lg:grid-cols-2">
               <Card>
                 <CardContent className="space-y-4 p-5">
                   <h3 id="section-maintenance-form" className="flex items-center gap-2 font-semibold"><Wrench className="h-5 w-5 text-primary" />{t("طلب صيانة", "Maintenance request")}</h3>

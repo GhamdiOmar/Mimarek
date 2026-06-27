@@ -96,7 +96,6 @@ const HASH_TO_CATEGORY: Record<string, FAQCategory> = {
   deals: "sales_crm",
   contracts: "sales_crm",
   units: "property_management",
-  documents: "property_management",
   maintenance: "property_management",
   "preventive-maintenance": "property_management",
   marketplace: "marketplace",

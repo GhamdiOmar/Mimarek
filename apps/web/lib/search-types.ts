@@ -17,8 +17,7 @@ export type SearchEntityType =
   | "contract"
   | "reservation"
   | "payment"
-  | "maintenance"
-  | "document";
+  | "maintenance";
 
 export interface SearchHit {
   /** Stable record id — used (with `type`) as the non-PII cmdk item `value`. */

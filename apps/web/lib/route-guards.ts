@@ -65,7 +65,6 @@ export const ROUTE_GUARDS: Record<string, RouteGuard> = {
   "/dashboard/maintenance/tickets": { permission: "maintenance:read", audience: "tenant" },
   "/dashboard/maintenance/preventive": { permission: "maintenance:read", audience: "tenant" },
   "/dashboard/reports": { permission: "reports:read", audience: "tenant" },
-  "/dashboard/documents": { permission: "documents:read", audience: "tenant" },
 
   // ── System tier ────────────────────────────────────────────────────────────
   "/dashboard/billing": { permission: "billing:read", audience: "tenant" },

@@ -12,12 +12,11 @@ export type PortalIdentity = {
 /**
  * Resolve the portal (tenant end-user) identity for the current session.
  *
- * Shared by `app/actions/portal.ts` and the portal document download route
- * (`app/api/portal/documents/[id]`) so the auth → role → org-scoped customer
- * resolution lives in exactly ONE place. The portal authorizes by identity +
- * ownership, NOT by the `documents:read` permission — a tenant `USER` does not
- * hold that permission, so the dashboard `/api/documents/[id]` route (which
- * gates on it) cannot be reused for the portal.
+ * Shared by `getTenantPortalSummary` and `createTenantMaintenanceRequest` in
+ * `app/actions/portal.ts` so the auth → role → org-scoped customer resolution
+ * lives in exactly ONE place. The portal authorizes by identity + ownership
+ * (role === "USER" whose email maps to an org customer), never by a tenant-staff
+ * permission.
  *
  * Throws on any failure: not signed in (`Unauthorized`), not a portal user
  * (`Forbidden`, role !== "USER"), no org, or no matching customer profile.

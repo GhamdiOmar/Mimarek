@@ -50,11 +50,6 @@ export type Permission =
   | "preventive_maintenance:read"
   | "preventive_maintenance:write"
 
-  // Documents
-  | "documents:read"
-  | "documents:write"
-  | "documents:delete"
-
   // Organization & Team
   | "organization:read"
   | "organization:write"
@@ -120,7 +115,6 @@ const ALL_PERMISSIONS: Permission[] = [
   "payments:read", "payments:write",
   "maintenance:read", "maintenance:write", "maintenance:delete",
   "preventive_maintenance:read", "preventive_maintenance:write",
-  "documents:read", "documents:write", "documents:delete",
   "organization:read", "organization:write",
   "team:read", "team:write", "team:delete",
   "reports:read", "reports:export",
@@ -175,7 +169,6 @@ export const TENANT_SCOPED_PERMISSIONS: Permission[] = [
   "payments:read", "payments:write",
   "maintenance:read", "maintenance:write", "maintenance:delete",
   "preventive_maintenance:read", "preventive_maintenance:write", "preventive_maintenance:delete",
-  "documents:read", "documents:write", "documents:delete",
   "organization:read", "organization:write",
   "team:read", "team:write", "team:delete",
   "reports:read", "reports:export",
@@ -211,7 +204,6 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     "payments:read", "payments:write",
     "maintenance:read", "maintenance:write", "maintenance:delete",
     "preventive_maintenance:read", "preventive_maintenance:write",
-    "documents:read", "documents:write", "documents:delete",
     "organization:read", "organization:write",
     "team:read", "team:write", "team:delete",
     "reports:read", "reports:export",
@@ -237,7 +229,6 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     "payments:read", "payments:write",
     "maintenance:read", "maintenance:write",
     "preventive_maintenance:read", "preventive_maintenance:write",
-    "documents:read", "documents:write",
     "organization:read",
     "team:read",
     "reports:read", "reports:export",
@@ -260,7 +251,6 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     "leases:read",
     "payments:read", "payments:write",
     "maintenance:read",
-    "documents:read", "documents:write",
     "notifications:read",
     "help:read", "help:create_ticket",
     "marketplace:read",
@@ -278,7 +268,6 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     "leases:read", "leases:write",
     "reservations:read", "reservations:write",
     "payments:read",
-    "documents:read", "documents:write",
     "notifications:read",
     "help:read", "help:create_ticket",
     "marketplace:read",
@@ -295,7 +284,6 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     "customers:read",
     "finance:read", "finance:write",
     "zatca:config", // finance owns the tenant's ZATCA tax config (Track B / R3)
-    "documents:read",
     "notifications:read",
     "help:read", "help:create_ticket",
   ],
@@ -305,7 +293,6 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     "properties:read",
     "maintenance:read", "maintenance:write",
     "preventive_maintenance:read",
-    "documents:read",
     "notifications:read",
     "help:read", "help:create_ticket",
   ],

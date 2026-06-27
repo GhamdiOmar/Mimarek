@@ -6,7 +6,6 @@ import {
   CalendarCheck,
   CreditCard,
   Wrench,
-  Receipt,
 } from "lucide-react";
 import type { SearchEntityType } from "./search-types";
 
@@ -55,11 +54,6 @@ export const SEARCH_ENTITY_META: Record<SearchEntityType, SearchEntityMeta> = {
     label: { ar: "الصيانة", en: "Maintenance" },
     listHref: (q) => `/dashboard/maintenance?q=${encodeURIComponent(q)}`,
   },
-  document: {
-    icon: Receipt,
-    label: { ar: "المستندات", en: "Documents" },
-    listHref: (q) => `/dashboard/documents?q=${encodeURIComponent(q)}`,
-  },
 };
 
 /** Fixed, intent-based group order (stable for keyboard muscle memory). */
@@ -70,5 +64,4 @@ export const SEARCH_ENTITY_ORDER: SearchEntityType[] = [
   "reservation",
   "payment",
   "maintenance",
-  "document",
 ];

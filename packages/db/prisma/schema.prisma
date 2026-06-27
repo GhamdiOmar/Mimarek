@@ -40,7 +40,6 @@ model Organization {
   users               User[]
   units               Unit[]                      @relation("UnitOrganization")
   customers           Customer[]
-  documents           Document[]
   maintenanceRequests MaintenanceRequest[]
   preventivePlans     PreventiveMaintenancePlan[]
   permissionRequests  PermissionRequest[]
@@ -224,7 +223,6 @@ model Unit {
   bathrooms                   Int? // Number of bathrooms
   commercialStrategy          CommercialStrategy? // FR-08/21: SELL, LEASE, HOLD, etc.
   reservations                Reservation[]
-  documents                   Document[]
   contracts                   Contract[]
   leases                      Lease[]
   maintenanceRequests         MaintenanceRequest[]
@@ -298,7 +296,6 @@ model Customer {
   reservations         Reservation[]
   contracts            Contract[]
   leases               Lease[]
-  documents            Document[]
   activities           CustomerActivity[]
   propertyInterests    Deal[]
   marketplaceInquiries MarketplaceInquiry[] @relation("MarketplaceInquiryCustomer")
@@ -475,9 +472,6 @@ model Contract {
   marketplaceInquiryId String?
   buyerOrgId           String?
   sellerOrgId          String?
-
-  // Documents linked to this contract
-  documents Document[]
 
   @@index([customerId])
   @@index([unitId])
@@ -696,43 +690,6 @@ enum PaymentStatus {
   PARTIALLY_PAID
   PAID
   OVERDUE
-}
-
-// ─── Document ─────────────────────────────────────────────────────────────────
-
-model Document {
-  id             String            @id @default(cuid())
-  name           String
-  url            String
-  type           String // file extension or mime type
-  category       DocCategory       @default(GENERAL)
-  size           Int? // in bytes
-  customerId     String?
-  customer       Customer?         @relation(fields: [customerId], references: [id])
-  unitId         String?
-  unit           Unit?             @relation(fields: [unitId], references: [id])
-  contractId     String?
-  contract       Contract?         @relation(fields: [contractId], references: [id])
-  organizationId String
-  organization   Organization      @relation(fields: [organizationId], references: [id])
-  userId         String?
-  version        Int               @default(1)
-  versions       DocumentVersion[]
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
-
-  @@index([customerId])
-  @@index([unitId])
-  @@index([contractId])
-  @@index([organizationId])
-}
-
-enum DocCategory {
-  GENERAL
-  LEGAL
-  CONTRACT
-  MARKETING
-  FINANCE
 }
 
 // ─── Maintenance Request ──────────────────────────────────────────────────────
@@ -1127,22 +1084,6 @@ enum JoinRequestStatus {
   DECLINED_JOIN
   EXPIRED_JOIN
   CANCELLED_JOIN
-}
-
-// ─── Document Version ────────────────────────────────────────────────────────
-
-model DocumentVersion {
-  id            String   @id @default(cuid())
-  documentId    String
-  document      Document @relation(fields: [documentId], references: [id])
-  versionNumber Int
-  url           String
-  size          Int?
-  uploadedBy    String?
-  changeNote    String?
-  createdAt     DateTime @default(now())
-
-  @@index([documentId])
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════

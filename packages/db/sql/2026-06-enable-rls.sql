@@ -60,7 +60,6 @@ ALTER TABLE IF EXISTS public."ContractTemplate"          ENABLE ROW LEVEL SECURI
 ALTER TABLE IF EXISTS public."Lease"                     ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public."RentInstallment"           ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public."RentPayment"               ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS public."Document"                  ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public."MaintenanceRequest"        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public."PreventiveMaintenancePlan" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public."PasswordResetToken"        ENABLE ROW LEVEL SECURITY;
@@ -73,7 +72,6 @@ ALTER TABLE IF EXISTS public."SupportTicket"             ENABLE ROW LEVEL SECURI
 ALTER TABLE IF EXISTS public."TicketMessage"             ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public."Invitation"                ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public."JoinRequest"               ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS public."DocumentVersion"           ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public."Plan"                      ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public."PlanEntitlement"           ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public."Subscription"              ENABLE ROW LEVEL SECURITY;
