@@ -90,6 +90,9 @@ jobs:
       - name: Check E2E coverage (no silently-skipped specs)
         run: cd apps/web && node scripts/check-e2e-coverage.mjs
 
+      - name: Check cron coverage (every sweep is scheduled)
+        run: cd apps/web && node scripts/check-cron-coverage.mjs
+
       - name: Run Playwright Tests
         run: cd apps/web && npx playwright test
 

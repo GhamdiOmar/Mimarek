@@ -1,5 +1,25 @@
 # Changelog — Mimarek PropTech
 
+## [5.8.0] — 2026-06-27 — Hardening Wave B: money-correctness (orphaned sweeps wired · effectivePaid single-homed · ZATCA VAT extracted)
+
+**Closes the three P1 money-correctness findings from the 2026-06-25 audit.** Backend / cron / lib only — no UI and no schema change.
+
+### Orphaned production sweeps (the silent money bug)
+- `markOverdueInstallments`, `expireTrials`, and `processDunning` existed but had **no cron route and no caller** — so installments never flipped to OVERDUE, trials never auto-expired, and dunning retries never fired in production. Each is now wired to a `CRON_SECRET`-gated route (`/api/cron/{mark-overdue-installments,expire-trials,process-dunning}`) plus a `vercel.json` schedule. New server-only `markOverdueInstallmentsInternal` (all-orgs) is the production writer of `RentInstallment.status="OVERDUE"`.
+- New **`scripts/check-cron-coverage.mjs` CI gate** asserts every sweep is reachable from a registered cron route — the regression can't recur (cron-reachability is a config concern the import-graph couldn't see; this gate can).
+- **SEC-013** — `lib/cron-auth.ts` now uses a constant-time compare (`timingSafeEqual`) and rejects the `?secret=` query fallback when `NODE_ENV === "production"` (query-string secrets leak into logs / proxies / Referer).
+
+### effectivePaid single-homed
+- The collections formula had 4 divergent copies (a private re-declaration in `dashboard-finance.ts`, four raw-SQL `CASE` blocks in `reports.ts`, an inline ternary in `getCollectionsTrend.ts`). All now derive from one source: `effectivePaid()` (pure, `lib/money.ts`) for TS, and a single `EFFECTIVE_PAID_SQL` `Prisma.sql` fragment for the raw-SQL paths. New `money.test.ts` locks the 4 documented cases. Behavior-preserving (identical formula). `lib/money.ts` stays import-pure (type-only `Prisma`) so plain test scripts can import it.
+
+### ZATCA VAT math extracted + tested
+- The legally-consequential VAT-inclusive back-computation was inlined inside the DB-coupled `issueDocumentForCharge`. Extracted to pure `lib/zatca-amounts.ts` `computeInclusiveBreakdown(gross, vatRate)` (mirrors the already-pure `buyer-routing.ts`), wired into `zatca-issuance.ts`, and unit-tested (1150 @ 15% → 1000 / 150 / 1150; 0% exempt; subtotal+vat reconciles).
+
+### Verify
+- `npm run build` green · `check-types` green · `npm run lint` 0 errors · `cspell` clean · **242 web unit tests** (7 new) · the new cron-coverage gate green. No UI change → §3.9 4-theme walk N/A; the finance/reports queries are behavior-preserving and covered by the CI `payment-correctness` e2e.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimarek/compare/v5.7.0...v5.8.0
+
 ## [5.7.0] — 2026-06-27 — Hardening Wave A: High/Critical security fixes (mass-assignment, authz, stale-JWT revocation)
 
 **Closes every High + Critical finding from the 2026-06-25 dual audit** (my repo-level arch+security audit + the independent `/security-review`). No new features — authorization, tenancy, and account-revocation hardening only. No data-shape change beyond two additive `User` columns. `/mimaric-qa` GATE = GO; its three "incomplete remediation" follow-ups (sibling mass-assignment actions) were folded into this wave so the class is fully closed, not partially.

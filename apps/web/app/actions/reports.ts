@@ -1,8 +1,13 @@
 "use server";
 
-import { db } from "@repo/db";
+import { db, Prisma } from "@repo/db";
 import { requirePermission } from "../../lib/auth-helpers";
 import { serialize } from "../../lib/serialize";
+import { effectivePaid } from "../../lib/money";
+
+// SQL form of effectivePaid for the raw-$queryRaw aggregations below. Assumes the
+// RentInstallment table is aliased `ri`. Keep in sync with effectivePaid() (lib/money.ts).
+const EFFECTIVE_PAID_SQL = Prisma.sql`CASE WHEN ri.status = 'PAID' THEN COALESCE(ri."paidAmount", ri.amount) ELSE COALESCE(ri."paidAmount", 0) END`;
 
 export async function getRevenueReport(startDate: string, endDate: string) {
   const session = await requirePermission("reports:read");
@@ -19,12 +24,7 @@ export async function getRevenueReport(startDate: string, endDate: string) {
   // Aggregation over all rows (no status='PAID' filter) where paidAt is in range
   const [rentAggRows, salesAgg, prevRentAggRows, prevSalesAgg] = await Promise.all([
     db.$queryRaw<{ total: string }[]>`
-      SELECT COALESCE(SUM(
-        CASE WHEN ri.status = 'PAID'
-             THEN COALESCE(ri."paidAmount", ri.amount)
-             ELSE COALESCE(ri."paidAmount", 0)
-        END
-      ), 0)::text AS total
+      SELECT COALESCE(SUM(${EFFECTIVE_PAID_SQL}), 0)::text AS total
       FROM "RentInstallment" ri
       JOIN "Lease" l ON l.id = ri."leaseId"
       JOIN "Customer" c ON c.id = l."customerId"
@@ -42,12 +42,7 @@ export async function getRevenueReport(startDate: string, endDate: string) {
       _sum: { amount: true },
     }),
     db.$queryRaw<{ total: string }[]>`
-      SELECT COALESCE(SUM(
-        CASE WHEN ri.status = 'PAID'
-             THEN COALESCE(ri."paidAmount", ri.amount)
-             ELSE COALESCE(ri."paidAmount", 0)
-        END
-      ), 0)::text AS total
+      SELECT COALESCE(SUM(${EFFECTIVE_PAID_SQL}), 0)::text AS total
       FROM "RentInstallment" ri
       JOIN "Lease" l ON l.id = ri."leaseId"
       JOIN "Customer" c ON c.id = l."customerId"
@@ -77,12 +72,7 @@ export async function getRevenueReport(startDate: string, endDate: string) {
   const [rentByMonth, salesByMonth] = await Promise.all([
     db.$queryRaw<{ month: string; amount: number }[]>`
       SELECT to_char(date_trunc('month', ri."paidAt"), 'YYYY-MM') AS month,
-             COALESCE(SUM(
-               CASE WHEN ri.status = 'PAID'
-                    THEN COALESCE(ri."paidAmount", ri.amount)
-                    ELSE COALESCE(ri."paidAmount", 0)
-               END
-             ), 0)::float AS amount
+             COALESCE(SUM(${EFFECTIVE_PAID_SQL}), 0)::float AS amount
       FROM "RentInstallment" ri
       JOIN "Lease" l ON l.id = ri."leaseId"
       JOIN "Customer" c ON c.id = l."customerId"
@@ -121,12 +111,7 @@ export async function getRevenueReport(startDate: string, endDate: string) {
   // Top 5 leases by rent collected (effectivePaid, keyed on paidAt)
   const topUnitsRaw = await db.$queryRaw<{ leaseId: string; revenue: string }[]>`
     SELECT ri."leaseId",
-           SUM(
-             CASE WHEN ri.status = 'PAID'
-                  THEN COALESCE(ri."paidAmount", ri.amount)
-                  ELSE COALESCE(ri."paidAmount", 0)
-             END
-           )::text AS revenue
+           SUM(${EFFECTIVE_PAID_SQL})::text AS revenue
     FROM "RentInstallment" ri
     JOIN "Lease" l ON l.id = ri."leaseId"
     JOIN "Customer" c ON c.id = l."customerId"
@@ -226,12 +211,7 @@ export async function getRentCollectionReport(startDate: string, endDate: string
 
   const totalDue = installments.reduce((s, i) => s + Number(i.amount), 0);
   // Σ effectivePaid over ALL rows — no status filter (OVERDUE partials count)
-  const totalCollected = installments.reduce((s, i) => {
-    const ep = i.status === "PAID"
-      ? Number(i.paidAmount ?? i.amount)
-      : Number(i.paidAmount ?? 0);
-    return s + ep;
-  }, 0);
+  const totalCollected = installments.reduce((s, i) => s + effectivePaid(i), 0);
   const collectionRate = totalDue > 0 ? Math.round((totalCollected / totalDue) * 100) : 0;
 
   // Overdue: status=OVERDUE OR (UNPAID|PARTIALLY_PAID and past due)
@@ -267,10 +247,7 @@ export async function getRentCollectionReport(startDate: string, endDate: string
     };
     existing.due += Number(i.amount);
     // effectivePaid per row
-    existing.paid +=
-      i.status === "PAID"
-        ? Number(i.paidAmount ?? i.amount)
-        : Number(i.paidAmount ?? 0);
+    existing.paid += effectivePaid(i);
     customerMap.set(key, existing);
   });
   const customers = Array.from(customerMap.values()).map((c) => ({
