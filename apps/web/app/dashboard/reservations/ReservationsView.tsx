@@ -46,6 +46,8 @@ import { z } from "zod";
 import { useLanguage } from "../../../components/LanguageProvider";
 import { usePermissions } from "../../../hooks/usePermissions";
 import { useUnsavedChanges } from "../../../hooks/useUnsavedChanges";
+import { useOptimisticAction } from "../../../hooks/useOptimisticAction";
+import { reservationReducer } from "./optimistic";
 import {
   getReservations,
   createReservation,
@@ -84,7 +86,7 @@ import { trackEvent, AnalyticsEvent } from "../../../lib/analytics";
 const SAR = (amount: number) =>
   new Intl.NumberFormat("en-SA", { style: "currency", currency: "SAR" }).format(amount);
 
-type Reservation = {
+export type Reservation = {
   id: string;
   status: "PENDING" | "CONFIRMED" | "EXPIRED" | "CANCELLED";
   amount: number;
@@ -158,7 +160,10 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
 
   useUnsavedChanges(formState.isDirty);
 
-  const [deals, setDeals] = React.useState<Reservation[]>(initialReservations);
+  const [baseDeals, setDeals] = React.useState<Reservation[]>(initialReservations);
+  // Optimistic layer (AGENTS.md §6.7): all `deals` reads below render the optimistic projection so a
+  // confirm/cancel flips the status pill + KPIs instantly; loadDeals reconciles, auto-revert on failure.
+  const { data: deals, run: runOptimistic } = useOptimisticAction(baseDeals, reservationReducer);
   const [loading, setLoading] = React.useState(false);
   const [loadError, setLoadError] = React.useState<string | null>(null);
   const [search, setSearch] = React.useState("");
@@ -244,17 +249,21 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
     }
   }
 
-  function loadDeals() {
-    setLoading(true);
+  // `silent` reconcile (post-mutation): refetch WITHOUT the full-table loading skeleton, so the
+  // optimistic row stays on screen until the authoritative data swaps in. Non-silent for fresh loads.
+  function loadDeals(opts?: { silent?: boolean }) {
+    if (!opts?.silent) setLoading(true);
     setLoadError(null);
-    getReservations()
+    return getReservations()
       .then((data) => setDeals(data as Reservation[]))
       .catch(() => {
         const msg = t("تعذّر تحميل الحجوزات", "Failed to load reservations");
         setLoadError(msg);
         toast.error(msg);
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (!opts?.silent) setLoading(false);
+      });
   }
 
   // Initial reservations arrive as props from the RSC server shell (CX-003 pt1 —
@@ -378,29 +387,33 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
   });
 
   async function handleConfirmDeal(dealId: string) {
-    try {
-      await updateReservationStatus(dealId, "CONFIRMED");
+    // Optimistic: status pill flips to CONFIRMED instantly; loadDeals reconciles, auto-revert on failure.
+    const ok = await runOptimistic(
+      { id: dealId, status: "CONFIRMED" },
+      () => updateReservationStatus(dealId, "CONFIRMED"),
+      () => loadDeals({ silent: true }),
+    );
+    if (ok) {
       trackEvent(AnalyticsEvent.ReservationConfirmed);
       toast.success(t("تم تأكيد الحجز", "Reservation confirmed"));
-      loadDeals();
-    } catch (err: unknown) {
-      toast.error(sanitizeError(err, lang));
     }
   }
 
   async function handleCancel() {
     if (!cancelDeal) return;
     setCancelling(true);
-    try {
-      await updateReservationStatus(cancelDeal.id, "CANCELLED");
+    const id = cancelDeal.id;
+    // Optimistic: status pill flips to CANCELLED instantly; loadDeals reconciles, auto-revert on failure.
+    const ok = await runOptimistic(
+      { id, status: "CANCELLED" },
+      () => updateReservationStatus(id, "CANCELLED"),
+      () => loadDeals({ silent: true }),
+    );
+    if (ok) {
       toast.success(t("تم إلغاء الحجز", "Reservation cancelled"));
       setCancelDeal(null);
-      loadDeals();
-    } catch (err: unknown) {
-      toast.error(sanitizeError(err, lang));
-    } finally {
-      setCancelling(false);
     }
+    setCancelling(false);
   }
 
   const statusTabs = [
