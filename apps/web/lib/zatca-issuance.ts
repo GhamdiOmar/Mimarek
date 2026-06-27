@@ -448,7 +448,10 @@ export async function issueDocumentForCharge(charge: ChargeInput): Promise<Issua
           buyerNameAr: cx.customer?.nameArabic ?? null,
           buyerVatNumber: buyerParty?.vatNumber ?? null,
           buyerCrNumber: buyerParty?.crn ?? null,
-          buyerAddress: (cx.customer?.address ?? undefined) as Prisma.InputJsonValue | undefined,
+          // SEC-009: snapshot the DECRYPTED national address (buyerCustomer), never
+          // the raw ciphertext on cx.customer — else the invoice stores ciphertext
+          // and toZatcaAddress() falls back to a placeholder address.
+          buyerAddress: (buyerCustomer?.address ?? undefined) as Prisma.InputJsonValue | undefined,
           unitType: cx.unitType,
           subtotal,
           vatCategory: tax.vatCategory,
