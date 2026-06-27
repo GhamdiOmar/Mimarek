@@ -2004,7 +2004,8 @@ model MarketplaceDeedProof {
   transfer           UnitTransferTransaction @relation(fields: [transferId], references: [id], onDelete: Cascade)
   deedNumberEnc      String? // AES-256-GCM ciphertext — never plaintext
   ownerNationalIdEnc String? // AES-256-GCM ciphertext
-  deedDocUrl         String? // object-storage URL of the uploaded deed (not the bytes)
+  deedDocKey         String? // SEC-016: UploadThing fileKey of the uploaded deed (authorized signed-URL download)
+  deedDocUrl         String? // LEGACY (pre-SEC-016): seller-supplied object-storage URL — kept for back-compat
   deedDocHash        String? // SHA-256 of the uploaded file (tamper detection)
   rettCertRef        String? // ZATCA RETT certificate reference (record-only)
   status             DeedProofStatus         @default(PENDING)

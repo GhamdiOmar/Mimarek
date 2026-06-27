@@ -1354,6 +1354,8 @@ export async function listOrgRegaAuthorizations() {
 export type DeedProofSubmitPayload = {
   deedNumber?: string;
   ownerNationalId?: string;
+  /** SEC-016: UploadThing fileKey of the uploaded deed (preferred — downloaded via the authorized signed-URL route). */
+  deedDocKey?: string;
   deedDocUrl?: string;
   deedDocHash?: string;
   rettCertRef?: string;
@@ -1393,6 +1395,15 @@ export async function submitDeedTransferProof(
     }
   }
 
+  // SEC-016: the UI now uploads the deed (UploadThing `deedProofUploader`) and
+  // submits its fileKey. We download it later via the authorized signed-URL route,
+  // never a raw bearer link. Validate length so a malformed/oversized value can't
+  // be persisted (a real fileKey is well under 256 chars).
+  const deedDocKey = payload.deedDocKey?.trim() || null;
+  if (deedDocKey && deedDocKey.length > 256) {
+    throw new Error("Invalid deed document reference.");
+  }
+
   // Encrypt the two highly-sensitive PII fields — NEVER store/log plaintext.
   const deedNumberEnc = payload.deedNumber?.trim()
     ? encrypt(payload.deedNumber.trim())
@@ -1407,6 +1418,7 @@ export async function submitDeedTransferProof(
       transferId,
       deedNumberEnc,
       ownerNationalIdEnc,
+      deedDocKey,
       deedDocUrl,
       deedDocHash: payload.deedDocHash?.trim() || null,
       rettCertRef: payload.rettCertRef?.trim() || null,
@@ -1417,6 +1429,7 @@ export async function submitDeedTransferProof(
     update: {
       deedNumberEnc,
       ownerNationalIdEnc,
+      deedDocKey,
       deedDocUrl,
       deedDocHash: payload.deedDocHash?.trim() || null,
       rettCertRef: payload.rettCertRef?.trim() || null,
@@ -1437,7 +1450,12 @@ export async function submitDeedTransferProof(
     action: "DEED_PROOF_SUBMITTED",
     resource: "MarketplaceDeedProof",
     resourceId: result.id,
-    metadata: { transferId, hasDeedDoc: !!result.deedDocUrl, hasRettCert: !!result.rettCertRef },
+    metadata: {
+      transferId,
+      hasDeedDoc: !!(result.deedDocKey || result.deedDocUrl),
+      deedDocSecure: !!result.deedDocKey,
+      hasRettCert: !!result.rettCertRef,
+    },
     organizationId: session.organizationId,
   });
   revalidatePath(ROUTES.marketplaceMyListings);
@@ -1548,6 +1566,7 @@ export async function getDeedProofForTransfer(transferId: string) {
     ownerNationalId: proof.ownerNationalIdEnc
       ? safeDecryptField(proof.ownerNationalIdEnc, "ownerNationalId")
       : null,
+    deedDocKey: proof.deedDocKey,
     deedDocUrl: proof.deedDocUrl,
     deedDocHash: proof.deedDocHash,
     rettCertRef: proof.rettCertRef,
