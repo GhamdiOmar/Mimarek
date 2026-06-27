@@ -27,6 +27,7 @@ import {
   createZatcaClient,
 } from "./zatca-server";
 import { isCompanyBuyer, validateBuyerForStandardClearance } from "./buyer-routing";
+import { computeInclusiveBreakdown } from "./zatca-amounts";
 
 /**
  * ZATCA Track C (R4) tenant issuance — the single `issueDocumentForCharge` classifier that
@@ -415,12 +416,9 @@ export async function issueDocumentForCharge(charge: ChargeInput): Promise<Issua
   }
 
   // 7. Amounts (VAT-inclusive — net back-computed so the doc reconciles with the payment).
-  const gross = round2(charge.amount);
   const isTaxable = documentType === "TAX_INVOICE" || documentType === "SIMPLIFIED";
   const vatRate = isTaxable ? tax.vatRate : 0;
-  const subtotal = isTaxable ? round2(gross / (1 + vatRate)) : gross;
-  const vatAmount = isTaxable ? round2(gross - subtotal) : 0;
-  const total = round2(subtotal + vatAmount);
+  const { subtotal, vatAmount, total } = computeInclusiveBreakdown(charge.amount, vatRate);
 
   // 8. Create the document (per-EGS number; idempotent; single line).
   const year = new Date().getFullYear();

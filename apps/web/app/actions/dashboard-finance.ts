@@ -1,8 +1,9 @@
 "use server";
 
-import { db, type Prisma } from "@repo/db";
+import { db } from "@repo/db";
 import { startOfMonth, endOfMonth } from "date-fns";
 import { requirePermission } from "../../lib/auth-helpers";
+import { effectivePaid } from "../../lib/money";
 
 export type FinanceStats = {
   collectedMTD: number;
@@ -13,17 +14,6 @@ export type FinanceStats = {
   unpaidCount: number;
   overdueCount: number;
 };
-
-/** effectivePaid — canonical formula per spec §4 */
-function effectivePaid(r: {
-  status: string;
-  amount: Prisma.Decimal;
-  paidAmount: Prisma.Decimal | null;
-}): number {
-  return r.status === "PAID"
-    ? Number(r.paidAmount ?? r.amount)
-    : Number(r.paidAmount ?? 0);
-}
 
 /**
  * Finance dashboard KPIs — rent roll + AR aging.

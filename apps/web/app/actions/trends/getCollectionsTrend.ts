@@ -2,6 +2,7 @@
 
 import { db } from "@repo/db";
 import { requirePermission } from "../../../lib/auth-helpers";
+import { effectivePaid } from "../../../lib/money";
 import { subWeeks, startOfWeek } from "date-fns";
 
 /** Last 12 weeks of AR collection % (effectivePaid / scheduled). */
@@ -28,13 +29,7 @@ export async function getCollectionsTrend(): Promise<number[]> {
   return weeks.map(({ start, end }) => {
     const bucket = rows.filter((r) => r.dueDate >= start && r.dueDate < end);
     // Σ effectivePaid over ALL bucket rows — no status filter
-    const paid = bucket.reduce((acc, r) => {
-      const ep =
-        r.status === "PAID"
-          ? Number(r.paidAmount ?? r.amount)
-          : Number(r.paidAmount ?? 0);
-      return acc + ep;
-    }, 0);
+    const paid = bucket.reduce((acc, r) => acc + effectivePaid(r), 0);
     const total = bucket.reduce((acc, r) => acc + Number(r.amount), 0);
     return total === 0 ? 0 : Math.round((paid / total) * 100);
   });
