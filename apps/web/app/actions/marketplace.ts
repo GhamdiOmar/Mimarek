@@ -3,7 +3,7 @@
 import { db } from "@repo/db";
 import { revalidatePath } from "next/cache";
 import { requirePermission } from "../../lib/auth-helpers";
-import { logAuditEvent } from "../../lib/audit";
+import { logAuditEvent, logAuditEventAwait } from "../../lib/audit";
 import { ROUTES } from "../../lib/routes";
 import { serialize } from "../../lib/serialize";
 import {
@@ -1372,6 +1372,27 @@ export async function submitDeedTransferProof(
   });
   if (!transfer) throw new Error("Transfer not found for your organization.");
 
+  // SEC-016: a platform admin later opens this URL in their browser to verify the
+  // deed, so a seller-supplied URL is an attack surface (javascript:, http:,
+  // file:, data:, internal SSRF targets). Require https:. The fuller "must be an
+  // uploaded file from our CDN" closure is DEFERRED to the upload-pipeline rebuild
+  // (where isAllowedUploadThingUrl is being removed) — for now, inline a minimal
+  // https-only check so we never store a non-https scheme.
+  const deedDocUrl = payload.deedDocUrl?.trim() || null;
+  if (deedDocUrl) {
+    let isHttps = false;
+    try {
+      isHttps = new URL(deedDocUrl).protocol === "https:";
+    } catch {
+      isHttps = false;
+    }
+    if (!isHttps) {
+      throw new Error(
+        "The deed document link must be a secure https link. الرجاء إدخال رابط آمن يبدأ بـ https.",
+      );
+    }
+  }
+
   // Encrypt the two highly-sensitive PII fields — NEVER store/log plaintext.
   const deedNumberEnc = payload.deedNumber?.trim()
     ? encrypt(payload.deedNumber.trim())
@@ -1386,7 +1407,7 @@ export async function submitDeedTransferProof(
       transferId,
       deedNumberEnc,
       ownerNationalIdEnc,
-      deedDocUrl: payload.deedDocUrl?.trim() || null,
+      deedDocUrl,
       deedDocHash: payload.deedDocHash?.trim() || null,
       rettCertRef: payload.rettCertRef?.trim() || null,
       status: "PENDING",
@@ -1396,7 +1417,7 @@ export async function submitDeedTransferProof(
     update: {
       deedNumberEnc,
       ownerNationalIdEnc,
-      deedDocUrl: payload.deedDocUrl?.trim() || null,
+      deedDocUrl,
       deedDocHash: payload.deedDocHash?.trim() || null,
       rettCertRef: payload.rettCertRef?.trim() || null,
       // Re-submission resets verification.
@@ -1453,6 +1474,14 @@ export async function verifyDeedTransferProof(
       await transitionTransfer(tx, transferId, "PENDING_SETTLEMENT", "READY");
     }
 
+    // SEC-015: deed-proof verification is one of the highest-stakes marketplace
+    // mutations, so its audit record must be durable + fail-closed. We write it
+    // here via the transaction client (`tx`) rather than the post-commit
+    // `logAuditEventAwait` ON PURPOSE: inside the $transaction the audit row is
+    // ATOMIC with the proof-status change and the transfer transition — a failed
+    // audit insert rolls the whole verification back. That is strictly stronger
+    // than a separate awaited write after commit (which could not undo a
+    // committed verification). Hence: tx.auditLog.create, not logAuditEventAwait.
     await tx.auditLog.create({
       data: {
         userId: session.userId,
@@ -1495,6 +1524,10 @@ export async function getDeedProofForTransfer(transferId: string) {
     throw new Error("Deed proof not found for your organization.");
   }
 
+  // SEC-015: deliberately fire-and-forget (NOT logAuditEventAwait). This is a
+  // READ, not a mutation — a deed-proof view must not 500 if the audit store
+  // hiccups. Fail-closed awaiting is reserved for security-critical MUTATIONS
+  // (deed-proof verification, conveyance kill-switch, billing plan changes).
   logAuditEvent({
     userId: session.userId,
     userEmail: session.email,
@@ -1593,7 +1626,10 @@ export async function setMarketplaceConveyanceEnabled(payload: {
     },
   });
 
-  logAuditEvent({
+  // SEC-015: the irreversible-conveyance kill-switch is the single highest-stakes
+  // platform toggle — its audit trail must be durable. Await + fail closed: if the
+  // record can't be written, surface the error rather than silently losing it.
+  await logAuditEventAwait({
     userId: session.userId,
     userEmail: session.email,
     userRole: session.role,
