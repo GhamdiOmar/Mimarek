@@ -1,5 +1,25 @@
 # Changelog — Mimarek PropTech
 
+## [5.12.0] — 2026-06-27 — Shared crypto package + SEC-016 deed-proof upload (closes the v5.11.0 deferrals)
+
+**Closes the two items deferred from v5.11.0** — the `seed-demo` plaintext-PII gap and SEC-016's full "require upload" closure — fully, no deferrals. `/mimaric-qa` GATE = GO (one P3 found + fixed: a client-trusted deed fileKey, now server-authoritative).
+
+### Shared crypto package
+- New source-only **`@repo/crypto`** package: `encryption` / `phone` / `security-log` / `pii-crypto` moved out of `apps/web/lib` (which now keeps 1-line shims, so all ~14 app imports are untouched). This lets the data layer reuse the canonical encrypt path.
+- **`seed-demo.ts` now encrypts customer PII** — every demo customer is written through `encryptCustomerData(data, org.id)` (phone/email/nationalId AES-256-GCM-encrypted with blind-index hashes), closing the pre-existing plaintext-PII gap and making demo data SEC-009-consistent.
+
+### SEC-016 — deed proof is now an uploaded file (full closure)
+- The marketplace deed-transfer proof is an **UploadThing upload**, not a seller-supplied URL. New `deedProofUploader` router + new authorized download route **`/api/marketplace/deed/[transferId]`** that authorizes (platform moderator `marketplace:moderate` OR the owning seller `org === transfer.sellerOrgId` + `marketplace:transfer:execute`) then redirects to a **15-minute signed URL** — never the permanent CDN link. Schema gains `MarketplaceDeedProof.deedDocKey`; the admin review links to the authorized route; the seller UI uploads via `UploadDropzone`. Audited; legacy `deedDocUrl` retained as a back-compat fallback.
+- **P3-1 hardening (server-authoritative key):** the fileKey is written **server-side** in `onUploadComplete`, bound to a transfer the caller's org provably owns (the uploader middleware verifies `transferId` belongs to the seller org). `submitDeedTransferProof` no longer accepts a client-supplied key — a seller can never attach a deed file they didn't upload.
+
+### Verify
+- `npm run build` green · `check-types` green · `lint` 0 errors · **288 web unit tests** (a 6-case deed-route authz matrix + 3 P3-1 source guards; the @repo/crypto refactor keeps all PII suites green through the shims) · `rls:check` green (59 tables) · live DB pushed (additive `deedDocKey`) + re-seeded.
+- **§3.9 preview walk:** CRM (PII masking intact through the new shims), my-listings, admin marketplace in light/dark × LTR/RTL — **0 console errors**.
+
+Full private-object closure (`deedProofUploader` `acl:"private"`) remains a one-step dashboard toggle — the signed-URL path already works for private objects.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimarek/compare/v5.11.0...v5.12.0
+
 ## [5.11.0] — 2026-06-27 — Mid/Low audit remediation + Documents-dashboard removal
 
 **Closes the Medium/Low tier of the 2026-06-25 audits (9 SEC + 2 of mine) and removes the broken-by-design Documents dashboard.** `/mimaric-qa` GATE = GO (one P1 found + fixed: a ZATCA buyer-address snapshot that read the pre-encryption value). One schema change (drop 2 tables, add 1 column).

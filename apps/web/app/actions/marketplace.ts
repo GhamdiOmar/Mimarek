@@ -1354,6 +1354,9 @@ export async function listOrgRegaAuthorizations() {
 export type DeedProofSubmitPayload = {
   deedNumber?: string;
   ownerNationalId?: string;
+  // SEC-016: the deed fileKey is NO LONGER accepted here — it is written
+  // server-side by the `deedProofUploader` onUploadComplete (bound to a
+  // verified-owned transfer), so a client can never attach a foreign key.
   deedDocUrl?: string;
   deedDocHash?: string;
   rettCertRef?: string;
@@ -1437,7 +1440,12 @@ export async function submitDeedTransferProof(
     action: "DEED_PROOF_SUBMITTED",
     resource: "MarketplaceDeedProof",
     resourceId: result.id,
-    metadata: { transferId, hasDeedDoc: !!result.deedDocUrl, hasRettCert: !!result.rettCertRef },
+    metadata: {
+      transferId,
+      hasDeedDoc: !!(result.deedDocKey || result.deedDocUrl),
+      deedDocSecure: !!result.deedDocKey,
+      hasRettCert: !!result.rettCertRef,
+    },
     organizationId: session.organizationId,
   });
   revalidatePath(ROUTES.marketplaceMyListings);
@@ -1548,6 +1556,7 @@ export async function getDeedProofForTransfer(transferId: string) {
     ownerNationalId: proof.ownerNationalIdEnc
       ? safeDecryptField(proof.ownerNationalIdEnc, "ownerNationalId")
       : null,
+    deedDocKey: proof.deedDocKey,
     deedDocUrl: proof.deedDocUrl,
     deedDocHash: proof.deedDocHash,
     rettCertRef: proof.rettCertRef,

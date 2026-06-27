@@ -17,6 +17,7 @@ import {
   ScrollText,
   Gavel,
   Lock,
+  Download,
   ExternalLink,
 } from "lucide-react";
 import {
@@ -112,6 +113,8 @@ type DeedProofDetail = {
   status: string;
   deedNumber: string | null;
   ownerNationalId: string | null;
+  /** SEC-016: when present, the deed is an uploaded file — download via the authorized signed-URL route. */
+  deedDocKey: string | null;
   deedDocUrl: string | null;
   deedDocHash: string | null;
   rettCertRef: string | null;
@@ -1392,9 +1395,33 @@ export default function AdminMarketplacePage() {
                   </div>
                 )}
               </div>
-              {proofDetail.deedDocUrl && (
-                /* SEC-016: deedDocUrl is seller-supplied. Warn the verifier it is
-                   an external link they are about to open, and keep
+              {proofDetail.deedDocKey ? (
+                /* SEC-016: the deed is an uploaded file. Download via the authorized
+                   route, which authorizes the request then redirects to a short-lived
+                   signed URL — never the raw permanent CDN URL. */
+                <div className="flex flex-col gap-1">
+                  <a
+                    href={`/api/marketplace/deed/${proofDetail.transferId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline min-h-[44px]"
+                  >
+                    <Download className="h-4 w-4" aria-hidden="true" />
+                    {t(
+                      "Download deed document (secure link — expires in 15 min)",
+                      "تنزيل وثيقة الصك (رابط آمن — ينتهي خلال 15 دقيقة)",
+                    )}
+                  </a>
+                  <p className="text-xs text-muted-foreground">
+                    {t(
+                      "Uploaded file — opens in a new tab via a short-lived, authorized link.",
+                      "ملف مرفوع — يفتح في تبويب جديد عبر رابط مُصرَّح به وقصير الأمد.",
+                    )}
+                  </p>
+                </div>
+              ) : proofDetail.deedDocUrl ? (
+                /* Legacy (pre-SEC-016): deedDocUrl is seller-supplied. Warn the
+                   verifier it is an external link they are about to open, and keep
                    rel="noopener noreferrer" + target="_blank" so the opened tab
                    can't reach back into this window. */
                 <div className="flex flex-col gap-1">
@@ -1414,7 +1441,7 @@ export default function AdminMarketplacePage() {
                     )}
                   </p>
                 </div>
-              )}
+              ) : null}
               <p className="rounded-md bg-warning/10 px-3 py-2 text-xs text-warning-strong">
                 {t(
                   "This view logs a PII access (READ_PII). Verify only against the official source.",

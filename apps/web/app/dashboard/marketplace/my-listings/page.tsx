@@ -33,6 +33,7 @@ import {
   type ColumnDef,
 } from "@repo/ui";
 import { useLanguage } from "../../../../components/LanguageProvider";
+import { UploadDropzone } from "../../../../lib/uploadthing";
 import {
   MARKETPLACE_LISTING_STATUS_LABEL as LISTING_STATUS_LABELS,
   MARKETPLACE_LISTING_STATUS_VARIANT as LISTING_STATUS_BADGE,
@@ -177,7 +178,12 @@ export default function MyListingsPage() {
   const [proofTarget, setProofTarget] = React.useState<IncomingInquiry | null>(null);
   const [deedNumber, setDeedNumber] = React.useState("");
   const [ownerNationalId, setOwnerNationalId] = React.useState("");
-  const [deedDocUrl, setDeedDocUrl] = React.useState("");
+  // SEC-016: the deed document is now an UPLOADED file (UploadThing). We track its
+  // fileKey + display name; the admin verifier downloads it via an authorized
+  // short-lived signed URL, never a raw bearer link.
+  const [deedDocKey, setDeedDocKey] = React.useState("");
+  const [deedDocName, setDeedDocName] = React.useState("");
+  const [deedUploadError, setDeedUploadError] = React.useState<string | null>(null);
   const [rettCertRef, setRettCertRef] = React.useState("");
   const [proofSubmitting, setProofSubmitting] = React.useState(false);
   const [proofError, setProofError] = React.useState<string | null>(null);
@@ -353,7 +359,9 @@ export default function MyListingsPage() {
     setProofTarget(inq);
     setDeedNumber("");
     setOwnerNationalId("");
-    setDeedDocUrl("");
+    setDeedDocKey("");
+    setDeedDocName("");
+    setDeedUploadError(null);
     setRettCertRef("");
     setProofError(null);
   }
@@ -366,7 +374,6 @@ export default function MyListingsPage() {
       await submitDeedTransferProof(proofTarget.transfer.id, {
         deedNumber: deedNumber.trim() || undefined,
         ownerNationalId: ownerNationalId.trim() || undefined,
-        deedDocUrl: deedDocUrl.trim() || undefined,
         rettCertRef: rettCertRef.trim() || undefined,
       });
       // Reflect the now-PENDING proof on the matching inquiry.
@@ -1239,18 +1246,67 @@ export default function MyListingsPage() {
             )}
           </Field>
           <Field
-            label={t("Deed document URL (optional)", "رابط وثيقة الصك (اختياري)")}
-            hint={t("Link to the uploaded deed file in your storage.", "رابط ملف الصك المرفوع في مساحة التخزين.")}
-          >
-            {(field) => (
-              <Input
-                {...field}
-                value={deedDocUrl}
-                onChange={(e) => setDeedDocUrl(e.target.value)}
-                placeholder="https://…"
-                dir="ltr"
-              />
+            label={t("Deed document (optional)", "وثيقة الصك (اختياري)")}
+            hint={t(
+              "Upload the deed file (PDF or image, up to 8MB). Only platform staff can download it via a secure, expiring link.",
+              "ارفع ملف الصك (PDF أو صورة، حتى 8 ميجابايت). يمكن لفريق المنصة فقط تنزيله عبر رابط آمن ينتهي بعد فترة قصيرة.",
             )}
+          >
+            {() =>
+              deedDocKey ? (
+                <div className="flex items-center justify-between gap-2 rounded-lg border border-border bg-secondary/10 px-3 py-2">
+                  <span className="flex items-center gap-2 text-sm text-foreground min-w-0">
+                    <CheckCircle2 className="h-4 w-4 shrink-0 text-secondary" aria-hidden="true" />
+                    <span className="truncate" dir="ltr">
+                      {deedDocName || t("File uploaded", "تم رفع الملف")}
+                    </span>
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setDeedDocKey("");
+                      setDeedDocName("");
+                      setDeedUploadError(null);
+                    }}
+                  >
+                    {t("Replace", "استبدال")}
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  <UploadDropzone
+                    endpoint="deedProofUploader"
+                    input={{ transferId: proofTarget?.transfer?.id ?? "" }}
+                    onClientUploadComplete={(res) => {
+                      // The key is written server-side (bound to the verified-owned
+                      // transfer) in onUploadComplete; this only drives the "uploaded" UI.
+                      const fileKey = res?.[0]?.serverData?.fileKey ?? "";
+                      setDeedDocKey(fileKey);
+                      setDeedDocName(res?.[0]?.name ?? "");
+                      setDeedUploadError(fileKey ? null : t("Upload failed — please try again.", "فشل الرفع — حاول مرة أخرى."));
+                    }}
+                    onUploadError={(err) =>
+                      setDeedUploadError(
+                        err?.message || t("Upload failed — please try again.", "فشل الرفع — حاول مرة أخرى."),
+                      )
+                    }
+                    appearance={{
+                      container: "border-border",
+                      button: "bg-primary text-primary-foreground text-xs px-3 py-1.5 rounded-md font-medium",
+                      label: "text-sm text-foreground",
+                      allowedContent: "text-xs text-muted-foreground",
+                    }}
+                  />
+                  {deedUploadError && (
+                    <p className="flex items-center gap-1.5 text-xs text-destructive">
+                      <AlertCircle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                      {deedUploadError}
+                    </p>
+                  )}
+                </div>
+              )
+            }
           </Field>
           <Field label={t("RETT certificate reference (optional)", "مرجع شهادة ضريبة التصرفات (اختياري)")}>
             {(field) => (
