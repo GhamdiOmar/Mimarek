@@ -1,0 +1,1626 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mimarek Property Marketplace Attractiveness Report</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --primary: #3db8c4;
+      --primary-strong: #14c0c0;
+      --primary-deep: #001b2a;
+      --navy: #031b29;
+      --surface: #082637;
+      --surface-2: #0d3244;
+      --surface-3: #123c50;
+      --ink: #e6f2f3;
+      --muted: #98b2bb;
+      --muted-2: #70909a;
+      --border: rgba(255, 255, 255, 0.1);
+      --border-strong: rgba(61, 184, 196, 0.32);
+      --success: #3da176;
+      --warning: #d99044;
+      --info: #5aa8e6;
+      --magenta: #d95c8a;
+      --paper: #f4fafb;
+      --shadow: 0 24px 80px rgba(0, 0, 0, 0.28);
+      --radius: 8px;
+      --max: 1440px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      background:
+        linear-gradient(90deg, rgba(61, 184, 196, 0.045) 1px, transparent 1px),
+        linear-gradient(180deg, rgba(61, 184, 196, 0.035) 1px, transparent 1px),
+        linear-gradient(180deg, #001b2a 0%, #042132 46%, #061b27 100%);
+      background-size: 44px 44px, 44px 44px, auto;
+      color: var(--ink);
+      font-family: Satoshi, "Segoe UI", Arial, sans-serif;
+      line-height: 1.6;
+      text-rendering: optimizeLegibility;
+    }
+
+    a {
+      color: var(--primary);
+      text-decoration: none;
+    }
+
+    a:hover {
+      color: var(--primary-strong);
+    }
+
+    .page {
+      max-width: var(--max);
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .shell {
+      display: grid;
+      grid-template-columns: 280px minmax(0, 1fr);
+      gap: 24px;
+      align-items: start;
+    }
+
+    .nav {
+      position: sticky;
+      top: 24px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: rgba(8, 38, 55, 0.88);
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.03);
+      padding: 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .brand-mark {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      background: #001b2a;
+      border: 1px solid rgba(61, 184, 196, 0.32);
+      color: var(--primary);
+      font-weight: 800;
+      letter-spacing: 0;
+    }
+
+    .brand strong {
+      display: block;
+      font-size: 13px;
+      letter-spacing: 0.08em;
+    }
+
+    .brand span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .nav-links {
+      display: grid;
+      gap: 6px;
+      margin-top: 14px;
+    }
+
+    .nav-links a {
+      display: block;
+      border-radius: 6px;
+      padding: 8px 10px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .nav-links a:hover {
+      background: rgba(61, 184, 196, 0.09);
+      color: var(--ink);
+    }
+
+    .main {
+      min-width: 0;
+    }
+
+    .hero {
+      min-height: 560px;
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
+      gap: 36px;
+      align-items: center;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 48px;
+      background:
+        linear-gradient(135deg, rgba(20, 192, 192, 0.13), transparent 34%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.015)),
+        rgba(3, 27, 41, 0.86);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .eyebrow {
+      margin: 0 0 14px;
+      color: var(--primary);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    h1, h2, h3, h4 {
+      margin: 0;
+      letter-spacing: 0;
+      line-height: 1.15;
+    }
+
+    h1 {
+      max-width: 11ch;
+      font-size: clamp(44px, 6vw, 86px);
+      font-weight: 850;
+    }
+
+    .hero-copy {
+      max-width: 680px;
+      margin-top: 20px;
+      color: #c4d7dc;
+      font-size: 18px;
+      line-height: 1.7;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 28px;
+    }
+
+    .button {
+      display: inline-flex;
+      min-height: 44px;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      padding: 10px 16px;
+      font-weight: 800;
+      font-size: 14px;
+      border: 1px solid transparent;
+    }
+
+    .button.primary {
+      background: var(--primary);
+      color: #001b2a;
+    }
+
+    .button.secondary {
+      border-color: var(--border-strong);
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .hero-panel {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: rgba(8, 38, 55, 0.78);
+      padding: 20px;
+    }
+
+    .hero-panel h2 {
+      font-size: 20px;
+      margin-bottom: 12px;
+    }
+
+    .signal-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .signal {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      background: rgba(255, 255, 255, 0.035);
+    }
+
+    .signal strong {
+      display: block;
+      font-size: 24px;
+      line-height: 1;
+      color: var(--primary);
+    }
+
+    .signal span {
+      display: block;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    section {
+      margin-top: 24px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: rgba(8, 38, 55, 0.86);
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.03);
+      padding: 32px;
+    }
+
+    .section-head {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .section-head h2 {
+      font-size: clamp(28px, 3vw, 44px);
+    }
+
+    .section-head p {
+      max-width: 78ch;
+      margin: 0;
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .three-col {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .fact, .pattern, .risk, .phase, .metric {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.035);
+      padding: 18px;
+    }
+
+    .fact h3, .pattern h3, .risk h3, .phase h3, .metric h3 {
+      font-size: 18px;
+      margin-bottom: 8px;
+    }
+
+    .fact p, .pattern p, .risk p, .phase p, .metric p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      border: 1px solid rgba(61, 184, 196, 0.24);
+      border-radius: 999px;
+      color: #c6f7fb;
+      background: rgba(61, 184, 196, 0.08);
+      padding: 4px 10px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .idea {
+      border-top: 1px solid var(--border);
+      padding-top: 28px;
+      margin-top: 28px;
+    }
+
+    .idea:first-of-type {
+      border-top: 0;
+      padding-top: 0;
+      margin-top: 0;
+    }
+
+    .idea-title {
+      display: grid;
+      grid-template-columns: 56px minmax(0, 1fr) auto;
+      gap: 16px;
+      align-items: start;
+      margin-bottom: 18px;
+    }
+
+    .num {
+      display: grid;
+      place-items: center;
+      width: 48px;
+      height: 48px;
+      border-radius: 8px;
+      background: rgba(61, 184, 196, 0.12);
+      border: 1px solid rgba(61, 184, 196, 0.32);
+      color: var(--primary);
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .idea h3 {
+      font-size: clamp(22px, 2.2vw, 32px);
+    }
+
+    .score {
+      display: grid;
+      gap: 4px;
+      min-width: 128px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+    }
+
+    .score strong {
+      color: var(--ink);
+      font-size: 20px;
+      line-height: 1;
+    }
+
+    .idea-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .brief {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      min-height: 150px;
+      background: rgba(255, 255, 255, 0.026);
+    }
+
+    .brief b {
+      display: block;
+      color: var(--primary);
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .brief p, .brief ul {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    ul.clean {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    ul.clean li {
+      position: relative;
+      padding-left: 14px;
+      margin: 7px 0;
+      color: var(--muted);
+    }
+
+    ul.clean li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0.72em;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--primary);
+    }
+
+    .implementation {
+      margin-top: 14px;
+      border: 1px solid rgba(61, 184, 196, 0.22);
+      border-radius: var(--radius);
+      padding: 16px;
+      background: rgba(61, 184, 196, 0.055);
+    }
+
+    .implementation h4 {
+      margin-bottom: 8px;
+      color: #dffbfe;
+      font-size: 15px;
+    }
+
+    .implementation p {
+      margin: 0;
+      color: #b9d3da;
+      font-size: 14px;
+    }
+
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      overflow: hidden;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+    }
+
+    .table th, .table td {
+      border-bottom: 1px solid var(--border);
+      padding: 13px 14px;
+      text-align: left;
+      vertical-align: top;
+      font-size: 13px;
+    }
+
+    .table th {
+      color: var(--primary);
+      background: rgba(255, 255, 255, 0.04);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .table td {
+      color: var(--muted);
+    }
+
+    .table tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .roadmap {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .phase h3 {
+      color: var(--primary);
+    }
+
+    .phase .window {
+      color: var(--ink);
+      font-size: 28px;
+      font-weight: 850;
+      line-height: 1;
+      margin: 8px 0 12px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .source-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .source {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      background: rgba(255, 255, 255, 0.026);
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .source b {
+      display: block;
+      color: var(--ink);
+      margin-bottom: 5px;
+    }
+
+    .print-note {
+      margin-top: 18px;
+      color: var(--muted-2);
+      font-size: 12px;
+    }
+
+    code {
+      color: #d8fbff;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 2px 5px;
+      font-family: "IBM Plex Mono", Consolas, monospace;
+      font-size: 0.92em;
+    }
+
+    @media (max-width: 1180px) {
+      .shell {
+        grid-template-columns: 1fr;
+      }
+
+      .nav {
+        position: static;
+      }
+
+      .nav-links {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .hero {
+        grid-template-columns: 1fr;
+      }
+
+      .idea-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .roadmap, .three-col {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 760px) {
+      .page {
+        padding: 14px;
+      }
+
+      .hero, section {
+        padding: 22px;
+      }
+
+      h1 {
+        max-width: 12ch;
+      }
+
+      .nav-links,
+      .two-col,
+      .three-col,
+      .idea-grid,
+      .roadmap,
+      .source-list,
+      .signal-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .idea-title {
+        grid-template-columns: 44px minmax(0, 1fr);
+      }
+
+      .num {
+        width: 40px;
+        height: 40px;
+      }
+
+      .score {
+        grid-column: 1 / -1;
+        text-align: left;
+      }
+    }
+
+    @media print {
+      :root {
+        color-scheme: light;
+      }
+
+      body {
+        background: white;
+        color: #102a34;
+      }
+
+      .page {
+        max-width: none;
+        padding: 0;
+      }
+
+      .shell {
+        display: block;
+      }
+
+      .nav, .hero-actions {
+        display: none;
+      }
+
+      .hero, section, .fact, .pattern, .risk, .phase, .metric, .brief, .implementation, .source {
+        background: white;
+        color: #102a34;
+        border-color: #d5e3e6;
+        box-shadow: none;
+      }
+
+      .hero {
+        min-height: auto;
+      }
+
+      .hero-copy, .section-head p, .fact p, .pattern p, .risk p, .phase p, .metric p, .brief p, .brief ul, .table td, .source {
+        color: #334f59;
+      }
+
+      a, .eyebrow, .brief b, .phase h3 {
+        color: #00707a;
+      }
+
+      .idea {
+        break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="shell">
+      <aside class="nav" aria-label="Report navigation">
+        <div class="brand">
+          <div class="brand-mark">M</div>
+          <div>
+            <strong>MIMAREK</strong>
+            <span>معمارك marketplace strategy</span>
+          </div>
+        </div>
+        <nav class="nav-links">
+          <a href="#summary">Executive Summary</a>
+          <a href="#market">Market Signals</a>
+          <a href="#foundation">Mimarek Foundation</a>
+          <a href="#ideas">Idea Portfolio</a>
+          <a href="#roadmap">Roadmap</a>
+          <a href="#risks">Risk Controls</a>
+          <a href="#metrics">Metrics</a>
+          <a href="#sources">Sources</a>
+        </nav>
+      </aside>
+
+      <main class="main">
+        <header class="hero">
+          <div>
+            <p class="eyebrow">Saudi-first PropTech strategy report</p>
+            <h1>Marketplace as a deal operating system.</h1>
+            <p class="hero-copy">
+              Mimarek should not compete as another listing portal. Its advantage is the ability to connect verified discovery, seller operations, buyer intent, CRM, reservations, contracts, payments, handover, and post-sale property management in one controlled Saudi workflow.
+            </p>
+            <div class="hero-actions">
+              <a class="button primary" href="#ideas">Review product ideas</a>
+              <a class="button secondary" href="#roadmap">Jump to roadmap</a>
+            </div>
+          </div>
+          <div class="hero-panel" aria-label="Report highlights">
+            <h2>Strategic conclusion</h2>
+            <p>
+              The market leaders win with trust, funnel completion, and convenience. Mimarek can win with a Saudi compliance layer plus operational depth after the inquiry.
+            </p>
+            <div class="signal-grid">
+              <div class="signal">
+                <strong>12</strong>
+                <span>detailed product ideas with benefit, scope, persona, risk, and implementation path.</span>
+              </div>
+              <div class="signal">
+                <strong>4</strong>
+                <span>implementation phases from quick wins to platform-level marketplace intelligence.</span>
+              </div>
+              <div class="signal">
+                <strong>7</strong>
+                <span>existing Mimarek rails that can be extended instead of rebuilt.</span>
+              </div>
+              <div class="signal">
+                <strong>KSA</strong>
+                <span>focused on REGA, FAL, Ejar, Sakani-style project journeys, Arabic-first workflows, and WhatsApp behavior.</span>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <section id="summary">
+          <div class="section-head">
+            <h2>Executive Summary</h2>
+            <p>
+              Property-management SaaS products optimize operations. Marketplace apps optimize discovery and lead volume. Mimarek can become more attractive by owning the full property transaction journey for Saudi developers, brokers, and real estate operators.
+            </p>
+          </div>
+          <div class="three-col">
+            <div class="fact">
+              <h3>Positioning</h3>
+              <p>Make the marketplace a trusted transaction layer for verified inventory, not a separate browsing feature.</p>
+            </div>
+            <div class="fact">
+              <h3>Product Shape</h3>
+              <p>Turn every inquiry into managed work: lead, qualification, viewing, offer, reservation, contract, settlement, and post-sale operations.</p>
+            </div>
+            <div class="fact">
+              <h3>Go-To-Market</h3>
+              <p>Lead with seller trust, developer launch pages, buyer confidence, and operational conversion after the sale.</p>
+            </div>
+          </div>
+          <div class="tag-row">
+            <span class="tag">Verified listings</span>
+            <span class="tag">CRM conversion</span>
+            <span class="tag">Project launch pages</span>
+            <span class="tag">Price intelligence</span>
+            <span class="tag">Saudi compliance</span>
+            <span class="tag">WhatsApp workflows</span>
+          </div>
+        </section>
+
+        <section id="market">
+          <div class="section-head">
+            <h2>Market Signals</h2>
+            <p>
+              The strongest competitors show five repeatable patterns. These patterns are the source material for the recommendations below.
+            </p>
+          </div>
+          <div class="two-col">
+            <div class="pattern">
+              <h3>Unified operations are the SaaS baseline</h3>
+              <p>AppFolio, Buildium, DoorLoop, Yardi Breeze, Zillow Rental Manager, and Apartments.com bundle leasing, rent collection, maintenance, screening, owner or resident portals, listings, and online workflows. Mimarek should present marketplace as part of the same operating system.</p>
+            </div>
+            <div class="pattern">
+              <h3>Discovery is becoming data-led</h3>
+              <p>Property Finder surfaces transactions, area insights, mortgage tools, new projects, agent search, and buyer guides. Bayut Saudi highlights true photos, real prices, real properties, map search, commute search, 360 tours, new projects, and Tru Broker discovery.</p>
+            </div>
+            <div class="pattern">
+              <h3>Trust signals drive conversion</h3>
+              <p>Saudi context makes this even stronger. REGA supports FAL license lookup, real-estate advertisement license lookup, broker contracts, and real estate inquiry services. Trust can be a product feature, not just a legal check.</p>
+            </div>
+            <div class="pattern">
+              <h3>Government journeys shape buyer expectations</h3>
+              <p>Sakani presents targeted services for broker, developer, buyer, renter, self-build, and project discovery. Ejar anchors rental trust around electronic contracts, payment follow-up, licensed brokers, and handover documentation.</p>
+            </div>
+          </div>
+        </section>
+
+        <section id="foundation">
+          <div class="section-head">
+            <h2>Mimarek Foundation</h2>
+            <p>
+              The current marketplace already has serious rails. The ideas in this report extend these rails with better discovery, packaging, intelligence, and conversion.
+            </p>
+          </div>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Existing capability</th>
+                <th>Current evidence in repo</th>
+                <th>Strategic implication</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Listing lifecycle</td>
+                <td><code>MarketplaceListingStatus</code>: draft, pending review, published, under contract, sold transferred, expired, rejected, suspended.</td>
+                <td>Mimarek can support professional publishing and moderation without rebuilding listing state.</td>
+              </tr>
+              <tr>
+                <td>Buyer-safe listing view</td>
+                <td><code>apps/web/lib/marketplace/listing-view.ts</code> returns allow-listed view models and excludes seller-internal fields.</td>
+                <td>Future public or semi-public marketplace surfaces can grow from a safe cross-org read layer.</td>
+              </tr>
+              <tr>
+                <td>Inquiry workflow</td>
+                <td><code>MarketplaceInquiry</code> has open, converted, withdrawn, declined, closed won, and closed lost states.</td>
+                <td>The lead-to-deal pipeline is already modeled and can become a seller CRM cockpit.</td>
+              </tr>
+              <tr>
+                <td>REGA and FAL attestation</td>
+                <td><code>OrgRegaAuthorization</code> tracks license number, seller or buyer role, verification status, method, expiry, and verifier.</td>
+                <td>Trust badges, seller profiles, and gated actions can use the existing authorization concept.</td>
+              </tr>
+              <tr>
+                <td>Settlement controls</td>
+                <td>Unit transfers require deed proof, manual verification, signed sale contract, both-org REGA verification, and a platform conveyance switch.</td>
+                <td>Mimarek has a rare high-trust transaction rail that pure listing portals do not usually offer.</td>
+              </tr>
+              <tr>
+                <td>PII protection</td>
+                <td>Marketplace customer and deed proof paths use encryption and audited PII reads.</td>
+                <td>Buyer trust and compliance can be marketed as a platform strength, provided UX stays transparent.</td>
+              </tr>
+              <tr>
+                <td>Admin moderation</td>
+                <td><code>/dashboard/admin/marketplace</code> moderates listings, REGA authorization, deed proofs, and conveyance settings.</td>
+                <td>The marketplace can scale with review queues and risk scoring rather than ad hoc staff review.</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="ideas">
+          <div class="section-head">
+            <h2>Idea Portfolio</h2>
+            <p>
+              Each idea is written as a product brief. Value and effort are directional, using High, Medium, or Low.
+            </p>
+          </div>
+
+          <article class="idea" id="idea-1">
+            <div class="idea-title">
+              <div class="num">01</div>
+              <div>
+                <h3>Verified Saudi Listing Badge</h3>
+                <div class="tag-row">
+                  <span class="tag">Trust</span>
+                  <span class="tag">Compliance</span>
+                  <span class="tag">Seller quality</span>
+                </div>
+              </div>
+              <div class="score"><strong>High</strong><span>Value</span></div>
+            </div>
+            <div class="idea-grid">
+              <div class="brief">
+                <b>Benefit</b>
+                <p>Increases buyer confidence, reduces spam or low-quality listings, and gives sellers a reason to complete compliance data. It turns regulatory readiness into a visible conversion signal.</p>
+              </div>
+              <div class="brief">
+                <b>Scope</b>
+                <ul class="clean">
+                  <li>Verified ad license display.</li>
+                  <li>Verified seller authorization display.</li>
+                  <li>Compliance status on cards and detail pages.</li>
+                  <li>Moderator checklist with expiry tracking.</li>
+                </ul>
+              </div>
+              <div class="brief">
+                <b>Persona</b>
+                <p>Buyer organization admin, acquisitions manager, broker, marketplace moderator, and seller manager who wants higher inquiry quality.</p>
+              </div>
+              <div class="brief">
+                <b>Risks</b>
+                <p>False confidence if verification is stale, legal exposure if the badge overstates the check, and staff workload if every listing needs manual review.</p>
+              </div>
+              <div class="brief">
+                <b>Priority</b>
+                <p>Start now. This is the clearest Saudi-specific differentiator and fits existing moderation rails.</p>
+              </div>
+            </div>
+            <div class="implementation">
+              <h4>How to implement in Mimarek</h4>
+              <p>Extend <code>MarketplaceListing</code> with verification metadata such as <code>adLicenseVerifiedAt</code>, <code>adLicenseExpiresAt</code>, <code>verificationSource</code>, and <code>verificationNotes</code>. Keep manual attestation first using the existing admin moderation page, then make <code>VerificationMethod.API_VERIFIED</code> useful later if REGA or FAL integration becomes available. Add badges to marketplace cards, listing detail, seller my-listings, and admin review tables. Add a scheduled stale-check job that moves expired verification into pending review.</p>
+            </div>
+          </article>
+
+          <article class="idea" id="idea-2">
+            <div class="idea-title">
+              <div class="num">02</div>
+              <div>
+                <h3>Seller Trust Profile</h3>
+                <div class="tag-row">
+                  <span class="tag">Reputation</span>
+                  <span class="tag">Broker enablement</span>
+                  <span class="tag">Developer brand</span>
+                </div>
+              </div>
+              <div class="score"><strong>High</strong><span>Value</span></div>
+            </div>
+            <div class="idea-grid">
+              <div class="brief">
+                <b>Benefit</b>
+                <p>Makes the marketplace feel safer and more professional. Sellers gain a profile they can improve, while buyers can compare credible suppliers beyond price.</p>
+              </div>
+              <div class="brief">
+                <b>Scope</b>
+                <ul class="clean">
+                  <li>Seller profile page.</li>
+                  <li>REGA or FAL status.</li>
+                  <li>Response time and inquiry closure rate.</li>
+                  <li>Active listings, projects, languages, locations.</li>
+                </ul>
+              </div>
+              <div class="brief">
+                <b>Persona</b>
+                <p>Broker owner, developer sales director, buyer acquisition team, and Mimarek platform staff.</p>
+              </div>
+              <div class="brief">
+                <b>Risks</b>
+                <p>Ranking disputes, incentive gaming, privacy issues around operational metrics, and reputational liability if ratings are not clearly defined.</p>
+              </div>
+              <div class="brief">
+                <b>Priority</b>
+                <p>Near term, after verified listing badges. Start with objective metrics before subjective ratings.</p>
+              </div>
+            </div>
+            <div class="implementation">
+              <h4>How to implement in Mimarek</h4>
+              <p>Create a <code>MarketplaceSellerProfile</code> model or derive the first version from <code>Organization</code>, <code>OrgRegaAuthorization</code>, listings, and inquiries. Add computed fields through a read model: median response time, open inquiry count, converted inquiries, closed won deals, and verification status. Add profile links from listing cards and filters. Avoid star ratings at first; use objective trust facts and a clear "Verified by Mimarek" language.</p>
+            </div>
+          </article>
+
+          <article class="idea" id="idea-3">
+            <div class="idea-title">
+              <div class="num">03</div>
+              <div>
+                <h3>Listing Quality and Compliance Score</h3>
+                <div class="tag-row">
+                  <span class="tag">Supply quality</span>
+                  <span class="tag">Seller guidance</span>
+                  <span class="tag">Moderation speed</span>
+                </div>
+              </div>
+              <div class="score"><strong>High</strong><span>Value</span></div>
+            </div>
+            <div class="idea-grid">
+              <div class="brief">
+                <b>Benefit</b>
+                <p>Improves listing quality before publication, reduces moderator back-and-forth, and gives sellers clear actions that increase visibility and conversion.</p>
+              </div>
+              <div class="brief">
+                <b>Scope</b>
+                <ul class="clean">
+                  <li>Completion checklist.</li>
+                  <li>Photo and document requirements.</li>
+                  <li>Pricing and duplicate risk warnings.</li>
+                  <li>Publish readiness score.</li>
+                </ul>
+              </div>
+              <div class="brief">
+                <b>Persona</b>
+                <p>Seller agent, sales manager, marketplace moderator, and operations manager responsible for clean inventory.</p>
+              </div>
+              <div class="brief">
+                <b>Risks</b>
+                <p>Overly strict scoring could block valid listings. AI-generated feedback could be wrong. Score must not become a hidden ranking black box.</p>
+              </div>
+              <div class="brief">
+                <b>Priority</b>
+                <p>Quick win. It uses fields Mimarek already has and can be delivered before advanced AI.</p>
+              </div>
+            </div>
+            <div class="implementation">
+              <h4>How to implement in Mimarek</h4>
+              <p>Add a pure scoring helper in <code>apps/web/lib/marketplace/listing-quality.ts</code>. Score required data, title length, price, area, city, district, short address, ad license, description, photos when media exists, and duplicate listing risk. Surface the score in <code>PublishListingDialog</code>, <code>my-listings</code>, and admin moderation. Store optional snapshots only if performance requires it; otherwise compute from listing data.</p>
+            </div>
+          </article>
+
+          <article class="idea" id="idea-4">
+            <div class="idea-title">
+              <div class="num">04</div>
+              <div>
+                <h3>Project and Off-Plan Launch Pages</h3>
+                <div class="tag-row">
+                  <span class="tag">Developers</span>
+                  <span class="tag">Inventory</span>
+                  <span class="tag">Launch campaigns</span>
+                </div>
+              </div>
+              <div class="score"><strong>Very High</strong><span>Value</span></div>
+            </div>
+            <div class="idea-grid">
+              <div class="brief">
+                <b>Benefit</b>
+                <p>Moves Mimarek beyond single-unit listings. Developers can market a project, manage unit availability, capture launch demand, and convert interest into reservations.</p>
+              </div>
+              <div class="brief">
+                <b>Scope</b>
+                <ul class="clean">
+                  <li>Project profile.</li>
+                  <li>Unit inventory table and availability.</li>
+                  <li>Payment plans and delivery dates.</li>
+                  <li>Brochures, progress updates, and inquiry routing.</li>
+                </ul>
+              </div>
+              <div class="brief">
+                <b>Persona</b>
+                <p>Developer CEO, sales director, project marketer, broker partner, and buyer looking for off-plan inventory.</p>
+              </div>
+              <div class="brief">
+                <b>Risks</b>
+                <p>Off-plan claims need strict review. Construction progress, delivery dates, and payment plans can become liability if stale or misleading.</p>
+              </div>
+              <div class="brief">
+                <b>Priority</b>
+                <p>Highest strategic bet for Saudi developers. Build after trust badges and seller profiles.</p>
+              </div>
+            </div>
+            <div class="implementation">
+              <h4>How to implement in Mimarek</h4>
+              <p>Add <code>MarketplaceProject</code> linked to <code>Organization</code> and existing units. Add project-level fields: name, city, district, developer, status, delivery quarter, project license, amenities, brochure URL, payment plan JSON, media, and publish status. Link <code>MarketplaceListing</code> to a project optionally. Build <code>/dashboard/marketplace/projects</code> for browsing and <code>/dashboard/marketplace/my-projects</code> for seller management. Keep project publication behind the same moderation and REGA review posture.</p>
+            </div>
+          </article>
+
+          <article class="idea" id="idea-5">
+            <div class="idea-title">
+              <div class="num">05</div>
+              <div>
+                <h3>Marketplace Inquiry to CRM Pipeline</h3>
+                <div class="tag-row">
+                  <span class="tag">Conversion</span>
+                  <span class="tag">CRM</span>
+                  <span class="tag">Sales operations</span>
+                </div>
+              </div>
+              <div class="score"><strong>Very High</strong><span>Value</span></div>
+            </div>
+            <div class="idea-grid">
+              <div class="brief">
+                <b>Benefit</b>
+                <p>Pure marketplaces stop at the lead. Mimarek can turn each inquiry into a managed sales process with ownership, next action, reminders, stages, and reporting.</p>
+              </div>
+              <div class="brief">
+                <b>Scope</b>
+                <ul class="clean">
+                  <li>Automatic CRM lead creation.</li>
+                  <li>Lead source, listing, budget, city, and buyer org.</li>
+                  <li>Pipeline stages for inquiry, viewing, offer, reservation, contract, won, lost.</li>
+                  <li>Task reminders and SLA.</li>
+                </ul>
+              </div>
+              <div class="brief">
+                <b>Persona</b>
+                <p>Sales manager, agent, broker, developer CRM admin, and executive tracking marketplace ROI.</p>
+              </div>
+              <div class="brief">
+                <b>Risks</b>
+                <p>Duplicate customers, PII mishandling, noisy pipeline records, and confusion between buyer organization and individual contact.</p>
+              </div>
+              <div class="brief">
+                <b>Priority</b>
+                <p>Immediate. This is the heart of making marketplace native to Mimarek.</p>
+              </div>
+            </div>
+            <div class="implementation">
+              <h4>How to implement in Mimarek</h4>
+              <p>Enhance <code>confirmMarketplaceInterest</code> and <code>convertMarketplaceInquiryToDeal</code> so seller-side CRM records include source metadata, listing ID, buyer organization, contact name, normalized phone, assigned owner, and next action. Keep using the canonical encrypted customer path. Add a Marketplace source filter to CRM views and a dashboard widget for incoming inquiries that need action today.</p>
+            </div>
+          </article>
+
+          <article class="idea" id="idea-6">
+            <div class="idea-title">
+              <div class="num">06</div>
+              <div>
+                <h3>WhatsApp-Native Communication Hub</h3>
+                <div class="tag-row">
+                  <span class="tag">Saudi behavior</span>
+                  <span class="tag">Response speed</span>
+                  <span class="tag">Agent workflow</span>
+                </div>
+              </div>
+              <div class="score"><strong>High</strong><span>Value</span></div>
+            </div>
+            <div class="idea-grid">
+              <div class="brief">
+                <b>Benefit</b>
+                <p>Matches local market behavior and increases response speed. Sellers can send brochures, location, viewing slots, and reservation steps without losing CRM traceability.</p>
+              </div>
+              <div class="brief">
+                <b>Scope</b>
+                <ul class="clean">
+                  <li>One-click WhatsApp deep links.</li>
+                  <li>Bilingual message templates.</li>
+                  <li>Template logging on CRM timeline.</li>
+                  <li>Optional future WhatsApp Business API integration.</li>
+                </ul>
+              </div>
+              <div class="brief">
+                <b>Persona</b>
+                <p>Sales agent, leasing agent, buyer contact, and sales manager who needs activity visibility.</p>
+              </div>
+              <div class="brief">
+                <b>Risks</b>
+                <p>Consent, privacy, message spam, and incomplete audit trail if agents continue conversations outside Mimarek.</p>
+              </div>
+              <div class="brief">
+                <b>Priority</b>
+                <p>Quick win with simple deep links. API integration can come later after policy review.</p>
+              </div>
+            </div>
+            <div class="implementation">
+              <h4>How to implement in Mimarek</h4>
+              <p>Add a <code>lib/marketplace/message-templates.ts</code> module with Arabic and English templates for brochure, viewing, offer follow-up, missing documents, and reservation confirmation. Reuse <code>normalizeSaudiPhoneE164</code> for <code>wa.me</code> links. Log each template launch as an activity event tied to <code>MarketplaceInquiry</code> and the seller CRM customer. Add consent copy in inquiry forms before any promotional follow-up.</p>
+            </div>
+          </article>
+
+          <article class="idea" id="idea-7">
+            <div class="idea-title">
+              <div class="num">07</div>
+              <div>
+                <h3>Smart Matching and Saved Buyer Requirements</h3>
+                <div class="tag-row">
+                  <span class="tag">Discovery</span>
+                  <span class="tag">Buyer intent</span>
+                  <span class="tag">Alerts</span>
+                </div>
+              </div>
+              <div class="score"><strong>High</strong><span>Value</span></div>
+            </div>
+            <div class="idea-grid">
+              <div class="brief">
+                <b>Benefit</b>
+                <p>Reduces buyer search effort and gives sellers warmer demand. Saved requirements become a data asset for inventory planning and project launches.</p>
+              </div>
+              <div class="brief">
+                <b>Scope</b>
+                <ul class="clean">
+                  <li>Saved searches.</li>
+                  <li>Requirement profiles by buyer org.</li>
+                  <li>New matching listing alerts.</li>
+                  <li>Suggested buyers for sellers.</li>
+                </ul>
+              </div>
+              <div class="brief">
+                <b>Persona</b>
+                <p>Buyer acquisition manager, investment analyst, broker, and developer sales manager.</p>
+              </div>
+              <div class="brief">
+                <b>Risks</b>
+                <p>Notification fatigue, perceived unfairness in seller recommendations, and exposing buyer strategy to sellers too aggressively.</p>
+              </div>
+              <div class="brief">
+                <b>Priority</b>
+                <p>Medium term. It needs clean listings and enough marketplace liquidity.</p>
+              </div>
+            </div>
+            <div class="implementation">
+              <h4>How to implement in Mimarek</h4>
+              <p>Create <code>MarketplaceSavedSearch</code> with buyer org, filters, frequency, and last notification timestamp. Extend existing filters with project status, payment plan, financing eligible, delivery date, gross yield estimate, and buyer intent. Run a scheduled matcher that notifies buyer admins when new published listings match. For seller-side recommendations, show only aggregated demand counts until privacy rules are fully designed.</p>
+            </div>
+          </article>
+
+          <article class="idea" id="idea-8">
+            <div class="idea-title">
+              <div class="num">08</div>
+              <div>
+                <h3>Price Intelligence and Comparable Market Insight</h3>
+                <div class="tag-row">
+                  <span class="tag">Pricing</span>
+                  <span class="tag">Market data</span>
+                  <span class="tag">Buyer confidence</span>
+                </div>
+              </div>
+              <div class="score"><strong>Very High</strong><span>Value</span></div>
+            </div>
+            <div class="idea-grid">
+              <div class="brief">
+                <b>Benefit</b>
+                <p>Helps sellers price realistically and helps buyers decide faster. Price per sqm, neighborhood ranges, and comparable listings make Mimarek feel more intelligent than a plain classifieds board.</p>
+              </div>
+              <div class="brief">
+                <b>Scope</b>
+                <ul class="clean">
+                  <li>Price per sqm on listing cards.</li>
+                  <li>Neighborhood range bands.</li>
+                  <li>Seller price guidance.</li>
+                  <li>Buyer fair-price indicator.</li>
+                </ul>
+              </div>
+              <div class="brief">
+                <b>Persona</b>
+                <p>Investment analyst, buyer admin, seller sales manager, broker, and executive dashboard user.</p>
+              </div>
+              <div class="brief">
+                <b>Risks</b>
+                <p>Bad comps can damage trust. Market data licensing may be needed. Sellers may resist low price-confidence labels.</p>
+              </div>
+              <div class="brief">
+                <b>Priority</b>
+                <p>Phased. Start with internal comps, then add external or licensed datasets later.</p>
+              </div>
+            </div>
+            <div class="implementation">
+              <h4>How to implement in Mimarek</h4>
+              <p>First version: compute <code>pricePerSqm</code> directly from listing price and area. Add a <code>MarketplaceCompSnapshot</code> or materialized read table keyed by city, district, property type, bedrooms, and area band. Use published listings, closed transferred marketplace transactions, and Mimarek-owned historical deals. Clearly label confidence as "Mimarek marketplace sample" until external transaction data is licensed or integrated.</p>
+            </div>
+          </article>
+
+          <article class="idea" id="idea-9">
+            <div class="idea-title">
+              <div class="num">09</div>
+              <div>
+                <h3>Mortgage and Payment Plan Simulator</h3>
+                <div class="tag-row">
+                  <span class="tag">Affordability</span>
+                  <span class="tag">Finance partners</span>
+                  <span class="tag">Buyer qualification</span>
+                </div>
+              </div>
+              <div class="score"><strong>High</strong><span>Value</span></div>
+            </div>
+            <div class="idea-grid">
+              <div class="brief">
+                <b>Benefit</b>
+                <p>Converts price into affordability. Buyers can understand monthly burden, down payment, installment plans, and financing fit before contacting the seller.</p>
+              </div>
+              <div class="brief">
+                <b>Scope</b>
+                <ul class="clean">
+                  <li>Monthly payment estimate.</li>
+                  <li>Down payment and tenor inputs.</li>
+                  <li>Developer payment plan schedule.</li>
+                  <li>Finance-ready lead qualification.</li>
+                </ul>
+              </div>
+              <div class="brief">
+                <b>Persona</b>
+                <p>Buyer organization finance lead, retail buyer contact if public marketplace grows, developer sales agent, and finance partner manager.</p>
+              </div>
+              <div class="brief">
+                <b>Risks</b>
+                <p>Financial advice liability, outdated rates, and mismatch between estimate and bank approval.</p>
+              </div>
+              <div class="brief">
+                <b>Priority</b>
+                <p>Medium. Useful after project pages and price-per-sqm are live.</p>
+              </div>
+            </div>
+            <div class="implementation">
+              <h4>How to implement in Mimarek</h4>
+              <p>Create a calculator component with explicit disclaimer text and configurable default rates managed by admin. For off-plan projects, store payment plan milestones as JSON or a related <code>ProjectPaymentMilestone</code> model. Add inquiry fields for budget, financing need, down payment readiness, and expected purchase timeline, then route high-readiness leads to sales priority queues.</p>
+            </div>
+          </article>
+
+          <article class="idea" id="idea-10">
+            <div class="idea-title">
+              <div class="num">10</div>
+              <div>
+                <h3>Reservation and Offer Workflow</h3>
+                <div class="tag-row">
+                  <span class="tag">Transaction</span>
+                  <span class="tag">Reservation</span>
+                  <span class="tag">Deal control</span>
+                </div>
+              </div>
+              <div class="score"><strong>Very High</strong><span>Value</span></div>
+            </div>
+            <div class="idea-grid">
+              <div class="brief">
+                <b>Benefit</b>
+                <p>Turns buyer interest into controlled commitment. Reduces leakage to informal channels and gives sellers a structured way to accept, reject, counter, or reserve.</p>
+              </div>
+              <div class="brief">
+                <b>Scope</b>
+                <ul class="clean">
+                  <li>Submit offer.</li>
+                  <li>Counter offer.</li>
+                  <li>Reserve unit.</li>
+                  <li>Attach documents and proof of seriousness.</li>
+                </ul>
+              </div>
+              <div class="brief">
+                <b>Persona</b>
+                <p>Buyer acquisition manager, seller sales manager, broker, finance/admin user, and legal reviewer.</p>
+              </div>
+              <div class="brief">
+                <b>Risks</b>
+                <p>Legal enforceability of reservation, payment handling, cancellation disputes, and race conditions if two buyers act on one unit.</p>
+              </div>
+              <div class="brief">
+                <b>Priority</b>
+                <p>High, but gate carefully. Mimarek already has reservation and transfer models that make this plausible.</p>
+              </div>
+            </div>
+            <div class="implementation">
+              <h4>How to implement in Mimarek</h4>
+              <p>Add <code>MarketplaceOffer</code> linked to inquiry and listing with amount, conditions, status, expiry, and audit trail. Use transactions and the existing state machine to prevent double-reservation. Let accepted offers call the existing conversion path into reservation. If booking fees are added later, do not store payment as a generic note; model it through finance/payments with refund and audit states.</p>
+            </div>
+          </article>
+
+          <article class="idea" id="idea-11">
+            <div class="idea-title">
+              <div class="num">11</div>
+              <div>
+                <h3>Rich Media, 360 Tours, and Handover-Ready Evidence</h3>
+                <div class="tag-row">
+                  <span class="tag">Visual trust</span>
+                  <span class="tag">Remote selling</span>
+                  <span class="tag">Operations reuse</span>
+                </div>
+              </div>
+              <div class="score"><strong>Medium</strong><span>Value</span></div>
+            </div>
+            <div class="idea-grid">
+              <div class="brief">
+                <b>Benefit</b>
+                <p>Better media improves inquiry conversion and lowers unnecessary visits. If captured correctly, listing media can later support inspection, handover, and maintenance context.</p>
+              </div>
+              <div class="brief">
+                <b>Scope</b>
+                <ul class="clean">
+                  <li>Photo gallery and floor plan.</li>
+                  <li>Video or 360 tour links.</li>
+                  <li>Media quality checklist.</li>
+                  <li>Handover snapshot reuse after deal close.</li>
+                </ul>
+              </div>
+              <div class="brief">
+                <b>Persona</b>
+                <p>Seller agent, photographer, buyer, maintenance manager, and handover team.</p>
+              </div>
+              <div class="brief">
+                <b>Risks</b>
+                <p>Storage cost, media moderation, outdated images, copyright, and accidental exposure of private information inside photos.</p>
+              </div>
+              <div class="brief">
+                <b>Priority</b>
+                <p>Medium. Start with simple image and floor-plan support before native 360 hosting.</p>
+              </div>
+            </div>
+            <div class="implementation">
+              <h4>How to implement in Mimarek</h4>
+              <p>Add a reusable <code>MarketplaceListingMedia</code> model or connect to existing document/media storage if present. Store media type, URL, order, caption, hash, moderation status, and capturedAt. Add a required media checklist to the quality score. On closed transfer, offer to attach selected media to handover records or unit documents for the buyer organization.</p>
+            </div>
+          </article>
+
+          <article class="idea" id="idea-12">
+            <div class="idea-title">
+              <div class="num">12</div>
+              <div>
+                <h3>Marketplace Performance Cockpit</h3>
+                <div class="tag-row">
+                  <span class="tag">Analytics</span>
+                  <span class="tag">Seller ROI</span>
+                  <span class="tag">Platform ops</span>
+                </div>
+              </div>
+              <div class="score"><strong>High</strong><span>Value</span></div>
+            </div>
+            <div class="idea-grid">
+              <div class="brief">
+                <b>Benefit</b>
+                <p>Shows sellers what is working and gives Mimarek platform staff liquidity insights. It makes marketplace value measurable, not anecdotal.</p>
+              </div>
+              <div class="brief">
+                <b>Scope</b>
+                <ul class="clean">
+                  <li>Views, inquiries, conversion rate.</li>
+                  <li>Response time and SLA breaches.</li>
+                  <li>Listing quality distribution.</li>
+                  <li>City, district, property type demand heatmap.</li>
+                </ul>
+              </div>
+              <div class="brief">
+                <b>Persona</b>
+                <p>Developer executive, seller sales manager, broker owner, platform marketplace manager, and customer success.</p>
+              </div>
+              <div class="brief">
+                <b>Risks</b>
+                <p>Metrics can be gamed. Small sample sizes can mislead. Cross-tenant aggregation must avoid leaking competitor performance.</p>
+              </div>
+              <div class="brief">
+                <b>Priority</b>
+                <p>Near term for seller-owned metrics. Platform aggregate analytics can follow when privacy rules are mature.</p>
+              </div>
+            </div>
+            <div class="implementation">
+              <h4>How to implement in Mimarek</h4>
+              <p>Use existing <code>viewCount</code> and <code>interestCount</code>, then add event tracking for detail view, WhatsApp launch, brochure download, saved listing, inquiry submitted, offer submitted, and reservation created. Keep tenant dashboards limited to their own listings. Add platform-only aggregate views with thresholds so no seller can infer another seller's confidential performance from small counts.</p>
+            </div>
+          </article>
+        </section>
+
+        <section id="roadmap">
+          <div class="section-head">
+            <h2>Recommended Roadmap</h2>
+            <p>
+              Sequence the work so trust and conversion improve before heavier marketplace intelligence. This avoids building advanced matching on top of weak listing quality.
+            </p>
+          </div>
+          <div class="roadmap">
+            <div class="phase">
+              <h3>Phase 1</h3>
+              <div class="window">0-45 days</div>
+              <p>Verified badges, listing quality score, seller profile v1, marketplace-to-CRM metadata, and WhatsApp deep-link templates.</p>
+            </div>
+            <div class="phase">
+              <h3>Phase 2</h3>
+              <div class="window">45-120 days</div>
+              <p>Project pages, richer media, seller performance cockpit, saved searches, and stronger inquiry stage management.</p>
+            </div>
+            <div class="phase">
+              <h3>Phase 3</h3>
+              <div class="window">120-240 days</div>
+              <p>Price-per-sqm comps, affordability calculator, reservation and offer workflow, and moderated project launch campaigns.</p>
+            </div>
+            <div class="phase">
+              <h3>Phase 4</h3>
+              <div class="window">240+ days</div>
+              <p>External data integrations, API verification where available, financing partners, syndication, and marketplace liquidity optimization.</p>
+            </div>
+          </div>
+        </section>
+
+        <section id="risks">
+          <div class="section-head">
+            <h2>Risk Controls</h2>
+            <p>
+              The marketplace touches compliance, cross-tenant data, financial decisions, and irreversible transfer workflows. These controls should be treated as product requirements.
+            </p>
+          </div>
+          <div class="three-col">
+            <div class="risk">
+              <h3>Compliance Overclaim</h3>
+              <p>Badge copy must say exactly what was verified, when, by whom, and whether it was manual or API verified. Do not imply government endorsement unless an official integration supports that claim.</p>
+            </div>
+            <div class="risk">
+              <h3>Cross-Tenant Leakage</h3>
+              <p>Keep buyer-visible marketplace views behind explicit allow-listed view models. Any new analytics or seller recommendations need aggregation thresholds.</p>
+            </div>
+            <div class="risk">
+              <h3>PII and Consent</h3>
+              <p>Continue using encrypted customer creation paths. Add consent capture for WhatsApp or marketing follow-up and audit every sensitive read.</p>
+            </div>
+            <div class="risk">
+              <h3>Pricing Liability</h3>
+              <p>Mark estimates as guidance, show data confidence, and keep external data licensing clean. Avoid presenting price intelligence as formal valuation.</p>
+            </div>
+            <div class="risk">
+              <h3>Offer and Reservation Disputes</h3>
+              <p>Model offer expiry, cancellation, refund status, and approval history explicitly. Do not rely on notes for legally meaningful states.</p>
+            </div>
+            <div class="risk">
+              <h3>Operational Load</h3>
+              <p>Use risk scoring and quality checklists to reduce moderator workload before adding more supply. Staff queues need SLA, assignment, and batch review.</p>
+            </div>
+          </div>
+        </section>
+
+        <section id="metrics">
+          <div class="section-head">
+            <h2>Measurement Framework</h2>
+            <p>
+              Mimarek should measure whether the marketplace is becoming more attractive through trust, liquidity, conversion, and operating efficiency.
+            </p>
+          </div>
+          <div class="three-col">
+            <div class="metric">
+              <h3>Supply Quality</h3>
+              <p>Percent of listings verified, average quality score, rejection reasons, median moderation time, and percentage with rich media.</p>
+            </div>
+            <div class="metric">
+              <h3>Demand Quality</h3>
+              <p>Inquiries per listing, duplicate inquiry rate, qualified inquiry rate, saved searches, and buyer repeat usage.</p>
+            </div>
+            <div class="metric">
+              <h3>Conversion</h3>
+              <p>Inquiry to viewing, viewing to offer, offer to reservation, reservation to contract, and contract to settled transfer.</p>
+            </div>
+            <div class="metric">
+              <h3>Seller Performance</h3>
+              <p>Median first response time, SLA breach rate, closed-won rate, expired listings, and price-change impact on inquiry rate.</p>
+            </div>
+            <div class="metric">
+              <h3>Platform Safety</h3>
+              <p>Suspensions, compliance failures, stale verifications, PII read audits, and reported listing issues.</p>
+            </div>
+            <div class="metric">
+              <h3>Business Value</h3>
+              <p>Marketplace-sourced deals, seller retention, paid upgrade adoption, project launch revenue, and downstream module activation after deal close.</p>
+            </div>
+          </div>
+        </section>
+
+        <section id="implementation-map">
+          <div class="section-head">
+            <h2>Implementation Map</h2>
+            <p>
+              Suggested engineering placement for the first release wave. This keeps changes close to existing marketplace boundaries.
+            </p>
+          </div>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Workstream</th>
+                <th>Primary files or modules</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Trust and badges</td>
+                <td><code>schema.prisma</code>, <code>app/actions/marketplace.ts</code>, admin marketplace page, marketplace cards.</td>
+                <td>Extend current compliance fields rather than creating a separate trust system.</td>
+              </tr>
+              <tr>
+                <td>Quality scoring</td>
+                <td><code>lib/marketplace/listing-quality.ts</code>, <code>PublishListingDialog.tsx</code>, <code>my-listings/page.tsx</code>.</td>
+                <td>Pure helper first. Store only if analytics or filtering require persistence.</td>
+              </tr>
+              <tr>
+                <td>Seller profile</td>
+                <td><code>Organization</code>, <code>OrgRegaAuthorization</code>, listing and inquiry read models.</td>
+                <td>Objective profile v1: licenses, active supply, response time, verified status.</td>
+              </tr>
+              <tr>
+                <td>CRM bridge</td>
+                <td><code>confirmMarketplaceInterest</code>, <code>convertMarketplaceInquiryToDeal</code>, customer actions, CRM views.</td>
+                <td>Respect existing PII encryption and phone normalization rules.</td>
+              </tr>
+              <tr>
+                <td>Projects</td>
+                <td>New project models, marketplace routes, unit inventory linkage, moderation queue.</td>
+                <td>Use project pages to attract developers and launch inventory at scale.</td>
+              </tr>
+              <tr>
+                <td>Analytics cockpit</td>
+                <td>Marketplace event table, dashboard widgets, platform admin analytics.</td>
+                <td>Separate tenant-owned metrics from platform aggregate metrics.</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="sources">
+          <div class="section-head">
+            <h2>Sources</h2>
+            <p>
+              Research was based on official product and government pages available on June 27, 2026.
+            </p>
+          </div>
+          <div class="source-list">
+            <div class="source">
+              <b>AppFolio</b>
+              Performance platform positioning, unified data, AI-native workflows, resident and investor operations.
+              <br /><a href="https://www.appfolio.com/">https://www.appfolio.com/</a>
+            </div>
+            <div class="source">
+              <b>Buildium</b>
+              Property accounting, rent collection, maintenance, resident center, rental syndication, tenant screening, online leasing, marketplace, and API.
+              <br /><a href="https://www.buildium.com/features/">https://www.buildium.com/features/</a>
+            </div>
+            <div class="source">
+              <b>DoorLoop</b>
+              Leasing, listings, applications, tenant screening, CRM, maintenance, owner portal, workflows, resident tools, and AI assistant.
+              <br /><a href="https://www.doorloop.com/features">https://www.doorloop.com/features</a>
+            </div>
+            <div class="source">
+              <b>Yardi Breeze</b>
+              Marketing and leasing, RentCafe listing exposure, online leases, rent collection, maintenance, owner tools, and accounting.
+              <br /><a href="https://www.yardibreeze.com/features/">https://www.yardibreeze.com/features/</a>
+            </div>
+            <div class="source">
+              <b>Zillow Rental Manager</b>
+              Listings, applications, leases, payments, tour management, pricing tools, and centralized landlord workflows.
+              <br /><a href="https://www.zillow.com/rental-manager/">https://www.zillow.com/rental-manager/</a>
+            </div>
+            <div class="source">
+              <b>Apartments.com Rental Manager</b>
+              Listing distribution, messaging, screening, leases, rent payments, maintenance, expenses, 3D tours, and rental comps.
+              <br /><a href="https://www.apartments.com/rental-manager">https://www.apartments.com/rental-manager</a>
+            </div>
+            <div class="source">
+              <b>Property Finder</b>
+              Buyer and renter tools, mortgage calculator, price maps, sale and rental transactions, area insights, agents, and off-plan projects.
+              <br /><a href="https://www.propertyfinder.ae/">https://www.propertyfinder.ae/</a>
+            </div>
+            <div class="source">
+              <b>Bayut Saudi</b>
+              Saudi marketplace search, real prices, real photos, map search, commute search, 360 tours, new projects, and Tru Broker discovery.
+              <br /><a href="https://www.bayut.sa/">https://www.bayut.sa/</a>
+            </div>
+            <div class="source">
+              <b>Aqar</b>
+              Saudi marketplace listings, projects, reservations, map, category filters, city supply, and property detail patterns.
+              <br /><a href="https://sa.aqar.fm/">https://sa.aqar.fm/</a>
+            </div>
+            <div class="source">
+              <b>Sakani</b>
+              Role-based services for broker, developer, buyer, renter, project marketing, and digital property journey support.
+              <br /><a href="https://sakani.sa/">https://sakani.sa/</a>
+            </div>
+            <div class="source">
+              <b>Ejar</b>
+              Saudi rental contract ecosystem, licensed brokers, payment follow-up, contract documentation, and unit handover services.
+              <br /><a href="https://www.ejar.sa/ar">https://www.ejar.sa/ar</a>
+            </div>
+            <div class="source">
+              <b>REGA</b>
+              Saudi regulatory authority services including FAL license inquiry, real estate advertisement license inquiry, real estate inquiries, and market statistics.
+              <br /><a href="https://rega.gov.sa/">https://rega.gov.sa/</a>
+            </div>
+          </div>
+          <p class="print-note">
+            Prepared as a standalone HTML report for Mimarek. Open directly in a browser or print to PDF.
+          </p>
+        </section>
+      </main>
+    </div>
+  </div>
+</body>
+</html>
