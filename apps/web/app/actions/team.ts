@@ -28,6 +28,7 @@ export async function getTeamMembers() {
       name: true,
       email: true,
       role: true,
+      isActive: true,
       createdAt: true,
       updatedAt: true,
     },
@@ -82,6 +83,47 @@ export async function updateTeamMember(userId: string, data: { role?: UserRole; 
 
   revalidatePath(ROUTES.settingsTeam);
   return updated;
+}
+
+// QA-M2: dedicated, explicit deactivate/activate path. Kept SEPARATE from
+// updateTeamMember so `isActive` can never be smuggled through the generic
+// update allowlist (mass-assignment) — the only writable column here is the
+// validated boolean, and deactivation bumps tokenVersion so the affected user's
+// existing JWT is revoked on their next action (SEC-003, same as a role change).
+const SetActiveSchema = z.object({ isActive: z.boolean() });
+
+export async function setTeamMemberActive(userId: string, isActive: boolean) {
+  const session = await requirePermission("team:write");
+
+  const parsed = SetActiveSchema.safeParse({ isActive });
+  if (!parsed.success) {
+    throw new Error("Invalid input: " + parsed.error.issues.map((i) => i.message).join(", "));
+  }
+  const nextActive = parsed.data.isActive;
+
+  // Guard: a caller cannot deactivate their own account (avoids self-lockout —
+  // another administrator must do it).
+  if (userId === session.userId && !nextActive) {
+    throw new Error("You cannot deactivate your own account. Please ask another administrator to do this.");
+  }
+
+  // Org-scoped, single-column update. The organizationId in the WHERE clause means
+  // a caller can never reach a user in another org. Deactivating bumps tokenVersion
+  // so the target's outstanding session is revoked immediately (SEC-003).
+  const result = await db.user.updateMany({
+    where: { id: userId, organizationId: session.organizationId },
+    data: {
+      isActive: nextActive,
+      ...(nextActive ? {} : { tokenVersion: { increment: 1 } }),
+    },
+  });
+  if (result.count !== 1) {
+    throw new Error("Team member not found. Please verify they belong to your organization.");
+  }
+
+  logAuditEvent({ userId: session.userId, userEmail: session.email, userRole: session.role, action: "UPDATE", resource: "User", resourceId: userId, metadata: { isActive: nextActive }, organizationId: session.organizationId });
+
+  revalidatePath(ROUTES.settingsTeam);
 }
 
 export async function removeTeamMember(userId: string) {

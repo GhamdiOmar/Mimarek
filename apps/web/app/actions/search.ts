@@ -79,7 +79,6 @@ export async function globalSearch(
     reservations,
     payments,
     maintenance,
-    documents,
   ] = await Promise.all([
     can("customers:read")
       ? db.customer.findMany({
@@ -210,18 +209,6 @@ export async function globalSearch(
           take: PAGE,
         })
       : Promise.resolve(null),
-
-    can("documents:read")
-      ? db.document.findMany({
-          where: {
-            organizationId: orgId,
-            name: { contains: q, mode: "insensitive" },
-          },
-          select: { id: true, name: true, category: true },
-          orderBy: { createdAt: "desc" },
-          take: PAGE,
-        })
-      : Promise.resolve(null),
   ]);
 
   // Pack a query group with cap + hasMore, tracking the running total for audit.
@@ -342,18 +329,6 @@ export async function globalSearch(
       };
     });
     pack("maintenance", hits, maintenance.length);
-  }
-
-  // ── Documents ──
-  if (documents) {
-    const hits: SearchHit[] = documents.slice(0, CAP).map((d) => ({
-      id: d.id,
-      type: "document" as const,
-      title: d.name,
-      subtitle: d.category || undefined,
-      href: `/dashboard/documents?q=${encodeURIComponent(q)}`,
-    }));
-    pack("document", hits, documents.length);
   }
 
   // Audit every search — PII-exposure level depends on whether the caller can

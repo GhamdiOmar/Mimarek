@@ -43,7 +43,6 @@ const SURFACES_TENANT = [
   { name: "maintenance", url: "/dashboard/maintenance", waitFor: "main" },
   { name: "leasing", url: "/dashboard/leasing", waitFor: "main" },
   { name: "finance", url: "/dashboard/finance", waitFor: "main" },
-  { name: "documents", url: "/dashboard/documents", waitFor: "main" },
   { name: "reports", url: "/dashboard/reports", waitFor: "main" },
   { name: "help", url: "/dashboard/help", waitFor: "main" },
   { name: "settings", url: "/dashboard/settings", waitFor: "main" },

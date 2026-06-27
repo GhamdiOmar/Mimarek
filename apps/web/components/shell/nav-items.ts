@@ -39,7 +39,6 @@ const navSeeds: NavSeed[] = [
   { label: { ar: "الفواتير", en: "Invoices" }, icon: "ReceiptText", href: "/dashboard/invoices", section: "operations" },
   { label: { ar: "الصيانة", en: "Maintenance" }, icon: "Wrench", href: "/dashboard/maintenance", section: "operations" },
   { label: { ar: "التقارير", en: "Reports" }, icon: "BarChart3", href: "/dashboard/reports", section: "operations" },
-  { label: { ar: "المستندات", en: "Documents" }, icon: "FileText", href: "/dashboard/documents", section: "operations" },
   // Sub-sections of Maintenance — exposed via the sub-tab bar inside /dashboard/maintenance
   // and Cmd-K search, but not as separate sidebar entries (IA: one top-level per workflow).
   { label: { ar: "تذاكر الصيانة", en: "Maintenance · Tickets" }, icon: "ClipboardList", href: "/dashboard/maintenance/tickets", section: "operations", hiddenFromNav: true },

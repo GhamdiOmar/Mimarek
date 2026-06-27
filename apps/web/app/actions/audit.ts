@@ -16,8 +16,8 @@ export async function getAuditLogs(filters?: {
 }) {
   const session = await requirePermission("audit:read");
 
-  const page = filters?.page ?? 1;
-  const pageSize = filters?.pageSize ?? 50;
+  const page = Math.max(1, filters?.page ?? 1);
+  const pageSize = Math.min(100, Math.max(1, filters?.pageSize ?? 50));
   const skip = (page - 1) * pageSize;
 
   const where: Prisma.AuditLogWhereInput = {

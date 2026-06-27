@@ -63,7 +63,6 @@ import { getCustomers } from "../../actions/customers";
 import { getUnitsWithBuildings } from "../../actions/units";
 import { getReservationById } from "../../actions/reservations";
 import { getJourneySummary } from "../../actions/journey";
-import { getMissingRequiredDocs } from "../../actions/document-requirements";
 import {
   getSavedViews,
   createSavedView,
@@ -243,18 +242,14 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
   const [journeyLoading, setJourneyLoading] = React.useState(false);
   const [journeyRelatedOpen, setJourneyRelatedOpen] = React.useState(false);
 
-  // Missing required docs for the open contract
-  const [missingDocs, setMissingDocs] = React.useState<string[]>([]);
   const [signConfirmOpen, setSignConfirmOpen] = React.useState(false);
   const [signTargetId, setSignTargetId] = React.useState<string | null>(null);
-  const [signMissingDocs, setSignMissingDocs] = React.useState<string[]>([]);
 
-  // Fetch journey + missing docs when detail drawer opens
+  // Fetch journey when detail drawer opens
   React.useEffect(() => {
     if (!detailContract) {
       setJourney(null);
       setJourneyRelatedOpen(false);
-      setMissingDocs([]);
       return;
     }
     setJourneyLoading(true);
@@ -262,11 +257,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
       .then((data) => setJourney(data))
       .catch(() => setJourney(null))
       .finally(() => setJourneyLoading(false));
-
-    getMissingRequiredDocs(detailContract.id)
-      .then((cats) => setMissingDocs(cats))
-      .catch(() => setMissingDocs([]));
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally keyed on the contract id only; re-running on the full `detailContract` object would re-fetch journey/docs on every unrelated list refresh that re-creates the object
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally keyed on the contract id only; re-running on the full `detailContract` object would re-fetch journey on every unrelated list refresh that re-creates the object
   }, [detailContract?.id]);
 
   function loadContracts() {
@@ -282,19 +273,10 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
       .finally(() => setLoading(false));
   }
 
-  // CX-021: signing is irreversible — open a confirm that also surfaces the
-  // required-documents gate (previously visible only in the detail drawer), so
-  // a user signing from the list row sees missing docs before committing.
-  async function askSign(contractId: string) {
+  // CX-021: signing is irreversible — open a confirm before committing.
+  function askSign(contractId: string) {
     setSignTargetId(contractId);
-    setSignMissingDocs([]);
     setSignConfirmOpen(true);
-    try {
-      const cats = await getMissingRequiredDocs(contractId);
-      setSignMissingDocs(cats);
-    } catch {
-      /* docs check failed — still allow the confirm, just without the warning */
-    }
   }
 
   async function confirmSign() {
@@ -1471,37 +1453,6 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
               )}
             </div>
 
-            {/* ── Missing Required Docs Banner ── */}
-            {missingDocs.length > 0 && (
-              <ProcessBlockerBanner
-                lang={lang}
-                blockers={missingDocs.map((cat) => {
-                  const catLabels: Record<string, { ar: string; en: string }> = {
-                    LEGAL:    { ar: "مستند قانوني", en: "Legal document" },
-                    CONTRACT: { ar: "نسخة العقد",   en: "Signed contract copy" },
-                    FINANCE:  { ar: "مستند مالي",   en: "Finance document" },
-                    MARKETING:{ ar: "مستند تسويقي", en: "Marketing document" },
-                    GENERAL:  { ar: "مستند عام",    en: "General document" },
-                  };
-                  const label = catLabels[cat] ?? { ar: cat, en: cat };
-                  return {
-                    id: `missing-doc-${cat}`,
-                    severity: "warning" as const,
-                    title: {
-                      ar: `مستند مطلوب: ${label.ar}`,
-                      en: `Required document: ${label.en}`,
-                    },
-                    detail: {
-                      ar: `يجب رفع مستند من فئة "${label.ar}" لاستكمال هذه المرحلة.`,
-                      en: `A document of category "${label.en}" must be uploaded to complete this stage.`,
-                    },
-                    actionLabel: { ar: "رفع مستند", en: "Upload document" },
-                    actionHref: "/dashboard/documents",
-                  };
-                })}
-              />
-            )}
-
             {/* ── Journey Section ── */}
             {journeyLoading && (
               <div className="flex items-center gap-2 py-2 text-xs text-muted-foreground">
@@ -2037,11 +1988,7 @@ export default function ContractsView({ initialContracts }: ContractsViewProps) 
         open={signConfirmOpen}
         onOpenChange={setSignConfirmOpen}
         title={t("توقيع العقد؟", "Sign this contract?")}
-        description={
-          signMissingDocs.length > 0
-            ? t(`تنبيه: توجد مستندات مطلوبة ناقصة (${signMissingDocs.length}). التوقيع نهائي ولا يمكن التراجع عنه.`, `Warning: ${signMissingDocs.length} required document(s) still missing. Signing is final and cannot be undone.`)
-            : t("التوقيع نهائي ولا يمكن التراجع عنه.", "Signing is final and cannot be undone.")
-        }
+        description={t("التوقيع نهائي ولا يمكن التراجع عنه.", "Signing is final and cannot be undone.")}
         confirmLabel={t("توقيع", "Sign")}
         cancelLabel={t("إلغاء", "Cancel")}
         onConfirm={confirmSign}

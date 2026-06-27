@@ -1393,15 +1393,27 @@ export default function AdminMarketplacePage() {
                 )}
               </div>
               {proofDetail.deedDocUrl && (
-                <a
-                  href={proofDetail.deedDocUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline min-h-[44px]"
-                >
-                  <ExternalLink className="h-4 w-4" aria-hidden="true" />
-                  {t("Open deed document", "فتح وثيقة الصك")}
-                </a>
+                /* SEC-016: deedDocUrl is seller-supplied. Warn the verifier it is
+                   an external link they are about to open, and keep
+                   rel="noopener noreferrer" + target="_blank" so the opened tab
+                   can't reach back into this window. */
+                <div className="flex flex-col gap-1">
+                  <a
+                    href={proofDetail.deedDocUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline min-h-[44px]"
+                  >
+                    <ExternalLink className="h-4 w-4" aria-hidden="true" />
+                    {t("Open deed document", "فتح وثيقة الصك")}
+                  </a>
+                  <p className="text-xs text-muted-foreground">
+                    {t(
+                      "External link — seller-supplied, opens in a new tab. Verify the source before trusting it.",
+                      "رابط خارجي — مُقدَّم من البائع ويفتح في تبويب جديد. تحقّق من المصدر قبل الاعتماد عليه.",
+                    )}
+                  </p>
+                </div>
               )}
               <p className="rounded-md bg-warning/10 px-3 py-2 text-xs text-warning-strong">
                 {t(

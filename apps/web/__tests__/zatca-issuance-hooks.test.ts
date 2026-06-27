@@ -49,3 +49,20 @@ describe("ZATCA Track C — every money-movement path issues a document (no sile
     expect(paymentPlans).not.toMatch(/await\s+issueDocumentForCharge\(/);
   });
 });
+
+describe("SEC-009 — ZATCA buyer snapshot uses the DECRYPTED customer address (no ciphertext at rest)", () => {
+  const issuance = read("lib/zatca-issuance.ts");
+
+  it("every buyerAddress write reads the decrypted buyerCustomer/customer, never the raw cx.customer", () => {
+    // After SEC-009 the Customer.address is ciphertext at rest; persisting cx.customer.address
+    // into TenantDocument.buyerAddress would store ciphertext and make toZatcaAddress() fall back
+    // to a placeholder address. The buyerAddress snapshot must come from the decrypted copy.
+    expect(issuance).not.toMatch(/buyerAddress:\s*\(cx\.customer/);
+    expect(issuance).toMatch(/buyerAddress:\s*\(buyerCustomer\?\.address/);
+  });
+
+  it("decrypts the customer before building the ZATCA buyer party (both issuance sites)", () => {
+    expect(issuance).toContain("decryptCustomerData(cx.customer)");
+    expect(issuance).toContain("decryptCustomerData(doc.customer)");
+  });
+});

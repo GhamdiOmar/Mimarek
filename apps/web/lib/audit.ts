@@ -81,59 +81,80 @@ function computeFieldChanges(
 }
 
 /**
- * Log an audit event (fire-and-forget).
- * Never throws — catches errors internally so it never blocks the main request.
+ * Shared audit writer — does the work and LETS ERRORS THROW (SEC-015).
+ * This is the single source of truth for *how* an audit row is written; the two
+ * public entry points below choose the error-handling contract:
+ *   - `logAuditEvent`      — fire-and-forget (swallow), for routine reads/writes.
+ *   - `logAuditEventAwait` — await + propagate, for security-critical mutations.
  *
  * RED Enhancement: When `before` and/or `after` are provided, stores
  * changeSnapshot and auto-computes fieldChanges diff.
  */
+async function writeAuditLog(params: AuditEventParams): Promise<void> {
+  let ipAddress: string | null = null;
+  try {
+    const h = await headers();
+    ipAddress =
+      h.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+      h.get("x-real-ip") ??
+      null;
+  } catch {
+    // Headers may not be available in some contexts
+  }
+
+  // Build change tracking data when before/after provided
+  let changeSnapshot: object | undefined;
+  let fieldChanges: Array<{ field: string; oldValue: unknown; newValue: unknown }> | undefined;
+
+  if (params.before || params.after) {
+    changeSnapshot = {
+      ...(params.before ? { before: params.before } : {}),
+      ...(params.after ? { after: params.after } : {}),
+    };
+  }
+
+  if (params.before && params.after) {
+    fieldChanges = computeFieldChanges(params.before, params.after);
+  }
+
+  await db.auditLog.create({
+    data: {
+      userId: params.userId,
+      userEmail: params.userEmail,
+      userRole: params.userRole,
+      action: params.action,
+      resource: params.resource,
+      resourceId: params.resourceId,
+      metadata: params.metadata as Prisma.InputJsonValue,
+      changeSnapshot: changeSnapshot as Prisma.InputJsonValue,
+      fieldChanges: fieldChanges as Prisma.InputJsonValue,
+      ipAddress,
+      organizationId: params.organizationId,
+    },
+  });
+}
+
+/**
+ * Log an audit event (fire-and-forget).
+ * Never throws — swallows errors so it never blocks the main request.
+ *
+ * Use this for routine reads/writes (incl. READ_PII on a list/detail render):
+ * a page must not 500 because the audit store hiccupped. For security-critical
+ * MUTATIONS that must fail closed, use `logAuditEventAwait` instead (SEC-015).
+ */
 export function logAuditEvent(params: AuditEventParams): void {
-  // Fire-and-forget: run async but don't await
-  void (async () => {
-    try {
-      let ipAddress: string | null = null;
-      try {
-        const h = await headers();
-        ipAddress =
-          h.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-          h.get("x-real-ip") ??
-          null;
-      } catch {
-        // Headers may not be available in some contexts
-      }
+  void writeAuditLog(params).catch((e) =>
+    console.error("[Audit] Failed to log event:", e),
+  );
+}
 
-      // Build change tracking data when before/after provided
-      let changeSnapshot: object | undefined;
-      let fieldChanges: Array<{ field: string; oldValue: unknown; newValue: unknown }> | undefined;
-
-      if (params.before || params.after) {
-        changeSnapshot = {
-          ...(params.before ? { before: params.before } : {}),
-          ...(params.after ? { after: params.after } : {}),
-        };
-      }
-
-      if (params.before && params.after) {
-        fieldChanges = computeFieldChanges(params.before, params.after);
-      }
-
-      await db.auditLog.create({
-        data: {
-          userId: params.userId,
-          userEmail: params.userEmail,
-          userRole: params.userRole,
-          action: params.action,
-          resource: params.resource,
-          resourceId: params.resourceId,
-          metadata: params.metadata as Prisma.InputJsonValue,
-          changeSnapshot: changeSnapshot as Prisma.InputJsonValue,
-          fieldChanges: fieldChanges as Prisma.InputJsonValue,
-          ipAddress,
-          organizationId: params.organizationId,
-        },
-      });
-    } catch (error) {
-      console.error("[Audit] Failed to log event:", error);
-    }
-  })();
+/**
+ * Log an audit event and AWAIT it (fail-closed) — SEC-015.
+ * Propagates the underlying error so the calling mutation aborts if the
+ * security-critical audit record could not be durably written. Reserve this for
+ * the highest-stakes mutations (deed-proof verification, conveyance kill-switch,
+ * billing plan/subscription changes); routine reads stay fire-and-forget.
+ */
+export async function logAuditEventAwait(params: AuditEventParams): Promise<void> {
+  await writeAuditLog(params);
 }

@@ -39,7 +39,6 @@ const ROUTES = [
   { path: "/dashboard/maintenance", label: "Maintenance" },
   { path: "/dashboard/marketplace", label: "Marketplace" },
   { path: "/dashboard/reports", label: "Reports" },
-  { path: "/dashboard/documents", label: "Documents" },
   { path: "/dashboard/billing", label: "Billing" },
   { path: "/dashboard/settings", label: "Settings" },
   { path: "/dashboard/help", label: "Help" },

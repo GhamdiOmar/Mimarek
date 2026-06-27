@@ -17,7 +17,6 @@ export const ROUTES = {
   payments: "/dashboard/payments",
   invoices: "/dashboard/invoices",
   finance: "/dashboard/finance",
-  documents: "/dashboard/documents",
   help: "/dashboard/help",
   billing: "/dashboard/billing",
   settings: "/dashboard/settings",

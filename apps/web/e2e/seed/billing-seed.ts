@@ -301,26 +301,6 @@ async function main() {
   console.log(`\n🏢 Using organization: ${org.name} (${org.id})`);
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // 3b. Document (SEC-006 fixture)
-  // ═══════════════════════════════════════════════════════════════════════════
-  // One document carrying a raw UploadThing CDN URL. The documents page MUST NOT
-  // render this URL into the DOM — its download link must point at the authorized
-  // `/api/documents/[id]` route instead. The e2e asserts both.
-  console.log("\n📄 Creating document fixture...");
-  await prisma.document.deleteMany({ where: { organizationId: org.id, name: "E2E SEC-006 Fixture.pdf" } });
-  const doc = await prisma.document.create({
-    data: {
-      name: "E2E SEC-006 Fixture.pdf",
-      url: "https://c5k2lwc5ws.ufs.sh/f/e2e-sec006-fixture-key",
-      type: "application/pdf",
-      category: "LEGAL",
-      organizationId: org.id,
-      userId: adminUser?.id ?? undefined,
-    },
-  });
-  console.log(`  ✅ Document: ${doc.id}`);
-
-  // ═══════════════════════════════════════════════════════════════════════════
   // 4. Subscription (TRIALING on Professional)
   // ═══════════════════════════════════════════════════════════════════════════
 

@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@repo/db";
-import { requirePermission } from "../../lib/auth-helpers";
+import { requireTenantPermission } from "../../lib/auth-helpers";
 
 /**
  * Analytics — v3.0 CRM & Property Platform
@@ -9,7 +9,7 @@ import { requirePermission } from "../../lib/auth-helpers";
  */
 
 export async function getPropertyAnalytics() {
-  const session = await requirePermission("dashboard:read");
+  const session = await requireTenantPermission("dashboard:read");
   const orgId = session.organizationId;
 
   const [totalUnits, unitsByStatus, unitsByType] = await Promise.all([

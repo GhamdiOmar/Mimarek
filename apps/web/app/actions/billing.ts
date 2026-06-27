@@ -3,7 +3,7 @@
 import { db, type Prisma } from "@repo/db";
 import { revalidatePath } from "next/cache";
 import { requirePermission } from "../../lib/auth-helpers";
-import { logAuditEvent } from "../../lib/audit";
+import { logAuditEvent, logAuditEventAwait } from "../../lib/audit";
 import { ROUTES } from "../../lib/routes";
 import { serialize } from "../../lib/serialize";
 import { createSubscription, transitionSubscription } from "../../lib/payment/subscription-machine";
@@ -102,7 +102,8 @@ export async function subscribeToPlan(data: {
     startTrial: data.startTrial ?? true,
   });
 
-  logAuditEvent({
+  // SEC-015: subscription change — fail closed if the audit row can't be written.
+  await logAuditEventAwait({
     userId: session.userId, userEmail: session.email, userRole: session.role,
     action: "CREATE", resource: "Subscription", resourceId: subscriptionId,
     metadata: { planId: data.planId, billingCycle: data.billingCycle },
@@ -166,7 +167,8 @@ export async function changePlan(data: {
     },
   });
 
-  logAuditEvent({
+  // SEC-015: plan change — fail closed if the audit row can't be written.
+  await logAuditEventAwait({
     userId: session.userId, userEmail: session.email, userRole: session.role,
     action: "UPDATE", resource: "Subscription", resourceId: current.id,
     metadata: { previousPlanId: current.planId, newPlanId: data.newPlanId },
@@ -203,7 +205,8 @@ export async function cancelSubscription(reason?: string) {
     reason || "User-initiated cancellation"
   );
 
-  logAuditEvent({
+  // SEC-015: subscription cancellation — fail closed if the audit row can't be written.
+  await logAuditEventAwait({
     userId: session.userId, userEmail: session.email, userRole: session.role,
     action: "UPDATE", resource: "Subscription", resourceId: current.id,
     metadata: { action: "canceled", reason },
@@ -538,7 +541,8 @@ export async function adminUpsertPlan(data: {
     });
   }
 
-  logAuditEvent({
+  // SEC-015: plan catalogue change — fail closed if the audit row can't be written.
+  await logAuditEventAwait({
     userId: session.userId, userEmail: session.email, userRole: session.role,
     action: data.id ? "UPDATE" : "CREATE", resource: "Plan", resourceId: plan.id,
     metadata: { slug: data.slug },

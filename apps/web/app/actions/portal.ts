@@ -32,21 +32,6 @@ export async function getTenantPortalSummary() {
     orderBy: { startDate: "desc" },
   });
 
-  // SEC-006 (portal residual): never serialize the raw UploadThing object URL into
-  // the portal client/DOM — it was a permanent public bearer credential. Select
-  // metadata only; downloads go through the ownership-scoped, authorized route
-  // `/api/portal/documents/[id]` (portal identity → customer/active-lease scope →
-  // short-lived signed URL). Mirrors the dashboard fix in `getDocuments`.
-  const documents = await db.document.findMany({
-    where: {
-      organizationId: customer.organizationId,
-      OR: [{ customerId: customer.id }, ...(activeLease ? [{ unitId: activeLease.unitId }] : [])],
-    },
-    orderBy: { createdAt: "desc" },
-    take: 12,
-    select: { id: true, name: true, category: true, createdAt: true },
-  });
-
   const maintenance = activeLease
     ? await db.maintenanceRequest.findMany({
         where: { organizationId: customer.organizationId, unitId: activeLease.unitId },
@@ -55,7 +40,7 @@ export async function getTenantPortalSummary() {
       })
     : [];
 
-  return serialize({ customer, activeLease, documents, maintenance });
+  return serialize({ customer, activeLease, maintenance });
 }
 
 // eslint-disable-next-line mimaric/require-action-guard -- guarded via resolvePortalIdentity() (auth() + role==="USER" + org-scoped customer/lease) before any write.

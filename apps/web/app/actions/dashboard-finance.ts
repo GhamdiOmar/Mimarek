@@ -2,7 +2,7 @@
 
 import { db } from "@repo/db";
 import { startOfMonth, endOfMonth } from "date-fns";
-import { requirePermission } from "../../lib/auth-helpers";
+import { requireTenantPermission } from "../../lib/auth-helpers";
 import { effectivePaid } from "../../lib/money";
 
 export type FinanceStats = {
@@ -28,7 +28,7 @@ export async function getFinanceStats(range?: {
   from: Date;
   to: Date;
 }): Promise<FinanceStats> {
-  const session = await requirePermission("dashboard:read");
+  const session = await requireTenantPermission("dashboard:read");
   const orgId = session.organizationId;
 
   const now = new Date();

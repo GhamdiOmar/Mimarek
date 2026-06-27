@@ -122,7 +122,7 @@ const CARD_SELECT = {
  * not expired, not suspended, and not the viewer's own. This is the single
  * visibility chokepoint for the cross-org marketplace.
  */
-function buyerVisibleWhere(viewerOrgId: string) {
+export function buyerVisibleWhere(viewerOrgId: string) {
   return {
     status: "PUBLISHED" as const,
     complianceStatus: "APPROVED" as const,

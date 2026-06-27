@@ -72,7 +72,7 @@ export const radialGroups: RadialGroupDef[] = [
     id: "operations",
     label: { ar: "العمليات", en: "Operations" },
     icon: "Wrench",
-    items: ["/dashboard/maintenance", "/dashboard/documents"],
+    items: ["/dashboard/maintenance"],
   },
   {
     id: "system",

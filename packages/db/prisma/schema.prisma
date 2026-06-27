@@ -40,7 +40,6 @@ model Organization {
   users               User[]
   units               Unit[]                      @relation("UnitOrganization")
   customers           Customer[]
-  documents           Document[]
   maintenanceRequests MaintenanceRequest[]
   preventivePlans     PreventiveMaintenancePlan[]
   permissionRequests  PermissionRequest[]
@@ -224,7 +223,6 @@ model Unit {
   bathrooms                   Int? // Number of bathrooms
   commercialStrategy          CommercialStrategy? // FR-08/21: SELL, LEASE, HOLD, etc.
   reservations                Reservation[]
-  documents                   Document[]
   contracts                   Contract[]
   leases                      Lease[]
   maintenanceRequests         MaintenanceRequest[]
@@ -263,13 +261,14 @@ model Customer {
   nationalId           String? // Saudi ID / Iqama (10 digits, starts with 1 or 2)
   personType           PersonType? // saudi_citizen, resident, gcc_citizen, etc.
   gender               Gender?
-  dateOfBirth          DateTime? // Gregorian DOB
+  dateOfBirth          DateTime? // Gregorian DOB — SEC-009: NOT persisted in plaintext; encrypted form lives in dateOfBirthEnc. Repopulated (as a Date) by decryptCustomerData on read.
+  dateOfBirthEnc       String? // SEC-009: AES-256-GCM ciphertext of the Gregorian DOB ISO string (no blind index — DOB is never searched). decryptCustomerData decrypts this back into dateOfBirth.
   dateOfBirthHijri     String? // Hijri date as text (e.g. 1410-10-19)
   nationality          String? // e.g. "Saudi Arabian"
   nationalityCode      String? // ISO code e.g. "SA"
   maritalStatus        String? // single, married, divorced, widowed
-  address              Json? // National address {region, city, district, streetName, buildingNumber, postalCode, additionalNumber, shortAddress}
-  documentInfo         Json? // ID document {documentType, documentNumber, issueDate, expiryDate, issuingAuthority}
+  address              Json? // National address {region, city, district, …}. SEC-009: stored as an AES-256-GCM ciphertext STRING (encrypt(JSON.stringify(addr))); decryptCustomerData parses it back to the object. Never searched → no blind index.
+  documentInfo         Json? // ID document {documentType, documentNumber, …}. SEC-009: stored as an AES-256-GCM ciphertext STRING (same as address).
   nationalIdHash       String? // HMAC-SHA256 blind index (lib/encryption.ts hashForSearch) for exact search on encrypted nationalId
   phoneHash            String? // HMAC-SHA256 blind index (lib/encryption.ts hashForSearch) for exact search on encrypted phone (E.164-normalized)
   emailHash            String? // HMAC-SHA256 blind index (lib/encryption.ts hashForSearch) for exact search on encrypted email
@@ -297,7 +296,6 @@ model Customer {
   reservations         Reservation[]
   contracts            Contract[]
   leases               Lease[]
-  documents            Document[]
   activities           CustomerActivity[]
   propertyInterests    Deal[]
   marketplaceInquiries MarketplaceInquiry[] @relation("MarketplaceInquiryCustomer")
@@ -474,9 +472,6 @@ model Contract {
   marketplaceInquiryId String?
   buyerOrgId           String?
   sellerOrgId          String?
-
-  // Documents linked to this contract
-  documents Document[]
 
   @@index([customerId])
   @@index([unitId])
@@ -695,43 +690,6 @@ enum PaymentStatus {
   PARTIALLY_PAID
   PAID
   OVERDUE
-}
-
-// ─── Document ─────────────────────────────────────────────────────────────────
-
-model Document {
-  id             String            @id @default(cuid())
-  name           String
-  url            String
-  type           String // file extension or mime type
-  category       DocCategory       @default(GENERAL)
-  size           Int? // in bytes
-  customerId     String?
-  customer       Customer?         @relation(fields: [customerId], references: [id])
-  unitId         String?
-  unit           Unit?             @relation(fields: [unitId], references: [id])
-  contractId     String?
-  contract       Contract?         @relation(fields: [contractId], references: [id])
-  organizationId String
-  organization   Organization      @relation(fields: [organizationId], references: [id])
-  userId         String?
-  version        Int               @default(1)
-  versions       DocumentVersion[]
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
-
-  @@index([customerId])
-  @@index([unitId])
-  @@index([contractId])
-  @@index([organizationId])
-}
-
-enum DocCategory {
-  GENERAL
-  LEGAL
-  CONTRACT
-  MARKETING
-  FINANCE
 }
 
 // ─── Maintenance Request ──────────────────────────────────────────────────────
@@ -1126,22 +1084,6 @@ enum JoinRequestStatus {
   DECLINED_JOIN
   EXPIRED_JOIN
   CANCELLED_JOIN
-}
-
-// ─── Document Version ────────────────────────────────────────────────────────
-
-model DocumentVersion {
-  id            String   @id @default(cuid())
-  documentId    String
-  document      Document @relation(fields: [documentId], references: [id])
-  versionNumber Int
-  url           String
-  size          Int?
-  uploadedBy    String?
-  changeNote    String?
-  createdAt     DateTime @default(now())
-
-  @@index([documentId])
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════

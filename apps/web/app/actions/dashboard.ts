@@ -1,11 +1,11 @@
 "use server";
 
 import { db } from "@repo/db";
-import { requirePermission } from "../../lib/auth-helpers";
+import { requireTenantPermission } from "../../lib/auth-helpers";
 import { serialize } from "../../lib/serialize";
 
 export async function getDashboardStats() {
-  const session = await requirePermission("dashboard:read");
+  const session = await requireTenantPermission("dashboard:read");
   const orgId = session.organizationId;
 
   const [
@@ -87,7 +87,7 @@ export async function getDashboardStats() {
 }
 
 export async function getRevenueTimeline() {
-  const session = await requirePermission("dashboard:read");
+  const session = await requireTenantPermission("dashboard:read");
   const orgId = session.organizationId;
 
   const now = new Date();
@@ -129,7 +129,7 @@ export async function getRevenueTimeline() {
 }
 
 export async function getDashboardV3Stats(range?: { from: Date; to: Date }) {
-  const session = await requirePermission("dashboard:read");
+  const session = await requireTenantPermission("dashboard:read");
   const orgId = session.organizationId;
 
   const now = new Date();
@@ -202,7 +202,7 @@ export async function getDashboardV3Stats(range?: { from: Date; to: Date }) {
 }
 
 export async function getDashboardRecentDeals() {
-  const session = await requirePermission("dashboard:read");
+  const session = await requireTenantPermission("dashboard:read");
   const orgId = session.organizationId;
 
   const deals = await db.reservation.findMany({
@@ -219,7 +219,7 @@ export async function getDashboardRecentDeals() {
 }
 
 export async function getDashboardUpcomingPayments() {
-  const session = await requirePermission("dashboard:read");
+  const session = await requireTenantPermission("dashboard:read");
   const orgId = session.organizationId;
 
   const now = new Date();
@@ -250,7 +250,7 @@ export async function getDashboardUpcomingPayments() {
 }
 
 export async function getDashboardMaintenanceSummary() {
-  const session = await requirePermission("dashboard:read");
+  const session = await requireTenantPermission("dashboard:read");
   const orgId = session.organizationId;
 
   const grouped = await db.maintenanceRequest.groupBy({

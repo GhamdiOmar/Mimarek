@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ClipboardCopy, Clock, Mail, RotateCcw, Trash2, User, UserPlus, X } from "lucide-react";
+import { ClipboardCopy, Clock, Mail, RotateCcw, Trash2, User, UserCheck, UserPlus, UserX, X } from "lucide-react";
 import { toast } from "sonner";
 import {
   AppBar,
@@ -21,8 +21,9 @@ import {
   type ColumnDef,
 } from "@repo/ui";
 import { useLanguage } from "../../../../components/LanguageProvider";
+import { useSession } from "../../../../components/SimpleSessionProvider";
 import { CUSTOMER_ASSIGNABLE_ROLES } from "../../../../lib/permissions";
-import { getTeamMembers, removeTeamMember } from "../../../actions/team";
+import { getTeamMembers, removeTeamMember, setTeamMemberActive } from "../../../actions/team";
 import { createInvitation, getOrgInvitations, resendInvitation, revokeInvitation } from "../../../actions/invitations";
 
 type TeamMember = {
@@ -30,6 +31,7 @@ type TeamMember = {
   name: string | null;
   email: string;
   role: string;
+  isActive: boolean;
   createdAt: string | Date;
 };
 
@@ -60,6 +62,8 @@ const inviteRoleOptions = CUSTOMER_ASSIGNABLE_ROLES.map((role) => ({
 
 export default function TeamManagementPage() {
   const { t, lang } = useLanguage();
+  const { data: session } = useSession();
+  const currentUserId = (session?.user?.id as string | undefined) ?? null;
   const dir = lang === "ar" ? "rtl" : "ltr";
   const [members, setMembers] = React.useState<TeamMember[]>([]);
   const [invitations, setInvitations] = React.useState<Invitation[]>([]);
@@ -69,6 +73,7 @@ export default function TeamManagementPage() {
   const [inviteRole, setInviteRole] = React.useState("AGENT");
   const [inviteFallbackUrl, setInviteFallbackUrl] = React.useState<string | null>(null);
   const [removeCandidate, setRemoveCandidate] = React.useState<TeamMember | null>(null);
+  const [activeCandidate, setActiveCandidate] = React.useState<TeamMember | null>(null);
   const [busyId, setBusyId] = React.useState<string | null>(null);
   const [inviting, setInviting] = React.useState(false);
   const [inviteError, setInviteError] = React.useState<string | null>(null);
@@ -121,6 +126,28 @@ export default function TeamManagementPage() {
       await fetchTeam();
     } catch {
       toast.error(t("تعذر إزالة العضو", "Could not remove team member"));
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleToggleActive(member: TeamMember) {
+    const nextActive = !member.isActive;
+    setBusyId(member.id);
+    try {
+      await setTeamMemberActive(member.id, nextActive);
+      toast.success(
+        nextActive
+          ? t("تم تفعيل العضو", "Team member activated")
+          : t("تم تعطيل العضو", "Team member deactivated"),
+      );
+      await fetchTeam();
+    } catch {
+      toast.error(
+        nextActive
+          ? t("تعذر تفعيل العضو", "Could not activate team member")
+          : t("تعذر تعطيل العضو", "Could not deactivate team member"),
+      );
     } finally {
       setBusyId(null);
     }
@@ -211,7 +238,7 @@ export default function TeamManagementPage() {
             <div className="py-12 text-center text-sm text-foreground animate-pulse">{t("جاري التحميل...", "Loading...")}</div>
           ) : (
             <>
-              <TeamList members={members} lang={lang} onRemove={(member) => setRemoveCandidate(member)} busyId={busyId} compact />
+              <TeamList members={members} lang={lang} currentUserId={currentUserId} onRemove={(member) => setRemoveCandidate(member)} onToggleActive={(member) => setActiveCandidate(member)} busyId={busyId} compact />
               <InvitationList invitations={pendingInvitations} lang={lang} onResend={handleResend} onRevoke={handleRevoke} busyId={busyId} />
             </>
           )}
@@ -274,7 +301,7 @@ export default function TeamManagementPage() {
           </Card>
         )}
 
-        <TeamList members={members} lang={lang} onRemove={(member) => setRemoveCandidate(member)} busyId={busyId} loading={loading} onInvite={() => setShowInvite(true)} />
+        <TeamList members={members} lang={lang} currentUserId={currentUserId} onRemove={(member) => setRemoveCandidate(member)} onToggleActive={(member) => setActiveCandidate(member)} busyId={busyId} loading={loading} onInvite={() => setShowInvite(true)} />
         <InvitationList invitations={pendingInvitations} lang={lang} onResend={handleResend} onRevoke={handleRevoke} busyId={busyId} />
       </div>
 
@@ -314,6 +341,64 @@ export default function TeamManagementPage() {
           </div>
         </div>
       </ResponsiveDialog>
+
+      <ResponsiveDialog
+        open={Boolean(activeCandidate)}
+        onOpenChange={(open) => {
+          if (!open) setActiveCandidate(null);
+        }}
+        title={
+          activeCandidate?.isActive
+            ? t("تعطيل عضو الفريق", "Deactivate team member")
+            : t("تفعيل عضو الفريق", "Activate team member")
+        }
+        description={
+          activeCandidate?.isActive
+            ? t(
+                "سيُنهى وصول هذا العضو فوراً وتُلغى جلسته الحالية. يمكنك تفعيله مرة أخرى لاحقاً.",
+                "This ends the member's access immediately and signs out their current session. You can reactivate them later.",
+              )
+            : t(
+                "سيستعيد هذا العضو وصوله إلى مساحة العمل.",
+                "This restores the member's access to the workspace.",
+              )
+        }
+      >
+        <div className="space-y-4">
+          <div className="rounded-md border border-border bg-muted/40 p-3 text-sm">
+            <p className="font-medium">{activeCandidate?.name ?? activeCandidate?.email}</p>
+            <p className="text-foreground">{activeCandidate?.email}</p>
+          </div>
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button type="button" variant="secondary" onClick={() => setActiveCandidate(null)} style={{ display: "inline-flex" }}>
+              {t("إلغاء", "Cancel")}
+            </Button>
+            <Button
+              type="button"
+              variant={activeCandidate?.isActive ? "destructive" : "success"}
+              loading={Boolean(activeCandidate && busyId === activeCandidate.id)}
+              onClick={async () => {
+                if (!activeCandidate) return;
+                await handleToggleActive(activeCandidate);
+                setActiveCandidate(null);
+              }}
+              style={{ display: "inline-flex" }}
+            >
+              {activeCandidate?.isActive ? (
+                <>
+                  <UserX className="h-4 w-4" />
+                  {t("تعطيل", "Deactivate")}
+                </>
+              ) : (
+                <>
+                  <UserCheck className="h-4 w-4" />
+                  {t("تفعيل", "Activate")}
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      </ResponsiveDialog>
     </>
   );
 }
@@ -321,7 +406,9 @@ export default function TeamManagementPage() {
 function TeamList({
   members,
   lang,
+  currentUserId,
   onRemove,
+  onToggleActive,
   busyId,
   loading = false,
   compact = false,
@@ -329,12 +416,59 @@ function TeamList({
 }: {
   members: TeamMember[];
   lang: "ar" | "en";
+  currentUserId: string | null;
   onRemove: (member: TeamMember) => void;
+  onToggleActive: (member: TeamMember) => void;
   busyId: string | null;
   loading?: boolean;
   compact?: boolean;
   onInvite?: () => void;
 }) {
+  // Shared row-action cluster (§6.6.7): status-toggle (forward action, hidden for
+  // self) → remove (destructive). Uniform `size="icon"` IconButtons, gap-1.
+  const renderActions = (member: TeamMember) => {
+    const isSelf = currentUserId != null && member.id === currentUserId;
+    return (
+      <div className="flex items-center justify-end gap-1">
+        {!isSelf &&
+          (member.isActive ? (
+            <IconButton
+              icon={UserX}
+              variant="ghost"
+              className="text-destructive"
+              aria-label={lang === "ar" ? "تعطيل" : "Deactivate"}
+              onClick={() => onToggleActive(member)}
+              loading={busyId === member.id}
+            />
+          ) : (
+            <IconButton
+              icon={UserCheck}
+              variant="ghost"
+              className="text-primary"
+              aria-label={lang === "ar" ? "تفعيل" : "Activate"}
+              onClick={() => onToggleActive(member)}
+              loading={busyId === member.id}
+            />
+          ))}
+        <IconButton
+          icon={Trash2}
+          variant="ghost"
+          className="text-destructive"
+          aria-label={lang === "ar" ? "إزالة" : "Remove"}
+          onClick={() => onRemove(member)}
+          loading={busyId === member.id}
+        />
+      </div>
+    );
+  };
+
+  const renderStatusBadge = (member: TeamMember) =>
+    member.isActive ? (
+      <Badge variant="success">{lang === "ar" ? "نشط" : "Active"}</Badge>
+    ) : (
+      <Badge variant="default">{lang === "ar" ? "معطّل" : "Inactive"}</Badge>
+    );
+
   const columns = React.useMemo<ColumnDef<TeamMember>[]>(
     () => [
       {
@@ -364,6 +498,12 @@ function TeamList({
         ),
       },
       {
+        accessorKey: "isActive",
+        header: lang === "ar" ? "الحالة" : "Status",
+        enableSorting: true,
+        cell: ({ row }) => renderStatusBadge(row.original),
+      },
+      {
         accessorKey: "createdAt",
         header: lang === "ar" ? "تاريخ الانضمام" : "Joined",
         enableSorting: true,
@@ -378,19 +518,11 @@ function TeamList({
         header: "",
         enableSorting: false,
         enableHiding: false,
-        cell: ({ row }) => (
-          <IconButton
-            icon={Trash2}
-            variant="ghost"
-            className="text-destructive"
-            aria-label={lang === "ar" ? "إزالة" : "Remove"}
-            onClick={() => onRemove(row.original)}
-            loading={busyId === row.original.id}
-          />
-        ),
+        cell: ({ row }) => renderActions(row.original),
       },
     ],
-    [lang, onRemove, busyId],
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- renderActions/renderStatusBadge are stable per-render helpers closing over these same deps
+    [lang, currentUserId, onRemove, onToggleActive, busyId],
   );
 
   if (compact) {
@@ -407,13 +539,8 @@ function TeamList({
             trailing={
               <div className="flex items-center gap-2">
                 <Badge variant="outline">{roleLabels[member.role]?.[lang] ?? member.role}</Badge>
-                <IconButton
-                  icon={Trash2}
-                  variant="ghost"
-                  className="h-11 w-11 text-destructive"
-                  onClick={() => onRemove(member)}
-                  aria-label={lang === "ar" ? "إزالة" : "Remove"}
-                />
+                {renderStatusBadge(member)}
+                {renderActions(member)}
               </div>
             }
             divider={index < members.length - 1}
@@ -460,13 +587,8 @@ function TeamList({
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <Badge variant="outline">{roleLabels[member.role]?.[lang] ?? member.role}</Badge>
-            <IconButton
-              icon={Trash2}
-              variant="ghost"
-              className="text-destructive"
-              aria-label={lang === "ar" ? "إزالة" : "Remove"}
-              onClick={() => onRemove(member)}
-            />
+            {renderStatusBadge(member)}
+            {renderActions(member)}
           </div>
         </div>
       )}
