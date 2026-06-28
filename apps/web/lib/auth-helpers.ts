@@ -11,6 +11,8 @@ import {
   type Permission,
 } from "./permissions";
 import { routeGuardFor } from "./route-guards";
+import { checkEntitlement } from "./entitlements";
+import type { EntitlementResult } from "./entitlements";
 
 export type AuthSession = {
   userId: string;
@@ -114,6 +116,40 @@ export async function getTenantPageAccess(
   if (!session.organizationId) return { allowed: false };
   if (!hasPermission(session.role, required)) return { allowed: false };
   return { allowed: true, session: session as TenantAuthSession };
+}
+
+/**
+ * Feature-level (plan-entitlement) access check for tenant pages — the plan
+ * analogue of `getTenantPageAccess`. Returns the full `EntitlementResult` so the
+ * caller can distinguish a PLAN lock (`upgradeRequired` → render `<UpgradeGate>`)
+ * from a permission denial (`getTenantPageAccess` → `<AccessDenied>`). The
+ * canonical pattern is: check `getTenantPageAccess` first (role), then this
+ * (plan). System users have no subscription, so they are redirected to their
+ * platform home rather than shown a plan lock.
+ *
+ * Pass `currentUsage` for LIMIT features so `remaining`/`granted` reflect the cap.
+ * Server actions keep `requireEntitlement` (throwing) as defense-in-depth — this
+ * is for the render path only.
+ */
+export async function getTenantFeatureAccess(
+  featureKey: string,
+  currentUsage?: number,
+): Promise<
+  | { allowed: true; session: TenantAuthSession; entitlement: EntitlementResult }
+  | { allowed: false; entitlement: EntitlementResult }
+> {
+  const session = await getSessionOrThrow();
+  if (isSystemRole(session.role)) redirect("/dashboard/admin");
+  if (!session.organizationId) {
+    return {
+      allowed: false,
+      entitlement: { granted: false, reason: "No organization", upgradeRequired: false, featureKey },
+    };
+  }
+  const entitlement = await checkEntitlement(session.organizationId, featureKey, currentUsage);
+  return entitlement.granted
+    ? { allowed: true, session: session as TenantAuthSession, entitlement }
+    : { allowed: false, entitlement };
 }
 
 /**

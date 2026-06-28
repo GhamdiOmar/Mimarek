@@ -1,5 +1,31 @@
 # Changelog — Mimarek PropTech
 
+## [5.15.0] — 2026-06-29 — Tenant locked/upgrade UI + usage meters (Pricing P2)
+
+**Phase 2 of the pricing & packaging program** — turns the P1 entitlement signals into rendered UI: plan-gated pages show a "locked — upgrade your plan" card, and the billing page shows usage-vs-limit meters. `/mimaric-qa` GATE = GO (0 P0/P1; 2 findings fixed below).
+
+### What's new
+- **`getTenantFeatureAccess(featureKey, currentUsage?)`** (`apps/web/lib/auth-helpers.ts`) — the plan-entitlement analogue of `getTenantPageAccess`. Returns the full `EntitlementResult` so a page can distinguish a PLAN lock (`upgradeRequired` → `<UpgradeGate>`) from a permission denial (`<AccessDenied>`). Redirects system roles to their platform home.
+- **`<UpgradeGate>`** (`apps/web/components/entitlements/`) — renders children when entitled; else a centered locked card (lock icon, bilingual copy, "Upgrade plan" CTA → `/dashboard/billing`), with an optional dimmed preview. Falls back to `<AccessDenied>` for non-plan denials.
+- **`<UsageMeter>`** — a usage-vs-limit bar; a `null` limit → "Unlimited"; fill colors at <80% (primary) / ≥80% (warning) / ≥100% (destructive); RTL-safe, tabular numbers, `role="progressbar"`.
+- **Page gates:** `/dashboard/finance` (`finance.access`) and the **entire** `/dashboard/maintenance` section (`cmms.access`) now show `<UpgradeGate>` for tiers that lack them. Maintenance gates at the **layout** (converted to a server component; the tab-nav moved to a client `MaintenanceTabs`) so there is no read-only leak to the tickets/preventive sub-routes.
+- **Billing usage meters:** `getOrgUsageSnapshot()` (`actions/billing.ts`) resolves current counts vs limits for users / units / customers / marketplace-listings; the billing page renders a "Usage vs. your plan" `<UsageMeter>` section (mobile + desktop). The listing-count predicate matches the publish gate exactly, so the meter and the cap always agree.
+- **Open marketplace browse:** `marketplace.read.access` is now `true` for all tiers (B2B network effect — browsing is open; only publishing is monetized).
+
+### QA fixes folded in
+- `<UpgradeGate>` renders `<AccessDenied>` (not the upgrade card) for a non-plan / no-org denial, matching its contract.
+- `getOrgUsageSnapshot` resolves entitlements with `Promise.all`.
+
+### Deferred (later phases)
+- Page-level gates for `reports.access` / `audit.access` (audit is a client page — needs a client-fetch gate) and `planning.access` / `gis.access`.
+- The `<LockedFeature>` inline-lock primitive lands with export-button gating.
+
+### Verify
+- `npm run build` green · `check-types` green · `lint` 0 errors.
+- **§3.9 preview walk** (`scripts/capture-v5150-p2.mjs`, local `next start`): Starter org → locked finance + maintenance (whole section, no tab leak); Professional org → unlocked finance dashboard + billing usage meters (Users 24/25 renders the warning-orange bar); light/dark × LTR/RTL; **0 console errors**.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimarek/compare/v5.14.0...v5.15.0
+
 ## [5.14.0] — 2026-06-28 — Plan entitlement enforcement across every module (Pricing P1)
 
 **Phase 1 of the pricing & packaging program** — closes the gap where only `users.max` and `units.max` were plan-enforced. Every module flag and absolute-count limit is now gated at the server-action layer, driven entirely from the database (no hardcoded access in app logic). `/mimaric-qa` GATE = GO (0 P0/P1). Server-only phase — locked/upgrade UI lands in P2.
