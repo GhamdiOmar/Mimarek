@@ -424,6 +424,24 @@ async function main() {
     await prisma.subscription.create({ data: { organizationId: dummyOrg.id, ...dummySub } });
   }
 
+  // ── Entitlement override: grant the primary demo/seller org marketplace
+  // publishing. The Professional plan excludes publishing BY TIER (Enterprise-
+  // only / Marketplace add-on); this per-org override simulates that add-on so
+  // the cross-org marketplace E2E + demos can publish. `resolveEntitlement`
+  // applies override > plan, so this beats the plan's `false` without changing
+  // the tier. (Grant the Dummy buyer nothing — it only browses/inquires.)
+  await prisma.entitlementOverride.upsert({
+    where: { organizationId_featureKey: { organizationId: org.id, featureKey: "marketplace.publish.access" } },
+    create: {
+      organizationId: org.id,
+      featureKey: "marketplace.publish.access",
+      type: "BOOLEAN",
+      value: "true",
+      reason: "Demo/E2E: simulates the Marketplace add-on (Professional plan excludes publishing by tier).",
+    },
+    update: { type: "BOOLEAN", value: "true" },
+  });
+
   console.log("Created plans (Starter, Professional, Enterprise) & subscriptions");
 
   // ── Marketplace (P3 conveyance) ─────────────────────────────────────────────

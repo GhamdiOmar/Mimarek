@@ -20,7 +20,7 @@
 
 ### Notes
 - **Seeded ahead of enforcement:** `finance.access`, `reports.access`, `marketplace.read.access` (PAGE-level module gates) plus `reports.export`, `storage.gb.max`, `api.access` are seeded/tiered now but enforced later — page-level locks arrive in P2; export is client-side, there is no file-size column, and there is no API-key action yet.
-- **`marketplace.publish.access` is Enterprise-only by tiering** — the Professional/Starter publish path is unlocked later via the Marketplace add-on (P4). The `marketplace.listings.max` cap is enforced now for forward-compat (Enterprise = unlimited).
+- **`marketplace.publish.access` is Enterprise-only by tiering** — the Professional/Starter publish path is unlocked later via the Marketplace add-on (P4). The `marketplace.listings.max` cap is enforced now for forward-compat (Enterprise = unlimited). The seed grants the primary demo/seller org (Professional) this flag via an `EntitlementOverride` (override > plan) so the cross-org marketplace E2E + demos can still publish without changing the tier.
 
 ### Verify
 - `npm run build` green · `check-types` green · `lint` 0 errors · **305 web unit tests** (300 existing + 5 new `entitlement-gating` cases: BOOLEAN deny/allow, no-subscription deny, LIMIT-cap deny, CRM-flag deny).
