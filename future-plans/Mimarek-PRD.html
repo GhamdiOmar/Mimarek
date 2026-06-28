@@ -1,0 +1,784 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0D1B2A" />
+  <title>Mimarek — Product Requirements Dossier (v5.13.0)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;900&display=swap" rel="stylesheet" />
+  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap" rel="stylesheet" />
+  <style>
+    :root{
+      /* NewIdentity palette */
+      --navy:#0D1B2A; --navy-2:#13283f; --teal:#00707A; --cyan:#14C0C0;
+      --light-cyan:#E6F7F6; --gray-blue:#A6B2C3;
+      --mark-navy:#031630; --mark-teal:#008d9a;
+      /* derived */
+      --bg:#f5fafb; --card:#ffffff; --ink:#0D1B2A;
+      --muted:#566976; --muted-2:#7c8c98;
+      --border:rgba(13,27,42,.12); --border-soft:rgba(13,27,42,.07);
+      --ring:rgba(0,112,122,.35);
+      --shadow-sm:0 1px 2px rgba(13,27,42,.06),0 1px 3px rgba(13,27,42,.08);
+      --shadow-md:0 6px 16px rgba(13,27,42,.08),0 2px 6px rgba(13,27,42,.06);
+      --shadow-lg:0 24px 60px rgba(13,27,42,.16);
+      --radius:14px; --radius-sm:9px; --max:1320px;
+      --sans:"Satoshi","Segoe UI",system-ui,Arial,sans-serif;
+      --arabic:"Tajawal","Segoe UI",system-ui,Arial,sans-serif;
+      --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+      --ship:#0a8f63; --gate:#b9791f; --plan:#2f7dc4; --ext:#6b7b88; --hold:#b5417f;
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+    body{
+      margin:0;color:var(--ink);background:var(--bg);
+      font-family:var(--sans);font-size:16px;line-height:1.6;
+      text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased;
+    }
+    a{color:var(--teal);text-decoration:none}
+    a:hover{color:var(--cyan)}
+    h1,h2,h3,h4{margin:0;color:var(--navy);letter-spacing:-.01em;line-height:1.15}
+    p{margin:0 0 0}
+    .wrap{max-width:var(--max);margin:0 auto;padding:20px}
+    .shell{display:grid;grid-template-columns:248px minmax(0,1fr);gap:24px;align-items:start}
+    main{min-width:0}
+
+    /* ---------- sidebar (desktop) ---------- */
+    .side{position:sticky;top:20px;max-height:calc(100vh - 40px);overflow:auto;
+      background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+      box-shadow:var(--shadow-sm);padding:16px}
+    .side .logo{display:flex;align-items:center;gap:10px;padding-bottom:14px;border-bottom:1px solid var(--border-soft)}
+    .side .logo img{height:30px;width:auto}
+    .side .tag{font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--muted-2);text-transform:uppercase;margin:12px 2px 6px}
+    .side nav{display:grid;gap:2px;counter-reset:s}
+    .side nav a{display:flex;gap:9px;align-items:baseline;padding:7px 9px;border-radius:8px;color:var(--muted);font-size:13px;min-height:34px}
+    .side nav a::before{counter-increment:s;content:counter(s,decimal-leading-zero);font-family:var(--mono);font-size:10px;color:var(--gray-blue);min-width:17px}
+    .side nav a:hover{background:var(--light-cyan);color:var(--navy)}
+
+    /* ---------- mobile top bar ---------- */
+    .topbar{display:none;position:sticky;top:0;z-index:50;background:rgba(255,255,255,.92);
+      backdrop-filter:saturate(1.4) blur(8px);border-bottom:1px solid var(--border);
+      padding:10px 16px;align-items:center;justify-content:space-between;
+      padding-top:calc(10px + env(safe-area-inset-top))}
+    .topbar img{height:26px}
+    .topbar details{position:relative}
+    .topbar summary{list-style:none;cursor:pointer;display:inline-flex;align-items:center;gap:8px;
+      min-height:44px;padding:0 14px;border:1px solid var(--border);border-radius:999px;
+      font-weight:700;font-size:13px;color:var(--navy);background:var(--card)}
+    .topbar summary::-webkit-details-marker{display:none}
+    .topbar details[open] .menu{display:grid}
+    .topbar .menu{display:none;position:absolute;inset-inline-end:0;top:52px;width:78vw;max-width:320px;
+      max-height:70vh;overflow:auto;background:var(--card);border:1px solid var(--border);
+      border-radius:var(--radius);box-shadow:var(--shadow-lg);padding:8px;gap:2px;z-index:60}
+    .topbar .menu a{display:block;padding:11px 12px;border-radius:8px;color:var(--navy);font-size:14px}
+    .topbar .menu a:hover{background:var(--light-cyan)}
+
+    /* ---------- cover ---------- */
+    .cover{position:relative;overflow:hidden;border-radius:var(--radius);color:#eaf6f7;
+      padding:56px 48px;
+      background:
+        radial-gradient(900px 460px at 86% -10%,rgba(20,192,192,.30),transparent 60%),
+        radial-gradient(700px 420px at 8% 120%,rgba(0,112,122,.45),transparent 60%),
+        linear-gradient(160deg,#0D1B2A 0%,#0c2433 48%,#08313a 100%);
+      box-shadow:var(--shadow-lg)}
+    .cover::after{content:"";position:absolute;inset:0;pointer-events:none;
+      background:linear-gradient(90deg,rgba(255,255,255,.05) 1px,transparent 1px),
+                 linear-gradient(180deg,rgba(255,255,255,.045) 1px,transparent 1px);
+      background-size:48px 48px;opacity:.5;mask:radial-gradient(700px 360px at 80% 0%,#000,transparent 75%)}
+    .cover-logo{height:48px;width:auto;margin-bottom:30px;position:relative}
+    .cover .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--cyan);margin-bottom:16px;position:relative}
+    .cover h1{color:#fff;font-size:clamp(34px,5vw,66px);font-weight:900;max-width:18ch;position:relative}
+    .cover .lede{color:#cfe6e8;font-size:clamp(16px,2vw,19px);max-width:66ch;margin-top:20px;line-height:1.7;position:relative}
+    .cover .meta{display:flex;flex-wrap:wrap;gap:24px;margin-top:36px;padding-top:24px;border-top:1px solid rgba(255,255,255,.16);position:relative}
+    .cover .meta div{font-size:13px;color:#bcd4d8}
+    .cover .meta strong{display:block;color:#fff;font-size:14px;margin-bottom:3px}
+
+    /* ---------- sections ---------- */
+    section{margin-top:20px;scroll-margin-top:16px;background:var(--card);
+      border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-sm);
+      padding:clamp(22px,3.2vw,40px)}
+    section.dark{background:linear-gradient(160deg,#0D1B2A,#0c2a33);color:#dcebed;border:0}
+    section.dark h2,section.dark h3,section.dark h4{color:#fff}
+    section.dark .kick{color:var(--cyan)}
+    section.dark .card{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.12)}
+    section.dark .card p,section.dark .body{color:#bcd2d6}
+    .kick{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--teal);margin-bottom:10px}
+    .head{margin-bottom:24px}
+    .head h2{font-size:clamp(24px,3vw,38px);font-weight:800}
+    .head p{max-width:80ch;margin-top:12px;color:var(--muted);font-size:clamp(15px,1.6vw,17px)}
+    .lead{font-size:clamp(17px,2vw,20px);font-weight:600;color:var(--navy);max-width:80ch;line-height:1.45}
+    .body{color:#42525e;max-width:84ch}
+
+    .grid{display:grid;gap:16px}
+    .g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:18px;box-shadow:var(--shadow-sm)}
+    .card.tint{background:var(--light-cyan);border-color:transparent}
+    .card h3{font-size:17px;margin-bottom:7px}
+    .card h4{font-size:14px;margin-bottom:6px}
+    .card p{margin:0;color:var(--muted);font-size:13.5px}
+    .role{font-family:var(--mono);font-size:11px;color:var(--teal);letter-spacing:.03em}
+    .stat{font-size:30px;font-weight:850;color:var(--teal);line-height:1;font-variant-numeric:tabular-nums}
+    .stat-l{display:block;margin-top:8px;color:var(--muted);font-size:12.5px}
+
+    ul.clean{margin:8px 0 0;padding-inline-start:20px;color:var(--muted);font-size:14px}
+    ul.clean li{margin:6px 0}
+    ul.clean li b{color:var(--navy)}
+
+    /* tags */
+    .tag{display:inline-flex;align-items:center;gap:6px;min-height:24px;border-radius:999px;padding:3px 11px;font-size:11.5px;font-weight:700;line-height:1;border:1px solid;white-space:nowrap}
+    .tag::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+    .t-ship{color:var(--ship);border-color:rgba(10,143,99,.35);background:rgba(10,143,99,.08)}
+    .t-gate{color:var(--gate);border-color:rgba(185,121,31,.35);background:rgba(185,121,31,.08)}
+    .t-plan{color:var(--plan);border-color:rgba(47,125,196,.35);background:rgba(47,125,196,.08)}
+    .t-ext{color:var(--ext);border-color:rgba(107,123,136,.3);background:rgba(107,123,136,.07)}
+    .t-hold{color:var(--hold);border-color:rgba(181,65,127,.4);background:rgba(181,65,127,.07);border-style:dashed}
+    .legend{display:flex;flex-wrap:wrap;gap:9px;margin-top:16px}
+
+    /* tables */
+    .tw{overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius-sm);-webkit-overflow-scrolling:touch}
+    table{width:100%;border-collapse:collapse;font-size:13px;min-width:640px}
+    thead th{text-align:start;background:var(--light-cyan);color:var(--navy);font-weight:700;padding:11px 13px;border-bottom:1px solid var(--border);position:sticky;top:0}
+    tbody td{padding:10px 13px;border-bottom:1px solid var(--border-soft);color:var(--muted);vertical-align:top}
+    tbody tr:last-child td{border-bottom:0}
+    tbody td:first-child{color:var(--navy);font-weight:600}
+    code,.mono{font-family:var(--mono);font-size:11.5px;color:var(--teal)}
+    .matrix td,.matrix th{text-align:center}
+    .matrix td:first-child,.matrix th:first-child{text-align:start}
+    .matrix .y{color:var(--ship);font-weight:800}.matrix .r{color:var(--plan);font-weight:800}.matrix .n{color:var(--gray-blue)}
+    .scroll-hint{display:none;font-size:11px;color:var(--muted-2);margin:6px 2px 0}
+
+    /* screenshots */
+    .shot{border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;background:#fff;box-shadow:var(--shadow-md)}
+    .shot .bar{display:flex;align-items:center;gap:6px;padding:8px 12px;background:var(--light-cyan);border-bottom:1px solid var(--border)}
+    .shot .bar i{width:9px;height:9px;border-radius:50%;background:var(--gray-blue)}
+    .shot .bar .u{margin-inline-start:8px;font-family:var(--mono);font-size:10px;color:var(--muted-2)}
+    .shot img{display:block;width:100%;height:auto;aspect-ratio:16/10;object-fit:cover;object-position:top center}
+    figure{margin:0}figcaption{margin-top:9px;color:var(--muted);font-size:12.5px;line-height:1.5}
+    figcaption b{color:var(--navy)}
+    .demo{font-style:italic;color:var(--muted-2)}
+
+    .tour{display:grid;grid-template-columns:1.05fr 1fr;gap:26px;align-items:center;padding:24px 0;border-top:1px solid var(--border-soft)}
+    .tour:first-of-type{border-top:0}
+    .tour:nth-child(even) .tc{order:2}
+    .tc h3{font-size:21px;margin-bottom:9px}
+    .tc .out{color:var(--teal);font-weight:700;font-size:13px;margin-bottom:9px}
+    .tc p{color:#42525e;font-size:14.5px}
+    .tc .proof{margin-top:9px;font-family:var(--mono);font-size:11px;color:var(--muted-2)}
+
+    .callout{border:1px solid var(--ring);background:var(--light-cyan);border-radius:var(--radius-sm);padding:17px 19px}
+    .callout.warn{border-color:rgba(185,121,31,.4);background:rgba(185,121,31,.07)}
+    .callout h4{margin-bottom:7px}.callout p{margin:0;color:#3c4c58;font-size:14px}
+
+    /* brand section */
+    .swatch{border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;box-shadow:var(--shadow-sm)}
+    .swatch .chip{height:84px}
+    .swatch .meta{padding:12px 13px;background:var(--card)}
+    .swatch .hex{font-family:var(--mono);font-size:12px;color:var(--navy);font-weight:700}
+    .swatch .nm{font-size:12.5px;color:var(--navy);font-weight:700;margin-top:4px}
+    .swatch .role{display:block;margin-top:3px;color:var(--muted);font-size:11.5px}
+    .logo-card{display:grid;place-items:center;min-height:150px;background:var(--light-cyan);border:1px solid var(--border);border-radius:var(--radius-sm);padding:24px}
+    .logo-card.dark{background:linear-gradient(160deg,#0D1B2A,#08313a)}
+    .logo-card img{max-width:78%;max-height:96px;height:auto}
+    .logo-card .lab{position:absolute}
+    .logo-wrap{position:relative}
+    .logo-wrap .lab{margin-top:8px;text-align:center;font-size:12px;color:var(--muted)}
+    .type-spec{display:flex;align-items:baseline;justify-content:space-between;gap:14px;padding:12px 0;border-bottom:1px solid var(--border-soft);flex-wrap:wrap}
+    .type-spec:last-child{border-bottom:0}
+    .type-spec .ex{color:var(--navy)}
+    .type-spec .sp{font-family:var(--mono);font-size:11px;color:var(--muted-2);white-space:nowrap}
+    .fontcard .en{font-size:34px;font-weight:700;color:var(--navy);line-height:1}
+    .fontcard .ar{font-family:var(--arabic);font-size:34px;font-weight:700;color:var(--navy);line-height:1;direction:rtl}
+    .weights{display:flex;gap:14px;flex-wrap:wrap;margin-top:12px;color:var(--navy)}
+    .weights span{font-size:15px}
+
+    .arabic{direction:rtl;text-align:right;font-family:var(--arabic)}
+    .arabic .kick{direction:ltr;text-align:right;font-family:var(--mono)}
+    .arabic h2{font-size:clamp(24px,2.6vw,34px);font-weight:700;line-height:1.3}
+    .arabic p{font-size:17px;line-height:1.95;color:#3c4c58;max-width:none}
+    .arabic .tag::before{display:none}
+    .arabic .pills{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+
+    hr.div{border:0;height:1px;background:var(--border);margin:22px 0}
+    .toplink{position:fixed;inset-inline-end:18px;inset-block-end:18px;width:46px;height:46px;border-radius:50%;
+      background:var(--teal);color:#fff;display:grid;place-items:center;font-weight:900;box-shadow:var(--shadow-lg);z-index:40}
+    footer.doc{color:var(--muted-2);font-size:12px;text-align:center;padding:28px 0 10px}
+
+    /* ---------- responsive: tablet ---------- */
+    @media (max-width:980px){
+      .shell{grid-template-columns:1fr}
+      .side{display:none}
+      .topbar{display:flex}
+      .g4{grid-template-columns:repeat(2,1fr)}
+      .tour{grid-template-columns:1fr}
+      .tour:nth-child(even) .tc{order:0}
+      .scroll-hint{display:block}
+    }
+    /* ---------- responsive: phone (iPhone 16 Pro ~393px) ---------- */
+    @media (max-width:600px){
+      .wrap{padding:12px}
+      .cover{padding:34px 22px;border-radius:12px}
+      .cover-logo{height:38px;margin-bottom:22px}
+      .cover .meta{gap:16px}
+      section{padding:20px 16px;border-radius:12px}
+      .g2,.g3,.g4{grid-template-columns:1fr}
+      .tc h3{font-size:19px}
+      .toplink{inset-inline-end:12px;inset-block-end:12px}
+      .fontcard .en,.fontcard .ar{font-size:26px}
+    }
+    @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+    /* ---------- print / PDF (A4) ---------- */
+    @page{size:A4;margin:14mm}
+    @media print{
+      body{background:#fff}
+      .topbar,.toplink,.side{display:none!important}
+      .shell{grid-template-columns:1fr;gap:0}
+      .wrap{padding:0;max-width:none}
+      section,.cover{box-shadow:none;break-inside:avoid;page-break-inside:avoid}
+      .cover{color:#eaf6f7}
+      section{border-color:#dde6ea;margin-top:10px}
+      .tour,.g2,.g3,.g4{break-inside:avoid}
+      a{color:var(--teal)}
+      .shot{box-shadow:none}
+      h2,h3{break-after:avoid}
+    }
+  </style>
+</head>
+<body>
+  <!-- mobile top bar -->
+  <header class="topbar">
+    <img src="../apps/web/public/assets/brand/newidentity/horizontal.svg" alt="Mimarek" />
+    <details>
+      <summary>Contents ▾</summary>
+      <div class="menu">
+        <a href="#summary">Executive summary</a>
+        <a href="#arabic">الملخص التنفيذي</a>
+        <a href="#brand">Brand &amp; identity</a>
+        <a href="#positioning">Positioning</a>
+        <a href="#market">Market &amp; why now</a>
+        <a href="#personas">Personas</a>
+        <a href="#roles">Roles &amp; permissions</a>
+        <a href="#routes">Route matrix</a>
+        <a href="#tour">Product tour</a>
+        <a href="#prds">Workflow PRDs</a>
+        <a href="#compliance">Saudi compliance</a>
+        <a href="#security">Security</a>
+        <a href="#monetization">Monetization</a>
+        <a href="#maturity">Maturity</a>
+        <a href="#roadmap">Roadmap &amp; scorecard</a>
+        <a href="#open">Open questions</a>
+        <a href="#dod">Definition of done</a>
+        <a href="#appendix">Appendix</a>
+      </div>
+    </details>
+  </header>
+
+  <div class="wrap">
+    <div class="shell">
+      <!-- sidebar -->
+      <aside class="side">
+        <div class="logo"><img src="../apps/web/public/assets/brand/newidentity/horizontal.svg" alt="Mimarek" /></div>
+        <p class="tag">Product Requirements Dossier</p>
+        <nav>
+          <a href="#summary">Executive summary</a>
+          <a href="#arabic">الملخص التنفيذي</a>
+          <a href="#brand">Brand &amp; identity</a>
+          <a href="#positioning">Positioning</a>
+          <a href="#market">Market &amp; why now</a>
+          <a href="#personas">Personas</a>
+          <a href="#roles">Roles &amp; permissions</a>
+          <a href="#routes">Route matrix</a>
+          <a href="#tour">Product tour</a>
+          <a href="#prds">Workflow PRDs</a>
+          <a href="#compliance">Saudi compliance</a>
+          <a href="#security">Security &amp; data</a>
+          <a href="#monetization">Monetization</a>
+          <a href="#maturity">Maturity</a>
+          <a href="#roadmap">Roadmap &amp; scorecard</a>
+          <a href="#open">Open questions</a>
+          <a href="#dod">Definition of done</a>
+          <a href="#appendix">Appendix</a>
+        </nav>
+      </aside>
+
+      <main>
+        <!-- COVER -->
+        <header class="cover" id="top">
+          <img class="cover-logo" src="../apps/web/public/assets/brand/newidentity/horizontal-reverse.svg" alt="Mimarek — معمارك" />
+          <p class="eyebrow">Product Requirements Dossier · v5.13.0 · June 2026</p>
+          <h1>Manage units. Empower real estate.</h1>
+          <p class="lede">The definitive product document for Mimarek — a Saudi-first PropTech platform that runs the
+          entire property lifecycle on one compliant system. Repo-grounded product truth, executive narrative, and
+          build-ready requirements in a single source.</p>
+          <div class="meta">
+            <div><strong>Status</strong>Production-ready · pre-commercial-launch</div>
+            <div><strong>Scope</strong>Sales · rentals · finance · CMMS · B2B marketplace</div>
+            <div><strong>Readers</strong>Leadership · GTM · product &amp; engineering</div>
+            <div><strong>Prepared</strong>28 June 2026</div>
+          </div>
+        </header>
+
+        <!-- 1 EXEC SUMMARY -->
+        <section id="summary">
+          <p class="kick">01 · Executive summary</p>
+          <div class="head"><h2>A complete product, hardened and waiting on go-to-market.</h2></div>
+          <p class="lead">Mimarek (v5.13.0) is feature-complete across the property lifecycle, security-hardened
+          through a 19-finding audit sweep, and built Arabic-first for the Saudi regulatory environment. What it does
+          not yet have is customers — it is pre-launch by choice, not by limitation.</p>
+          <div class="grid g4" style="margin:22px 0 6px">
+            <div class="card tint"><div class="stat">14</div><span class="stat-l">Shipped modules, lead → maintenance</span></div>
+            <div class="card tint"><div class="stat">9</div><span class="stat-l">Roles across platform / tenant split</span></div>
+            <div class="card tint"><div class="stat">AES-256</div><span class="stat-l">PII encrypted at rest + blind-index search</span></div>
+            <div class="card tint"><div class="stat">ZATCA</div><span class="stat-l">Phase-2 e-invoicing engine, in-house</span></div>
+          </div>
+          <div class="grid g2" style="margin-top:14px">
+            <div class="card"><h4>What this means</h4><p>The engineering risk of a compliant Saudi PropTech system is retired. What remains is commercial: deployment, pricing, positioning, and the regulated go-lives (production ZATCA, marketplace conveyance) that need external sign-off — not code.</p></div>
+            <div class="card"><h4>How to read this</h4><p>Every capability carries a status tag. Nothing is aspirational unless labelled. Figures inside screenshots are illustrative demo data, not business metrics — real traction and pricing are marked founder-input.</p></div>
+          </div>
+          <div class="legend">
+            <span class="tag t-ship">Shipped — in code</span>
+            <span class="tag t-gate">Gated — built, off by flag / sign-off</span>
+            <span class="tag t-plan">Planned</span>
+            <span class="tag t-ext">External evidence</span>
+            <span class="tag t-hold">Placeholder — founder input</span>
+          </div>
+        </section>
+
+        <!-- 2 ARABIC -->
+        <section id="arabic" class="arabic">
+          <p class="kick">02 · الملخص التنفيذي</p>
+          <div class="head"><h2>منتجٌ مكتمل وجاهزٌ للتشغيل، بانتظار التسويق والمبيعات.</h2></div>
+          <p>معمارك منصةٌ سعوديةٌ متكاملة لإدارة دورة حياة العقار — من العميل المحتمل إلى الحجز والعقد والتحصيل
+          والصيانة — مبنيةٌ أصلاً للسوق السعودي ولغته ولوائحه. المنتج اليوم مكتمل المزايا وجاهزٌ للتشغيل (الإصدار
+          5.13.0): تحصيلٌ ذكي للإيجارات، وإدارةٌ للمبيعات والعقود، وفوترةٌ إلكترونية متوافقة مع هيئة الزكاة والضريبة
+          والدخل (المرحلة الثانية)، وسوقٌ عقاري بين المنشآت، ولوحاتٌ تنفيذية مخصّصة لكل دور.</p>
+          <p>البيانات الحسّاسة مشفّرة بمعيار <span class="mono" dir="ltr">AES-256-GCM</span>، والوصول محكومٌ بفصلٍ
+          صارم بين فريق المنصّة والعملاء عبر تسعة أدوار وصلاحياتٍ دقيقة، مع عزلٍ كامل لبيانات كل منشأة. النظام عربيٌّ
+          أولاً بواجهةٍ كاملة من اليمين إلى اليسار. لم يُطلَق المنتج تجارياً بعد؛ تصف هذه الوثيقة الحالة الراهنة
+          تمهيداً لبناء استراتيجية التسويق والمبيعات. الأرقام في اللقطات بياناتٌ توضيحية وليست مؤشرات أداء حقيقية.</p>
+          <div class="pills">
+            <span class="tag t-ship">١٤ وحدة جاهزة</span>
+            <span class="tag t-ship">فوترة ZATCA المرحلة الثانية</span>
+            <span class="tag t-ship">تشفير بياناتٍ كامل</span>
+            <span class="tag t-gate">قبل الإطلاق التجاري</span>
+          </div>
+        </section>
+
+        <!-- 3 BRAND -->
+        <section id="brand">
+          <p class="kick">03 · Brand &amp; identity</p>
+          <div class="head"><h2>The Mimarek identity — modern, modular, data-driven.</h2>
+            <p>The visual system every Mimarek surface and document is built on: one logo system, a disciplined
+            palette, and two typefaces. Consistency protects recognition — always apply the identity with clarity,
+            balance, and discipline.</p></div>
+
+          <h3 style="margin:6px 0 14px;font-size:16px;color:var(--teal)">Logo system</h3>
+          <div class="grid g4">
+            <div class="logo-wrap"><div class="logo-card"><img src="../apps/web/public/assets/brand/newidentity/primary.svg" alt="Primary stacked logo"/></div><div class="lab">Primary — stacked</div></div>
+            <div class="logo-wrap"><div class="logo-card"><img src="../apps/web/public/assets/brand/newidentity/horizontal.svg" alt="Horizontal bilingual lockup"/></div><div class="lab">Horizontal — bilingual</div></div>
+            <div class="logo-wrap"><div class="logo-card"><img src="../apps/web/public/assets/brand/newidentity/icon.svg" alt="Icon-only mark"/></div><div class="lab">Icon-only mark</div></div>
+            <div class="logo-wrap"><div class="logo-card dark"><img src="../apps/web/public/assets/brand/newidentity/horizontal-reverse.svg" alt="Reverse logo on dark"/></div><div class="lab">Reverse — on dark</div></div>
+          </div>
+          <p class="body" style="margin-top:14px;font-size:13.5px">Clear space = the height of the cyan square in the icon, on all sides. Minimum size: 120&nbsp;px digital / 20&nbsp;mm print for the full lockup, 32&nbsp;px for the icon. Never stretch, recolor, rotate, add effects, or rearrange the locked elements; use the reverse lockup on dark backgrounds.</p>
+
+          <hr class="div"/>
+          <h3 style="margin:0 0 14px;font-size:16px;color:var(--teal)">Color palette</h3>
+          <div class="grid g4">
+            <div class="swatch"><div class="chip" style="background:#0D1B2A"></div><div class="meta"><span class="hex">#0D1B2A</span><div class="nm">Deep Navy · 60%</div><span class="role">Foundation, primary type, headers, structure</span></div></div>
+            <div class="swatch"><div class="chip" style="background:#00707A"></div><div class="meta"><span class="hex">#00707A</span><div class="nm">Teal · 20%</div><span class="role">Professionalism, balance — CTAs, links, icons</span></div></div>
+            <div class="swatch"><div class="chip" style="background:#14C0C0"></div><div class="meta"><span class="hex">#14C0C0</span><div class="nm">Bright Cyan · 10%</div><span class="role">Action &amp; emphasis — highlights, data accents</span></div></div>
+            <div class="swatch"><div class="chip" style="background:#E6F7F6;border-bottom:1px solid var(--border)"></div><div class="meta"><span class="hex">#E6F7F6</span><div class="nm">Light Cyan · 5%</div><span class="role">Backgrounds, surfaces, subtle accents</span></div></div>
+          </div>
+          <div class="grid g4" style="margin-top:14px">
+            <div class="swatch"><div class="chip" style="background:#A6B2C3"></div><div class="meta"><span class="hex">#A6B2C3</span><div class="nm">Gray Blue · 5%</div><span class="role">Borders, dividers, muted text, neutral balance</span></div></div>
+            <div class="card" style="grid-column:span 3"><h4>Color roles &amp; rules</h4><p style="color:#42525e">Deep Navy carries primary typography, navigation, and structure. Teal and Bright Cyan drive action and highlight key information — use for buttons, links, icons, and data accents, with cyan used sparingly. Light tones support clarity and create breathing room. <b style="color:var(--navy)">Do</b> maintain strong contrast for readability and accessibility. <b style="color:var(--navy)">Don't</b> overuse bright accents or introduce colors outside the palette. The logo mark uses its own fixed tones (<span class="mono">#031630</span> / <span class="mono">#008d9a</span>) and is never a UI color.</p></div>
+          </div>
+
+          <hr class="div"/>
+          <h3 style="margin:0 0 14px;font-size:16px;color:var(--teal)">Typography</h3>
+          <div class="grid g2">
+            <div class="card fontcard"><div class="en">Mimarek</div><h4 style="margin-top:12px">Satoshi — English &amp; UI</h4><p>Modern, geometric sans-serif with excellent clarity and neutrality. Used for all Latin text, numbers, and interface copy.</p><div class="weights"><span style="font-weight:300">Light</span><span style="font-weight:400">Regular</span><span style="font-weight:500">Medium</span><span style="font-weight:700">Bold</span></div></div>
+            <div class="card fontcard"><div class="ar">معمارك</div><h4 style="margin-top:12px">Tajawal — Arabic</h4><p>Contemporary Arabic typeface with high readability and balanced forms. Used for all Arabic content, RTL-first.</p><div class="weights" style="direction:rtl"><span style="font-family:var(--arabic);font-weight:300">خفيف</span><span style="font-family:var(--arabic);font-weight:400">عادي</span><span style="font-family:var(--arabic);font-weight:500">متوسط</span><span style="font-family:var(--arabic);font-weight:700">عريض</span></div></div>
+          </div>
+          <div class="card" style="margin-top:14px">
+            <h4 style="margin-bottom:6px">Type hierarchy</h4>
+            <div class="type-spec"><span class="ex" style="font-size:30px;font-weight:700">Manage every unit with clarity.</span><span class="sp">H1 · Satoshi Bold · 40/44</span></div>
+            <div class="type-spec"><span class="ex" style="font-size:22px;font-weight:500">Smarter decisions. Better performance.</span><span class="sp">H2 · Satoshi Medium · 24/32</span></div>
+            <div class="type-spec"><span class="ex" style="font-size:16px">Body text — concise, left-aligned, 45–75 characters per line for comfortable reading.</span><span class="sp">Body · Satoshi Regular · 16/24</span></div>
+            <div class="type-spec"><span class="ex" style="font-size:12px;color:var(--muted)">Caption · metadata, timestamps, helper text.</span><span class="sp">Caption · 12/16</span></div>
+          </div>
+
+          <hr class="div"/>
+          <h3 style="margin:0 0 14px;font-size:16px;color:var(--teal)">Visual principles</h3>
+          <div class="grid g3">
+            <div class="card tint"><h4>Clean &amp; modular</h4><p>Remove noise; build from a simple geometric system. Thin dividers, rounded square modules, generous whitespace.</p></div>
+            <div class="card tint"><h4>Data-driven &amp; high-contrast</h4><p>Visuals communicate insight and performance. Keep strong contrast; use cyan only for actions and accents.</p></div>
+            <div class="card tint"><h4>Aspirational imagery</h4><p>Modern architecture (bright, clean), insight-led dashboards, and clean structured UI cards.</p></div>
+          </div>
+        </section>
+
+        <!-- 4 POSITIONING -->
+        <section id="positioning">
+          <p class="kick">04 · Positioning</p>
+          <div class="head"><h2>One operating system for the property business — Saudi-native, not Saudi-translated.</h2>
+            <p>Lead marketing with the differentiators; the baselines are table stakes.</p></div>
+          <p class="lead" style="margin-bottom:20px">Mimarek replaces spreadsheet-and-WhatsApp coordination of a developer's sales, leasing, finance, and maintenance teams with one tenant-isolated system where a customer entered once flows from lead → reservation → contract → rent installment → receipt without re-keying.</p>
+          <div class="grid g2">
+            <div class="card"><h4>Baseline expectations <span class="tag t-ext" style="margin-inline-start:6px">table stakes</span></h4>
+              <ul class="clean"><li><b>Arabic-first &amp; RTL</b> — expected of any 2026 Saudi product.</li><li><b>Responsive &amp; secure access</b> — desktop, tablet, mobile.</li><li><b>Role-based dashboards</b> — CFO and leasing agent see different things.</li></ul></div>
+            <div class="card"><h4>Differentiators <span class="tag t-ship" style="margin-inline-start:6px">where we win</span></h4>
+              <ul class="clean"><li><b>Compliance-native workflow fit</b> — ZATCA, Absher fields, Ejar/REGA hooks built into the lifecycle.</li><li><b>Enter a customer once, reuse everywhere</b> — one record powers CRM, contracts, finance, maintenance.</li><li><b>Cross-org B2B marketplace</b> — trade units between organizations with deed-transfer settlement.</li><li><b>Encrypted customer data by default</b> — searchable blind indexes, audit trail, tenant isolation.</li></ul></div>
+          </div>
+          <p class="body" style="margin-top:18px"><b style="color:var(--navy)">Deliberately out of scope.</b> Pure property management — not an off-plan/project-launch platform, not a public consumer listings portal, not an accounting general ledger. It connects to those; it doesn't replace them.</p>
+        </section>
+
+        <!-- 5 MARKET -->
+        <section id="market">
+          <p class="kick">05 · Market &amp; why now</p>
+          <div class="head"><h2>Regulation is forcing Saudi real estate onto compliant software — now.</h2>
+            <p>External, defensible drivers. Market-size figures are left as founder/analyst input, not invented here.</p></div>
+          <div class="grid g3">
+            <div class="card"><h3>ZATCA Phase-2 <span class="tag t-ext"></span></h3><p>Mandatory e-invoicing (Fatoora) rolls across VAT-registered businesses in waves. Operators issuing rent and sale documents need a cleared, compliant path — Mimarek has the engine in-house.</p></div>
+            <div class="card"><h3>Ejar &amp; REGA <span class="tag t-ext"></span></h3><p>Rental contracts route through Ejar; brokerage and advertising fall under REGA licensing. Saudi PropTech must speak these systems to be credible.</p></div>
+            <div class="card"><h3>Vision 2030 &amp; PDPL <span class="tag t-ext"></span></h3><p>Sector digitization plus the PDPL / NDMO data-governance regime reward systems that encrypt, audit, and localize customer data by design.</p></div>
+          </div>
+          <div class="callout" style="margin-top:18px"><h4>The timing argument</h4><p>Compliance deadlines convert "nice-to-have software" into "required infrastructure." A product already compliant when the operator must act has a buying-window advantage over generic CRMs and foreign property tools that are not Saudi-native.</p></div>
+        </section>
+
+        <!-- 6 PERSONAS -->
+        <section id="personas">
+          <p class="kick">06 · Personas</p>
+          <div class="head"><h2>Who buys, and who sits in each seat.</h2>
+            <p>Two universes that never share surfaces or data: the platform team that operates Mimarek, and the customer organizations that run their property business inside it.</p></div>
+          <h3 style="margin:4px 0 12px;font-size:15px;color:var(--teal)">Platform tier — Mimarek staff</h3>
+          <div class="grid g2">
+            <div class="card"><span class="role">SYSTEM_ADMIN</span><h3>Platform Admin</h3><p>Operates the product: tenants, plans, billing, coupons, ZATCA platform onboarding, marketplace moderation, data-retention policy.</p></div>
+            <div class="card"><span class="role">SYSTEM_SUPPORT</span><h3>Platform Support</h3><p>Cross-tenant support: tickets, account help, ZATCA clearance ops. Broad permissions for support tooling, blocked from tenant business data by the audience guard.</p></div>
+          </div>
+          <h3 style="margin:22px 0 12px;font-size:15px;color:var(--teal)">Tenant tier — the customer organization's seats</h3>
+          <div class="grid g3">
+            <div class="card"><span class="role">ADMIN</span><h3>Org Owner / Admin</h3><p>The buyer's decision-maker. Full control: team, settings, every module, ZATCA config.</p></div>
+            <div class="card"><span class="role">MANAGER</span><h3>Property / Sales Manager</h3><p>The "units admin" + sales-management seat: properties, deals, contracts, leases, reports, marketplace publish &amp; convert.</p></div>
+            <div class="card"><span class="role">AGENT</span><h3>Sales Agent</h3><p>Pipeline execution: leads, customers, deals, contracts, payment recording. No exports, no PII reveal.</p></div>
+            <div class="card"><span class="role">LEASING</span><h3>Leasing Officer</h3><p>Rentals: leases, reservations, renewals, customer records with PII access.</p></div>
+            <div class="card"><span class="role">FINANCE</span><h3>Finance / Accounting</h3><p>Money seat: payments, billing view, reports, ZATCA tax config.</p></div>
+            <div class="card"><span class="role">TECHNICIAN</span><h3>Maintenance Technician</h3><p>Field seat: assigned work orders and preventive tasks only — no financial or customer data.</p></div>
+            <div class="card"><span class="role">USER</span><h3>Basic User · buyer / tenant</h3><p>The end-user persona: dashboard, notifications, help.</p></div>
+            <div class="card" style="border-style:dashed"><span class="role">B2B · cross-org</span><h3>Seller ↔ Buyer org</h3><p>In the marketplace, organizations act as seller (publish) and buyer (inquire → convert → conveyance), with a platform moderator between them.</p></div>
+          </div>
+        </section>
+
+        <!-- 7 ROLES -->
+        <section id="roles">
+          <p class="kick">07 · Roles &amp; permissions</p>
+          <div class="head"><h2>The access model is a sales asset — not fine print.</h2>
+            <p>Simplified from ~60 permissions in <span class="mono">lib/permissions.ts</span>. PII read is gated separately from record read.</p></div>
+          <div class="tw"><table class="matrix">
+            <thead><tr><th>Capability</th><th>Admin</th><th>Manager</th><th>Agent</th><th>Leasing</th><th>Finance</th><th>Tech</th><th>User</th></tr></thead>
+            <tbody>
+              <tr><td>Dashboard</td><td class="y">●</td><td class="y">●</td><td class="y">●</td><td class="y">●</td><td class="y">●</td><td class="y">●</td><td class="y">●</td></tr>
+              <tr><td>CRM &amp; customers</td><td class="y">●</td><td class="y">●</td><td class="y">●</td><td class="y">●</td><td class="r">◐</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td>Properties / units</td><td class="y">●</td><td class="y">●</td><td class="r">◐</td><td class="r">◐</td><td class="n">–</td><td class="r">◐</td><td class="n">–</td></tr>
+              <tr><td>Reservations &amp; deals</td><td class="y">●</td><td class="y">●</td><td class="y">●</td><td class="y">●</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td>Contracts</td><td class="y">●</td><td class="y">●</td><td class="y">●</td><td class="y">●</td><td class="r">◐</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td>Leases</td><td class="y">●</td><td class="y">●</td><td class="r">◐</td><td class="y">●</td><td class="r">◐</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td>Payments</td><td class="y">●</td><td class="y">●</td><td class="y">●</td><td class="r">◐</td><td class="y">●</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td>Maintenance</td><td class="y">●</td><td class="y">●</td><td class="r">◐</td><td class="n">–</td><td class="n">–</td><td class="y">●</td><td class="n">–</td></tr>
+              <tr><td>Reports &amp; export</td><td class="y">●</td><td class="y">●</td><td class="n">–</td><td class="r">◐</td><td class="y">●</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td>Billing (subscription)</td><td class="y">●</td><td class="r">◐</td><td class="n">–</td><td class="n">–</td><td class="r">◐</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td>Team &amp; org settings</td><td class="y">●</td><td class="r">◐</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td>ZATCA tax config</td><td class="y">●</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="y">●</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td>Marketplace (publish/trade)</td><td class="y">●</td><td class="y">●</td><td class="r">◐</td><td class="r">◐</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td>Audit log</td><td class="y">●</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+            </tbody>
+          </table></div>
+          <p class="scroll-hint">↔ Scroll the table horizontally</p>
+          <p class="body" style="margin-top:14px"><span class="matrix"><span class="y" style="font-weight:800">●</span></span> full · <span class="r" style="font-weight:800;color:var(--plan)">◐</span> read/partial · <span style="color:var(--gray-blue);font-weight:800">–</span> none. Platform roles (<span class="mono">SYSTEM_ADMIN</span>, <span class="mono">SYSTEM_SUPPORT</span>) get broad permissions for support tooling but are <b style="color:var(--navy)">blocked from all tenant business data</b> by a Layer-3 audience check — permission alone never grants tenant access.</p>
+        </section>
+
+        <!-- 8 ROUTE MATRIX -->
+        <section id="routes">
+          <p class="kick">08 · Route, permission &amp; audience matrix</p>
+          <div class="head"><h2>Every surface has a guard.</h2>
+            <p>Derived from <span class="mono">lib/route-guards.ts</span> — the single source for route → permission + audience. Tenant and platform surfaces never overlap.</p></div>
+          <div class="tw"><table>
+            <thead><tr><th>Route</th><th>Audience</th><th>Gate</th></tr></thead>
+            <tbody>
+              <tr><td><code>/dashboard</code></td><td>Tenant</td><td>dashboard:read</td></tr>
+              <tr><td><code>/dashboard/crm</code></td><td>Tenant</td><td>crm:read (PII: customers:read_pii)</td></tr>
+              <tr><td><code>/dashboard/units</code></td><td>Tenant</td><td>properties:read</td></tr>
+              <tr><td><code>/dashboard/reservations</code></td><td>Tenant</td><td>deals:read</td></tr>
+              <tr><td><code>/dashboard/contracts</code></td><td>Tenant</td><td>contracts:read</td></tr>
+              <tr><td><code>/dashboard/payments</code> · <code>/invoices</code></td><td>Tenant</td><td>payments:read · finance:read</td></tr>
+              <tr><td><code>/dashboard/maintenance</code></td><td>Tenant</td><td>maintenance:read</td></tr>
+              <tr><td><code>/dashboard/marketplace</code></td><td>Tenant</td><td>marketplace:read / publish</td></tr>
+              <tr><td><code>/dashboard/finance</code> · <code>/reports</code></td><td>Tenant</td><td>finance:read · reports:read</td></tr>
+              <tr><td><code>/dashboard/billing</code> · <code>/settings</code></td><td>Tenant</td><td>billing:read · organization/team</td></tr>
+              <tr><td><code>/dashboard/admin/**</code></td><td>Platform</td><td>isSystemRole + per-area (billing:admin, zatca:admin, marketplace:moderate)</td></tr>
+            </tbody>
+          </table></div>
+          <p class="scroll-hint">↔ Scroll the table horizontally</p>
+        </section>
+
+        <!-- 9 PRODUCT TOUR -->
+        <section id="tour">
+          <p class="kick">09 · Product tour</p>
+          <div class="head"><h2>One customer record flows from lead to receipt — screen by screen.</h2>
+            <p>Each step is a working surface today; captions state the business outcome. <span class="demo">All figures are illustrative demo data.</span></p></div>
+
+          <div class="tour"><div class="tc"><h3>1 · Role dashboard</h3><p class="out">See the business in ten seconds.</p><p>A North-Star metric plus reservations, signed contracts, overdue payments, portfolio size, and open maintenance — with a date range and pending-actions queue. Each role lands on the dashboard built for its job.</p><p class="proof">/dashboard</p></div>
+            <figure><div class="shot"><div class="bar"><i></i><i></i><i></i><span class="u">mimarek · /dashboard</span></div><img src="../apps/web/public/assets/screenshots/dossier/dashboard-en-light.png" alt="Dashboard"/></div></figure></div>
+
+          <div class="tour"><div class="tc"><h3>2 · CRM pipeline</h3><p class="out">Move a lead to a signed deal without losing it.</p><p>A Kanban pipeline with per-customer activity timeline, agent assignment, and a deliberate "Show PII" gate — sensitive identity stays masked until a permitted user reveals it.</p><p class="proof">/dashboard/crm · customers:read_pii</p></div>
+            <figure><div class="shot"><div class="bar"><i></i><i></i><i></i><span class="u">mimarek · /dashboard/crm</span></div><img src="../apps/web/public/assets/screenshots/dossier/crm-en-light.png" alt="CRM"/></div></figure></div>
+
+          <div class="tour"><div class="tc"><h3>3 · Reservations</h3><p class="out">Hold a unit, then convert it — one record, no re-entry.</p><p>Time-boxed reservations with deposit tracking and extension approvals that convert straight into a contract, against live unit inventory.</p><p class="proof">/dashboard/reservations</p></div>
+            <figure><div class="shot"><div class="bar"><i></i><i></i><i></i><span class="u">mimarek · /dashboard/reservations</span></div><img src="../apps/web/public/assets/screenshots/dossier/reservations-en-light.png" alt="Reservations"/></div></figure></div>
+
+          <div class="tour"><div class="tc"><h3>4 · Payments &amp; collections</h3><p class="out">Know exactly what's collected, overdue, and due next.</p><p>Rent and sale installments in one ledger with record-payment, bulk mark-paid, and an append-only reversal trail; overdue flagging runs on a schedule.</p><p class="proof">/dashboard/payments</p></div>
+            <figure><div class="shot"><div class="bar"><i></i><i></i><i></i><span class="u">mimarek · /dashboard/payments</span></div><img src="../apps/web/public/assets/screenshots/dossier/payments-en-light.png" alt="Payments"/></div></figure></div>
+
+          <div class="tour"><div class="tc"><h3>5 · Invoices &amp; ZATCA</h3><p class="out">Issue a tax document the authority will clear.</p><p>SaaS invoices and tenant-issued ZATCA documents with sequenced numbering, 15% VAT, QR, signed XML, and clearance status. The crypto engine is in-house (<span class="mono">@repo/zatca</span>).</p><p class="proof">/dashboard/invoices</p></div>
+            <figure><div class="shot"><div class="bar"><i></i><i></i><i></i><span class="u">mimarek · /dashboard/invoices</span></div><img src="../apps/web/public/assets/screenshots/dossier/invoices-en-light.png" alt="Invoices"/></div></figure></div>
+
+          <div class="tour"><div class="tc"><h3>6 · Maintenance (CMMS)</h3><p class="out">Catch SLA breaches before the tenant escalates.</p><p>Work orders by category and priority with assignment and cost tracking, plus preventive-maintenance plans that auto-generate recurring work orders.</p><p class="proof">/dashboard/maintenance</p></div>
+            <figure><div class="shot"><div class="bar"><i></i><i></i><i></i><span class="u">mimarek · /dashboard/maintenance</span></div><img src="../apps/web/public/assets/screenshots/dossier/maintenance-en-light.png" alt="Maintenance"/></div></figure></div>
+
+          <div class="tour"><div class="tc"><h3>7 · Finance dashboard</h3><p class="out">Control receivables risk by aging bucket.</p><p>Collection rate, total AR, overdue, and AR-aging, with on-demand revenue / occupancy / collection reports exportable to PDF and Excel.</p><p class="proof">/dashboard/finance</p></div>
+            <figure><div class="shot"><div class="bar"><i></i><i></i><i></i><span class="u">mimarek · /dashboard/finance</span></div><img src="../apps/web/public/assets/screenshots/dossier/finance-en-light.png" alt="Finance"/></div></figure></div>
+
+          <div class="tour"><div class="tc"><h3>8 · Platform administration</h3><p class="out">Run the SaaS business itself.</p><p>A separate platform-staff console: ARR / MRR, ARR waterfall, AR aging, ZATCA clearance rate, trial-to-paid, plan/coupon management, marketplace moderation, and PDPL data-retention.</p><p class="proof">/dashboard/admin · SYSTEM_ADMIN</p></div>
+            <figure><div class="shot"><div class="bar"><i></i><i></i><i></i><span class="u">mimarek · /dashboard/admin</span></div><img src="../apps/web/public/assets/screenshots/dossier/admin-en-light.png" alt="Admin"/></div></figure></div>
+        </section>
+
+        <!-- 10 WORKFLOW PRDs -->
+        <section id="prds">
+          <p class="kick">10 · Workflow PRDs</p>
+          <div class="head"><h2>Build-ready requirements, by workflow.</h2>
+            <p>Each requirement is testable and carries a priority (Must/Should) and status. These are the execution-level specs squads build against.</p></div>
+
+          <h3 style="font-size:18px;margin:8px 0 10px">A · Lead → Contract</h3>
+          <p class="body" style="margin-bottom:12px">Turns an inquiry into a reserved unit and a signed sale or lease contract — the commercial heart of the product, connecting CRM, inventory, reservations, and contracts.</p>
+          <div class="tw"><table>
+            <thead><tr><th>ID</th><th>Requirement</th><th>Pri</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td>LTC-01</td><td>Create a customer with required identity/contact fields through the canonical encrypted path.</td><td>Must</td><td><span class="tag t-ship">Shipped</span></td></tr>
+              <tr><td>LTC-02</td><td>Import customers via validate → commit steps; invalid rows fail with visible errors.</td><td>Should</td><td><span class="tag t-ship">Shipped</span></td></tr>
+              <tr><td>LTC-03</td><td>View customers in Kanban and list with stage filters; PII masked unless permitted + explicitly revealed.</td><td>Must</td><td><span class="tag t-ship">Shipped</span></td></tr>
+              <tr><td>LTC-04</td><td>Create/confirm/cancel reservations only for eligible customer/unit combinations, with optimistic UI.</td><td>Must</td><td><span class="tag t-ship">Shipped</span></td></tr>
+              <tr><td>LTC-05</td><td>Create sale and lease contracts from customer/unit context; drafts editable, signing irreversible with confirmation.</td><td>Must</td><td><span class="tag t-ship">Shipped</span></td></tr>
+              <tr><td>LTC-06</td><td>Signed contract state is visible to payments, invoices, reports, and dashboards.</td><td>Must</td><td><span class="tag t-ship">Shipped</span></td></tr>
+              <tr><td>LTC-07</td><td>Automatic Ejar registration on lease signing.</td><td>Should</td><td><span class="tag t-plan">Planned</span></td></tr>
+            </tbody>
+          </table></div>
+          <p class="body" style="margin-top:10px;font-size:13px"><b style="color:var(--navy)">Acceptance:</b> a lead moves CRM → reservation → signed contract through visible UI; invalid transitions fail safely; PII stays masked unless authorized; no step depends on a hidden URL.</p>
+
+          <h3 style="font-size:18px;margin:24px 0 10px">B · Rent → Invoice (finance &amp; ZATCA)</h3>
+          <div class="tw"><table>
+            <thead><tr><th>ID</th><th>Requirement</th><th>Pri</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td>RTI-01</td><td>Generate rent installment schedules from active leases (monthly/quarterly/etc.).</td><td>Must</td><td><span class="tag t-ship">Shipped</span></td></tr>
+              <tr><td>RTI-02</td><td>Record full/partial payments, bulk mark-paid, and ledger-style reversals (never destructive delete).</td><td>Must</td><td><span class="tag t-ship">Shipped</span></td></tr>
+              <tr><td>RTI-03</td><td>Flag overdue installments on a schedule; surface collected / overdue / due-next.</td><td>Must</td><td><span class="tag t-ship">Shipped</span></td></tr>
+              <tr><td>RTI-04</td><td>Generate or link ZATCA tax invoices/receipts by charge classification + buyer data; hold when buyer data missing.</td><td>Must</td><td><span class="tag t-ship">Shipped</span></td></tr>
+              <tr><td>RTI-05</td><td>Tenant ZATCA config (EGS, tax mapping) under settings; active config locked, reset via support flow.</td><td>Must</td><td><span class="tag t-ship">Shipped</span></td></tr>
+              <tr><td>RTI-06</td><td>Production ZATCA clearance against live Fatoora (production CSID + advisor sign-off + deployed scheduler).</td><td>Must</td><td><span class="tag t-gate">Gated</span></td></tr>
+              <tr><td>RTI-07</td><td>Strict PDF/A-3b legal-copy conformance certification.</td><td>Should</td><td><span class="tag t-plan">Planned</span></td></tr>
+            </tbody>
+          </table></div>
+          <p class="body" style="margin-top:10px;font-size:13px"><b style="color:var(--navy)">Acceptance:</b> a recorded payment produces the correct collected/overdue state and the right ZATCA document or hold; sandbox issuance clears; tax classification remains advisor-reviewed.</p>
+
+          <h3 style="font-size:18px;margin:24px 0 10px">C · Maintenance operations</h3>
+          <div class="tw"><table>
+            <thead><tr><th>ID</th><th>Requirement</th><th>Pri</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td>MNT-01</td><td>Create tickets with category, priority, assignment, scheduling, and cost (estimated vs actual).</td><td>Must</td><td><span class="tag t-ship">Shipped</span></td></tr>
+              <tr><td>MNT-02</td><td>Track status lifecycle (open → assigned → in-progress → resolved → closed) with SLA-breach visibility.</td><td>Must</td><td><span class="tag t-ship">Shipped</span></td></tr>
+              <tr><td>MNT-03</td><td>Preventive-maintenance plans auto-generate recurring work orders by frequency.</td><td>Should</td><td><span class="tag t-ship">Shipped</span></td></tr>
+              <tr><td>MNT-04</td><td>Technician seat sees only assigned work — no financial or customer data.</td><td>Must</td><td><span class="tag t-ship">Shipped</span></td></tr>
+              <tr><td>MNT-05</td><td>Vendor dispatch + parts inventory.</td><td>Should</td><td><span class="tag t-plan">Planned</span></td></tr>
+            </tbody>
+          </table></div>
+
+          <h3 style="font-size:18px;margin:24px 0 10px">D · B2B marketplace &amp; conveyance</h3>
+          <div class="tw"><table>
+            <thead><tr><th>ID</th><th>Requirement</th><th>Pri</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td>MKT-01</td><td>Verified organizations publish units; listings pass a compliance/moderation gate before going live.</td><td>Must</td><td><span class="tag t-ship">Shipped</span></td></tr>
+              <tr><td>MKT-02</td><td>Buyer orgs browse/filter, inquire, and convert an inquiry into a reservation + preliminary contract/deal.</td><td>Must</td><td><span class="tag t-ship">Shipped</span></td></tr>
+              <tr><td>MKT-03</td><td>Deed proof stores sensitive data encrypted; file upload via authorized, signed-URL access only.</td><td>Must</td><td><span class="tag t-ship">Shipped</span></td></tr>
+              <tr><td>MKT-04</td><td>REGA/FAL authorization + platform verification represented in workflow (manual verification).</td><td>Must</td><td><span class="tag t-ship">Shipped</span></td></tr>
+              <tr><td>MKT-05</td><td>Atomic cross-org unit transfer behind settlement + legal gates, with kill switch.</td><td>Must</td><td><span class="tag t-gate">Gated</span></td></tr>
+              <tr><td>MKT-06</td><td>Unrestricted production launch (platform FAL/license, legal + PDPL sign-off, operating policy).</td><td>Must</td><td><span class="tag t-ext">External</span></td></tr>
+            </tbody>
+          </table></div>
+
+          <h3 style="font-size:18px;margin:24px 0 10px">E · Platform admin, security &amp; billing</h3>
+          <div class="tw"><table>
+            <thead><tr><th>ID</th><th>Requirement</th><th>Pri</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td>PSB-01</td><td>Platform console: ARR/MRR, ARR waterfall, AR aging, ZATCA clearance rate, trial-to-paid (system-only).</td><td>Must</td><td><span class="tag t-ship">Shipped</span></td></tr>
+              <tr><td>PSB-02</td><td>Subscription lifecycle (trial → active → past-due → paused → canceled) with automated trial expiry + dunning.</td><td>Must</td><td><span class="tag t-ship">Shipped</span></td></tr>
+              <tr><td>PSB-03</td><td>Plans, entitlements, coupons, and tokenized payment methods, all org-scoped.</td><td>Must</td><td><span class="tag t-ship">Shipped</span></td></tr>
+              <tr><td>PSB-04</td><td>PII encryption + blind-index, token revocation, sign-out-all-devices, append-only audit log.</td><td>Must</td><td><span class="tag t-ship">Shipped</span></td></tr>
+              <tr><td>PSB-05</td><td>Data-retention sweeps (PDPL), support tickets, and permission requests.</td><td>Must</td><td><span class="tag t-ship">Shipped</span></td></tr>
+            </tbody>
+          </table></div>
+        </section>
+
+        <!-- 11 COMPLIANCE -->
+        <section id="compliance">
+          <p class="kick">11 · Saudi compliance posture</p>
+          <div class="head"><h2>Compliance built into the data model, not promised on a slide.</h2></div>
+          <div class="tw"><table>
+            <thead><tr><th>System</th><th>What's in the product</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td>ZATCA (Phase-2)</td><td>In-house engine: UBL, signing, hash chaining, QR; SaaS + tenant issuance; clearance/report cycle</td><td><span class="tag t-ship">Shipped</span> <span class="tag t-gate">prod gated</span></td></tr>
+              <tr><td>Absher (identity/KYC)</td><td>Customer model: nationalId, personType, gender, DOB — encrypted at rest</td><td><span class="tag t-ship">Shipped (schema)</span></td></tr>
+              <tr><td>MOC (commercial registry)</td><td>Organization model: CR, entityType, legalForm, registration status</td><td><span class="tag t-ship">Shipped (schema)</span></td></tr>
+              <tr><td>REGA</td><td>Listing compliance gate + per-org FAL/REGA authorization before conveyance</td><td><span class="tag t-ship">Shipped</span> <span class="tag t-gate">conveyance gated</span></td></tr>
+              <tr><td>Ejar</td><td>Lease carries an Ejar contract id; auto-registration not yet wired</td><td><span class="tag t-plan">Planned</span></td></tr>
+              <tr><td>NDMO / SDAIA &amp; PDPL</td><td>Configurable retention sweeps, append-only audit log, IP-minimized consent log</td><td><span class="tag t-ship">Shipped</span></td></tr>
+            </tbody>
+          </table></div>
+          <div class="callout warn" style="margin-top:18px"><h4>Honest read on ZATCA &amp; conveyance</h4><p>The ZATCA engine is code-complete and defaults to <span class="mono">SANDBOX</span>; production is one explicit switch but blocks on external prerequisites — production CSID, tax-advisor sign-off, and a deployed scheduler. Marketplace deed conveyance is fully built but ships behind an off-by-default flag pending REGA/legal authorization. These are governance gates, not missing features.</p></div>
+        </section>
+
+        <!-- 12 SECURITY -->
+        <section id="security" class="dark">
+          <p class="kick">12 · Security &amp; data protection</p>
+          <div class="head"><h2>Encrypted, isolated, audited — the trust layer for an enterprise sale.</h2></div>
+          <div class="grid g2">
+            <div class="card"><h4>Encryption &amp; search</h4><p>Customer PII (phone, email, national ID, DOB, address, document info) is encrypted with AES-256-GCM at rest. HMAC blind-index hashes allow exact search without decrypting.</p></div>
+            <div class="card"><h4>Tenant isolation</h4><p>Every record is scoped by <span class="mono" style="color:var(--cyan)">organizationId</span>; Postgres RLS is enabled on all 60 tables to slam the anon/PostgREST door. One tenant cannot read another's data.</p></div>
+            <div class="card"><h4>Auditability (PDPL)</h4><p>An append-only audit log records create/update/delete/PII-read/export with before/after snapshots and IP — retained on a configurable schedule.</p></div>
+            <div class="card"><h4>Session &amp; access</h4><p>JWT with instant revocation (token-version bump = sign-out-everywhere), a 3-layer audience guard separating platform staff from tenant data, PII-read gated separately.</p></div>
+          </div>
+          <div class="callout" style="margin-top:18px;background:rgba(20,192,192,.10);border-color:rgba(20,192,192,.4)"><h4 style="color:#fff">Audited, not assumed</h4><p style="color:#cfe6e8">June 2026 (v5.6.1 → v5.13.0) closed <b style="color:#fff">19 security findings</b> across mass-assignment, authorization, supply-chain CVEs, document access, PII encryption, and token hashing — each shipped with regression tests.</p></div>
+        </section>
+
+        <!-- 13 MONETIZATION -->
+        <section id="monetization">
+          <p class="kick">13 · Monetization &amp; packaging</p>
+          <div class="head"><h2>The billing machine is built — the price tags are a business decision.</h2>
+            <p>Everything needed to charge is shipped. Prices are DB-configurable and left as founder input, not invented.</p></div>
+          <div class="grid g3">
+            <div class="card"><h3>Plans &amp; tiers <span class="tag t-ship"></span></h3><p>Three seeded tiers (Starter / Professional / Enterprise) with monthly + annual cycles, free trials, and per-plan entitlements (flags + limits).</p></div>
+            <div class="card"><h3>Subscription lifecycle <span class="tag t-ship"></span></h3><p>Trialing → active → past-due → paused → canceled, with automated trial expiry, dunning, plan changes, and price-lock at renewal.</p></div>
+            <div class="card"><h3>Revenue instrumentation <span class="tag t-ship"></span></h3><p>MRR per subscription with monthly snapshots and an ARR waterfall splitting new / expansion / contraction / churn.</p></div>
+            <div class="card"><h3>Invoicing <span class="tag t-ship"></span></h3><p>SaaS invoices with sequential numbering, 15% VAT, credit notes, and ZATCA fields.</p></div>
+            <div class="card"><h3>Coupons <span class="tag t-ship"></span></h3><p>Percentage or fixed-amount codes with redemption limits, validity windows, and plan/cycle scoping.</p></div>
+            <div class="card"><h3>Payment methods <span class="tag t-ship"></span></h3><p>Tokenized cards per org (mada / Visa / Mastercard / Apple Pay) across multiple Saudi gateways.</p></div>
+          </div>
+          <div class="callout" style="margin-top:18px"><h4>Pricing — founder input required <span class="tag t-hold" style="margin-inline-start:8px">placeholder</span></h4><p>Tiers exist; SAR price points, included limits, and trial length are a go-to-market decision to set with the founder — not a code change.</p></div>
+        </section>
+
+        <!-- 14 MATURITY -->
+        <section id="maturity">
+          <p class="kick">14 · Maturity</p>
+          <div class="head"><h2>A product that spent its last cycle hardening, not patching.</h2></div>
+          <div class="tw"><table>
+            <thead><tr><th>Version</th><th>Theme</th><th>Highlight</th></tr></thead>
+            <tbody>
+              <tr><td>v5.13.0</td><td>Optimistic rendering</td><td>Instant mark-paid + reservation-status feedback</td></tr>
+              <tr><td>v5.12.0</td><td>Crypto refactor + deed upload</td><td>Shared encryption package; server-authoritative deed upload (SEC-016)</td></tr>
+              <tr><td>v5.11.0</td><td>PII encryption + cleanup</td><td>DOB / address / document info encrypted; invitation tokens hashed</td></tr>
+              <tr><td>v5.7–5.10</td><td>Hardening waves A–C</td><td>Mass-assignment closed; JWT revocation; CVE patch; signed-URL document access; abuse tests</td></tr>
+              <tr><td>v5.1–5.6</td><td>ZATCA Phase-2 + a11y</td><td>In-house e-invoicing R1→R5; WCAG label sweep + enforcing lint rule</td></tr>
+              <tr><td>v5.0.0</td><td>Mimarek rebrand</td><td>Brand, palette, typography (teal/navy · Tajawal/Satoshi)</td></tr>
+            </tbody>
+          </table></div>
+          <div class="grid g3" style="margin-top:16px">
+            <div class="card tint"><h4>Quality gates</h4><p>Vitest unit + Playwright E2E with CI coverage gates, lint/type/format, and a production-audit gate blocking new critical CVEs.</p></div>
+            <div class="card tint"><h4>Stack</h4><p>Next.js 16, React 19, Tailwind v4, Prisma + Supabase PostgreSQL, NextAuth v5.</p></div>
+            <div class="card tint"><h4>Architecture</h4><p>Turborepo monorepo with shared <span class="mono">@repo/db · ui · crypto · zatca</span>; server-actions data layer; multi-tenant by design.</p></div>
+          </div>
+        </section>
+
+        <!-- 15 ROADMAP + SCORECARD -->
+        <section id="roadmap">
+          <p class="kick">15 · Roadmap &amp; scorecard</p>
+          <div class="head"><h2>What's next is mostly switches and go-lives, not green-field build.</h2></div>
+          <div class="grid g2">
+            <div class="card"><h3>Now <span class="tag t-gate"></span></h3><p>Deploy a hosted environment; flip ZATCA to production once CSID + advisor sign-off + scheduler are in place.</p></div>
+            <div class="card"><h3>Next <span class="tag t-gate"></span></h3><p>Activate marketplace conveyance after REGA/legal authorization; refresh the public landing page on verified proof.</p></div>
+            <div class="card"><h3>Later <span class="tag t-plan"></span></h3><p>Ejar registration on lease signing; vendor dispatch + parts inventory; metered entitlements; PDF/A-3b certification.</p></div>
+            <div class="card"><h3>Exploring <span class="tag t-plan"></span></h3><p>Rebuilt document/attachment product (after the v5.11 vault removal); deeper analytics.</p></div>
+          </div>
+          <h3 style="font-size:16px;margin:22px 0 10px;color:var(--teal)">Scorecard — metric definitions (no invented numbers)</h3>
+          <div class="tw"><table>
+            <thead><tr><th>Metric</th><th>Definition</th><th>Baseline</th></tr></thead>
+            <tbody>
+              <tr><td>Activation</td><td>Orgs completing onboarding + first unit/customer/contract</td><td><span class="tag t-hold">founder input</span></td></tr>
+              <tr><td>Collection rate</td><td>Collected ÷ billed in period</td><td><span class="tag t-hold">founder input</span></td></tr>
+              <tr><td>Lead → sign duration</td><td>Customer creation → signed contract</td><td><span class="tag t-hold">founder input</span></td></tr>
+              <tr><td>ZATCA clearance rate</td><td>Cleared ÷ submitted documents</td><td><span class="tag t-hold">founder input</span></td></tr>
+              <tr><td>Trial → paid</td><td>Trials converting to active subscriptions</td><td><span class="tag t-hold">founder input</span></td></tr>
+              <tr><td>Net new ARR</td><td>New + expansion − contraction − churn</td><td><span class="tag t-hold">founder input</span></td></tr>
+            </tbody>
+          </table></div>
+        </section>
+
+        <!-- 16 OPEN QUESTIONS -->
+        <section id="open">
+          <p class="kick">16 · Open questions — needs ownership</p>
+          <div class="head"><h2>Decisions that gate go-to-market.</h2></div>
+          <div class="tw"><table>
+            <thead><tr><th>Topic</th><th>Decision required</th><th>Owner</th></tr></thead>
+            <tbody>
+              <tr><td>ICP priority</td><td>Developer, property manager, brokerage, family office, or platform operator first</td><td>Founder</td></tr>
+              <tr><td>Packaging</td><td>Which modules belong in Starter / Professional / Enterprise + add-ons</td><td>Founder / Product</td></tr>
+              <tr><td>Pricing</td><td>SAR pricing, annual discount, marketplace fee, ZATCA add-on policy</td><td>Founder</td></tr>
+              <tr><td>Compliance posture</td><td>Risk tolerance + sign-off owner for ZATCA, REGA/FAL, PDPL, Ejar</td><td>Founder / Legal</td></tr>
+              <tr><td>Marketplace launch</td><td>Conveyance: internal pilot, limited beta, or production</td><td>Founder / Legal</td></tr>
+              <tr><td>Deployment</td><td>Hosting, production DB region, scheduler, observability</td><td>Eng</td></tr>
+              <tr><td>Customer references</td><td>Approved logos, quotes, portfolio sizes for collateral</td><td>Founder</td></tr>
+            </tbody>
+          </table></div>
+        </section>
+
+        <!-- 17 DOD -->
+        <section id="dod">
+          <p class="kick">17 · Definition of done</p>
+          <div class="head"><h2>The bar any PRD-derived work must clear before it ships.</h2></div>
+          <div class="grid g2">
+            <div class="card"><h4>Product &amp; UX</h4><ul class="clean"><li>Every capability reachable through a visible UI path (no hidden URLs).</li><li>Works in Arabic (RTL) and English (LTR), light and dark.</li><li>Empty / loading / error states handled; friendly, bilingual error copy.</li></ul></div>
+            <div class="card"><h4>Engineering &amp; security</h4><ul class="clean"><li>Org-scoping + route/action permission on every surface.</li><li>PII through the canonical encrypted path; audit events on sensitive actions.</li><li>Build/lint/type green; unit + E2E coverage; production-audit gate clean.</li></ul></div>
+          </div>
+        </section>
+
+        <!-- 18 APPENDIX -->
+        <section id="appendix">
+          <p class="kick">18 · Appendix</p>
+          <div class="head"><h2>Evidence discipline &amp; proof index.</h2>
+            <p>Capabilities were verified against source. Demo figures are illustrative; traction and pricing are explicit placeholders. No metric here is invented.</p></div>
+          <div class="grid g3">
+            <figure><div class="shot"><div class="bar"><i></i><i></i><i></i><span class="u">العربية · /dashboard</span></div><img src="../apps/web/public/assets/screenshots/dossier/dashboard-ar-light.png" alt="Arabic dashboard"/></div><figcaption><b>Arabic (RTL)</b> — full right-to-left layout.</figcaption></figure>
+            <figure><div class="shot"><div class="bar"><i></i><i></i><i></i><span class="u">العربية · /dashboard/crm</span></div><img src="../apps/web/public/assets/screenshots/dossier/crm-ar-light.png" alt="Arabic CRM"/></div><figcaption><b>Arabic CRM</b> — pipeline mirrored for RTL.</figcaption></figure>
+            <figure><div class="shot"><div class="bar"><i></i><i></i><i></i><span class="u">dark · /dashboard</span></div><img src="../apps/web/public/assets/screenshots/dossier/dashboard-en-dark.png" alt="Dark dashboard"/></div><figcaption><b>Dark mode</b> — designed, not inverted.</figcaption></figure>
+          </div>
+          <hr class="div"/>
+          <h4 style="margin-bottom:10px">Source proof index</h4>
+          <div class="tw"><table>
+            <thead><tr><th>Claim</th><th>Verified in</th></tr></thead>
+            <tbody>
+              <tr><td>9 roles · ~60 permissions · platform/tenant split</td><td><code>apps/web/lib/permissions.ts</code></td></tr>
+              <tr><td>Route → permission + audience</td><td><code>apps/web/lib/route-guards.ts</code></td></tr>
+              <tr><td>AES-256-GCM PII encryption + blind index</td><td><code>packages/crypto/src/encryption.ts</code></td></tr>
+              <tr><td>RLS on all 60 tables</td><td><code>packages/db/sql/2026-06-enable-rls.sql</code></td></tr>
+              <tr><td>ZATCA engine + sandbox default</td><td><code>packages/zatca/</code> · <code>lib/zatca-env.ts</code></td></tr>
+              <tr><td>Data model &amp; multi-tenancy</td><td><code>packages/db/prisma/schema.prisma</code></td></tr>
+              <tr><td>Brand spec (palette, type, logo)</td><td><code>NewIdentity/Mimarek visual identity guidelines.pdf</code></td></tr>
+            </tbody>
+          </table></div>
+        </section>
+
+        <footer class="doc">Mimarek — Product Requirements Dossier · v5.13.0 · prepared 28 June 2026 · confidential. Screenshots from a local production build on illustrative seed data. Brand per the Mimarek Visual Identity Guidelines.</footer>
+      </main>
+    </div>
+  </div>
+  <a class="toplink" href="#top" aria-label="Back to top">↑</a>
+</body>
+</html>
