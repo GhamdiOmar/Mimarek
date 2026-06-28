@@ -7,7 +7,7 @@ import { logAuditEvent, logAuditEventAwait } from "../../lib/audit";
 import { ROUTES } from "../../lib/routes";
 import { serialize } from "../../lib/serialize";
 import { createSubscription, transitionSubscription } from "../../lib/payment/subscription-machine";
-import { invalidateEntitlements } from "../../lib/entitlements";
+import { invalidateEntitlements, checkEntitlement, FEATURE_KEYS } from "../../lib/entitlements";
 import { getNextSequenceValue, GLOBAL_SEQUENCE_SCOPE } from "../../lib/sequence";
 import { getPublicPlans } from "../../lib/server/plans";
 import { clearSubscriptionInvoiceInternal } from "../../lib/zatca-clearance";
@@ -63,6 +63,45 @@ export async function getCurrentSubscription() {
   });
 
   return subscription ? serialize(subscription) : null;
+}
+
+/**
+ * Usage-vs-limit snapshot for the org's absolute-count LIMIT entitlements —
+ * feeds the billing-page `<UsageMeter>`s (pricing P2). `limit = null` means
+ * unlimited. Resolved through the entitlement engine so plan + add-on (P4)
+ * limits are reflected automatically.
+ */
+export async function getOrgUsageSnapshot(): Promise<
+  { key: string; labelAr: string; labelEn: string; current: number; limit: number | null }[]
+> {
+  const session = await requirePermission("billing:read");
+  const orgId = session.organizationId;
+  const [users, units, customers, listings] = await Promise.all([
+    db.user.count({ where: { organizationId: orgId } }),
+    db.unit.count({ where: { organizationId: orgId } }),
+    db.customer.count({ where: { organizationId: orgId } }),
+    db.marketplaceListing.count({
+      where: { sellerOrgId: orgId, status: { in: ["PENDING_REVIEW", "PUBLISHED"] } },
+    }),
+  ]);
+  const metrics = [
+    { key: FEATURE_KEYS.USERS_MAX, labelAr: "المستخدمون", labelEn: "Users", current: users },
+    { key: FEATURE_KEYS.UNITS_MAX, labelAr: "الوحدات", labelEn: "Units", current: units },
+    { key: FEATURE_KEYS.CUSTOMERS_MAX, labelAr: "العملاء", labelEn: "Customers", current: customers },
+    {
+      key: FEATURE_KEYS.MARKETPLACE_LISTINGS_MAX,
+      labelAr: "إعلانات السوق",
+      labelEn: "Marketplace listings",
+      current: listings,
+    },
+  ];
+  return Promise.all(
+    metrics.map(async (m) => {
+      const ent = await checkEntitlement(orgId, m.key, m.current);
+      const limit = ent.limit === undefined || ent.limit === Infinity ? null : ent.limit;
+      return { key: m.key, labelAr: m.labelAr, labelEn: m.labelEn, current: m.current, limit };
+    }),
+  );
 }
 
 /**

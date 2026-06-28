@@ -3,6 +3,7 @@
 import * as React from "react";
 import {
   CreditCard,
+  Gauge,
   Receipt,
   AlertTriangle,
   ChevronRight,
@@ -33,7 +34,9 @@ import {
   getCurrentSubscription,
   getInvoices,
   getPaymentMethods,
+  getOrgUsageSnapshot,
 } from "../../actions/billing";
+import { UsageMeter } from "../../../components/entitlements";
 
 // ─── Serialized DTOs (Decimal → string|number, Date → string over the RSC boundary) ──
 
@@ -63,12 +66,15 @@ type PaymentMethodDTO = {
   isDefault: boolean;
 };
 
+type UsageMetric = { key: string; labelAr: string; labelEn: string; current: number; limit: number | null };
+
 export default function BillingDashboardPage() {
   const { can } = usePermissions();
   const { lang } = useLanguage();
   const [subscription, setSubscription] = React.useState<SubscriptionDTO | null>(null);
   const [invoices, setInvoices] = React.useState<InvoiceDTO[]>([]);
   const [paymentMethods, setPaymentMethods] = React.useState<PaymentMethodDTO[]>([]);
+  const [usage, setUsage] = React.useState<UsageMetric[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [changingPlan] = React.useState(false);
@@ -77,14 +83,16 @@ export default function BillingDashboardPage() {
   React.useEffect(() => {
     async function load() {
       try {
-        const [sub, inv, pm] = await Promise.all([
+        const [sub, inv, pm, use] = await Promise.all([
           getCurrentSubscription(),
           getInvoices(1, 5),
           getPaymentMethods(),
+          getOrgUsageSnapshot(),
         ]);
         setSubscription(sub);
         setInvoices(inv.invoices);
         setPaymentMethods(pm);
+        setUsage(use);
       } catch {
         setError(lang === "ar" ? "فشل تحميل بيانات الفوترة" : "Failed to load billing data");
       } finally {
@@ -309,6 +317,26 @@ export default function BillingDashboardPage() {
             />
           )}
 
+          {/* Usage vs plan limits */}
+          {usage.length > 0 && (
+            <div>
+              <h2 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
+                <Gauge className="w-4 h-4 text-primary" aria-hidden="true" />
+                {lang === "ar" ? "الاستخدام مقابل خطتك" : "Usage vs. your plan"}
+              </h2>
+              <div className="space-y-3 rounded-xl border border-border bg-card p-4">
+                {usage.map((u) => (
+                  <UsageMeter
+                    key={u.key}
+                    current={u.current}
+                    limit={u.limit}
+                    label={lang === "ar" ? u.labelAr : u.labelEn}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Recent invoices */}
           <div>
             <div className="flex items-center justify-between mb-2">
@@ -512,6 +540,32 @@ export default function BillingDashboardPage() {
               )}
             </CardHeader>
           </Card>
+
+          {/* Usage vs plan limits */}
+          {usage.length > 0 && (
+            <Card className="rounded-xl shadow-sm">
+              <CardHeader className="border-b">
+                <div className="flex items-center gap-2">
+                  <Gauge className="w-5 h-5 text-primary" />
+                  <CardTitle className="text-lg">
+                    {lang === "ar" ? "الاستخدام مقابل خطتك" : "Usage vs. your plan"}
+                  </CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                  {usage.map((u) => (
+                    <UsageMeter
+                      key={u.key}
+                      current={u.current}
+                      limit={u.limit}
+                      label={lang === "ar" ? u.labelAr : u.labelEn}
+                    />
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Payment Methods + Recent Invoices */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

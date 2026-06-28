@@ -341,7 +341,7 @@ async function main() {
     { featureKey: "reports.access",             type: "BOOLEAN", values: ["true", "true", "true"] },
     { featureKey: "finance.access",             type: "BOOLEAN", values: ["false", "true", "true"] },
     { featureKey: "cmms.access",                type: "BOOLEAN", values: ["false", "true", "true"] },
-    { featureKey: "marketplace.read.access",    type: "BOOLEAN", values: ["false", "true", "true"] },
+    { featureKey: "marketplace.read.access",    type: "BOOLEAN", values: ["true", "true", "true"] },
     { featureKey: "marketplace.publish.access", type: "BOOLEAN", values: ["false", "false", "true"] },
     { featureKey: "zatca.sandbox.access",       type: "BOOLEAN", values: ["false", "true", "true"] },
     { featureKey: "zatca.production.access",    type: "BOOLEAN", values: ["false", "false", "true"] },
