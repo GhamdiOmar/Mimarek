@@ -1,5 +1,34 @@
 # Changelog — Mimarek PropTech
 
+## [5.14.0] — 2026-06-28 — Plan entitlement enforcement across every module (Pricing P1)
+
+**Phase 1 of the pricing & packaging program** — closes the gap where only `users.max` and `units.max` were plan-enforced. Every module flag and absolute-count limit is now gated at the server-action layer, driven entirely from the database (no hardcoded access in app logic). `/mimaric-qa` GATE = GO (0 P0/P1). Server-only phase — locked/upgrade UI lands in P2.
+
+### What's new
+- **`FEATURE_KEYS` expanded 11 → 25** (`apps/web/lib/entitlements.ts`): new module flags (`crm.access`, `reservations.access`, `contracts.access`, `payments.access`, `finance.access`, `reports.access`, `marketplace.read.access`, `marketplace.publish.access`, `zatca.sandbox.access`, `zatca.production.access`, `custom.templates.access`) and absolute-count limits (`customers.max`, `marketplace.listings.max`, `storage.gb.max`). The entitlement engine (`checkEntitlement`/`resolveEntitlement`) is unchanged.
+- **Enforcement wired into 8 create-actions**, each layered behind the existing tenant `requirePermission(...)` guard (so system users never reach it), placed before any mutation / transaction / network call:
+  - `customers.ts` → `crm.access` + `customers.max`
+  - `reservations.ts` → `reservations.access`
+  - `contracts.ts` → `contracts.access`
+  - `payment-plans.ts` → `payments.access`
+  - `maintenance.ts` → `cmms.access`
+  - `marketplace.ts` (publish) → `marketplace.publish.access` + `marketplace.listings.max`
+  - `zatca/tenant-onboarding.ts` → env-conditional `zatca.sandbox.access` / `zatca.production.access`
+  - `contract-templates.ts` → `custom.templates.access`
+- **Seed is now matrix-driven** (`packages/db/prisma/seed.ts`): the three hand-maintained per-plan entitlement arrays collapse into one typed `ENTITLEMENT_MATRIX` (25 keys × [Starter, Professional, Enterprise]). This makes tier-drift a compile error and guarantees every plan covers every key (a key absent from a plan silently denies it). Tiering follows the product spec — Starter gets the core CRM→reservations→contracts→payments→reports loop; Professional adds finance/CMMS/marketplace-browse/ZATCA-sandbox/audit/export; Enterprise unlocks publishing, production ZATCA, API, custom templates/branding. All 9 pre-existing key values are preserved exactly.
+- **Usage-limit notifications** (`lib/billing-notifications.ts`): `notifyUsageLimit80/100` now name customers / marketplace-listings / storage in addition to users / units.
+
+### Notes
+- **Seeded ahead of enforcement:** `finance.access`, `reports.access`, `marketplace.read.access` (PAGE-level module gates) plus `reports.export`, `storage.gb.max`, `api.access` are seeded/tiered now but enforced later — page-level locks arrive in P2; export is client-side, there is no file-size column, and there is no API-key action yet.
+- **`marketplace.publish.access` is Enterprise-only by tiering** — the Professional/Starter publish path is unlocked later via the Marketplace add-on (P4). The `marketplace.listings.max` cap is enforced now for forward-compat (Enterprise = unlimited). The seed grants the primary demo/seller org (Professional) this flag via an `EntitlementOverride` (override > plan) so the cross-org marketplace E2E + demos can still publish without changing the tier.
+
+### Verify
+- `npm run build` green · `check-types` green · `lint` 0 errors · **305 web unit tests** (300 existing + 5 new `entitlement-gating` cases: BOOLEAN deny/allow, no-subscription deny, LIMIT-cap deny, CRM-flag deny).
+- DB re-seeded so live plans carry the expanded entitlement matrix.
+- No schema change → no `db push` / RLS step. Server-only change → no §3.9 preview walk (no UI surface touched).
+
+**Full diff:** https://github.com/GhamdiOmar/Mimarek/compare/v5.13.0...v5.14.0
+
 ## [5.13.0] — 2026-06-27 — Optimistic UI for payments + reservations
 
 **Ships the parked `feat/optimistic-rendering` branch** (rebased onto current main, conflicts hand-resolved to preserve the v5.x ZATCA-invoice feedback). `/mimaric-qa` GATE = GO. Implements the AGENTS.md §6.7 "optimistic UI update, revert-with-toast on failure" pattern.

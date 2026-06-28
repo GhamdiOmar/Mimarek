@@ -19,6 +19,7 @@ import { normalizeSaudiPhoneE164 } from "../../lib/phone";
 import { checkRateLimit } from "../../lib/rate-limit";
 import { isSystemRole } from "../../lib/permissions";
 import { isConveyanceEnabled } from "../../lib/marketplace/conveyance";
+import { checkLimit, requireEntitlement, FEATURE_KEYS } from "../../lib/entitlements";
 import { syncDealStageForUnit } from "../../lib/server/pipeline-sync";
 import {
   isValidListingTransition,
@@ -216,6 +217,22 @@ export async function publishMarketplaceListing(
     throw new Error(
       "Invalid National Address short code. Format: 4 letters + 4 digits (e.g. RRRA2929).",
     );
+  }
+
+  // Entitlement gates: marketplace publishing access + live-listing cap.
+  // (publish access is plan-gated; the cap matters once the Marketplace add-on
+  // grants publish to lower tiers — Enterprise's cap is "unlimited".)
+  await requireEntitlement(session.organizationId, FEATURE_KEYS.MARKETPLACE_PUBLISH_ACCESS);
+  const liveListingCount = await db.marketplaceListing.count({
+    where: { sellerOrgId: session.organizationId, status: { in: ["PENDING_REVIEW", "PUBLISHED"] } },
+  });
+  const listingLimit = await checkLimit(
+    session.organizationId,
+    FEATURE_KEYS.MARKETPLACE_LISTINGS_MAX,
+    liveListingCount,
+  );
+  if (!listingLimit.granted) {
+    throw new Error(listingLimit.reason ?? "Marketplace listing limit reached. Please upgrade your plan.");
   }
 
   const updated = await db.$transaction(async (tx) => {

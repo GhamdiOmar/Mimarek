@@ -12,6 +12,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requirePermission } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
+import { requireEntitlement, FEATURE_KEYS } from "../../lib/entitlements";
 import { ROUTES, routeToMaintenanceRequest } from "../../lib/routes";
 import { serialize } from "../../lib/serialize";
 
@@ -102,6 +103,9 @@ export async function createMaintenanceRequest(data: {
       "This unit was transferred to another organization via the marketplace and can no longer receive maintenance requests from your organization.",
     );
   }
+
+  // Entitlement gate: Maintenance (CMMS) module access.
+  await requireEntitlement(session.organizationId, FEATURE_KEYS.CMMS_ACCESS);
 
   if (parsed.data.assignedToId) {
     const assignee = await db.user.findFirst({

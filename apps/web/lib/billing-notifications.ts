@@ -105,6 +105,9 @@ export async function notifyUsageLimit80(orgId: string, featureKey: string, curr
   const featureNames: Record<string, { ar: string; en: string }> = {
     "users.max": { ar: "المستخدمين", en: "Users" },
     "units.max": { ar: "الوحدات", en: "Units" },
+    "customers.max": { ar: "العملاء", en: "Customers" },
+    "marketplace.listings.max": { ar: "إعلانات السوق", en: "Marketplace listings" },
+    "storage.gb.max": { ar: "مساحة التخزين", en: "Storage" },
   };
   const name = featureNames[featureKey] ?? { ar: featureKey, en: featureKey };
 
@@ -123,6 +126,9 @@ export async function notifyUsageLimit100(orgId: string, featureKey: string, lim
   const featureNames: Record<string, { ar: string; en: string }> = {
     "users.max": { ar: "المستخدمين", en: "Users" },
     "units.max": { ar: "الوحدات", en: "Units" },
+    "customers.max": { ar: "العملاء", en: "Customers" },
+    "marketplace.listings.max": { ar: "إعلانات السوق", en: "Marketplace listings" },
+    "storage.gb.max": { ar: "مساحة التخزين", en: "Storage" },
   };
   const name = featureNames[featureKey] ?? { ar: featureKey, en: featureKey };
 

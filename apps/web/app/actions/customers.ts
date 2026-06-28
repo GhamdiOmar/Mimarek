@@ -6,6 +6,7 @@ import { z } from "zod";
 import { requirePermission } from "../../lib/auth-helpers";
 import { hasPermission } from "../../lib/permissions";
 import { logAuditEvent } from "../../lib/audit";
+import { checkLimit, requireEntitlement, FEATURE_KEYS } from "../../lib/entitlements";
 import {
   encryptCustomerData,
   decryptCustomerData,
@@ -193,6 +194,16 @@ export async function createCustomer(data: {
       select: { id: true },
     });
     if (!agent) throw new Error("The selected agent is not part of your organization.");
+  }
+
+  // Entitlement gates: CRM module access + customer-count limit.
+  await requireEntitlement(session.organizationId, FEATURE_KEYS.CRM_ACCESS);
+  const customerCount = await db.customer.count({
+    where: { organizationId: session.organizationId },
+  });
+  const customerLimit = await checkLimit(session.organizationId, FEATURE_KEYS.CUSTOMERS_MAX, customerCount);
+  if (!customerLimit.granted) {
+    throw new Error(customerLimit.reason ?? "Customer limit reached. Please upgrade your plan.");
   }
 
   // Encrypt PII fields before saving (per-tenant blind-index hashes, keyed by org).

@@ -4,6 +4,7 @@ import { db, Prisma, ContractType } from "@repo/db";
 import { z } from "zod";
 import { requirePermission } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
+import { requireEntitlement, FEATURE_KEYS } from "../../lib/entitlements";
 import { serialize } from "../../lib/serialize";
 
 // Mass-assignment allowlist (same class as SEC-001/005). Ownership is already
@@ -24,6 +25,9 @@ export async function createContractTemplate(data: {
   content: string;
 }) {
   const session = await requirePermission("contracts:write");
+
+  // Entitlement gate: Custom contract templates (Enterprise tier).
+  await requireEntitlement(session.organizationId, FEATURE_KEYS.CUSTOM_TEMPLATES_ACCESS);
 
   const template = await db.contractTemplate.create({
     data: {
