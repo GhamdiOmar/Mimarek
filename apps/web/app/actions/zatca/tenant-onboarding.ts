@@ -9,6 +9,7 @@ import { ROUTES } from "../../../lib/routes";
 import { generateCsr, createZatcaClient, ZatcaError } from "@repo/zatca";
 import { encryptZatca, encryptZatcaOptional } from "../../../lib/zatca-crypto";
 import { EGS_PUBLIC_SELECT, getTenantEgs } from "../../../lib/zatca-server";
+import { requireEntitlement, FEATURE_KEYS } from "../../../lib/entitlements";
 import {
   resolveZatcaEnvironment,
   resolveZatcaCsrEnvironment,
@@ -82,6 +83,15 @@ export async function onboardTenantEgs(rawInput: TenantOnboardInput) {
   // The target environment for this onboarding (fail-safe SANDBOX, R5) — written to the EGS row
   // and used by every paired lookup so reads can't miss writes.
   const env = resolveZatcaEnvironment();
+
+  // Entitlement gate: ZATCA access is plan-tiered. Onboarding into a non-sandbox
+  // (PRODUCTION/SIMULATION) target requires production access; SANDBOX requires
+  // sandbox access. The entitlement gates *whether the tenant may onboard*, not
+  // which environment the platform targets (that stays env-driven, §F note).
+  await requireEntitlement(
+    organizationId,
+    env === "SANDBOX" ? FEATURE_KEYS.ZATCA_SANDBOX_ACCESS : FEATURE_KEYS.ZATCA_PRODUCTION_ACCESS,
+  );
 
   // Per-org single-ACTIVE-EGS guard (DB-backed by zatca_egs_one_active_per_org_env).
   // Reuse a DRAFT/RESET row; refuse to clobber an ACTIVE one (D30 — locked).

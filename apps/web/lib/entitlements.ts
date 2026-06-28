@@ -13,21 +13,37 @@ export type { EntitlementResult, OrgEntitlementData } from "./entitlements/evalu
  * Matches PlanEntitlement.featureKey values in the database.
  */
 export const FEATURE_KEYS = {
-  // Numeric limits
+  // ─── Numeric limits (absolute counts) ───
   USERS_MAX: "users.max",
   UNITS_MAX: "units.max",
+  CUSTOMERS_MAX: "customers.max",
+  MARKETPLACE_LISTINGS_MAX: "marketplace.listings.max",
+  STORAGE_GB_MAX: "storage.gb.max",
 
-  // Boolean features
+  // ─── Module access flags ───
+  CRM_ACCESS: "crm.access",
+  RESERVATIONS_ACCESS: "reservations.access",
+  CONTRACTS_ACCESS: "contracts.access",
+  PAYMENTS_ACCESS: "payments.access",
+  FINANCE_ACCESS: "finance.access",
   CMMS_ACCESS: "cmms.access",
   PLANNING_ACCESS: "planning.access",
+  GIS_ACCESS: "gis.access",
+  REPORTS_ACCESS: "reports.access",
+  AUDIT_ACCESS: "audit.access",
+  MARKETPLACE_READ_ACCESS: "marketplace.read.access",
+  MARKETPLACE_PUBLISH_ACCESS: "marketplace.publish.access",
+
+  // ─── Capability flags ───
   REPORTS_EXPORT: "reports.export",
   PII_ENCRYPTION: "pii.encryption",
-  GIS_ACCESS: "gis.access",
-  AUDIT_ACCESS: "audit.access",
   API_ACCESS: "api.access",
   CUSTOM_BRANDING: "custom.branding",
+  CUSTOM_TEMPLATES_ACCESS: "custom.templates.access",
+  ZATCA_SANDBOX_ACCESS: "zatca.sandbox.access",
+  ZATCA_PRODUCTION_ACCESS: "zatca.production.access",
 
-  // Tier-based
+  // ─── Tier-based ───
   SLA_PRIORITY: "sla.priority",
 } as const;
 

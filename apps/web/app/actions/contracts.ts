@@ -4,6 +4,7 @@ import { db, Prisma, ContractStatus, ContractType, RecurrenceType } from "@repo/
 import { revalidatePath } from "next/cache";
 import { requirePermission } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
+import { requireEntitlement, FEATURE_KEYS } from "../../lib/entitlements";
 import { ROUTES, routeToContract } from "../../lib/routes";
 import { serialize } from "../../lib/serialize";
 import { syncDealStageForUnit } from "../../lib/server/pipeline-sync";
@@ -92,6 +93,9 @@ export async function createContract(data: {
   if (!unit) {
     throw new Error("Unit not found or you don't have access. Please verify the unit exists in your organization.");
   }
+
+  // Entitlement gate: Contracts module access.
+  await requireEntitlement(session.organizationId, FEATURE_KEYS.CONTRACTS_ACCESS);
 
   // Ejar validation for LEASE contracts
   if (data.type === "LEASE") {

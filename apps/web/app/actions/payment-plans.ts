@@ -4,6 +4,7 @@ import { db, Prisma, type InstallmentStatus } from "@repo/db";
 import { z } from "zod";
 import { requirePermission } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
+import { requireEntitlement, FEATURE_KEYS } from "../../lib/entitlements";
 import { revalidatePath } from "next/cache";
 import { routeToContract } from "../../lib/routes";
 import { serialize } from "../../lib/serialize";
@@ -24,6 +25,9 @@ export async function createPaymentPlan(
     where: { id: contractId, unit: { organizationId: session.organizationId } },
   });
   if (!contract) throw new Error("Contract not found or you don't have access. Please verify the contract exists.");
+
+  // Entitlement gate: Payments module access.
+  await requireEntitlement(session.organizationId, FEATURE_KEYS.PAYMENTS_ACCESS);
 
   // Validate sum
   const netAmount = Number(contract.netAmount ?? contract.amount);

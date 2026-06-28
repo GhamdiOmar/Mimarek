@@ -313,41 +313,55 @@ async function main() {
     return plan;
   }
 
-  const starterEntitlements = [
-    { featureKey: "users.max", type: "LIMIT", value: "5" },
-    { featureKey: "units.max", type: "LIMIT", value: "50" },
-    { featureKey: "cmms.access", type: "BOOLEAN", value: "false" },
-    { featureKey: "reports.export", type: "BOOLEAN", value: "false" },
-    { featureKey: "pii.encryption", type: "BOOLEAN", value: "false" },
-    { featureKey: "audit.access", type: "BOOLEAN", value: "false" },
-    { featureKey: "api.access", type: "BOOLEAN", value: "false" },
-    { featureKey: "custom.branding", type: "BOOLEAN", value: "false" },
-    { featureKey: "sla.priority", type: "LIMIT", value: "standard" },
+  // ── Entitlement matrix — single source of truth across all 3 plans ──────────
+  // resolveEntitlement() DENIES any featureKey absent from a plan (a missing
+  // BOOLEAN silently locks a feature; a missing LIMIT blocks even the first
+  // create). Driving all three plans from ONE matrix guarantees identical key
+  // coverage — never hand-maintain three drifting lists. Columns: [Starter,
+  // Professional, Enterprise]. Tiering follows the product spec: small operators
+  // get the core CRM→reservations→contracts→payments→reports loop; Professional
+  // adds finance/CMMS/marketplace-browse/ZATCA-sandbox/audit/export; Enterprise
+  // unlocks publishing, production ZATCA, API, custom templates/branding.
+  const ENTITLEMENT_MATRIX: {
+    featureKey: string;
+    type: "BOOLEAN" | "LIMIT";
+    values: [string, string, string];
+  }[] = [
+    // Absolute-count limits
+    { featureKey: "users.max",                  type: "LIMIT",   values: ["5", "25", "unlimited"] },
+    { featureKey: "units.max",                  type: "LIMIT",   values: ["50", "500", "unlimited"] },
+    { featureKey: "customers.max",              type: "LIMIT",   values: ["200", "2000", "unlimited"] },
+    { featureKey: "marketplace.listings.max",   type: "LIMIT",   values: ["0", "20", "unlimited"] },
+    { featureKey: "storage.gb.max",             type: "LIMIT",   values: ["5", "50", "unlimited"] },
+    // Module access flags
+    { featureKey: "crm.access",                 type: "BOOLEAN", values: ["true", "true", "true"] },
+    { featureKey: "reservations.access",        type: "BOOLEAN", values: ["true", "true", "true"] },
+    { featureKey: "contracts.access",           type: "BOOLEAN", values: ["true", "true", "true"] },
+    { featureKey: "payments.access",            type: "BOOLEAN", values: ["true", "true", "true"] },
+    { featureKey: "reports.access",             type: "BOOLEAN", values: ["true", "true", "true"] },
+    { featureKey: "finance.access",             type: "BOOLEAN", values: ["false", "true", "true"] },
+    { featureKey: "cmms.access",                type: "BOOLEAN", values: ["false", "true", "true"] },
+    { featureKey: "marketplace.read.access",    type: "BOOLEAN", values: ["false", "true", "true"] },
+    { featureKey: "marketplace.publish.access", type: "BOOLEAN", values: ["false", "false", "true"] },
+    { featureKey: "zatca.sandbox.access",       type: "BOOLEAN", values: ["false", "true", "true"] },
+    { featureKey: "zatca.production.access",    type: "BOOLEAN", values: ["false", "false", "true"] },
+    { featureKey: "audit.access",               type: "BOOLEAN", values: ["false", "true", "true"] },
+    { featureKey: "reports.export",             type: "BOOLEAN", values: ["false", "true", "true"] },
+    { featureKey: "pii.encryption",             type: "BOOLEAN", values: ["false", "true", "true"] },
+    { featureKey: "planning.access",            type: "BOOLEAN", values: ["false", "false", "true"] },
+    { featureKey: "gis.access",                 type: "BOOLEAN", values: ["false", "false", "true"] },
+    { featureKey: "api.access",                 type: "BOOLEAN", values: ["false", "false", "true"] },
+    { featureKey: "custom.branding",            type: "BOOLEAN", values: ["false", "false", "true"] },
+    { featureKey: "custom.templates.access",    type: "BOOLEAN", values: ["false", "false", "true"] },
+    // Tier
+    { featureKey: "sla.priority",               type: "LIMIT",   values: ["standard", "business", "premium"] },
   ];
+  const entitlementsForPlan = (col: 0 | 1 | 2) =>
+    ENTITLEMENT_MATRIX.map((e) => ({ featureKey: e.featureKey, type: e.type, value: e.values[col] }));
 
-  const professionalEntitlements = [
-    { featureKey: "users.max", type: "LIMIT", value: "25" },
-    { featureKey: "units.max", type: "LIMIT", value: "500" },
-    { featureKey: "cmms.access", type: "BOOLEAN", value: "true" },
-    { featureKey: "reports.export", type: "BOOLEAN", value: "true" },
-    { featureKey: "pii.encryption", type: "BOOLEAN", value: "true" },
-    { featureKey: "audit.access", type: "BOOLEAN", value: "true" },
-    { featureKey: "api.access", type: "BOOLEAN", value: "false" },
-    { featureKey: "custom.branding", type: "BOOLEAN", value: "false" },
-    { featureKey: "sla.priority", type: "LIMIT", value: "business" },
-  ];
-
-  const enterpriseEntitlements = [
-    { featureKey: "users.max", type: "LIMIT", value: "unlimited" },
-    { featureKey: "units.max", type: "LIMIT", value: "unlimited" },
-    { featureKey: "cmms.access", type: "BOOLEAN", value: "true" },
-    { featureKey: "reports.export", type: "BOOLEAN", value: "true" },
-    { featureKey: "pii.encryption", type: "BOOLEAN", value: "true" },
-    { featureKey: "audit.access", type: "BOOLEAN", value: "true" },
-    { featureKey: "api.access", type: "BOOLEAN", value: "true" },
-    { featureKey: "custom.branding", type: "BOOLEAN", value: "true" },
-    { featureKey: "sla.priority", type: "LIMIT", value: "premium" },
-  ];
+  const starterEntitlements = entitlementsForPlan(0);
+  const professionalEntitlements = entitlementsForPlan(1);
+  const enterpriseEntitlements = entitlementsForPlan(2);
 
   const starterPlan = await upsertPlanWithEntitlements("starter", {
     nameEn: "Starter", nameAr: "المبتدئ",

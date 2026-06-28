@@ -4,6 +4,7 @@ import { db } from "@repo/db";
 import { revalidatePath } from "next/cache";
 import { requirePermission } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
+import { requireEntitlement, FEATURE_KEYS } from "../../lib/entitlements";
 import { syncDealStageForUnit } from "../../lib/server/pipeline-sync";
 import { ROUTES } from "../../lib/routes";
 import { serialize } from "../../lib/serialize";
@@ -35,6 +36,9 @@ export async function createReservation(data: {
   if (existingReservation) {
     throw new Error("This customer already has an active reservation for this unit. Please cancel the existing reservation first or choose a different unit.");
   }
+
+  // Entitlement gate: Reservations module access.
+  await requireEntitlement(session.organizationId, FEATURE_KEYS.RESERVATIONS_ACCESS);
 
   // RED: Race condition guard — CAS (compare-and-swap) on unit status inside transaction.
   // A plain findFirst+update races; updateMany with a WHERE status="AVAILABLE" is atomic.
