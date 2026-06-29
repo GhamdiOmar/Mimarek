@@ -1,5 +1,20 @@
 # Changelog — Mimarek PropTech
 
+## [5.15.1] — 2026-06-30 — Design-system compliance for the upgrade/usage UI (Pricing P2 follow-up)
+
+A design-review pass on the P2 locked/upgrade UI against AGENTS.md §6. No behavior change — visual + copy consistency only.
+
+### Fixed
+- **`<UpgradeGate>` now renders via the `<EmptyState>` primitive** (§6.12) instead of a hand-rolled card — so the plan-lock and `<AccessDenied>` blocked-states read identically (shared `forbidden` icon tone, type scale, spacing) instead of diverging.
+- **Arabic copy** (§6.11.4 / §6.3.3): the named lock message is restructured so the feature name is the OBJECT of "لا تتضمن" (which agrees with خطتك) — fixing the gender mismatch the screenshots showed ("الصيانة غير متاح" → "خطتك الحالية لا تتضمن الصيانة. قم بترقية خطتك للوصول."). Removed tashkeel from UI labels per §6.3.3 ("تتضمّن"→"تتضمن", "متبقٍ"→"متبقي").
+- **`<UsageMeter>`** (§6.3.4): the "remaining" caption now isolates its number in `dir="ltr"` (like the value line already did), so Arabic captions render the count cleanly.
+
+### Verify
+- `npm run build` green · `check-types` green · `lint` 0 errors.
+- §3.9 walk (local `next start`): finance + maintenance locked states (now EmptyState-based) + billing usage meters, light/dark × LTR/RTL, **0 console errors**. Arabic copy confirmed grammatical + tashkeel-free in the running UI.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimarek/compare/v5.15.0...v5.15.1
+
 ## [5.15.0] — 2026-06-29 — Tenant locked/upgrade UI + usage meters (Pricing P2)
 
 **Phase 2 of the pricing & packaging program** — turns the P1 entitlement signals into rendered UI: plan-gated pages show a "locked — upgrade your plan" card, and the billing page shows usage-vs-limit meters. `/mimaric-qa` GATE = GO (0 P0/P1; 2 findings fixed below).

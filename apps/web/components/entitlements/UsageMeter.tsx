@@ -23,7 +23,7 @@ export function UsageMeter({
   label: string;
   className?: string;
 }) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const unlimited = limit === null || !Number.isFinite(limit);
   const pct = unlimited || (limit ?? 0) <= 0 ? 0 : Math.min(100, Math.round((current / (limit as number)) * 100));
   const remaining = unlimited ? Infinity : Math.max(0, (limit as number) - current);
@@ -58,10 +58,15 @@ export function UsageMeter({
               style={{ width: `${pct}%` }}
             />
           </div>
-          <p className="mt-1 text-xs text-muted-foreground tabular-nums">
-            {pct >= 100
-              ? t("تم بلوغ الحد الأقصى", "Limit reached")
-              : t(`متبقٍ ${remaining.toLocaleString("en-US")}`, `${remaining.toLocaleString("en-US")} remaining`)}
+          <p className="mt-1 text-xs text-muted-foreground">
+            {pct >= 100 ? (
+              t("تم بلوغ الحد الأقصى", "Limit reached")
+            ) : lang === "ar" ? (
+              // Number isolated LTR inside the RTL caption (§6.3.4).
+              <>متبقي <span dir="ltr" className="tabular-nums">{remaining.toLocaleString("en-US")}</span></>
+            ) : (
+              <><span dir="ltr" className="tabular-nums">{remaining.toLocaleString("en-US")}</span> remaining</>
+            )}
           </p>
         </>
       )}
