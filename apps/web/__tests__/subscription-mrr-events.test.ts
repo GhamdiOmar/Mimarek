@@ -3,7 +3,7 @@ import { boundaryMrrEvent, subscriptionMrr } from "../lib/payment/arr-events";
 
 // ARR-waterfall reconciliation: SubscriptionMrrSnapshot (and thus ARR) counts
 // status=ACTIVE only, so a status transition moves ARR ⇔ it crosses the ACTIVE
-// boundary. getArrWaterfall reconciles |starting + ΣmrrDeltaSar − ending| ≤ 1,
+// boundary. getArrWaterfall reconciles |starting + Σ mrrDeltaSar − ending| ≤ 1,
 // summing NEW + EXPANSION + CONTRACTION + CHURN + REACTIVATION + REFUND_ADJ.
 // These lock the category/sign so every churn/reactivation path reconciles.
 
