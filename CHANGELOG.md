@@ -1,16 +1,19 @@
 # Changelog — Mimarek PropTech
 
-## [5.15.1] — 2026-06-30 — Design-system compliance for the upgrade/usage UI (Pricing P2 follow-up)
+## [5.15.1] — 2026-06-30 — Design + error-message §6.11.4 compliance (Pricing P2 follow-up)
 
-A design-review pass on the P2 locked/upgrade UI against AGENTS.md §6. No behavior change — visual + copy consistency only.
+A compliance pass on the P2 locked/upgrade surfaces against AGENTS.md §6 — visual/copy consistency plus bilingual entitlement-error messages.
 
-### Fixed
+### Fixed — design system (§6)
 - **`<UpgradeGate>` now renders via the `<EmptyState>` primitive** (§6.12) instead of a hand-rolled card — so the plan-lock and `<AccessDenied>` blocked-states read identically (shared `forbidden` icon tone, type scale, spacing) instead of diverging.
 - **Arabic copy** (§6.11.4 / §6.3.3): the named lock message is restructured so the feature name is the OBJECT of "لا تتضمن" (which agrees with خطتك) — fixing the gender mismatch the screenshots showed ("الصيانة غير متاح" → "خطتك الحالية لا تتضمن الصيانة. قم بترقية خطتك للوصول."). Removed tashkeel from UI labels per §6.3.3 ("تتضمّن"→"تتضمن", "متبقٍ"→"متبقي").
 - **`<UsageMeter>`** (§6.3.4): the "remaining" caption now isolates its number in `dir="ltr"` (like the value line already did), so Arabic captions render the count cleanly.
 
+### Fixed — error messages (§6.11.4)
+- **Entitlement denials now display as friendly bilingual copy.** The P1 entitlement gates throw short English strings ("Feature not included in current plan", "Limit reached (200/200)", "Customer limit reached…") as §3.8 defense-in-depth behind the UI's `<UpgradeGate>`. The central `lib/error-sanitizer.ts` (the §6.11.4 governance point) previously passed these through verbatim — so an Arabic tenant who hit the raw throw saw English. It now maps plan/limit denials to bilingual upgrade/limit copy (mirroring `<UpgradeGate>`), hides the raw `featureKey` fallback (no variable-name leak), and collapses the dev-ish misconfiguration strings ("Invalid limit configuration", "Unknown entitlement type: …") to the generic fallback. Covers all current + future entitlement throws (incl. P3 admin actions) with one change.
+
 ### Verify
-- `npm run build` green · `check-types` green · `lint` 0 errors.
+- `npm run build` green · `check-types` green · `lint` 0 errors · **new `error-sanitizer` test (12 cases)** locking the bilingual mappings + leak-collapse.
 - §3.9 walk (local `next start`): finance + maintenance locked states (now EmptyState-based) + billing usage meters, light/dark × LTR/RTL, **0 console errors**. Arabic copy confirmed grammatical + tashkeel-free in the running UI.
 
 **Full diff:** https://github.com/GhamdiOmar/Mimarek/compare/v5.15.0...v5.15.1
