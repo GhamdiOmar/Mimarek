@@ -1,5 +1,29 @@
 # Changelog — Mimarek PropTech
 
+## [5.16.0] — 2026-06-30 — Admin subscription management (Pricing P3)
+
+**Phase 3 of the pricing & packaging program** — platform staff can now operate any tenant org's subscription from `/dashboard/admin/subscriptions`: change plan, set a custom negotiated price, pause / resume / cancel, and read a live usage-vs-plan snapshot. No new model, no new route (extends the existing `billing:admin` SYSTEM-only surface). `/mimaric-qa` GATE = PASS (0 P0/P1; all flagged P2/P3 findings fixed below).
+
+### What's new
+- **Six admin server actions** (`apps/web/app/actions/admin-subscriptions.ts`, each `requirePermission("billing:admin")` → mutate → `logAuditEventAwait` w/ `targetOrgId` → `invalidateEntitlements(targetOrgId)` → `revalidatePath`): `adminChangeOrgPlan`, `adminSetCustomPrice`, `adminPauseSubscription`, `adminResumeSubscription`, `adminCancelSubscription`, and `adminGetSubscriptionContext` (plan list + usage snapshot in one RPC). `billing:admin` is SYSTEM-only, so no tenant role can reach these (verified against `permissions.ts`); cross-org access is by-design (the audit row is the actor's, the affected org rides in metadata).
+- **`SubscriptionDetailDrawer`** (`components/admin/`) — a per-row detail/management drawer (desktop dialog / mobile bottom sheet via `ResponsiveDialog`). §6.6-disciplined: exactly one primary (Apply change); custom-price + pause are secondary; Cancel is destructive + `ConfirmDialog`-guarded. Usage meters reuse `<UsageMeter>` (Users 4/5 → orange ≥80% warning). All copy bilingual, RTL-safe, errors via `sanitizeError`.
+- **`orgUsageSnapshot`** (`lib/server/org-usage.ts`) — the single usage-vs-limit resolver shared by the tenant billing page and the admin drawer (sequential counts + live uncached entitlement resolve; the marketplace-listing predicate matches the publish gate).
+- **`mrrForCycle`** (`lib/payment/mrr.ts`) + **`SUBSCRIPTION_STATUS_LABEL`/`_VARIANT`** (`lib/domain-labels.ts`, typed `satisfies Record<SubscriptionStatus, …>`).
+- **Tenant `changePlan` back-filled** with `mrrSar` + `eventCategory` (EXPANSION/CONTRACTION) + `mrrDeltaSar` so its MRR analytics match the admin path.
+
+### QA fixes folded in (from the `/mimaric-qa` gate)
+- **ARR waterfall now reconciles across status churn** (pre-existing gap, fixed here). `transitionSubscription` + `createSubscription` previously never emitted `NEW`/`CHURN`/`REACTIVATION` events, so `getArrWaterfall` drifted on *every* cancel, pause, trial-conversion and new sub. New pure, unit-tested `lib/payment/arr-events.ts` derives the event from the **ACTIVE-boundary crossing** (leaving ACTIVE → `CHURN` −mrr; entering ACTIVE → `NEW` from a trial / `REACTIVATION` otherwise, +mrr; non-active↔non-active → nothing, so no double-count). New subs book `NEW`; subs now persist `mrrSar` on create.
+- **Open drawer re-syncs after a mutation** — pausing/cancelling/changing a plan now updates the drawer's status badge, price and available actions live (Pause↔Resume swap) instead of showing stale state until close/reopen.
+- **Mobile parity** — the mobile subscription cards are now tappable and open the drawer as a bottom sheet (was a dead affordance: cards looked tappable but the detail view was desktop-only, §3.1).
+- **Billing cycle picker restricted to Monthly + Annual** — the only two cycles the `Plan` model prices (prevents a wrong `priceAtRenewal` on quarterly/semi-annual).
+- **Drawer accessibility** — added a `DialogDescription` (`aria-describedby`) so the dialog/bottom-sheet is fully labelled (§6.17).
+
+### Verify
+- `npm run build` green · `check-types` green · `lint` 0 errors · **331 web unit tests** (317 + **14 new `subscription-mrr-events` cases** locking the ARR category/sign + no-double-count).
+- **§3.9 walk** (local `next start`): admin subscriptions list + detail drawer, light/dark × LTR/RTL (4 shots) + mobile 375×812 bottom sheet (light-EN, dark-AR); **0 console errors**. **Functional:** pause → drawer flips to Paused (Resume appears) → resume → restored to Active, all live, 0 errors.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimarek/compare/v5.15.1...v5.16.0
+
 ## [5.15.1] — 2026-06-30 — Design + error-message §6.11.4 compliance (Pricing P2 follow-up)
 
 A compliance pass on the P2 locked/upgrade surfaces against AGENTS.md §6 — visual/copy consistency plus bilingual entitlement-error messages.

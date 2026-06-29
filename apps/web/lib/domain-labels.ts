@@ -22,6 +22,7 @@ import type {
   ContractStatus,
   ReservationStatus,
   PaymentStatus,
+  SubscriptionStatus,
   MaintenanceStatus,
   MaintenancePriority,
   MaintenanceCategory,
@@ -76,6 +77,29 @@ export const CONTRACT_STATUS_VARIANT = {
   CANCELLED: "error",
   VOID: "warning",
 } satisfies Record<ContractStatus, BadgeVariant> as Record<string, BadgeVariant>;
+
+// ─── SubscriptionStatus ───────────────────────────────────────────────────────
+
+export const SUBSCRIPTION_STATUS_LABEL = {
+  TRIALING: { ar: "تجريبي", en: "Trialing" },
+  ACTIVE: { ar: "نشط", en: "Active" },
+  PAST_DUE: { ar: "متأخر السداد", en: "Past due" },
+  UNPAID: { ar: "غير مدفوع", en: "Unpaid" },
+  PAUSED: { ar: "متوقف مؤقتًا", en: "Paused" },
+  CANCELED: { ar: "ملغى", en: "Canceled" },
+} satisfies Record<SubscriptionStatus, { ar: string; en: string }> as Record<
+  string,
+  { ar: string; en: string }
+>;
+
+export const SUBSCRIPTION_STATUS_VARIANT = {
+  TRIALING: "info",
+  ACTIVE: "success",
+  PAST_DUE: "warning",
+  UNPAID: "error",
+  PAUSED: "default",
+  CANCELED: "error",
+} satisfies Record<SubscriptionStatus, BadgeVariant> as Record<string, BadgeVariant>;
 
 // ─── ReservationStatus ────────────────────────────────────────────────────────
 
