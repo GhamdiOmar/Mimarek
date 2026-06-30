@@ -1,5 +1,7 @@
 import { getTenantPageAccess } from "../../../lib/auth-helpers";
 import { getUnitsWithBuildings } from "../../actions/units";
+import { orgUsageSnapshot } from "../../../lib/server/org-usage";
+import { FEATURE_KEYS } from "../../../lib/entitlements/keys";
 import { AccessDenied } from "../_components/AccessDenied";
 import UnitsView from "./UnitsView";
 
@@ -21,5 +23,12 @@ export default async function UnitsPage() {
 
   const initialUnits = await getUnitsWithBuildings();
 
-  return <UnitsView initialUnits={initialUnits} />;
+  // CX-002: pre-render the units.max usage so the user sees the cap (and the
+  // create affordance disables) BEFORE filling the form, instead of the server
+  // action throwing. `limit = null` means unlimited.
+  const usage = await orgUsageSnapshot(access.session.organizationId);
+  const u = usage.find((m) => m.key === FEATURE_KEYS.UNITS_MAX);
+  const unitsUsage = u ? { current: u.current, limit: u.limit } : null;
+
+  return <UnitsView initialUnits={initialUnits} unitsUsage={unitsUsage} />;
 }

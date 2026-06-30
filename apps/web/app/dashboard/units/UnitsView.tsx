@@ -2,6 +2,7 @@
 
 import { useLanguage } from "../../../components/LanguageProvider";
 import { sanitizeError } from "../../../lib/error-sanitizer";
+import { UsageMeter } from "../../../components/entitlements";
 import { useUnsavedChanges } from "../../../hooks/useUnsavedChanges";
 import * as React from "react";
 import { useForm, Controller } from "react-hook-form";
@@ -34,6 +35,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import {
   Button,
+  ActionLink,
   IconButton,
   Badge,
   Input,
@@ -133,8 +135,20 @@ type ActiveContract = {
 
 type BadgeVariant = React.ComponentProps<typeof Badge>["variant"];
 
-export default function UnitsView({ initialUnits }: { initialUnits: UnitRow[] }) {
+export default function UnitsView({
+  initialUnits,
+  unitsUsage = null,
+}: {
+  initialUnits: UnitRow[];
+  /** CX-002: org's units.max usage for the pre-render cap meter. null = no data; limit null = unlimited. */
+  unitsUsage?: { current: number; limit: number | null } | null;
+}) {
   const { t, lang } = useLanguage();
+  // CX-002: surface the units.max cap BEFORE the user fills the create form.
+  const unitsLimit = unitsUsage?.limit ?? null;
+  const unitsCount = unitsUsage?.current ?? 0;
+  const unitsAtCap = unitsLimit !== null && unitsCount >= unitsLimit;
+  const unitsNearCap = unitsLimit !== null && unitsLimit > 0 && unitsCount / unitsLimit >= 0.8;
   const [selectedUnits, setSelectedUnits] = React.useState<string[]>([]);
   const [units, setUnits] = React.useState<UnitRow[]>(initialUnits);
   const [updating, setUpdating] = React.useState(false);
@@ -511,6 +525,23 @@ export default function UnitsView({ initialUnits }: { initialUnits: UnitRow[] })
     (mobileMinPrice ? 1 : 0) +
     (mobileMaxPrice ? 1 : 0);
 
+  // CX-002: a pre-render units.max cap meter — shown at ≥80% usage; at 100% it
+  // also offers the upgrade path. The create affordances disable at the cap so
+  // the user never fills the form just to hit the server-side limit throw.
+  const unitsLimitBanner =
+    unitsLimit !== null && (unitsNearCap || unitsAtCap) ? (
+      <div className="flex flex-col gap-2 rounded-lg border border-border bg-card p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0 flex-1">
+          <UsageMeter current={unitsCount} limit={unitsLimit} label={t("الوحدات", "Units")} />
+        </div>
+        {unitsAtCap && (
+          <ActionLink href="/dashboard/billing">
+            {t("ترقية الخطة لإضافة المزيد", "Upgrade your plan to add more")}
+          </ActionLink>
+        )}
+      </div>
+    ) : null;
+
   return (
     <>
       {/* ═══ MOBILE LAYOUT (below md) ═══════════════════════════════════ */}
@@ -539,6 +570,9 @@ export default function UnitsView({ initialUnits }: { initialUnits: UnitRow[] })
             </span>
           }
         />
+
+        {/* CX-002: units.max cap meter (mobile) */}
+        {unitsLimitBanner && <div className="px-4 pt-3">{unitsLimitBanner}</div>}
 
         {/* Search input */}
         <div className="px-4 pt-3">
@@ -673,6 +707,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: UnitRow[] })
           icon={Plus}
           label={t("وحدة جديدة", "New unit")}
           onClick={() => setShowAddModal(true)}
+          disabled={unitsAtCap}
         />
 
         {/* Filter BottomSheet */}
@@ -824,7 +859,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: UnitRow[] })
         }
         actions={
           <>
-            <Button variant="primary" size="sm" style={{ display: "inline-flex" }} className="gap-2" onClick={() => setShowAddModal(true)}>
+            <Button variant="primary" size="sm" style={{ display: "inline-flex" }} className="gap-2" onClick={() => setShowAddModal(true)} disabled={unitsAtCap}>
               <Plus className="h-3.5 w-3.5" />
               {t("إضافة وحدة", "Add Unit")}
             </Button>
@@ -839,6 +874,9 @@ export default function UnitsView({ initialUnits }: { initialUnits: UnitRow[] })
           </>
         }
       />
+
+      {/* CX-002: units.max cap meter (desktop) */}
+      {unitsLimitBanner}
 
       {/* CX-010: bulk unit import wizard */}
       <ImportWizard
@@ -1148,7 +1186,8 @@ export default function UnitsView({ initialUnits }: { initialUnits: UnitRow[] })
                 );
               })}
 
-              {/* Add Unit Placeholder */}
+              {/* Add Unit Placeholder — hidden at the plan's units cap (CX-002) */}
+              {!unitsAtCap && (
               <div
                 role="button"
                 tabIndex={0}
@@ -1160,6 +1199,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: UnitRow[] })
                 <Plus className="h-8 w-8" aria-hidden="true" />
                 <span className="text-xs font-bold mt-2">{t("إضافة وحدة", "Add Unit")}</span>
               </div>
+              )}
             </div>
           ) : (
             /* Table View — powered by shared DataTable primitive */
