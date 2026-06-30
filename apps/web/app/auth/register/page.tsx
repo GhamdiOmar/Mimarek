@@ -156,7 +156,7 @@ export default function RegisterPage() {
 
             <div className="space-y-4">
               {error && (
-                <div className="p-3 bg-destructive/10 border border-destructive/20 text-destructive text-sm rounded-lg">{error}</div>
+                <div role="alert" className="p-3 bg-destructive/10 border border-destructive/20 text-destructive text-sm rounded-lg">{error}</div>
               )}
 
               <div className="space-y-1.5">

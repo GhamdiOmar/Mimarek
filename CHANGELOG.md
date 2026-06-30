@@ -1,5 +1,20 @@
 # Changelog — Mimarek PropTech
 
+## [5.24.0] — 2026-06-30 — Form errors announced to screen readers (CX-008)
+
+CX-audit fix. **40 form/action submit-error banners across 21 files** rendered their error in a destructive-tinted box but lacked `role="alert"` — so screen-reader users got **silence on every failed submit** (WCAG 2.2 § 4.1.3). Now every submit-error banner is a live region that announces when it appears.
+
+### What's new
+- Added `role="alert"` to the submit-error banner in 21 files — CRM (AddCustomerModal, CrmView, CustomerDrawer), Units, Billing (page + plans coupon), Onboarding, Settings (security + ZATCA), admin (marketplace + ZATCA), Marketplace (browse / [listingId] / my-listings / PublishListingDialog), Import Wizard, Customer-Activity timeline, and the auth forms (login / register / reset-password / invite). The `<Alert>` primitive already models `role="alert"`; this brings the hand-rolled banners to parity.
+- **Attribute-only — zero visual change.** Each banner is conditionally rendered (`{error && …}`), so its insertion triggers the assertive announcement. Field-level inline errors were left alone (the governed `<Field>` already handles those).
+
+### Verify
+- `npm run build` green · `check-types` green · `lint` 0 errors · cspell clean · `/mimaric-qa` gate = GO.
+- **Every one of the 40 additions reviewed (§3.8):** each lands on a genuine destructive error banner — no `<Field>`-wrapped field errors (would double-announce), no `<Alert>` primitives (redundant), no decorative/badge elements. The diff is purely `+role="alert"` (40 insertions / 40 deletions). Done as a 24-agent parallel sweep, then fully validated.
+- **E2E** (local prod build, light + dark): a failed login renders the error banner **with `role="alert"` carrying the message**. **4/4 checks, 0 console errors.**
+
+**Full diff:** https://github.com/GhamdiOmar/Mimarek/compare/v5.23.0...v5.24.0
+
 ## [5.23.0] — 2026-06-30 — Reservation flow: add a customer inline (CX-004)
 
 CX-audit fix. The reservation create modal **dead-ended** when the searched customer didn't exist — the customer autocomplete only rendered when there were matches, so a free-typed name failed the `customerId` requirement and the user had to cancel → go to CRM → add the customer → return → re-enter the unit + amount. A reservation almost always starts from a *new* lead, so this was friction on the primary revenue journey.

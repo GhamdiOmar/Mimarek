@@ -677,7 +677,7 @@ export default function TenantZatcaView({ summary, taxConfig, branches }: Tenant
               </div>
 
               {formError && (
-                <p className="rounded-md border border-destructive bg-destructive/10 px-3 py-2 text-xs text-destructive">{formError}</p>
+                <p role="alert" className="rounded-md border border-destructive bg-destructive/10 px-3 py-2 text-xs text-destructive">{formError}</p>
               )}
 
               <div className="flex justify-end">

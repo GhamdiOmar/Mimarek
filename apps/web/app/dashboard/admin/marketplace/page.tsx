@@ -1170,7 +1170,7 @@ export default function AdminMarketplacePage() {
         }
       >
         {approveError && (
-          <div className="flex items-center gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          <div className="flex items-center gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
             <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
             {approveError}
           </div>
@@ -1200,7 +1200,7 @@ export default function AdminMarketplacePage() {
       >
         <div className="space-y-4 py-2">
           {rejectError && (
-            <div className="flex items-center gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            <div className="flex items-center gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
               <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
               {rejectError}
             </div>
@@ -1243,7 +1243,7 @@ export default function AdminMarketplacePage() {
       >
         <div className="space-y-4 py-2">
           {suspendError && (
-            <div className="flex items-center gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            <div className="flex items-center gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
               <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
               {suspendError}
             </div>
@@ -1297,7 +1297,7 @@ export default function AdminMarketplacePage() {
       >
         <div className="space-y-4 py-2">
           {regaError && (
-            <div className="flex items-center gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            <div className="flex items-center gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
               <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
               {regaError}
             </div>
@@ -1355,7 +1355,7 @@ export default function AdminMarketplacePage() {
       >
         <div className="space-y-4 py-2">
           {proofError && (
-            <div className="flex items-center gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            <div className="flex items-center gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
               <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
               {proofError}
             </div>
@@ -1507,7 +1507,7 @@ export default function AdminMarketplacePage() {
       >
         <div className="space-y-4 py-2">
           {conveyanceError && (
-            <div className="flex items-center gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            <div className="flex items-center gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
               <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
               {conveyanceError}
             </div>

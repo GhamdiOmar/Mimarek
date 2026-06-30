@@ -257,7 +257,7 @@ export default function PlansPage() {
           </div>
         )}
         {couponError && (
-          <p className="text-xs text-destructive -mt-2">{couponError}</p>
+          <p role="alert" className="text-xs text-destructive -mt-2">{couponError}</p>
         )}
 
         {/* Plan tiers stacked */}
@@ -509,7 +509,7 @@ export default function PlansPage() {
           </div>
         )}
         {couponError && (
-          <p className="text-xs text-destructive mt-2" data-testid="coupon-error">
+          <p role="alert" className="text-xs text-destructive mt-2" data-testid="coupon-error">
             {couponError}
           </p>
         )}

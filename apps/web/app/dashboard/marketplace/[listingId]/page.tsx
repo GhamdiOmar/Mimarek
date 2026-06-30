@@ -405,7 +405,7 @@ export default function ListingDetailPage() {
         ) : (
           <div className="space-y-4 py-2">
             {submitError && (
-              <div className="flex items-center gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              <div role="alert" className="flex items-center gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
                 <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
                 {submitError}
               </div>

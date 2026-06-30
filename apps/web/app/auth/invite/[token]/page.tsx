@@ -255,7 +255,7 @@ export default function InviteAcceptPage() {
               {/* Form */}
               <div className="space-y-4">
                 {error && (
-                  <div className="p-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg">
+                  <div role="alert" className="p-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg">
                     {error}
                   </div>
                 )}
