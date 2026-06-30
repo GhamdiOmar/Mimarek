@@ -1,6 +1,7 @@
 "use client";
 
 import { useLanguage } from "../../../components/LanguageProvider";
+import { sanitizeError } from "../../../lib/error-sanitizer";
 import { useSearchParams } from "next/navigation";
 import * as React from "react";
 import {
@@ -558,10 +559,7 @@ export default function CrmView({
       setShowDeleteDialog(false);
       setDeleteTarget(null);
     } catch (err: unknown) {
-      setError(
-        (err instanceof Error ? err.message : "") ||
-          (t("فشل حذف العميل. يرجى المحاولة مجدداً.", "Failed to delete contact. Please try again."))
-      );
+      setError(sanitizeError(err, lang));
     } finally {
       setDeleting(false);
     }

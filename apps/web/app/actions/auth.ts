@@ -16,6 +16,7 @@ import {
   consumeEmailVerificationToken,
   verifyEmailUrl,
 } from "../../lib/email-verification";
+import { ensureDefaultSubscription } from "../../lib/payment/subscription-machine";
 
 const ALLOWED_LANDING_PAGES = [
   "/dashboard", "/dashboard/units",
@@ -274,6 +275,17 @@ export async function confirmEmailVerificationAction(token: string) {
         resourceId: result.userId,
         organizationId: null,
       });
+    }
+    // CX-001: the org was created without a subscription, so every entitlement is
+    // denied until one exists. Auto-provision the free default (Starter) plan at
+    // activation so the product works out of the box. Best-effort and idempotent —
+    // never block email verification on it (the completeOnboarding safety net retries).
+    if (result.organizationId) {
+      try {
+        await ensureDefaultSubscription(result.organizationId);
+      } catch (err) {
+        console.error("[auth] ensureDefaultSubscription on verify failed:", err);
+      }
     }
     return { success: true };
   }

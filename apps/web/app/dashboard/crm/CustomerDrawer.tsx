@@ -53,6 +53,7 @@ import {
 } from "../../actions/customer-interests";
 import { maskPhone, maskEmail } from "@/lib/pii-masking";
 import { toWhatsAppNumber } from "@/lib/phone";
+import { sanitizeError } from "@/lib/error-sanitizer";
 import { getStatusConfig, formatSAR } from "./crm-helpers";
 import {
   SOURCE_LABELS,
@@ -288,15 +289,7 @@ export function CustomerDrawer({
         setEditSuccess(false);
       }, 800);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "";
-      const isFriendly = msg.length < 200 && !msg.includes("Prisma") && !msg.includes("Invalid `") && !msg.includes("invocation");
-      setEditError(
-        isFriendly && msg
-          ? msg
-          : lang === "ar"
-            ? "تعذّر حفظ التغييرات. يرجى التحقق من البيانات والمحاولة مجدداً."
-            : "Failed to save changes. Please check the details and try again."
-      );
+      setEditError(sanitizeError(err, lang));
     } finally {
       setSavingEdit(false);
     }
@@ -346,15 +339,7 @@ export function CustomerDrawer({
       setShowLinkModal(false);
       showToast(lang === "ar" ? "تم ربط العقار بنجاح" : "Property linked successfully");
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "";
-      const isFriendly = msg.length < 200 && !msg.includes("Prisma") && !msg.includes("Invalid `");
-      setLinkError(
-        isFriendly && msg
-          ? msg
-          : lang === "ar"
-            ? "تعذّر ربط العقار. يرجى المحاولة مجدداً."
-            : "Failed to link property. Please try again."
-      );
+      setLinkError(sanitizeError(err, lang));
     } finally {
       setSavingLink(false);
     }
@@ -370,15 +355,7 @@ export function CustomerDrawer({
       setDroppingInterest(null);
       showToast(lang === "ar" ? "تم إسقاط الاهتمام" : "Interest dropped");
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "";
-      const isFriendly = msg.length < 200 && !msg.includes("Prisma");
-      showToast(
-        isFriendly && msg
-          ? msg
-          : lang === "ar"
-            ? "تعذّر إسقاط الاهتمام. يرجى المحاولة مجدداً."
-            : "Failed to drop interest. Please try again."
-      );
+      showToast(sanitizeError(err, lang));
     } finally {
       setDroppingLoading(false);
     }
@@ -418,15 +395,7 @@ export function CustomerDrawer({
         window.location.href = "/dashboard/reservations";
       }, 1200);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "";
-      const isFriendly = msg.length < 200 && !msg.includes("Prisma") && !msg.includes("Invalid `");
-      setConvertError(
-        isFriendly && msg
-          ? msg
-          : lang === "ar"
-            ? "تعذّر إنشاء الحجز. يرجى المحاولة مجدداً."
-            : "Failed to create reservation. Please try again."
-      );
+      setConvertError(sanitizeError(err, lang));
     } finally {
       setSavingConvert(false);
     }

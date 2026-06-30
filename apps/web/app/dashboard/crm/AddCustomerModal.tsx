@@ -28,6 +28,7 @@ import { cn } from "@repo/ui/lib/utils";
 import { createCustomer } from "../../actions/customers";
 import { addCustomerInterest } from "../../actions/customer-interests";
 import { trackEvent, AnalyticsEvent } from "../../../lib/analytics";
+import { sanitizeError } from "../../../lib/error-sanitizer";
 import { useUnsavedChanges } from "../../../hooks/useUnsavedChanges";
 import { PIPELINE_STAGES, SOURCE_LABELS } from "./crm-config";
 
@@ -293,20 +294,9 @@ export function AddCustomerModal({
       onCreated(created);
       onClose();
     } catch (err: unknown) {
-      // Only surface friendly messages — never raw Prisma/technical errors
-      const msg = err instanceof Error ? err.message : "";
-      const isFriendly =
-        msg.length < 200 &&
-        !msg.includes("Prisma") &&
-        !msg.includes("Invalid `") &&
-        !msg.includes("invocation");
-      setError(
-        isFriendly && msg
-          ? msg
-          : lang === "ar"
-            ? "تعذّر حفظ جهة الاتصال. يرجى التحقق من البيانات والمحاولة مجدداً."
-            : "Failed to save contact. Please check the details and try again.",
-      );
+      // CX-003: friendly bilingual copy (maps plan-limit/entitlement throws to
+      // native AR/EN; collapses any technical leak) instead of raw err.message.
+      setError(sanitizeError(err, lang));
     } finally {
       setSubmitting(false);
     }

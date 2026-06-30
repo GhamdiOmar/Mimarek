@@ -27,6 +27,7 @@ import {
 } from "@repo/ui";
 import { cn } from "@repo/ui/lib/utils";
 import { useLanguage } from "../../../../components/LanguageProvider";
+import { sanitizeError } from "../../../../lib/error-sanitizer";
 import {
   getMarketplaceListingDetail,
   confirmMarketplaceInterest,
@@ -117,7 +118,7 @@ export default function ListingDetailPage() {
       });
       setSubmitSuccess(true);
     } catch (err: unknown) {
-      setSubmitError(err instanceof Error ? err.message : (t("فشل إرسال الاستفسار", "Failed to submit inquiry")));
+      setSubmitError(sanitizeError(err, lang));
     } finally {
       setSubmitting(false);
     }

@@ -7,6 +7,7 @@ import { getTenantSessionOrThrow } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
 import { notifyAdmins } from "../../lib/create-notification";
 import { checkRateLimit, peekRateLimit } from "../../lib/rate-limit";
+import { ensureDefaultSubscription } from "../../lib/payment/subscription-machine";
 
 // â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
@@ -324,6 +325,16 @@ export async function completeOnboarding() {
       where: { id: session.userId },
       data: { onboardingCompleted: true },
     });
+
+    // CX-001 safety net: ensure the org has a subscription so the dashboard is
+    // usable (the free Starter plan is normally provisioned at email activation,
+    // but cover orgs that predate that path or where it best-effort-failed).
+    // Idempotent — a no-op when a subscription already exists.
+    try {
+      await ensureDefaultSubscription(session.organizationId);
+    } catch (err) {
+      console.error("[Onboarding] ensureDefaultSubscription failed:", err);
+    }
 
     logAuditEvent({
       userId: session.userId,

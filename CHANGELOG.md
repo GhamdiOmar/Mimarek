@@ -1,5 +1,24 @@
 # Changelog — Mimarek PropTech
 
+## [5.21.0] — 2026-06-30 — First-run unblock + bilingual entitlement errors (CX-001, CX-003)
+
+Fixes from the v5.20.0 CX audit. The headline is **CX-001 (Critical):** a brand-new org registered, verified email, and finished onboarding with **no subscription** — so the entitlement engine denied every feature and the owner couldn't create a single customer/unit/contract until they manually subscribed. The free `Plan.isDefault` (Starter) was read nowhere. Now it's load-bearing.
+
+### What's new
+- **CX-001 — auto-provision the free default plan** (`lib/payment/subscription-machine.ts`): new `ensureDefaultSubscription(orgId)` — idempotent (no-op if any subscription exists), finds the `isDefault` plan, and creates it ACTIVE via `createSubscription({ startTrial: false })` (free → mrr 0, no ARR inflation). Wired best-effort (never blocks the flow) into **email activation** (`confirmEmailVerificationAction`) and, as a safety net for pre-existing orgs, **onboarding completion** (`completeOnboarding`). A new org is now usable on the free tier from day one.
+- **H-1 — keep the paid-upgrade path open** (`app/actions/billing.ts`): because every org now always has the free Starter, `subscribeToPlan` would have thrown "already has an active subscription" on every upgrade attempt. It now treats the free `isDefault` plan as a **bootstrap baseline** — superseding it (ACTIVE → CANCELED) and starting the chosen plan's trial — so "Start Free Trial" works. A genuine paid/non-default subscription still routes through `changePlan`.
+- **CX-003 — bilingual entitlement errors** (~13 sites): consolidated every hand-rolled `catch` that echoed raw `err.message` (or swallowed it into a hardcoded generic) onto the pure bilingual `sanitizeError(err, lang)` — UnitsView, AddCustomerModal, CustomerDrawer (×4), CrmView, marketplace my-listings (×6) / MarketplaceView / [listingId] / PublishListingDialog. Plan-limit/entitlement throws now render friendly AR/EN copy; technical leaks collapse to a clean bilingual generic instead of surfacing a raw English/Prisma string to Arabic users.
+
+### Notes
+- **Next.js production reality:** thrown server-action error messages are **redacted** in production builds, so the entitlement-*specific* "upgrade your plan" copy only renders in dev / non-redacted paths; in production `sanitizeError` yields the clean bilingual generic (no raw redacted digest string leaks — the real win). The entitlement-specific copy in production comes from a **pre-render lock** (CX-002, next release), not from a thrown message.
+- **Accepted low-risk (tracked):** `ensureDefaultSubscription` is application-level idempotent (`findFirst`-then-`create`) — a DB-level uniqueness guard was deliberately not added (orgs legitimately keep historical CANCELED subs; a blanket `@@unique` would break that). The race window is near-zero (single-use verify token; the onboarding Finish button is `disabled` during submit) and bounded (all readers use `findFirst orderBy createdAt desc`).
+
+### Verify
+- `npm run build` green · `check-types` green · `lint` 0 errors on all touched files · `sanitizeError`'s entitlement/limit/no-subscription → bilingual mappings already locked by `error-sanitizer.test.ts`.
+- **End-to-end functional proof** (throwaway no-sub org on a local prod build, then torn down): `pre-state 0 subscriptions` → **CX-003** friendly bilingual error EN + AR (no raw leak) → **CX-001** onboarding auto-provisions exactly one ACTIVE `starter` (`isDefault`) subscription (idempotent) → **H-1** "Start Free Trial" upgrades to **Professional TRIALING (499/mo)** with the Starter baseline superseded to CANCELED → the org can now create a unit. **10/10 checks pass.** (The only console errors are the *intentional* entitlement-throw 500s a provisioned org never hits.)
+
+**Full diff:** https://github.com/GhamdiOmar/Mimarek/compare/v5.20.0...v5.21.0
+
 ## [5.20.0] — 2026-06-30 — Help & Onboarding: surface the subscription / billing model
 
 The pricing & packaging program (P1–P5 + the add-on-revenue follow-up) shipped plans, limits, add-ons, usage meters, and upgrade gates — but nothing in **Help** or **Onboarding** told tenants those concepts exist or where to act on them. This closes that discoverability gap. Content & discoverability only — no schema, server action, route guard, or RLS surface touched.

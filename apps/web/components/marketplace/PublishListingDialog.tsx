@@ -5,6 +5,7 @@ import { Loader2, AlertCircle, CheckCircle2, Store } from "lucide-react";
 import { Button, ResponsiveDialog, SelectField } from "@repo/ui";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "../LanguageProvider";
+import { sanitizeError } from "../../lib/error-sanitizer";
 import {
   validateMarketplaceEligibility,
   createMarketplaceDraft,
@@ -71,13 +72,13 @@ export function PublishListingDialog({
         const result = await validateMarketplaceEligibility(unit.id);
         setBlockers(result.eligible ? [] : result.blockers);
       } catch (e) {
-        setError(e instanceof Error ? e.message : ar ? "تعذّر التحقق من الأهلية" : "Eligibility check failed");
+        setError(sanitizeError(e, lang));
         setBlockers([]);
       } finally {
         setChecking(false);
       }
     })();
-  }, [open, unit, ar]);
+  }, [open, unit, ar, lang]);
 
   async function handlePublish() {
     if (!unit) return;
@@ -104,7 +105,7 @@ export function PublishListingDialog({
       });
       setSuccess(true);
     } catch (e) {
-      setError(e instanceof Error ? e.message : ar ? "فشل نشر الإعلان" : "Failed to publish listing");
+      setError(sanitizeError(e, lang));
     } finally {
       setSubmitting(false);
     }

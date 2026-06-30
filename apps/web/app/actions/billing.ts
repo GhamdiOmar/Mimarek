@@ -89,16 +89,33 @@ export async function subscribeToPlan(data: {
 }) {
   const session = await requirePermission("billing:write");
 
-  // Check if org already has an active subscription
+  // Check if the org already has an active subscription. The free `isDefault` plan
+  // is auto-provisioned at activation (CX-001) so a new org is usable on day one —
+  // but it's a bootstrap BASELINE, not a chosen subscription. Supersede it here so
+  // the org can start a real (trial) plan from the plans page; otherwise every new
+  // org would be permanently blocked from upgrading (the subscribe CTA would throw).
+  // A genuine paid / non-default active subscription still routes through changePlan.
   const existing = await db.subscription.findFirst({
     where: {
       organizationId: session.organizationId,
       status: { in: ["TRIALING", "ACTIVE", "PAST_DUE"] },
     },
+    include: { plan: { select: { isDefault: true, priceMonthly: true } } },
   });
 
   if (existing) {
-    throw new Error("Your organization already has an active subscription. To change plans, please use the upgrade or downgrade option instead.");
+    const isFreeDefault = existing.plan.isDefault && Number(existing.plan.priceMonthly) === 0;
+    if (!isFreeDefault) {
+      throw new Error("Your organization already has an active subscription. To change plans, please use the upgrade or downgrade option instead.");
+    }
+    // Cancel the free baseline (ACTIVE/TRIALING → CANCELED is a valid transition)
+    // before creating the chosen plan, so the org isn't left with two active subs.
+    await transitionSubscription(
+      existing.id,
+      "CANCELED",
+      `user:${session.userId}`,
+      "Superseded by a chosen plan",
+    );
   }
 
   const plan = await db.plan.findFirst({
