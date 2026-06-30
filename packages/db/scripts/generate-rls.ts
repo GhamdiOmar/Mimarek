@@ -28,6 +28,7 @@ const SQL_PATH = resolve(PKG_DIR, "sql", "2026-06-enable-rls.sql");
 /** Tables that exist in the database but are not models in schema.prisma. */
 const EXTRA_TABLES: ReadonlyArray<{ table: string; comment: string }> = [
   { table: "_CouponPlans", comment: "implicit M2M join table (Plan ↔ Coupon)" },
+  { table: "_AddOnPlans", comment: "implicit M2M join table (Plan ↔ AddOn)" },
   { table: "_prisma_migrations", comment: "Prisma internal" },
 ];
 

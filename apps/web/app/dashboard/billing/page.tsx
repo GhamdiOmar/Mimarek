@@ -320,10 +320,15 @@ export default function BillingDashboardPage() {
           {/* Usage vs plan limits */}
           {usage.length > 0 && (
             <div>
-              <h2 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
-                <Gauge className="w-4 h-4 text-primary" aria-hidden="true" />
-                {lang === "ar" ? "الاستخدام مقابل خطتك" : "Usage vs. your plan"}
-              </h2>
+              <div className="mb-2 flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  <Gauge className="w-4 h-4 text-primary" aria-hidden="true" />
+                  {lang === "ar" ? "الاستخدام مقابل خطتك" : "Usage vs. your plan"}
+                </h2>
+                <ActionLink asChild trailingIcon={ChevronRight} directional className="text-xs">
+                  <Link href="/dashboard/billing/add-ons">{lang === "ar" ? "إدارة الإضافات" : "Manage add-ons"}</Link>
+                </ActionLink>
+              </div>
               <div className="space-y-3 rounded-xl border border-border bg-card p-4">
                 {usage.map((u) => (
                   <UsageMeter
@@ -545,11 +550,16 @@ export default function BillingDashboardPage() {
           {usage.length > 0 && (
             <Card className="rounded-xl shadow-sm">
               <CardHeader className="border-b">
-                <div className="flex items-center gap-2">
-                  <Gauge className="w-5 h-5 text-primary" />
-                  <CardTitle className="text-lg">
-                    {lang === "ar" ? "الاستخدام مقابل خطتك" : "Usage vs. your plan"}
-                  </CardTitle>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Gauge className="w-5 h-5 text-primary" />
+                    <CardTitle className="text-lg">
+                      {lang === "ar" ? "الاستخدام مقابل خطتك" : "Usage vs. your plan"}
+                    </CardTitle>
+                  </div>
+                  <ActionLink asChild trailingIcon={ChevronRight} directional className="text-xs">
+                    <Link href="/dashboard/billing/add-ons">{lang === "ar" ? "إدارة الإضافات" : "Manage add-ons"}</Link>
+                  </ActionLink>
                 </div>
               </CardHeader>
               <CardContent className="pt-6">

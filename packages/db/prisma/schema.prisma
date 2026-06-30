@@ -1114,6 +1114,25 @@ enum EntitlementType {
   METERED // Usage-based tracking (future)
 }
 
+enum AddOnPricing {
+  FLAT // One flat price regardless of quantity
+  PER_SEAT // Priced per user/seat
+  PER_UNIT // Priced per unit
+  PER_INVOICE // Priced per invoice
+  USAGE // Usage-priced (billing deferred to the metered phase)
+  CUSTOM // Negotiated / custom pricing
+}
+
+enum AddOnLimitMode {
+  ADDITIVE // Effective limit = plan limit + Σ(addOn.value × quantity)
+  OVERRIDE // Effective limit replaces the plan value
+}
+
+enum AddOnStatus {
+  ACTIVE
+  CANCELED
+}
+
 enum InvoiceStatus {
   DRAFT
   ISSUED
@@ -1223,6 +1242,7 @@ model Plan {
   entitlements  PlanEntitlement[]
   subscriptions Subscription[]
   coupons       Coupon[]          @relation("CouponPlans")
+  addOns        AddOn[]           @relation("AddOnPlans")
 
   @@index([isPublic, sortOrder])
 }
@@ -1273,12 +1293,67 @@ model Subscription {
   events       SubscriptionEvent[]
   invoices     Invoice[]
   mrrSnapshots SubscriptionMrrSnapshot[]
+  addOns       SubscriptionAddOn[]
 
   @@index([organizationId])
   @@index([status])
   @@index([currentPeriodEnd])
   @@index([acquiredMonth])
   @@index([activatedMonth])
+}
+
+// ─── Add-On (sellable entitlement booster) ──────────────────────────────────
+
+model AddOn {
+  id               String           @id @default(cuid())
+  slug             String           @unique
+  nameEn           String
+  nameAr           String
+  descriptionEn    String?
+  descriptionAr    String?
+  pricingModel     AddOnPricing     @default(FLAT)
+  priceMonthly     Decimal          @default(0) @db.Decimal(14, 2)
+  priceAnnual      Decimal          @default(0) @db.Decimal(14, 2)
+  currency         String           @default("SAR")
+  // Entitlement this add-on grants (mirrors the PlanEntitlement shape).
+  grantsFeatureKey String?
+  grantsType       EntitlementType?
+  grantsValue      String? // "true" for BOOLEAN, numeric string for LIMIT
+  limitMode        AddOnLimitMode   @default(ADDITIVE)
+  isPublic         Boolean          @default(true) // self-serve purchasable
+  isActive         Boolean          @default(true)
+  sortOrder        Int              @default(0)
+  billingDeferred  Boolean          @default(false) // USAGE/CUSTOM: not yet billable
+  metadata         Json?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @default(now()) @updatedAt
+
+  plans         Plan[]              @relation("AddOnPlans")
+  subscriptions SubscriptionAddOn[]
+
+  @@index([isActive, isPublic, sortOrder])
+  @@index([grantsFeatureKey])
+}
+
+// ─── Subscription Add-On (an org's purchased add-on) ────────────────────────
+
+model SubscriptionAddOn {
+  id                  String       @id @default(cuid())
+  subscriptionId      String
+  subscription        Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  addOnId             String
+  addOn               AddOn        @relation(fields: [addOnId], references: [id])
+  quantity            Int          @default(1)
+  unitPriceAtPurchase Decimal      @default(0) @db.Decimal(14, 2) // snapshot — no retroactive re-billing
+  status              AddOnStatus  @default(ACTIVE)
+  activatedAt         DateTime     @default(now())
+  canceledAt          DateTime?
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @default(now()) @updatedAt
+
+  @@unique([subscriptionId, addOnId])
+  @@index([subscriptionId, status])
+  @@index([addOnId])
 }
 
 // ─── Subscription Event (audit trail for status transitions) ────────────────

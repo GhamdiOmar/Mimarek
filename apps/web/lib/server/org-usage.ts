@@ -1,6 +1,6 @@
 import { db } from "@repo/db";
 import { FEATURE_KEYS } from "../entitlements";
-import { resolveEntitlement, type OrgEntitlementData } from "../entitlements/evaluator";
+import { resolveEntitlement, buildAddOnGrants, type OrgEntitlementData } from "../entitlements/evaluator";
 
 export type OrgUsageMetric = {
   key: string;
@@ -30,6 +30,12 @@ async function fetchOrgEntitlementData(orgId: string): Promise<OrgEntitlementDat
   const overrides = await db.entitlementOverride.findMany({
     where: { organizationId: orgId, OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] },
   });
+  const addOnRows = subscription
+    ? await db.subscriptionAddOn.findMany({
+        where: { subscriptionId: subscription.id, status: "ACTIVE" },
+        include: { addOn: true },
+      })
+    : [];
 
   const planEntitlements: Record<string, { type: string; value: string }> = {};
   for (const e of subscription?.plan.entitlements ?? []) {
@@ -43,6 +49,7 @@ async function fetchOrgEntitlementData(orgId: string): Promise<OrgEntitlementDat
     planSlug: subscription?.plan.slug ?? null,
     planEntitlements,
     overrides: overrideMap,
+    addOns: buildAddOnGrants(addOnRows),
     subscriptionStatus: subscription?.status ?? null,
   };
 }

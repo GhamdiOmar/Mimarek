@@ -68,6 +68,7 @@ export const ROUTE_GUARDS: Record<string, RouteGuard> = {
 
   // ── System tier ────────────────────────────────────────────────────────────
   "/dashboard/billing": { permission: "billing:read", audience: "tenant" },
+  "/dashboard/billing/add-ons": { permission: "billing:read", audience: "tenant" },
   // NOTE (disagreement, resolved): nav-items.ts:44 (Settings) had NO audience
   // (audit finding A8) — it rendered to BOTH audiences but the edge gate
   // redirected system users away. The enforcement intent is tenant-only, so it
@@ -92,6 +93,7 @@ export const ROUTE_GUARDS: Record<string, RouteGuard> = {
   "/dashboard/admin/tickets": { permission: "billing:admin", audience: "platform" },
   "/dashboard/admin/marketplace": { permission: "marketplace:moderate", audience: "platform" },
   "/dashboard/admin/data-retention": { permission: "billing:admin", audience: "platform" },
+  "/dashboard/admin/add-ons": { permission: "billing:admin", audience: "platform" },
   "/dashboard/admin/zatca": { permission: "zatca:admin", audience: "platform" },
   // /dashboard/admin/coupons + /dashboard/admin/subscriptions are not in nav but
   // are platform surfaces (CLAUDE.md §8.2). The longest-prefix audience match on

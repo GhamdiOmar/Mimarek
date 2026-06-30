@@ -68,6 +68,7 @@ function baseSeed(entitlements: Ent[], extra: Partial<Record<string, Row[]>> = {
     organization: [{ id: ORG, name: "Org A" }],
     subscription: [subWith(entitlements)],
     entitlementOverride: [],
+    subscriptionAddOn: [],
     contractTemplate: [],
     customer: [],
     ...extra,

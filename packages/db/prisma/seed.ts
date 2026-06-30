@@ -442,6 +442,54 @@ async function main() {
     update: { type: "BOOLEAN", value: "true" },
   });
 
+  // ── Add-ons (P4) — sellable entitlement boosters ──────────────────────────
+  // Catalogue is curated by platform admins; tenants self-purchase. Granted
+  // entitlements flow through the evaluator's add-on tier (override > add-on >
+  // plan). The marketplace.publish override above is left as-is (the E2E seller
+  // relies on it); the "Marketplace Publishing" add-on below is the productised
+  // equivalent that Starter/Professional orgs can buy.
+  async function upsertAddOn(slug: string, data: Record<string, unknown>, planSlugs?: string[]) {
+    return prisma.addOn.upsert({
+      where: { slug },
+      create: { slug, ...data, plans: planSlugs?.length ? { connect: planSlugs.map((s) => ({ slug: s })) } : undefined } as any,
+      update: { ...data, plans: planSlugs ? { set: planSlugs.map((s) => ({ slug: s })) } : undefined } as any,
+    });
+  }
+
+  const extraUnits = await upsertAddOn("extra-units-50", {
+    nameEn: "Extra Units +50", nameAr: "وحدات إضافية +50",
+    descriptionEn: "Raise your unit limit by 50.", descriptionAr: "ارفع حد الوحدات بمقدار 50.",
+    pricingModel: "FLAT", priceMonthly: 99, priceAnnual: 990,
+    grantsFeatureKey: "units.max", grantsType: "LIMIT", grantsValue: "50", limitMode: "ADDITIVE", sortOrder: 1,
+  });
+  await upsertAddOn("extra-users-5", {
+    nameEn: "Extra Users +5", nameAr: "مستخدمون إضافيون +5",
+    descriptionEn: "Add 5 more team seats.", descriptionAr: "أضف 5 مقاعد إضافية للفريق.",
+    pricingModel: "PER_SEAT", priceMonthly: 49, priceAnnual: 490,
+    grantsFeatureKey: "users.max", grantsType: "LIMIT", grantsValue: "5", limitMode: "ADDITIVE", sortOrder: 2,
+  });
+  // NOTE: no "Extra Storage" add-on — `storage.gb.max` has no enforcement gate or
+  // usage meter yet, so selling it would charge for a no-op. Re-add once storage
+  // is actually metered/enforced. The other three add-ons all back real, gated
+  // limits (units.max, users.max, marketplace.publish.access).
+  await upsertAddOn("marketplace-publishing", {
+    nameEn: "Marketplace Publishing", nameAr: "النشر في السوق",
+    descriptionEn: "Publish your listings to the Mimarek marketplace.", descriptionAr: "انشر إعلاناتك في سوق معمارك.",
+    pricingModel: "FLAT", priceMonthly: 199, priceAnnual: 1990,
+    grantsFeatureKey: "marketplace.publish.access", grantsType: "BOOLEAN", grantsValue: "true", limitMode: "ADDITIVE", sortOrder: 4,
+  }, ["starter", "professional"]);
+
+  // Demo purchase: Dummy (Starter, units.max=50) buys "+50 units" → effective 100.
+  const dummySubRow = await prisma.subscription.findFirst({ where: { organizationId: dummyOrg.id }, select: { id: true } });
+  if (dummySubRow) {
+    await prisma.subscriptionAddOn.upsert({
+      where: { subscriptionId_addOnId: { subscriptionId: dummySubRow.id, addOnId: extraUnits.id } },
+      create: { subscriptionId: dummySubRow.id, addOnId: extraUnits.id, quantity: 1, unitPriceAtPurchase: 990, status: "ACTIVE" },
+      update: { quantity: 1, status: "ACTIVE", canceledAt: null },
+    });
+  }
+  console.log("Created add-ons (catalogue + demo purchase)");
+
   console.log("Created plans (Starter, Professional, Enterprise) & subscriptions");
 
   // ── Marketplace (P3 conveyance) ─────────────────────────────────────────────

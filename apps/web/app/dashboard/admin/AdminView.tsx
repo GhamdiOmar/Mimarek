@@ -3,7 +3,7 @@
 import * as React from "react";
 import {
   Users, Receipt,
-  Ticket, ListChecks, Tag, SearchCheck, Settings,
+  Ticket, ListChecks, Tag, SearchCheck, Settings, Blocks,
   ChevronRight, ShieldAlert, TrendingUp, AlertTriangle,
   TrendingDown, Wallet, PieChart, Sparkles, CheckCircle2,
 } from "lucide-react";
@@ -196,6 +196,12 @@ const quickLinks = [
     icon: Tag,
     label: { ar: "الكوبونات", en: "Coupons" },
     desc: { ar: "أكواد الخصم والعروض", en: "Discount codes & promotions" },
+  },
+  {
+    href: "/dashboard/admin/add-ons",
+    icon: Blocks,
+    label: { ar: "الإضافات", en: "Add-ons" },
+    desc: { ar: "إضافات قابلة للبيع ترفع حدود الخطة", en: "Sellable add-ons that raise plan limits" },
   },
   {
     href: "/dashboard/admin/payments",

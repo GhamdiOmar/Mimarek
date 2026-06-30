@@ -75,6 +75,8 @@ ALTER TABLE IF EXISTS public."JoinRequest"               ENABLE ROW LEVEL SECURI
 ALTER TABLE IF EXISTS public."Plan"                      ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public."PlanEntitlement"           ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public."Subscription"              ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public."AddOn"                     ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public."SubscriptionAddOn"         ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public."SubscriptionEvent"         ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public."SubscriptionMrrSnapshot"   ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public."EntitlementOverride"       ENABLE ROW LEVEL SECURITY;
@@ -106,6 +108,7 @@ ALTER TABLE IF EXISTS public."OrgZatcaTaxConfig"         ENABLE ROW LEVEL SECURI
 
 -- ── Non-model tables ─────────────────────────────────────────────────────────
 ALTER TABLE IF EXISTS public."_CouponPlans"              ENABLE ROW LEVEL SECURITY; -- implicit M2M join table (Plan ↔ Coupon)
+ALTER TABLE IF EXISTS public."_AddOnPlans"               ENABLE ROW LEVEL SECURITY; -- implicit M2M join table (Plan ↔ AddOn)
 ALTER TABLE IF EXISTS public."_prisma_migrations"        ENABLE ROW LEVEL SECURITY; -- Prisma internal
 
 -- ── Verification (optional) — every public table should report relrowsecurity = true ──
