@@ -1,5 +1,23 @@
 # Changelog — Mimarek PropTech
 
+## [5.27.0] — 2026-06-30 — Remove the premature plans-page coupon UI (CX-006)
+
+CX-audit fix. The tenant plans page (`/dashboard/billing/plans`) had a coupon-code input that validated a code and previewed a strikethrough discount — but **that discount was silently dropped at subscribe**: in this system coupons apply to an **Invoice** (`applyCoupon(couponId, invoiceId)`), and invoice generation isn't wired at subscribe-time yet, so there was no invoice for the code to discount. The preview promised a saving the flow never delivered. Until the billing/invoice layer is wired (billing go-live), the honest move is to remove the premature preview.
+
+### What's new
+- **`billing/plans/page.tsx`** — removed the coupon-code input + discount-preview UI (mobile + desktop), the `appliedCoupon`/`couponCode`/`couponLoading`/`couponError` state, the `handleValidateCoupon`/`handleRemoveCoupon`/`calculateDiscount` handlers, the strikethrough/discounted-price branches, the now-unused `Tag`/`X`/`IconButton`/`validateCoupon` imports + `AppliedCoupon` type, and the 6 coupon translation keys (both AR + EN). Plans now show their real price with no false discount preview.
+- **`actions/coupons.ts`** — `validateCoupon` (its sole caller, the plans-page preview, is gone) is annotated **RESERVED** for the invoice/checkout coupon flow at billing go-live; it is intentionally kept (it pairs with the still-wired `applyCoupon`), not deleted.
+- **E2E** — removed the now-dead UI-driven coupon coverage: the "Coupon Application" block + the two SEC-008 coupon-at-apply tests in `e2e/billing.admin.spec.ts` (the SEC-007 hidden-plan test is kept), and the coupon page-object helpers in `e2e/pages/billing.page.ts`.
+
+### Unchanged (coupons remain a real feature)
+The admin coupon CRUD (`/dashboard/admin/coupons`), the `Coupon`/`CouponRedemption` models, and **both** `validateCoupon` + `applyCoupon` server actions stay intact. `applyCoupon`'s apply-time re-validation (**SEC-008** — inactive / expired / not-yet-valid / wrong-plan / wrong-cycle) and atomic redemption-cap race-guard are untouched and still **unit-tested** (`__tests__/hardening-wave-a.test.ts`, `coupon-redemption-race.test.ts`, `tenant-isolation.test.ts`) — so dropping the UI E2E tests leaves **no coverage gap**.
+
+### Verify
+- `npm run build` green · `check-types` green · `lint` 0 errors · `/mimaric-qa` gate = GO (zero P0/P1/P2; one P3 — the now-orphaned `validateCoupon` export — resolved by the RESERVED annotation).
+- **E2E** (local prod build, all 4 theme/lang combos + mobile 375×812): `/dashboard/billing/plans` renders heading + 3 plan cards + prices + "Start Free Trial" with **no coupon section / input / Apply button / Tag icon** anywhere. **48/48 checks, 0 console errors.**
+
+**Full diff:** https://github.com/GhamdiOmar/Mimarek/compare/v5.26.0...v5.27.0
+
 ## [5.26.0] — 2026-06-30 — Honest dunning copy (CX-005)
 
 CX-audit fix. The PAST_DUE (overdue-payment) recovery was a dead-end: the banner's "Update Payment" button had **no handler** (there is no payment gateway — billing isn't deployed), and FAQ fi-6 (introduced in v5.20.0) over-promised a working button. This makes the dunning copy honest.

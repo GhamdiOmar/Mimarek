@@ -12,8 +12,15 @@ import { serialize } from "../../lib/serialize";
 // ═══════════════════════════════════════════════════════════════════════════════
 
 /**
- * Validate a coupon code and return discount info.
- * Used during checkout before applying.
+ * Validate a coupon code and return discount info (pre-apply preview).
+ *
+ * RESERVED — no active caller. The tenant plans-page coupon preview that called
+ * this was removed in v5.27.0 (CX-006): coupons apply to an Invoice via
+ * `applyCoupon`, and invoice generation is not yet wired at subscribe-time, so a
+ * plans-page discount preview was premature. This validator is intentionally kept
+ * as the forward-looking primitive for the invoice/checkout coupon flow at
+ * billing go-live (it pairs with the still-wired `applyCoupon`, which re-validates
+ * server-side at apply-time — SEC-008). Do not treat as dead code.
  */
 export async function validateCoupon(code: string, planId?: string) {
   await requireTenantPermission("billing:read");
