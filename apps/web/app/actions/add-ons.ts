@@ -1,10 +1,13 @@
 "use server";
 
 import { db } from "@repo/db";
+import type { BillingCycle, Prisma, SubscriptionStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { requirePermission } from "../../lib/auth-helpers";
 import { logAuditEvent } from "../../lib/audit";
 import { invalidateEntitlements } from "../../lib/entitlements";
+import { mrrForCycle, subscriptionMrrWithAddOns } from "../../lib/payment/mrr";
+import { eventCategoryForDelta } from "../../lib/payment/admin-subscription-helpers";
 import { ROUTES } from "../../lib/routes";
 import { serialize } from "../../lib/serialize";
 
@@ -191,6 +194,56 @@ export async function getAvailableAddOns() {
   return serialize({ addOns, owned, billingCycle: sub.billingCycle });
 }
 
+/**
+ * Keep `Subscription.mrrSar` accurate after an add-on purchase/cancel and record
+ * the revenue change in the ARR waterfall. Recomputes plan + active-add-on MRR,
+ * writes it to the sub, and (when it moved) emits an EXPANSION/CONTRACTION
+ * SubscriptionEvent. Status is unchanged (ACTIVE→ACTIVE). Add-on revenue thus
+ * flows into the MRR snapshots + waterfall automatically (both read `mrrSar`).
+ * Module-private async (a "use server" file may export only async functions, §4).
+ */
+async function syncAddOnMrr(
+  sub: {
+    id: string;
+    status: SubscriptionStatus;
+    billingCycle: BillingCycle;
+    priceAtRenewal: Prisma.Decimal | null;
+    mrrSar: Prisma.Decimal | null;
+  },
+  triggeredBy: string,
+  reason: string,
+) {
+  const active = await db.subscriptionAddOn.findMany({
+    where: { subscriptionId: sub.id, status: "ACTIVE" },
+    select: { unitPriceAtPurchase: true, quantity: true },
+  });
+  const oldMrr = sub.mrrSar != null ? Number(sub.mrrSar) : mrrForCycle(Number(sub.priceAtRenewal ?? 0), sub.billingCycle);
+  const newMrr = subscriptionMrrWithAddOns(
+    Number(sub.priceAtRenewal ?? 0),
+    sub.billingCycle,
+    active.map((a) => ({ unitPriceAtPurchase: Number(a.unitPriceAtPurchase), quantity: a.quantity })),
+  );
+  const delta = Math.round((newMrr - oldMrr) * 100) / 100;
+  if (delta === 0) {
+    await db.subscription.update({ where: { id: sub.id }, data: { mrrSar: newMrr } });
+    return;
+  }
+  await db.$transaction([
+    db.subscription.update({ where: { id: sub.id }, data: { mrrSar: newMrr } }),
+    db.subscriptionEvent.create({
+      data: {
+        subscriptionId: sub.id,
+        fromStatus: sub.status,
+        toStatus: sub.status,
+        triggeredBy,
+        reason,
+        eventCategory: eventCategoryForDelta(delta) ?? undefined,
+        mrrDeltaSar: delta,
+      },
+    }),
+  ]);
+}
+
 /** Purchase (or update the quantity of) an add-on for the org's active subscription. */
 export async function purchaseAddOn(addOnId: string, quantity = 1) {
   const session = await requirePermission("billing:write");
@@ -224,6 +277,7 @@ export async function purchaseAddOn(addOnId: string, quantity = 1) {
     metadata: { addOnSlug: addOn.slug, quantity: qty, unitPriceAtPurchase: unitPrice },
     organizationId: orgId,
   });
+  await syncAddOnMrr(sub, `user:${session.userId}`, `Add-on purchased: ${addOn.slug}`);
   invalidateEntitlements(orgId);
   revalidatePath(ROUTES.billing);
   return { success: true };
@@ -236,11 +290,12 @@ export async function cancelAddOn(addOnId: string) {
   const sub = await db.subscription.findFirst({
     where: { organizationId: orgId, status: { in: ["TRIALING", "ACTIVE", "PAST_DUE"] } },
     orderBy: { createdAt: "desc" },
-    select: { id: true },
+    select: { id: true, status: true, billingCycle: true, priceAtRenewal: true, mrrSar: true },
   });
   if (!sub) throw new Error("No active subscription.");
   const existing = await db.subscriptionAddOn.findUnique({
     where: { subscriptionId_addOnId: { subscriptionId: sub.id, addOnId } },
+    include: { addOn: { select: { slug: true } } },
   });
   if (!existing || existing.status !== "ACTIVE") throw new Error("This add-on isn't active.");
 
@@ -254,6 +309,7 @@ export async function cancelAddOn(addOnId: string) {
     metadata: { action: "canceled" },
     organizationId: orgId,
   });
+  await syncAddOnMrr(sub, `user:${session.userId}`, `Add-on canceled: ${existing.addOn.slug}`);
   invalidateEntitlements(orgId);
   revalidatePath(ROUTES.billing);
   return { success: true };
