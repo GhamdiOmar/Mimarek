@@ -13,6 +13,8 @@ export interface FABProps {
   href?: string;
   className?: string;
   position?: "end" | "start";
+  /** When true, the FAB is non-interactive and dimmed (renders a disabled button even if `href` is set). */
+  disabled?: boolean;
 }
 
 const baseClasses = cn(
@@ -32,11 +34,17 @@ export function FAB({
   href,
   className,
   position = "end",
+  disabled = false,
 }: FABProps) {
   const positionClass = position === "end" ? "end-4" : "start-4";
-  const mergedClassName = cn(baseClasses, positionClass, className);
+  const mergedClassName = cn(
+    baseClasses,
+    positionClass,
+    disabled && "opacity-45 pointer-events-none hover:bg-primary hover:shadow-lg active:scale-100",
+    className,
+  );
 
-  if (href) {
+  if (href && !disabled) {
     return (
       <Link
         href={href}
@@ -55,6 +63,7 @@ export function FAB({
       type="button"
       aria-label={label}
       onClick={onClick}
+      disabled={disabled}
       className={mergedClassName}
       style={{ display: "inline-flex", touchAction: "manipulation" }}
     >

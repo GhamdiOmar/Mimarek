@@ -1,5 +1,20 @@
 # Changelog — Mimarek PropTech
 
+## [5.25.0] — 2026-06-30 — Pre-render the units limit (CX-002)
+
+CX-audit fix. A Starter org at its `units.max` cap could fill the entire Add-Unit form only for the server action to throw — there was no pre-render signal of the cap (the units page gated by role only, not by the LIMIT entitlement). Now the units page surfaces the cap **before** the user acts.
+
+### What's new
+- **`units/page.tsx`** (server) fetches the org's `units.max` usage (`orgUsageSnapshot`, org-scoped) and passes `unitsUsage` to `UnitsView`.
+- **`UnitsView`** renders a `<UsageMeter>` banner at **≥80% usage** (both mobile + desktop). At the hard cap the bar turns red ("Limit reached"), the **Add-Unit affordances disable** (the header button, the mobile `<FAB>`, and the placeholder "Add Unit" card is hidden), and an **"Upgrade your plan to add more"** `<ActionLink>` to Billing appears. The server-action `checkLimit` remains the real gate — this is the pre-render hint that prevents the futile form-fill (and pairs with the now-bilingual CX-003 error if the cap is somehow reached).
+- **`FAB` primitive** gained an optional `disabled` prop (dims + `pointer-events-none`, sets `<button disabled>`, renders a disabled button instead of a link). Optional, defaults false — no impact on existing FAB callers.
+
+### Verify
+- `npm run build` green · `check-types` green · `lint` 0 errors · cspell clean · `/mimaric-qa` gate = GO.
+- **E2E** (local prod build; a temporary `EntitlementOverride` forced the demo org to the cap, then was removed): at cap (18/18) → meter + **Add disabled** + Upgrade link (light + dark); near-cap (18/22 = 82%) → meter shown, **Add enabled**, no Upgrade link. **9/9 checks, 0 console errors.**
+
+**Full diff:** https://github.com/GhamdiOmar/Mimarek/compare/v5.24.0...v5.25.0
+
 ## [5.24.0] — 2026-06-30 — Form errors announced to screen readers (CX-008)
 
 CX-audit fix. **40 form/action submit-error banners across 21 files** rendered their error in a destructive-tinted box but lacked `role="alert"` — so screen-reader users got **silence on every failed submit** (WCAG 2.2 § 4.1.3). Now every submit-error banner is a live region that announces when it appears.
