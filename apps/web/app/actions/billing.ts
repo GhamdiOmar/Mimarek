@@ -10,6 +10,7 @@ import { createSubscription, transitionSubscription } from "../../lib/payment/su
 import { invalidateEntitlements } from "../../lib/entitlements";
 import { orgUsageSnapshot } from "../../lib/server/org-usage";
 import { mrrForCycle } from "../../lib/payment/mrr";
+import { buildSubscriptionInvoiceLines } from "../../lib/payment/invoice-lines";
 import { getNextSequenceValue, GLOBAL_SEQUENCE_SCOPE } from "../../lib/sequence";
 import { getPublicPlans } from "../../lib/server/plans";
 import { clearSubscriptionInvoiceInternal } from "../../lib/zatca-clearance";
@@ -332,14 +333,25 @@ export async function generateSubscriptionInvoice(params: {
     throw new Error("You don't have permission to perform this action. Please contact your administrator.");
   }
 
-  const price = subscription.billingCycle === "ANNUAL"
-    ? subscription.plan.priceAnnual
-    : subscription.plan.priceMonthly;
-
-  const priceNum = Number(price);
   const vatRate = 0.15; // Saudi VAT 15%
-  const vatAmount = priceNum * vatRate;
-  const total = priceNum + vatAmount;
+
+  // Active add-ons are billed on this invoice — one line each, at the plan's
+  // cycle (the snapshotted `unitPriceAtPurchase` is already cycle-correct).
+  const activeAddOns = await db.subscriptionAddOn.findMany({
+    where: { subscriptionId: subscription.id, status: "ACTIVE" },
+    include: { addOn: { select: { nameEn: true, nameAr: true } } },
+    orderBy: { activatedAt: "asc" },
+  });
+
+  const { lineItems: lineItemsData, subtotal, vatAmount, total } = buildSubscriptionInvoiceLines({
+    planNameEn: subscription.plan.nameEn,
+    planNameAr: subscription.plan.nameAr,
+    billingCycle: subscription.billingCycle,
+    billingCycleAr: getBillingCycleAr(subscription.billingCycle),
+    planPrice: Number(subscription.billingCycle === "ANNUAL" ? subscription.plan.priceAnnual : subscription.plan.priceMonthly),
+    addOns: activeAddOns.map((sa) => ({ nameEn: sa.addOn.nameEn, nameAr: sa.addOn.nameAr, quantity: sa.quantity, unitPrice: Number(sa.unitPriceAtPurchase) })),
+    vatRate,
+  });
 
   // Generate invoice number and create the invoice atomically so the sequence
   // bump and the invoice row are committed together (or both roll back).
@@ -353,27 +365,14 @@ export async function generateSubscriptionInvoice(params: {
         subscriptionId: subscription.id,
         status: "ISSUED",
         billingCycle: subscription.billingCycle,
-        subtotal: priceNum,
+        subtotal,
         vatRate,
         vatAmount,
         total,
         currency: "SAR",
         issuedAt: new Date(),
         dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Due in 7 days
-        lineItems: {
-          create: [
-            {
-              description: `${subscription.plan.nameEn} - ${subscription.billingCycle} subscription`,
-              descriptionAr: `${subscription.plan.nameAr} - اشتراك ${getBillingCycleAr(subscription.billingCycle)}`,
-              quantity: 1,
-              unitPrice: priceNum,
-              vatRate,
-              vatAmount,
-              total,
-              sortOrder: 0,
-            },
-          ],
-        },
+        lineItems: { create: lineItemsData },
       },
       include: { lineItems: true },
     });

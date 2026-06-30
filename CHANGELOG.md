@@ -1,5 +1,23 @@
 # Changelog — Mimarek PropTech
 
+## [5.19.0] — 2026-06-30 — Add-on revenue → MRR / ARR / invoices (Pricing P4 follow-up)
+
+Add-ons (P4) applied their entitlements but their recurring **revenue** was invisible to the billing analytics. This wires it in.
+
+### What's new
+- **MRR sync** (`apps/web/app/actions/add-ons.ts`): purchasing or canceling an add-on now recomputes `Subscription.mrrSar` (plan MRR + Σ active add-on MRR, cycle-aware via the new pure `subscriptionMrrWithAddOns`) and writes an `EXPANSION`/`CONTRACTION` `SubscriptionEvent` for the delta (mirroring `adminChangeOrgPlan`). Because the MRR snapshots + ARR waterfall read `mrrSar`/`SubscriptionEvent`, add-on revenue now flows into both **automatically** — and reconciles (the event delta explains the snapshot endpoint change; no double-count).
+- **Invoice line-items:** `generateSubscriptionInvoice` now appends one line per active add-on (qty × snapshotted unit price), before ZATCA clearance, via a new pure `buildSubscriptionInvoiceLines` (plan line + add-on lines, line-level VAT, summed totals).
+
+### Notes
+- `generateSubscriptionInvoice` is currently **un-wired** (no UI/cron caller yet) — the add-on line-items apply whenever subscription-invoice generation is invoked. Its line-item math is unit-tested directly. (Wiring an automatic renewal-invoice cron is future work, alongside P6.)
+
+### Verify
+- `npm run build` green · `check-types` green · `lint` 0 errors · **369 web unit tests** (+10: 6 `addon-mrr` MRR-with-add-ons cases + 4 `invoice-lines` line/VAT/total cases).
+- **Integration proof** (real tenant UI + DB): purchasing "Extra Users +5" on a Professional/ANNUAL org raised `mrrSar` 399.17 → **440.00** with an `EXPANSION` event (+40.83 = 490÷12); canceling reverted to 399.17 with a `CONTRACTION` event (−40.83). 0 console errors; reverted.
+- **§3.9:** billing add-ons page (the touched UI) light/dark × LTR/RTL + mobile — **0 console errors**.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimarek/compare/v5.18.0...v5.19.0
+
 ## [5.18.0] — 2026-06-30 — Scheduled plan-change engine (Pricing P5)
 
 **Phase 5 of the pricing & packaging program** — a platform admin schedules a future price change or plan migration for a whole cohort of subscriptions, with a cutoff date; a daily cron applies it, grandfathers existing subscribers, and announces it.
