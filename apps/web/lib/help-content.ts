@@ -3,6 +3,7 @@ export type FAQCategory =
   | "sales_crm"
   | "property_management"
   | "marketplace"
+  | "subscription"
   | "finance"
   | "zatca"
   | "security_privacy"
@@ -29,6 +30,7 @@ export const FAQ_CATEGORIES: { key: FAQCategory; label: { ar: string; en: string
   { key: "sales_crm", label: { ar: "المبيعات والعملاء", en: "Sales & CRM" } },
   { key: "property_management", label: { ar: "إدارة العقارات", en: "Property Management" } },
   { key: "marketplace", label: { ar: "السوق العقاري", en: "Marketplace" } },
+  { key: "subscription", label: { ar: "الاشتراك والفوترة", en: "Subscription & Billing" } },
   { key: "finance", label: { ar: "المالية", en: "Finance" } },
   { key: "zatca", label: { ar: "الفوترة الإلكترونية (زاتكا)", en: "E-Invoicing (ZATCA)" } },
   { key: "security_privacy", label: { ar: "الأمان والخصوصية", en: "Security & Privacy" } },
@@ -170,24 +172,48 @@ export const FAQ_ITEMS: FAQItem[] = [
     answer: { ar: "من قسم المستندات، انقر 'رفع مستند' لرفع ملفات PDF أو صور أو مستندات نصية. تختار لكل مستند فئته عند الرفع — عام، قانوني، عقود، تسويق، أو مالي — وبعدها تبحث بالاسم وتصفّي القائمة حسب الفئة وتحمّل أي مستند.", en: "In the Documents section, click 'Upload Document' to upload PDFs, images, or text files. You pick each document's category as you upload it (General, Legal, Contract, Marketing, or Finance). From there you can search by name, filter the list by category, and download any document." },
     category: "property_management",
   },
-  // Billing & Subscription
+  // Subscription & Billing
   {
     id: "fi-4",
     question: { ar: "كيف أدير اشتراكي؟", en: "How do I manage my subscription?" },
     answer: { ar: "يعرض قسم الفوترة خطتك الحالية وحالتها (تجريبي، نشط، متأخر، ملغي)، ودورة الفوترة (شهري، ربع سنوي، نصف سنوي، سنوي)، وتاريخ الفاتورة التالية، وطرق الدفع المحفوظة. انقر 'تغيير الخطة' لاستعراض الخطط المتاحة والمقارنة بينها.", en: "The Billing section shows your current plan and its status (trialing, active, past due, canceled), your billing cycle (monthly, quarterly, semi-annual, annual), the next billing date, and any saved payment methods. Click 'Change Plan' to browse and compare what's available." },
-    category: "finance",
+    category: "subscription",
+  },
+  {
+    id: "sub-1",
+    question: { ar: "ما الفرق بين الخطط وما الذي تتضمنه كل خطة؟", en: "What's the difference between the plans, and what does each include?" },
+    answer: { ar: "تحدد خطتك ما يمكنك الوصول إليه وحدوده. تتدرّج الخطط (المبتدئ، الاحترافي، المؤسسات) في الحدود (عدد المستخدمين، الوحدات، العملاء، إعلانات السوق) وفي الميزات المتاحة (مثل المالية، الصيانة، النشر في السوق، الفوترة الإلكترونية المتقدمة). افتح الفوترة > الخطط لمقارنة الخطط واختيار ما يناسب منشأتك.", en: "Your plan determines what you can access and your limits. Plans (Starter, Professional, Enterprise) step up in limits (users, units, customers, marketplace listings) and in available features (such as Finance, Maintenance, marketplace publishing, advanced e-invoicing). Open Billing > Plans to compare plans and pick what fits your organization." },
+    category: "subscription",
+  },
+  {
+    id: "sub-2",
+    question: { ar: "لماذا تظهر لي رسالة 'الميزة غير متاحة في خطتك' أو 'قم بالترقية'؟", en: "Why do I see a 'feature not in your plan' or 'upgrade your plan' message?" },
+    answer: { ar: "هذا يعني أن خطتك الحالية لا تتضمّن تلك الميزة. ترقية الخطة تفتحها فوراً. انقر 'ترقية الخطة' في الرسالة، أو اذهب إلى الفوترة > الخطط لاختيار خطة أعلى. وبعض الميزات يمكن فتحها أيضاً عبر إضافة (انظر سؤال الإضافات).", en: "It means your current plan doesn't include that feature. Upgrading your plan unlocks it immediately. Click 'Upgrade plan' on the message, or go to Billing > Plans to choose a higher plan. Some features can also be unlocked with an add-on (see the add-ons question)." },
+    category: "subscription",
+  },
+  {
+    id: "sub-3",
+    question: { ar: "كيف تعمل حدود الاستخدام، وأين أرى استهلاكي؟", en: "How do usage limits work, and where do I see my usage?" },
+    answer: { ar: "بعض الموارد (المستخدمون، الوحدات، العملاء، إعلانات السوق) لها حد أقصى حسب خطتك. تعرض صفحة الفوترة مقياس 'الاستخدام مقابل خطتك' لكل مورد: يتحول إلى البرتقالي عند بلوغ 80% وإلى الأحمر عند 100%. وعند بلوغ الحد لن تتمكن من إضافة المزيد حتى ترفع الحد (بترقية الخطة أو شراء إضافة).", en: "Some resources (users, units, customers, marketplace listings) have a maximum based on your plan. The Billing page shows a 'Usage vs. your plan' meter for each: it turns orange at 80% and red at 100%. When you hit the limit you can't add more until you raise it — by upgrading your plan or buying an add-on." },
+    category: "subscription",
+  },
+  {
+    id: "sub-4",
+    question: { ar: "ما هي الإضافات وكيف أشتريها أو ألغيها؟", en: "What are add-ons, and how do I buy or cancel them?" },
+    answer: { ar: "الإضافات تعزّز خطتك دون تغييرها: ترفع حداً معيناً (مثل +50 وحدة أو +5 مستخدمين) أو تفتح ميزة. افتح الفوترة > الإضافات لاستعراض المتاح لخطتك، ثم انقر 'شراء'. يسري الأثر فوراً ويظهر في مقاييس الاستخدام، ويمكنك الإلغاء في أي وقت فيعود الحد إلى وضعه السابق.", en: "Add-ons boost your plan without changing it: they raise a specific limit (e.g. +50 units or +5 users) or unlock a feature. Open Billing > Add-ons to see what's available for your plan, then click 'Purchase'. It takes effect immediately and shows in your usage meters, and you can cancel anytime — the limit then reverts." },
+    category: "subscription",
   },
   {
     id: "fi-5",
     question: { ar: "كيف أستخدم كود الخصم (كوبون)؟", en: "How do I apply a coupon code?" },
     answer: { ar: "من صفحة الخطط (الفوترة > الخطط)، أدخل كود الخصم في حقل الكوبون وانقر 'تطبيق'. إذا كان الكود صالحاً، ظهر الخصم (نسبة مئوية أو مبلغ ثابت) على أسعار الخطط: السعر الأصلي مشطوباً، والسعر الجديد باللون الأخضر، ومبلغ التوفير.", en: "On the Plans page (Billing > Plans), type the discount code in the coupon field and click 'Apply'. If the code works, the discount (percentage or fixed amount) shows up on plan prices: the original price is crossed out, the new price is in green, and you see how much you save." },
-    category: "finance",
+    category: "subscription",
   },
   {
     id: "fi-6",
     question: { ar: "ماذا يحدث عند تأخر سداد الاشتراك؟", en: "What happens when my subscription payment is overdue?" },
     answer: { ar: "عند تأخر السداد، تتحول حالة اشتراكك إلى 'متأخر' ويظهر شريط تنبيه مع زر 'تحديث الدفع'. ولديك فترة سماح لتحديث طريقة الدفع قبل تعليق الخدمة. وتجد فواتيرك ومبالغها في صفحة الفواتير.", en: "When a payment is overdue, your subscription status changes to 'Past Due' and a warning banner appears with an 'Update Payment' button. You get a grace period to fix your payment method before the service is suspended. You can check your invoices and their amounts on the Invoices page." },
-    category: "finance",
+    category: "subscription",
   },
   {
     id: "fi-7",

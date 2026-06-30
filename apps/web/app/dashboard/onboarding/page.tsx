@@ -711,6 +711,21 @@ export default function OnboardingPage() {
                 </>
               )}
             </div>
+            {doneVariant === "normal" && (
+              <div className="rounded-xl border border-border bg-card p-4 text-center max-w-sm">
+                <p className="text-sm text-foreground">
+                  {t("الخطوة التالية: اختر خطتك من الفوترة لتفعيل كل الميزات وتحديد حدود منشأتك.", "Next: choose your plan in Billing to activate all features and set your organization's limits.")}
+                </p>
+                <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+                  <Button variant="outline" size="sm" onClick={() => router.push("/dashboard/billing/plans")} style={{ display: "inline-flex" }}>
+                    {t("اختيار الخطة", "Choose a plan")}
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => router.push("/dashboard/help#billing")} style={{ display: "inline-flex" }}>
+                    {t("تعرّف على الاشتراك", "Learn about billing")}
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -1256,6 +1271,21 @@ export default function OnboardingPage() {
                     </>
                   )}
                 </div>
+                {doneVariant === "normal" && (
+                  <div className="rounded-xl border border-border bg-card p-4 text-center max-w-sm">
+                    <p className="text-sm text-foreground">
+                      {t("الخطوة التالية: اختر خطتك من الفوترة لتفعيل كل الميزات وتحديد حدود منشأتك.", "Next: choose your plan in Billing to activate all features and set your organization's limits.")}
+                    </p>
+                    <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+                      <Button variant="outline" size="sm" onClick={() => router.push("/dashboard/billing/plans")} style={{ display: "inline-flex" }}>
+                        {t("اختيار الخطة", "Choose a plan")}
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => router.push("/dashboard/help#billing")} style={{ display: "inline-flex" }}>
+                        {t("تعرّف على الاشتراك", "Learn about billing")}
+                      </Button>
+                    </div>
+                  </div>
+                )}
                 <div className="flex flex-col items-center gap-3 pt-2">
                   <Button
                     onClick={() => router.push("/dashboard")}

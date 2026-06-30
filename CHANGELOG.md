@@ -1,5 +1,24 @@
 # Changelog — Mimarek PropTech
 
+## [5.20.0] — 2026-06-30 — Help & Onboarding: surface the subscription / billing model
+
+The pricing & packaging program (P1–P5 + the add-on-revenue follow-up) shipped plans, limits, add-ons, usage meters, and upgrade gates — but nothing in **Help** or **Onboarding** told tenants those concepts exist or where to act on them. This closes that discoverability gap. Content & discoverability only — no schema, server action, route guard, or RLS surface touched.
+
+### What's new
+- **New "Subscription & Billing" Help category** (`lib/help-content.ts`) — a dedicated FAQ category (before Finance) with **7 FAQs**: 3 billing FAQs moved out of "Finance" (manage subscription · apply a coupon · payment overdue) + **4 new**, each written against the live implementation and bilingual (AR/EN):
+  - *What's the difference between the plans, and what does each include?* — Starter / Professional / Enterprise tiering of limits + features.
+  - *Why do I see a "feature not in your plan" / "upgrade your plan" message?* — what the upgrade gate means and how to unlock (plan or add-on).
+  - *How do usage limits work, and where do I see my usage?* — per-resource meters, the **80% (orange) / 100% (red)** thresholds, and the "Usage vs. your plan" panel on Billing.
+  - *What are add-ons, and how do I buy or cancel them?* — additive limit/feature boosts, immediate effect, and revert-on-cancel.
+- **Deep-link anchors** (`help/page.tsx`) — `/dashboard/help#billing` (plus `#subscription`, `#plans`, `#add-ons`, `#upgrade`, `#limits`, `#coupons`) opens the FAQ tab filtered to the new category.
+- **Onboarding "next step" card** (`onboarding/page.tsx`) — the Done step now closes the loop: a card prompting the just-onboarded user to **choose a plan in Billing to activate all features and set their org's limits**, with a "Choose a plan" → `/dashboard/billing/plans` button and a "Learn about billing" → `/dashboard/help#billing` link. Renders on both mobile + desktop.
+
+### Verify
+- `check-types` green · **`/mimaric-qa` gate = PASS** (0 P0/P1/P2). Every load-bearing FAQ claim was verified against code — tier names (`seed.ts`), the 80%/100% meter colors (`UsageMeter.tsx`), the "Usage vs. your plan" label, the add-on "limits revert immediately" semantics, the "Past Due" status + Update-Payment banner, and that every referenced route (`/dashboard/billing`, `/billing/plans`, `/billing/add-ons`, `#billing`) exists and is **tenant**-audience.
+- **§3.9 walk** (local `next start`): Help `#billing` (new category + 7 FAQs) and the Onboarding Done-step card, light/dark × LTR/RTL + mobile 375×812 — **0 console errors**. Deep-link confirmed (`#billing` lands on the filtered FAQ tab); the new category is data-driven, so the Help page picked it up with zero renderer changes.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimarek/compare/v5.19.0...v5.20.0
+
 ## [5.19.0] — 2026-06-30 — Add-on revenue → MRR / ARR / invoices (Pricing P4 follow-up)
 
 Add-ons (P4) applied their entitlements but their recurring **revenue** was invisible to the billing analytics. This wires it in.
