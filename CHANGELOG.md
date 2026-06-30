@@ -1,5 +1,22 @@
 # Changelog — Mimarek PropTech
 
+## [5.26.0] — 2026-06-30 — Honest dunning copy (CX-005)
+
+CX-audit fix. The PAST_DUE (overdue-payment) recovery was a dead-end: the banner's "Update Payment" button had **no handler** (there is no payment gateway — billing isn't deployed), and FAQ fi-6 (introduced in v5.20.0) over-promised a working button. This makes the dunning copy honest.
+
+### What's new
+- **`billing/page.tsx`** — both PAST_DUE banners (mobile + desktop) replace the dead "Update Payment" `<Button>` with a **"Contact support"** `<ActionLink>` → `/dashboard/help`; the description now directs the user to support ("Contact support to resolve your payment before service is suspended"); the unused `updatingPayment` state is removed.
+- **`help-content.ts`** — FAQ fi-6 no longer claims an "Update Payment" button or self-service payment update; it explains the Past-Due state + grace period and directs to **contact support**.
+
+### Note
+This is the honest **interim**. A real self-service add/update-payment-method flow needs the (not-yet-integrated) payment gateway — tracked for the billing-go-live work; `addPaymentMethod`/`resumeSubscription` actions don't exist yet.
+
+### Verify
+- `npm run build` green · `check-types` green · `lint` 0 errors · cspell clean · `/mimaric-qa` gate = GO.
+- **E2E** (local prod build, light + dark; a temporary `PAST_DUE` status was forced on the demo org, then reverted): FAQ fi-6 directs to contact support (no "Update Payment" button promise); the PAST_DUE banner shows a **"Contact support"** link → `/dashboard/help`; the dead button is gone. **8/8 checks, 0 console errors.**
+
+**Full diff:** https://github.com/GhamdiOmar/Mimarek/compare/v5.25.0...v5.26.0
+
 ## [5.25.0] — 2026-06-30 — Pre-render the units limit (CX-002)
 
 CX-audit fix. A Starter org at its `units.max` cap could fill the entire Add-Unit form only for the server action to throw — there was no pre-render signal of the cap (the units page gated by role only, not by the LIMIT entitlement). Now the units page surfaces the cap **before** the user acts.
