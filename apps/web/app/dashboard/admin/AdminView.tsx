@@ -3,7 +3,7 @@
 import * as React from "react";
 import {
   Users, Receipt,
-  Ticket, ListChecks, Tag, SearchCheck, Settings, Blocks,
+  Ticket, ListChecks, Tag, SearchCheck, Settings, Blocks, CalendarClock,
   ChevronRight, ShieldAlert, TrendingUp, AlertTriangle,
   TrendingDown, Wallet, PieChart, Sparkles, CheckCircle2,
 } from "lucide-react";
@@ -202,6 +202,12 @@ const quickLinks = [
     icon: Blocks,
     label: { ar: "الإضافات", en: "Add-ons" },
     desc: { ar: "إضافات قابلة للبيع ترفع حدود الخطة", en: "Sellable add-ons that raise plan limits" },
+  },
+  {
+    href: "/dashboard/admin/scheduled-plan-changes",
+    icon: CalendarClock,
+    label: { ar: "التغييرات المجدولة", en: "Scheduled changes" },
+    desc: { ar: "تغييرات أسعار/خطط مستقبلية بموعد تنفيذ", en: "Future price/plan changes with a cutoff" },
   },
   {
     href: "/dashboard/admin/payments",

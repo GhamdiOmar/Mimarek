@@ -35,6 +35,7 @@ export const ROUTES = {
   // Admin / platform
   adminCoupons: "/dashboard/admin/coupons",
   adminAddOns: "/dashboard/admin/add-ons",
+  adminScheduledPlanChanges: "/dashboard/admin/scheduled-plan-changes",
   adminPlans: "/dashboard/admin/plans",
   adminEmail: "/dashboard/admin/email",
   adminMarketplace: "/dashboard/admin/marketplace",

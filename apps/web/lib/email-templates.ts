@@ -126,3 +126,45 @@ export function testEmail(input: { appUrl: string; lang?: EmailLang }) {
     text: ar ? `تم إرسال اختبار البريد من ${input.appUrl}` : `Email test sent from ${input.appUrl}`,
   };
 }
+
+export function scheduledPlanChangeEmail(input: {
+  name?: string | null;
+  sourcePlanName: string;
+  targetPlanName?: string | null;
+  effectiveAt: Date;
+  isMigration: boolean;
+  billingUrl: string;
+  lang?: EmailLang;
+}) {
+  const ar = input.lang !== "en";
+  const dateStr = input.effectiveAt.toLocaleDateString(ar ? "ar-SA-u-nu-latn" : "en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+  const title = ar ? "تغيير قادم على اشتراكك" : "An upcoming change to your subscription";
+  const what =
+    input.isMigration && input.targetPlanName
+      ? ar
+        ? `سيتم نقل اشتراكك من «${input.sourcePlanName}» إلى «${input.targetPlanName}»`
+        : `Your subscription will move from "${input.sourcePlanName}" to "${input.targetPlanName}"`
+      : ar
+        ? `سيتم تحديث سعر خطة «${input.sourcePlanName}»`
+        : `The price of your "${input.sourcePlanName}" plan will be updated`;
+  const body = ar
+    ? `<p style="margin:0 0 12px;line-height:1.7">مرحباً${input.name ? ` ${input.name}` : ""}،</p>
+       <p style="margin:0 0 12px;line-height:1.7">${what} اعتباراً من ${dateStr}. يبقى سعرك الحالي سارياً حتى ذلك التاريخ.</p>
+       ${cta("عرض الفوترة", input.billingUrl)}
+       <p style="margin:0;line-height:1.7;color:#667085">لأي استفسار، تواصل مع فريق الدعم.</p>
+       ${linkFallback(input.billingUrl)}`
+    : `<p style="margin:0 0 12px;line-height:1.7">Hello${input.name ? ` ${input.name}` : ""},</p>
+       <p style="margin:0 0 12px;line-height:1.7">${what}, effective ${dateStr}. Your current price stays in effect until then.</p>
+       ${cta("View billing", input.billingUrl)}
+       <p style="margin:0;line-height:1.7;color:#667085">If you have any questions, contact support.</p>
+       ${linkFallback(input.billingUrl)}`;
+  return {
+    subject: ar ? "تغيير قادم على اشتراك معمارك" : "An upcoming change to your Mimarek subscription",
+    html: shell(title, body),
+    text: ar ? `${what} اعتباراً من ${dateStr}. ${input.billingUrl}` : `${what}, effective ${dateStr}. ${input.billingUrl}`,
+  };
+}
