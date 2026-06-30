@@ -37,6 +37,7 @@ import {
   type ColumnDef,
 } from "@repo/ui";
 import { useLanguage } from "../../../components/LanguageProvider";
+import { sanitizeError } from "../../../lib/error-sanitizer";
 import {
   MARKETPLACE_INQUIRY_STATUS_LABEL as INQUIRY_STATUS_LABELS,
   MARKETPLACE_INQUIRY_STATUS_VARIANT as INQUIRY_STATUS_VARIANT,
@@ -248,7 +249,7 @@ function MarketplacePage({ initialListings, initialSellerOrgs }: MarketplaceView
       );
       setWithdrawTarget(null);
     } catch (err: unknown) {
-      setWithdrawError(err instanceof Error ? err.message : (t("فشل سحب الاستفسار", "Failed to withdraw inquiry")));
+      setWithdrawError(sanitizeError(err, lang));
     } finally {
       setWithdrawing(false);
     }

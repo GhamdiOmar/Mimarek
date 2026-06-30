@@ -301,6 +301,51 @@ export async function createSubscription(params: {
   return subscription.id;
 }
 
+/**
+ * Idempotently ensure an organization has a subscription.
+ *
+ * New orgs register + verify email + onboard with NO subscription row, which makes
+ * `resolveEntitlement` deny EVERY feature ("No active subscription") — so a brand-new
+ * owner can't create a single record on day one (CX-001). This provisions the free
+ * `isDefault` plan (Starter) so the product works out of the box on the free tier;
+ * the plan's `isDefault` flag finally becomes load-bearing.
+ *
+ * Safe to call repeatedly: a no-op if ANY subscription already exists (any status).
+ * `startTrial: false` → the free plan is ACTIVE immediately (no trial, mrr 0, so no
+ * ARR inflation). Returns the subscription id, or null if no default plan is
+ * configured (defensive — logged, never thrown into the activation path).
+ */
+export async function ensureDefaultSubscription(organizationId: string): Promise<string | null> {
+  // Idempotent guard: any existing subscription means already provisioned.
+  const existing = await db.subscription.findFirst({
+    where: { organizationId },
+    select: { id: true },
+    orderBy: { createdAt: "desc" },
+  });
+  if (existing) return existing.id;
+
+  const defaultPlan = await db.plan.findFirst({
+    where: { isDefault: true },
+    select: { id: true, slug: true },
+  });
+  if (!defaultPlan) {
+    console.error(
+      "[subscription] ensureDefaultSubscription: no isDefault plan configured — org left without entitlements",
+      { organizationId }
+    );
+    return null;
+  }
+
+  const subscriptionId = await createSubscription({
+    organizationId,
+    planId: defaultPlan.id,
+    billingCycle: "MONTHLY",
+    startTrial: false, // free default tier → ACTIVE immediately, no trial
+  });
+  await invalidateEntitlements(organizationId);
+  return subscriptionId;
+}
+
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 function calculatePeriodEnd(

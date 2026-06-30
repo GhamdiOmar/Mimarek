@@ -34,6 +34,7 @@ import {
 } from "@repo/ui";
 import { useLanguage } from "../../../../components/LanguageProvider";
 import { UploadDropzone } from "../../../../lib/uploadthing";
+import { sanitizeError } from "../../../../lib/error-sanitizer";
 import {
   MARKETPLACE_LISTING_STATUS_LABEL as LISTING_STATUS_LABELS,
   MARKETPLACE_LISTING_STATUS_VARIANT as LISTING_STATUS_BADGE,
@@ -242,7 +243,7 @@ export default function MyListingsPage() {
       );
       setEditTarget(null);
     } catch (err: unknown) {
-      setEditError(err instanceof Error ? err.message : (lang === "ar" ? "فشل التعديل" : "Failed to update"));
+      setEditError(sanitizeError(err, lang));
     } finally {
       setEditing(false);
     }
@@ -267,7 +268,7 @@ export default function MyListingsPage() {
       );
       setUnpublishTarget(null);
     } catch (err: unknown) {
-      setUnpublishError(err instanceof Error ? err.message : (lang === "ar" ? "فشل إلغاء النشر" : "Failed to unpublish"));
+      setUnpublishError(sanitizeError(err, lang));
     } finally {
       setUnpublishing(false);
     }
@@ -291,7 +292,7 @@ export default function MyListingsPage() {
       );
       setConvertTarget(null);
     } catch (err: unknown) {
-      setConvertError(err instanceof Error ? err.message : (lang === "ar" ? "فشل التحويل" : "Failed to convert"));
+      setConvertError(sanitizeError(err, lang));
     } finally {
       setConverting(false);
     }
@@ -319,7 +320,7 @@ export default function MyListingsPage() {
       );
       setSettleTarget(null);
     } catch (err: unknown) {
-      setSettleError(err instanceof Error ? err.message : (lang === "ar" ? "فشل تسوية التحويل" : "Failed to settle transfer"));
+      setSettleError(sanitizeError(err, lang));
     } finally {
       setSettling(false);
     }
@@ -347,7 +348,7 @@ export default function MyListingsPage() {
       setRega(updated as unknown as OrgRega);
       setRegaDialogOpen(false);
     } catch (err: unknown) {
-      setRegaError(err instanceof Error ? err.message : t("Failed to submit authorization", "فشل إرسال الترخيص"));
+      setRegaError(sanitizeError(err, lang));
     } finally {
       setRegaSubmitting(false);
     }
@@ -386,7 +387,7 @@ export default function MyListingsPage() {
       );
       setProofTarget(null);
     } catch (err: unknown) {
-      setProofError(err instanceof Error ? err.message : t("Failed to submit deed proof", "فشل إرسال سند الملكية"));
+      setProofError(sanitizeError(err, lang));
     } finally {
       setProofSubmitting(false);
     }

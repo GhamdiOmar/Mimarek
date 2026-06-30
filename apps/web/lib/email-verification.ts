@@ -59,6 +59,9 @@ export type ConsumeResult = {
   userId?: string;
   userEmail?: string;
   userRole?: string;
+  // Returned on success so the caller can auto-provision the org's default
+  // (free Starter) subscription at activation — see ensureDefaultSubscription.
+  organizationId?: string;
 };
 
 /**
@@ -109,6 +112,7 @@ export async function consumeEmailVerificationToken(rawToken: string): Promise<C
             userId: updated.id,
             userEmail: updated.email,
             userRole: updated.role,
+            organizationId: updated.organizationId ?? undefined,
           };
         }
         return { ok: true };

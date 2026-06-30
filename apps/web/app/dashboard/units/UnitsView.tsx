@@ -1,6 +1,7 @@
 "use client";
 
 import { useLanguage } from "../../../components/LanguageProvider";
+import { sanitizeError } from "../../../lib/error-sanitizer";
 import { useUnsavedChanges } from "../../../hooks/useUnsavedChanges";
 import * as React from "react";
 import { useForm, Controller } from "react-hook-form";
@@ -310,8 +311,10 @@ export default function UnitsView({ initialUnits }: { initialUnits: UnitRow[] })
       setUnits((prev) => [...prev, unit]);
       setShowAddModal(false);
       reset();
-    } catch {
-      setError(t("فشل إنشاء الوحدة", "Failed to create unit"));
+    } catch (err) {
+      // CX-003: surface the real reason (e.g. plan limit reached) as friendly
+      // bilingual copy instead of swallowing it into a generic message.
+      setError(sanitizeError(err, lang));
     } finally {
       setUpdating(false);
     }
