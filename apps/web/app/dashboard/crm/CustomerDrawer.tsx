@@ -1137,7 +1137,7 @@ export function CustomerDrawer({
           </div>
 
           {editError && (
-            <p className="text-sm text-destructive bg-destructive/10 border border-destructive/30 rounded-lg px-3 py-2">
+            <p role="alert" className="text-sm text-destructive bg-destructive/10 border border-destructive/30 rounded-lg px-3 py-2">
               {editError}
             </p>
           )}
@@ -1288,7 +1288,7 @@ export function CustomerDrawer({
             )}
 
             {linkError && (
-              <p className="text-sm text-destructive bg-destructive/10 border border-destructive/30 rounded-lg px-3 py-2">
+              <p role="alert" className="text-sm text-destructive bg-destructive/10 border border-destructive/30 rounded-lg px-3 py-2">
                 {linkError}
               </p>
             )}
@@ -1404,7 +1404,7 @@ export function CustomerDrawer({
             </div>
 
             {convertError && (
-              <p className="text-sm text-destructive bg-destructive/10 border border-destructive/30 rounded-lg px-3 py-2">
+              <p role="alert" className="text-sm text-destructive bg-destructive/10 border border-destructive/30 rounded-lg px-3 py-2">
                 {convertError}
               </p>
             )}

@@ -222,7 +222,7 @@ export default function CustomerActivityTimeline({ customerId }: CustomerActivit
           />
 
           {submitError && (
-            <p className="text-xs text-red-600">{submitError}</p>
+            <p role="alert" className="text-xs text-red-600">{submitError}</p>
           )}
 
           <div className="flex items-center justify-end gap-2">

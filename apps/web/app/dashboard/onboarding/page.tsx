@@ -370,7 +370,7 @@ export default function OnboardingPage() {
       {/* Body */}
       <div className="flex-1 overflow-y-auto px-4 py-5 space-y-5 pb-[calc(theme(height.mobile-bottomnav)+env(safe-area-inset-bottom)+7rem)]">
         {error && (
-          <div className="rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
+          <div role="alert" className="rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
             {error}
           </div>
         )}
@@ -831,7 +831,7 @@ export default function OnboardingPage() {
           <div className="bg-card rounded-xl border border-border shadow-sm p-8 min-h-[400px]">
             {/* Error Banner */}
             {error && (
-              <div className="mb-6 p-4 bg-destructive/10 border border-destructive/30 rounded-lg text-sm text-destructive">
+              <div role="alert" className="mb-6 p-4 bg-destructive/10 border border-destructive/30 rounded-lg text-sm text-destructive">
                 {error}
               </div>
             )}

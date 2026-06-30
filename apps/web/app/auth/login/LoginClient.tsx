@@ -256,7 +256,7 @@ export default function LoginClient({ falLicense }: { falLicense?: string | null
               </div>
 
               {error && (
-                <div className="p-3 bg-destructive/10 border border-destructive/20 text-destructive text-sm rounded-lg">
+                <div role="alert" className="p-3 bg-destructive/10 border border-destructive/20 text-destructive text-sm rounded-lg">
                   {error}
                 </div>
               )}

@@ -860,7 +860,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: UnitRow[] })
 
       {/* Inline Error Display */}
       {error && (
-        <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-destructive/10 border border-destructive/30">
+        <div role="alert" className="flex items-center justify-between gap-3 p-3 rounded-lg bg-destructive/10 border border-destructive/30">
           <p className="text-sm text-destructive">{error}</p>
           <IconButton
             icon={X}
@@ -1981,7 +1981,7 @@ export default function UnitsView({ initialUnits }: { initialUnits: UnitRow[] })
         }
       >
         {error && (
-          <p className="text-sm text-destructive">{error}</p>
+          <p role="alert" className="text-sm text-destructive">{error}</p>
         )}
       </ResponsiveDialog>
 

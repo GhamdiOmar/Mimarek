@@ -958,7 +958,7 @@ export default function MyListingsPage() {
       >
         <div className="space-y-4 py-2">
           {editError && (
-            <div className="flex items-center gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            <div role="alert" className="flex items-center gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
               <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
               {editError}
             </div>
@@ -1031,7 +1031,7 @@ export default function MyListingsPage() {
       >
         <div className="space-y-4 py-2">
           {unpublishError && (
-            <div className="flex items-center gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            <div role="alert" className="flex items-center gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
               <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
               {unpublishError}
             </div>
@@ -1075,7 +1075,7 @@ export default function MyListingsPage() {
         }
       >
         {convertError && (
-          <div className="flex items-center gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          <div role="alert" className="flex items-center gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
             <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
             {convertError}
           </div>
@@ -1105,7 +1105,7 @@ export default function MyListingsPage() {
         }
       >
         {settleError && (
-          <div className="flex items-center gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          <div role="alert" className="flex items-center gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
             <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
             {settleError}
           </div>
@@ -1139,7 +1139,7 @@ export default function MyListingsPage() {
       >
         <div className="space-y-4 py-2">
           {regaError && (
-            <div className="flex items-center gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            <div role="alert" className="flex items-center gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
               <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
               {regaError}
             </div>
@@ -1218,7 +1218,7 @@ export default function MyListingsPage() {
       >
         <div className="space-y-4 py-2">
           {proofError && (
-            <div className="flex items-center gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            <div role="alert" className="flex items-center gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
               <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
               {proofError}
             </div>
@@ -1300,7 +1300,7 @@ export default function MyListingsPage() {
                     }}
                   />
                   {deedUploadError && (
-                    <p className="flex items-center gap-1.5 text-xs text-destructive">
+                    <p role="alert" className="flex items-center gap-1.5 text-xs text-destructive">
                       <AlertCircle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                       {deedUploadError}
                     </p>

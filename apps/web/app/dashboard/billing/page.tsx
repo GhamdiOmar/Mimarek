@@ -229,7 +229,7 @@ export default function BillingDashboardPage() {
         <div className="flex-1 px-4 pt-4 pb-8 space-y-5">
           {/* Error banner */}
           {error && (
-            <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+            <div role="alert" className="flex items-center justify-between gap-3 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
               <p className="text-sm text-destructive">{error}</p>
               <IconButton
                 icon={X}
@@ -463,7 +463,7 @@ export default function BillingDashboardPage() {
 
           {/* Error Display */}
           {error && (
-            <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-destructive/10 border border-destructive/30">
+            <div role="alert" className="flex items-center justify-between gap-3 p-3 rounded-lg bg-destructive/10 border border-destructive/30">
               <p className="text-sm text-destructive">{error}</p>
               <IconButton
                 icon={X}

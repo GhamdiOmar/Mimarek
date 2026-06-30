@@ -90,7 +90,7 @@ export default function SecuritySettingsPage() {
   const passwordForm = (suffix: string) => (
     <div className="space-y-5">
       {error && (
-        <div className="p-3 bg-destructive/10 border border-destructive/30 text-destructive text-sm rounded-lg">
+        <div role="alert" className="p-3 bg-destructive/10 border border-destructive/30 text-destructive text-sm rounded-lg">
           {error}
         </div>
       )}

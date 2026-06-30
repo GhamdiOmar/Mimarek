@@ -790,7 +790,7 @@ export default function CrmView({
 
       <div className="flex-1 px-4 py-3">
         {error && (
-          <div className="mb-3 flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+          <div role="alert" className="mb-3 flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
             <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
             <span className="flex-1">{error}</span>
           </div>
@@ -1072,7 +1072,7 @@ export default function CrmView({
 
       {/* ── Error Banner ── */}
       {error && (
-        <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-destructive/10 border border-destructive/30">
+        <div role="alert" className="flex items-center justify-between gap-3 p-3 rounded-lg bg-destructive/10 border border-destructive/30">
           <p className="text-sm text-destructive">{error}</p>
           <IconButton
             icon={X}
@@ -1501,7 +1501,7 @@ export default function CrmView({
           </div>
         }
       >
-        {error && <p className="text-sm text-destructive">{error}</p>}
+        {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
       </ResponsiveDialog>
     </div>
     </div>

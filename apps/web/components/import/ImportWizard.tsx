@@ -408,7 +408,7 @@ export function ImportWizard({
 
         {/* Error banner */}
         {error && (
-          <div className="flex items-start justify-between gap-3 rounded-lg border border-destructive/30 bg-destructive/10 p-3">
+          <div role="alert" className="flex items-start justify-between gap-3 rounded-lg border border-destructive/30 bg-destructive/10 p-3">
             <p className="text-sm text-destructive">{error}</p>
             <IconButton
               icon={X}
