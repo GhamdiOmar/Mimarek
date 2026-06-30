@@ -755,9 +755,25 @@ function DataTableInner<TData, TValue>({
               <div
                 key={row.id}
                 onClick={onRowClick ? () => onRowClick(row.original) : undefined}
+                // CX-007: a clickable card must be keyboard-operable (WCAG 2.1.1 / §6.6.0).
+                role={onRowClick ? "button" : undefined}
+                tabIndex={onRowClick ? 0 : undefined}
+                onKeyDown={
+                  onRowClick
+                    ? (e) => {
+                        // Only when the card itself is focused — never on a bubbled
+                        // Enter/Space from an inner control (avoids a double-action).
+                        if ((e.key === "Enter" || e.key === " ") && e.target === e.currentTarget) {
+                          e.preventDefault();
+                          onRowClick(row.original);
+                        }
+                      }
+                    : undefined
+                }
                 className={cn(
                   "rounded-lg border border-border bg-card p-3 transition-colors",
-                  onRowClick && "cursor-pointer active:bg-muted/40",
+                  onRowClick &&
+                    "cursor-pointer active:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
                   rowClassName?.(row.original),
                 )}
               >
@@ -860,7 +876,27 @@ function DataTableInner<TData, TValue>({
                         key={row.id}
                         data-state={row.getIsSelected() ? "selected" : undefined}
                         onClick={onRowClick ? () => onRowClick(row.original) : undefined}
-                        className={cn(onRowClick && "cursor-pointer", rowClassName?.(row.original))}
+                        // CX-007: a clickable row must be keyboard-operable (WCAG 2.1.1 / §6.6.0).
+                        role={onRowClick ? "button" : undefined}
+                        tabIndex={onRowClick ? 0 : undefined}
+                        onKeyDown={
+                          onRowClick
+                            ? (e) => {
+                                // Only when the row itself is focused — never on a bubbled
+                                // Enter/Space from an inner control (avoids a double-action).
+                                if ((e.key === "Enter" || e.key === " ") && e.target === e.currentTarget) {
+                                  e.preventDefault();
+                                  onRowClick(row.original);
+                                }
+                              }
+                            : undefined
+                        }
+                        className={cn(
+                          // A real outline (not a box-shadow ring) renders reliably on a <tr>.
+                          onRowClick &&
+                            "cursor-pointer focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
+                          rowClassName?.(row.original),
+                        )}
                       >
                         {row.getVisibleCells().map((cell) => {
                           const meta = (cell.column.columnDef.meta ?? {}) as { align?: "start" | "end" | "center"; numeric?: boolean };
