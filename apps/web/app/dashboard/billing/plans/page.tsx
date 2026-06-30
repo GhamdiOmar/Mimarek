@@ -10,15 +10,12 @@ import {
   Sparkle,
   Building2,
   ArrowLeft,
-  Tag,
-  X,
   Loader2,
 } from "lucide-react";
-import { Button, AppBar, SARAmount, Skeleton, IconButton, ActionLink } from "@repo/ui";
+import { Button, AppBar, SARAmount, Skeleton, ActionLink } from "@repo/ui";
 import { PageHeader } from "@repo/ui/components/PageHeader";
 import Link from "next/link";
 import { subscribeToPlan, getCurrentSubscription, getPlans } from "../../../actions/billing";
-import { validateCoupon } from "../../../actions/coupons";
 import { toast } from "sonner";
 
 // ─── Serialized DTOs (Decimal → string, Date → string over the RSC boundary) ──
@@ -42,11 +39,6 @@ type PlanDTO = {
 
 type CurrentSubscriptionDTO = { planId: string } | null;
 
-// The `coupon` object returned by validateCoupon on a successful validation.
-type AppliedCoupon = NonNullable<
-  Awaited<ReturnType<typeof validateCoupon>>["coupon"]
->;
-
 export default function PlansPage() {
   const { lang } = useLanguage();
   const router = useRouter();
@@ -55,12 +47,6 @@ export default function PlansPage() {
   const [loading, setLoading] = React.useState(true);
   const [subscribing, setSubscribing] = React.useState<string | null>(null);
   const [billingCycle, setBillingCycle] = React.useState<"MONTHLY" | "ANNUAL">("ANNUAL");
-
-  // Coupon state
-  const [couponCode, setCouponCode] = React.useState("");
-  const [couponLoading, setCouponLoading] = React.useState(false);
-  const [appliedCoupon, setAppliedCoupon] = React.useState<AppliedCoupon | null>(null);
-  const [couponError, setCouponError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     async function load() {
@@ -78,44 +64,6 @@ export default function PlansPage() {
   }, []);
 
   const t = translations[lang];
-
-  async function handleValidateCoupon() {
-    if (!couponCode.trim()) return;
-    setCouponLoading(true);
-    setCouponError(null);
-    try {
-      const result = await validateCoupon(couponCode.trim());
-      if (result.valid && result.coupon) {
-        setAppliedCoupon(result.coupon);
-        setCouponError(null);
-      } else {
-        setAppliedCoupon(null);
-        setCouponError(result.reason ?? t.couponInvalid);
-      }
-    } catch (error: unknown) {
-      setCouponError(error instanceof Error ? error.message : t.couponInvalid);
-      setAppliedCoupon(null);
-    } finally {
-      setCouponLoading(false);
-    }
-  }
-
-  function handleRemoveCoupon() {
-    setAppliedCoupon(null);
-    setCouponCode("");
-    setCouponError(null);
-  }
-
-  function calculateDiscount(price: number): { discountAmount: number; discountedPrice: number } {
-    if (!appliedCoupon || price === 0) return { discountAmount: 0, discountedPrice: price };
-    let discountAmount: number;
-    if (appliedCoupon.type === "PERCENTAGE") {
-      discountAmount = Math.round((price * appliedCoupon.value) / 100 * 100) / 100;
-    } else {
-      discountAmount = Math.min(appliedCoupon.value, price);
-    }
-    return { discountAmount, discountedPrice: Math.max(0, price - discountAmount) };
-  }
 
   async function handleSubscribe(planId: string) {
     setSubscribing(planId);
@@ -206,70 +154,12 @@ export default function PlansPage() {
           </Button>
         </div>
 
-        {/* Coupon input */}
-        {appliedCoupon ? (
-          <div className="flex items-center gap-3 p-3 rounded-lg border border-success/40 bg-success/10">
-            <Tag className="w-5 h-5 text-success flex-shrink-0" aria-hidden="true" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-success">{appliedCoupon.code}</p>
-              <p className="text-xs text-success/80">
-                {appliedCoupon.type === "PERCENTAGE"
-                  ? `${appliedCoupon.value}% ${t.discount}`
-                  : `${appliedCoupon.value} ${t.sar} ${t.discount}`}
-              </p>
-            </div>
-            <IconButton
-              icon={X}
-              aria-label={t.removeCoupon}
-              variant="ghost"
-              onClick={handleRemoveCoupon}
-              className="text-success hover:bg-success/10 h-8 w-8"
-            />
-          </div>
-        ) : (
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1">
-              <Tag className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
-              <input
-                type="text"
-                aria-label={t.couponPlaceholder}
-                value={couponCode}
-                onChange={(e) => {
-                  setCouponCode(e.target.value.toUpperCase());
-                  setCouponError(null);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleValidateCoupon();
-                }}
-                placeholder={t.couponPlaceholder}
-                className="w-full h-11 ps-9 pe-3 text-sm rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-              />
-            </div>
-            <Button
-              variant="secondary"
-              onClick={handleValidateCoupon}
-              disabled={!couponCode.trim() || couponLoading}
-              style={{ display: "inline-flex" }}
-              className="h-11"
-            >
-              {couponLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : t.applyCoupon}
-            </Button>
-          </div>
-        )}
-        {couponError && (
-          <p role="alert" className="text-xs text-destructive -mt-2">{couponError}</p>
-        )}
-
         {/* Plan tiers stacked */}
         {plans.map((plan, index) => {
           const Icon = planIcons[index] ?? Crown;
           const isCurrentPlan = currentSub?.planId === plan.id;
           const price = billingCycle === "ANNUAL" ? Number(plan.priceAnnual) : Number(plan.priceMonthly);
           const monthlyEquiv = billingCycle === "ANNUAL" ? Math.round(price / 12) : price;
-          const { discountAmount, discountedPrice } = calculateDiscount(price);
-          const discountedMonthly = billingCycle === "ANNUAL"
-            ? Math.round(discountedPrice / 12)
-            : discountedPrice;
           const entitlements = plan.entitlements ?? [];
 
           return (
@@ -295,30 +185,6 @@ export default function PlansPage() {
               <div className="pt-1">
                 {price === 0 ? (
                   <p className="text-2xl font-bold text-foreground">{t.free}</p>
-                ) : appliedCoupon && discountAmount > 0 ? (
-                  <>
-                    <SARAmount
-                      value={monthlyEquiv}
-                      size={12}
-                      className="text-xs text-muted-foreground line-through tabular-nums"
-                    />
-                    <div className="flex items-baseline gap-1 mt-0.5">
-                      <SARAmount
-                        value={discountedMonthly}
-                        size={18}
-                        className="text-2xl font-bold text-success tabular-nums"
-                      />
-                      <span className="text-sm text-muted-foreground">/{t.month}</span>
-                    </div>
-                    <p className="text-xs text-success mt-1">
-                      {t.youSave}{" "}
-                      <SARAmount
-                        value={discountAmount}
-                        size={11}
-                        className="tabular-nums font-medium"
-                      />
-                    </p>
-                  </>
                 ) : (
                   <div className="flex items-baseline gap-1">
                     <SARAmount
@@ -333,7 +199,7 @@ export default function PlansPage() {
                   <p className="text-xs text-muted-foreground mt-1">
                     {t.billedAnnually}:{" "}
                     <SARAmount
-                      value={appliedCoupon ? discountedPrice : price}
+                      value={price}
                       size={11}
                       className="tabular-nums"
                     />
@@ -448,73 +314,6 @@ export default function PlansPage() {
         </Button>
       </div>
 
-      {/* Coupon Code Section */}
-      <div className="max-w-md mx-auto" data-testid="coupon-section">
-        {appliedCoupon ? (
-          <div className="flex items-center gap-3 p-3 rounded-lg border border-success/30 bg-success/10">
-            <Tag className="w-5 h-5 text-success flex-shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-success">
-                {appliedCoupon.code}
-              </p>
-              <p className="text-xs text-success">
-                {appliedCoupon.type === "PERCENTAGE"
-                  ? `${appliedCoupon.value}% ${t.discount}`
-                  : `${appliedCoupon.value} ${t.sar} ${t.discount}`}
-                {" — "}
-                {lang === "ar" ? appliedCoupon.descriptionAr : appliedCoupon.descriptionEn}
-              </p>
-            </div>
-            <IconButton
-              icon={X}
-              aria-label={t.removeCoupon}
-              variant="ghost"
-              onClick={handleRemoveCoupon}
-              className="text-success hover:bg-success/15"
-            />
-          </div>
-        ) : (
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1">
-              <Tag className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <input
-                type="text"
-                aria-label={t.couponPlaceholder}
-                value={couponCode}
-                onChange={(e) => {
-                  setCouponCode(e.target.value.toUpperCase());
-                  setCouponError(null);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleValidateCoupon();
-                }}
-                placeholder={t.couponPlaceholder}
-                className="w-full ps-9 pe-3 py-2 text-sm rounded-lg border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                data-testid="coupon-input"
-              />
-            </div>
-            <Button
-              variant="secondary"
-              onClick={handleValidateCoupon}
-              disabled={!couponCode.trim() || couponLoading}
-             
-              data-testid="apply-coupon-btn"
-            >
-              {couponLoading ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current" />
-              ) : (
-                t.applyCoupon
-              )}
-            </Button>
-          </div>
-        )}
-        {couponError && (
-          <p role="alert" className="text-xs text-destructive mt-2" data-testid="coupon-error">
-            {couponError}
-          </p>
-        )}
-      </div>
-
       {/* Plans Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
         {plans.map((plan, index) => {
@@ -523,12 +322,6 @@ export default function PlansPage() {
           const price = billingCycle === "ANNUAL" ? Number(plan.priceAnnual) : Number(plan.priceMonthly);
           const monthlyEquiv = billingCycle === "ANNUAL" ? Math.round(price / 12) : price;
           const isPopular = index === 1; // Professional is middle/popular
-
-          // Calculate coupon discount on the total price
-          const { discountAmount, discountedPrice } = calculateDiscount(price);
-          const discountedMonthly = billingCycle === "ANNUAL"
-            ? Math.round(discountedPrice / 12)
-            : discountedPrice;
 
           return (
             <div
@@ -557,28 +350,13 @@ export default function PlansPage() {
                     <p className="text-3xl font-bold">{t.free}</p>
                   ) : (
                     <>
-                      {appliedCoupon && discountAmount > 0 ? (
-                        <>
-                          <p className="text-sm text-muted-foreground line-through" data-testid="original-price">
-                            {monthlyEquiv.toLocaleString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-US")} {t.sar}/{t.month}
-                          </p>
-                          <p className="text-3xl font-bold text-success" data-testid="discounted-price">
-                            {discountedMonthly.toLocaleString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-US")}
-                            <span className="text-base font-normal text-muted-foreground"> {t.sar}/{t.month}</span>
-                          </p>
-                          <p className="text-xs text-success mt-1">
-                            {t.youSave} {discountAmount.toLocaleString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-US")} {t.sar}
-                          </p>
-                        </>
-                      ) : (
-                        <p className="text-3xl font-bold">
-                          {monthlyEquiv.toLocaleString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-US")}
-                          <span className="text-base font-normal text-muted-foreground"> {t.sar}/{t.month}</span>
-                        </p>
-                      )}
+                      <p className="text-3xl font-bold">
+                        {monthlyEquiv.toLocaleString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-US")}
+                        <span className="text-base font-normal text-muted-foreground"> {t.sar}/{t.month}</span>
+                      </p>
                       {billingCycle === "ANNUAL" && (
                         <p className="text-xs text-muted-foreground mt-1">
-                          {t.billedAnnually}: {(appliedCoupon ? discountedPrice : price).toLocaleString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-US")} {t.sar}/{t.year}
+                          {t.billedAnnually}: {price.toLocaleString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-US")} {t.sar}/{t.year}
                         </p>
                       )}
                     </>
@@ -590,7 +368,6 @@ export default function PlansPage() {
                     variant="secondary"
                     className="w-full"
                     disabled
-                   
                   >
                     <CheckCircle2 className="w-4 h-4 me-2" />
                     {t.currentPlan}
@@ -601,7 +378,6 @@ export default function PlansPage() {
                     variant={isPopular ? "primary" : "secondary"}
                     disabled={!!subscribing}
                     onClick={() => handleSubscribe(plan.id)}
-                   
                   >
                     {subscribing === plan.id ? (
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current me-2" />
@@ -687,12 +463,6 @@ const translations = {
     getStarted: "ابدأ الآن",
     startTrial: "ابدأ تجربة مجانية",
     mostPopular: "الأكثر شيوعاً",
-    couponPlaceholder: "أدخل رمز الكوبون",
-    applyCoupon: "تطبيق",
-    removeCoupon: "إزالة الكوبون",
-    couponInvalid: "رمز الكوبون غير صالح",
-    discount: "خصم",
-    youSave: "توفر",
   },
   en: {
     title: "Choose Your Plan",
@@ -710,11 +480,5 @@ const translations = {
     getStarted: "Get Started",
     startTrial: "Start Free Trial",
     mostPopular: "Most Popular",
-    couponPlaceholder: "Enter coupon code",
-    applyCoupon: "Apply",
-    removeCoupon: "Remove coupon",
-    couponInvalid: "Invalid coupon code",
-    discount: "off",
-    youSave: "You save",
   },
 };

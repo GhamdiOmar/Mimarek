@@ -18,11 +18,10 @@ import { BillingPage } from './pages/billing.page';
  * 7. System Admin privileges
  * 8. ZATCA sending simulation
  * 9. VAT requirements (15% Saudi)
- * 10. Coupon application & validation
- * 11. Billing & payment reports
- * 12. Admin plan changes
- * 13. Notifications
- * 14. New subscriber alert
+ * 10. Billing & payment reports
+ * 11. Admin plan changes
+ * 12. Notifications
+ * 13. New subscriber alert
  */
 
 test.describe('Billing Dashboard — Admin', () => {
@@ -168,79 +167,7 @@ test.describe('Billing Dashboard — Admin', () => {
   });
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // 4. COUPON APPLICATION
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  test.describe('Coupon Application', () => {
-    test('coupon input section is visible on plans page', async () => {
-      await billing.gotoPlans();
-      await billing.expectCouponSectionVisible();
-    });
-
-    test('entering a valid coupon code shows discount preview', async () => {
-      await billing.gotoPlans();
-      await billing.enterCouponCode('WELCOME20');
-      await billing.clickApplyCoupon();
-      // If coupon exists and is valid, it should show applied state
-      // This depends on seed data — will show error if coupon doesn't exist
-      const hasApplied = await billing.page.locator('[data-testid="coupon-section"]')
-        .getByText('WELCOME20').isVisible().catch(() => false);
-      const hasError = await billing.page.locator('[data-testid="coupon-error"]')
-        .isVisible().catch(() => false);
-      // Either the coupon is applied or there's a validation error
-      expect(hasApplied || hasError).toBeTruthy();
-    });
-
-    test('entering an invalid coupon code shows error message', async () => {
-      await billing.gotoPlans();
-      await billing.enterCouponCode('INVALID_CODE_XYZ');
-      await billing.clickApplyCoupon();
-      await billing.expectCouponError();
-    });
-
-    test('coupon can be submitted by pressing Enter', async () => {
-      await billing.gotoPlans();
-      await billing.submitCouponViaEnter('TESTCODE');
-      // Should show either applied state or error
-      const section = billing.page.locator('[data-testid="coupon-section"]');
-      await expect(section).toBeVisible();
-    });
-
-    test('applied coupon shows strikethrough original price and discounted price', async () => {
-      await billing.gotoPlans();
-      await billing.enterCouponCode('WELCOME20');
-      await billing.clickApplyCoupon();
-      // If valid coupon, check for price display changes
-      const hasDiscount = await billing.page.locator('[data-testid="discounted-price"]')
-        .first().isVisible().catch(() => false);
-      if (hasDiscount) {
-        await billing.expectOriginalPriceStrikethrough();
-        await billing.expectDiscountedPrice();
-      }
-    });
-
-    test('coupon can be removed after applying', async () => {
-      await billing.gotoPlans();
-      await billing.enterCouponCode('WELCOME20');
-      await billing.clickApplyCoupon();
-      const hasApplied = await billing.page.locator('[data-testid="coupon-section"]')
-        .getByText('WELCOME20').isVisible().catch(() => false);
-      if (hasApplied) {
-        await billing.removeCoupon();
-        // After removal, the input should reappear
-        await expect(billing.page.locator('[data-testid="coupon-input"]')).toBeVisible();
-      }
-    });
-
-    test('empty coupon code cannot be submitted (button disabled)', async () => {
-      await billing.gotoPlans();
-      const btn = billing.page.locator('[data-testid="apply-coupon-btn"]');
-      await expect(btn).toBeDisabled();
-    });
-  });
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // 5. INVOICES & VAT VALIDATION
+  // 4. INVOICES & VAT VALIDATION
   // ═══════════════════════════════════════════════════════════════════════════
 
   test.describe('Invoices & VAT', () => {
@@ -408,10 +335,10 @@ test.describe('Billing Dashboard — Admin', () => {
   });
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // 11. SECURITY — hidden plans (SEC-007) & coupon validation (SEC-008)
+  // 11. SECURITY — hidden plans (SEC-007)
   // ═══════════════════════════════════════════════════════════════════════════
 
-  test.describe('Security — hidden plans & coupon validation', () => {
+  test.describe('Security — hidden plans', () => {
     test('non-public ("hidden") plan is never offered on the plans page (SEC-007)', async () => {
       await billing.gotoPlans();
       await billing.expectPlansPageLoaded();
@@ -422,20 +349,10 @@ test.describe('Billing Dashboard — Admin', () => {
       ).toHaveCount(0);
     });
 
-    test('expired coupon is rejected at apply (SEC-008)', async () => {
-      await billing.gotoPlans();
-      // EXPIRED2024 is seeded with validUntil in 2024 → must be rejected on apply.
-      await billing.enterCouponCode('EXPIRED2024');
-      await billing.clickApplyCoupon();
-      await billing.expectCouponError();
-    });
-
-    test('inactive coupon is rejected at apply (SEC-008)', async () => {
-      await billing.gotoPlans();
-      // INACTIVE50 is seeded with isActive=false → must be rejected on apply.
-      await billing.enterCouponCode('INACTIVE50');
-      await billing.clickApplyCoupon();
-      await billing.expectCouponError();
-    });
+    // Coupon apply-time validation (SEC-008) is still enforced server-side in
+    // `actions/coupons.ts` (applyCoupon re-validates at invoice apply-time), but
+    // the tenant-facing plans-page coupon UI was removed in v5.27.0 (coupons
+    // apply to invoices, and invoice generation is not yet wired — billing
+    // go-live). The former plans-page coupon E2E coverage was removed with it.
   });
 });

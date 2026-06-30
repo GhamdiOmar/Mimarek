@@ -141,53 +141,6 @@ export class BillingPage {
     ).toBeVisible();
   }
 
-  // ─── Coupon Application ────────────────────────────────────────────────
-  // Coupon UI exposes data-testid hooks on the desktop tree only.
-
-  async expectCouponSectionVisible() {
-    await expect(this.page.locator('[data-testid="coupon-section"]').first()).toBeVisible();
-  }
-
-  async enterCouponCode(code: string) {
-    const input = this.page.locator('[data-testid="coupon-input"]').first();
-    await input.fill(code);
-  }
-
-  async clickApplyCoupon() {
-    await this.page.locator('[data-testid="apply-coupon-btn"]').first().click();
-    // Wait for the server action to complete
-    await this.page.waitForTimeout(1000);
-  }
-
-  async submitCouponViaEnter(code: string) {
-    const input = this.page.locator('[data-testid="coupon-input"]').first();
-    await input.fill(code);
-    await input.press('Enter');
-    await this.page.waitForTimeout(1000);
-  }
-
-  async expectCouponApplied(code: string) {
-    const section = this.page.locator('[data-testid="coupon-section"]').first();
-    await expect(section.getByText(code)).toBeVisible();
-  }
-
-  async expectCouponError() {
-    await expect(this.page.locator('[data-testid="coupon-error"]').first()).toBeVisible();
-  }
-
-  async expectDiscountedPrice() {
-    await expect(this.page.locator('[data-testid="discounted-price"]').first()).toBeVisible();
-  }
-
-  async expectOriginalPriceStrikethrough() {
-    await expect(this.page.locator('[data-testid="original-price"]').first()).toBeVisible();
-  }
-
-  async removeCoupon() {
-    const section = this.page.locator('[data-testid="coupon-section"]').first();
-    await section.locator('button').last().click();
-  }
-
   // ─── Invoices Page ──────────────────────────────────────────────────────
 
   async expectInvoicesPageLoaded() {
