@@ -1,5 +1,20 @@
 # Changelog — Mimarek PropTech
 
+## [5.23.0] — 2026-06-30 — Reservation flow: add a customer inline (CX-004)
+
+CX-audit fix. The reservation create modal **dead-ended** when the searched customer didn't exist — the customer autocomplete only rendered when there were matches, so a free-typed name failed the `customerId` requirement and the user had to cancel → go to CRM → add the customer → return → re-enter the unit + amount. A reservation almost always starts from a *new* lead, so this was friction on the primary revenue journey.
+
+### What's new
+- **`reservations/ReservationsView.tsx`** — the customer dropdown now renders for any non-empty query; when there are **no matches** it shows a "+ Add new customer: '<query>'" row that opens the governed `AddCustomerModal` pre-filled with the typed name. On creation the new customer is added to the list and **selected in the reservation form** — no context switch, no re-entry.
+- **`crm/AddCustomerModal.tsx`** — added an optional `initialName` prop (seeds the name field on open) so the inline-add opens pre-filled.
+- **§4 compliance:** the new customer is created through the **canonical encrypt path** — the inline-add reuses the governed `AddCustomerModal` (which routes through `encryptCustomerData`); it does NOT hand-roll a `customer.create`.
+
+### Verify
+- `npm run build` green · `check-types` green · `lint` 0 errors · cspell clean · `/mimaric-qa` gate = GO.
+- **E2E** (local prod build, light + dark): typing an unmatched customer name in the reservation create modal shows the "+ Add new customer" affordance (no dead-end) and opens `AddCustomerModal` pre-filled with the typed name. **4/4 checks, 0 console errors.**
+
+**Full diff:** https://github.com/GhamdiOmar/Mimarek/compare/v5.22.0...v5.23.0
+
 ## [5.22.0] — 2026-06-30 — Keyboard-operable table rows (CX-007)
 
 CX-audit fix. Clickable `DataTable` rows were **mouse-only** — the desktop `<tr>` and the mobile card attached `onClick` + `cursor-pointer` with no `role`/`tabIndex`/`onKeyDown`, so keyboard and screen-reader users couldn't open a record (WCAG 2.2 § 2.1.1 / AGENTS.md § 6.6.0). It's the shared primitive behind every clickable list, so one change fixes them all.

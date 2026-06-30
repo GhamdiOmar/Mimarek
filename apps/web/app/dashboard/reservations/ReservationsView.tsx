@@ -58,6 +58,7 @@ import {
 import { getCustomers } from "../../actions/customers";
 import { getUnitsWithBuildings } from "../../actions/units";
 import { getJourneySummary } from "../../actions/journey";
+import { AddCustomerModal } from "../crm/AddCustomerModal";
 import {
   getSavedViews,
   createSavedView,
@@ -185,6 +186,9 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
   const [createOpen, setCreateOpen] = React.useState(false);
   const [customers, setCustomers] = React.useState<Customer[]>([]);
   const [units, setUnits] = React.useState<Unit[]>([]);
+  // CX-004: open the governed create-customer modal inline when the searched
+  // customer doesn't exist (so the reservation flow isn't a dead-end).
+  const [showAddCustomer, setShowAddCustomer] = React.useState(false);
   const [customerSearch, setCustomerSearch] = React.useState("");
   const [unitSearch, setUnitSearch] = React.useState("");
   // Display-name local state for autocomplete fields (the RHF fields hold IDs)
@@ -1175,7 +1179,7 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
                     onBlur={field.onBlur}
                     placeholder={t("ابحث عن العميل...", "Search customer...")}
                   />
-                  {customerSearch && !field.value && filteredCustomers.length > 0 && (
+                  {customerSearch && !field.value && (
                     <div className="absolute z-10 top-full mt-1 w-full bg-popover border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
                       {filteredCustomers.map((c) => (
                         <Button
@@ -1194,6 +1198,22 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
                           {c.name}
                         </Button>
                       ))}
+                      {/* CX-004: no match → add the new customer inline instead of dead-ending. */}
+                      {filteredCustomers.length === 0 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setShowAddCustomer(true)}
+                          className="w-full justify-start rounded-none px-3 py-2 text-sm font-normal text-primary gap-1.5"
+                          style={{ display: "flex" }}
+                        >
+                          <Plus className="h-4 w-4 shrink-0" />
+                          <span className="truncate min-w-0">
+                            {t(`إضافة عميل جديد: "${customerSearch}"`, `Add new customer: "${customerSearch}"`)}
+                          </span>
+                        </Button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -1508,6 +1528,25 @@ export default function ReservationsView({ initialReservations }: ReservationsVi
       cancelLabel={t("تراجع", "Go back")}
       onConfirm={handleBulkDelete}
       variant="destructive"
+    />
+
+    {/* CX-004: inline create-customer (governed encrypt-path modal) from the
+        reservation flow — opened when the searched customer doesn't exist. */}
+    <AddCustomerModal
+      open={showAddCustomer}
+      onClose={() => setShowAddCustomer(false)}
+      initialName={customerSearch}
+      pageAvailableUnits={[]}
+      teamMembers={[]}
+      lang={lang}
+      onCreated={(created) => {
+        const c: Customer = { id: created.id, name: created.name, phone: created.phone ?? undefined };
+        setCustomers((prev) => [c, ...prev]);
+        setValue("customerId", created.id, { shouldValidate: true, shouldDirty: true });
+        setSelectedCustomerName(created.name);
+        setCustomerSearch(created.name);
+        setShowAddCustomer(false);
+      }}
     />
     </>
   );
