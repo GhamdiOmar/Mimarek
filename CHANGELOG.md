@@ -1,5 +1,20 @@
 # Changelog — Mimarek PropTech
 
+## [5.28.0] — 2026-06-30 — CRM customer Edit form → RHF + zod + Field (CX-009)
+
+CX-audit fix. The CRM customer **Edit Profile** form (`CustomerDrawer`) was the last raw-`useState` form in the app: submit-only validation, a plain number `<Input>` for budget, no unsaved-changes guard — diverging from the governed RHF + zod + `Field` pattern the create modal (`AddCustomerModal`) already uses. Ported it to that pattern.
+
+### What's new
+- **`crm/CustomerDrawer.tsx`** — the Edit Profile form now uses `react-hook-form` + `zodResolver` (`mode: "onTouched"`), one `Controller`→`Field` per field, with **per-field inline errors** (not a single submit-only banner), `SARAmountInput` for budget (formatted SAR + ر.س/SAR suffix), and `useUnsavedChanges(isDirty && open)` to warn on nav-away. Behavior is otherwise preserved exactly: the `updateCustomer` payload mapping, the **PII-safe merge-back** (only non-PII fields from the server response are merged; phone/email/nationalId stay decrypted-client-side), the success toast + 800ms auto-close, and **edit-phone stays optional** (no new required-field regression — a phone-less customer remains savable).
+- **a11y — label association (the one real review finding).** Threading `Field`'s wiring (`{...f}` → `id`/`aria-invalid`/`aria-describedby`) onto the **phone** (`SaudiPhoneInput`) and **budget** (`SARAmountInput`) controls — the render prop previously discarded `f`, so `Field`'s `useId()`-minted `<label htmlFor>` was orphaned (WCAG 2.2 1.3.1/4.1.2). Lint can't catch render-prop threading, so this was a build-green-but-broken case (§3.4).
+- **`crm/AddCustomerModal.tsx`** — the same `{...f}` thread applied to its phone, budget, **and** nationalId controls. The create modal was the benchmark the refactor copied, and it shared the identical orphaned-label defect — fixed in the same change so the reference stops propagating it (§3.3).
+
+### Verify
+- `npm run build` green · `check-types` green · `lint` 0 errors · `/mimaric-qa` + a 6-agent adversarial multi-lens review = **FIX-THEN-GO**; the one real P2 (orphaned phone/budget labels) was fixed; the 3 P3s (whitespace-only name, budget=0 round-trip, `SARAmountInput` blur-reformat) are consistent with the reference / pre-existing primitive design and left as-is.
+- **E2E** (local prod build, all 4 theme/lang combos + the create modal): open a customer → Edit dialog renders the RHF form seeded from the customer; **phone + budget reachable via their labels** (htmlFor↔id wired) in every combo; the name-required `Field` error shows on an empty name and blocks the save; a valid save auto-closes the dialog (success branch). Create modal: phone/budget/nationalId all label-associated. **40/40 checks, 0 console errors.**
+
+**Full diff:** https://github.com/GhamdiOmar/Mimarek/compare/v5.27.0...v5.28.0
+
 ## [5.27.0] — 2026-06-30 — Remove the premature plans-page coupon UI (CX-006)
 
 CX-audit fix. The tenant plans page (`/dashboard/billing/plans`) had a coupon-code input that validated a code and previewed a strikethrough discount — but **that discount was silently dropped at subscribe**: in this system coupons apply to an **Invoice** (`applyCoupon(couponId, invoiceId)`), and invoice generation isn't wired at subscribe-time yet, so there was no invoice for the code to discount. The preview promised a saving the flow never delivered. Until the billing/invoice layer is wired (billing go-live), the honest move is to remove the premature preview.

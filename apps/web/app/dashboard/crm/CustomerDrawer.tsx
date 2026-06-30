@@ -1,6 +1,9 @@
 "use client";
 
 import * as React from "react";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import {
   Users,
   Plus,
@@ -27,12 +30,14 @@ import {
   IconButton,
   ActionLink,
   Input,
+  Field,
   SelectField,
   HijriDatePicker,
   ResponsiveDialog,
   QuickActionRail,
   DirectionalIcon,
   SaudiPhoneInput,
+  SARAmountInput,
   EmptyState,
   LifecycleRail,
   NextActionPanel,
@@ -40,6 +45,7 @@ import {
   RelatedContextPanel,
 } from "@repo/ui";
 import { cn } from "@repo/ui/lib/utils";
+import { useUnsavedChanges } from "@/hooks/useUnsavedChanges";
 import { updateCustomer } from "../../actions/customers";
 import { getJourneySummary } from "../../actions/journey";
 import type { JourneySummary } from "@repo/types";
@@ -169,18 +175,61 @@ export function CustomerDrawer({
 }) {
   const statusCfg = getStatusConfig(customer.status);
 
-  // ── Feature A: Edit modal state ──
+  // ── Feature A: Edit modal (RHF + zod — CX-009) ──
   const [showEditModal, setShowEditModal] = React.useState(false);
-  const [editForm, setEditForm] = React.useState({
-    name: customer.name ?? "",
-    nameArabic: customer.nameArabic ?? "",
-    phone: customer.phone ?? "",
-    email: customer.email ?? "",
-    source: customer.source ?? "",
-    agentId: customer.agentId ?? customer.agent?.id ?? "",
-    budget: customer.budget ? String(customer.budget) : "",
-    propertyTypeInterest: customer.propertyTypeInterest ?? "",
+
+  // Schema built per-render so the required-name message uses the current lang.
+  // Edit keeps phone OPTIONAL (unlike the create modal) — an existing phone-less
+  // customer must still be savable; no new required-field regression.
+  const editSchema = React.useMemo(
+    () =>
+      z.object({
+        name: z.string().min(1, lang === "ar" ? "الاسم مطلوب." : "Name is required."),
+        nameArabic: z.string().optional(),
+        phone: z.string().optional(),
+        email: z.string().optional(),
+        source: z.string().optional(),
+        budget: z.number().nullable().optional(),
+        propertyTypeInterest: z.string().optional(),
+        agentId: z.string().optional(),
+      }),
+    [lang],
+  );
+  type EditValues = z.infer<typeof editSchema>;
+
+  // Seed from the current customer. `customer.phone`/`email` are the RAW decrypted
+  // values (masking is applied at display via maskPhone/maskEmail), so seeding +
+  // submitting them round-trips correctly.
+  const editDefaults = React.useCallback(
+    (): EditValues => ({
+      name: customer.name ?? "",
+      nameArabic: customer.nameArabic ?? "",
+      phone: customer.phone ?? "",
+      email: customer.email ?? "",
+      source: customer.source ?? "",
+      budget:
+        customer.budget != null && customer.budget !== ""
+          ? Number(customer.budget)
+          : null,
+      propertyTypeInterest: customer.propertyTypeInterest ?? "",
+      agentId: customer.agentId ?? customer.agent?.id ?? "",
+    }),
+    [customer],
+  );
+
+  const {
+    control: editControl,
+    handleSubmit: handleEditFormSubmit,
+    reset: resetEditForm,
+    formState: editFormState,
+  } = useForm<EditValues>({
+    resolver: zodResolver(editSchema),
+    mode: "onTouched",
+    defaultValues: editDefaults(),
   });
+  // Warn on nav-away only while the edit modal is open with unsaved changes.
+  useUnsavedChanges(editFormState.isDirty && showEditModal);
+
   const [savingEdit, setSavingEdit] = React.useState(false);
   const [editError, setEditError] = React.useState<string | null>(null);
   const [editSuccess, setEditSuccess] = React.useState(false);
@@ -251,27 +300,24 @@ export function CustomerDrawer({
     window.location.href = `/dashboard/reservations?${params.toString()}`;
   }
 
-  // ── Feature A: Edit submit ──
-  async function handleEditSubmit() {
-    if (!editForm.name.trim()) {
-      setEditError(lang === "ar" ? "الاسم حقل مطلوب." : "Name is required.");
-      return;
-    }
+  // ── Feature A: Edit submit (RHF — validation via zodResolver) ──
+  const onEditSubmit = handleEditFormSubmit(async (values) => {
     setSavingEdit(true);
     setEditError(null);
     try {
       const updated = await updateCustomer(customer.id, {
-        name: editForm.name,
-        nameArabic: editForm.nameArabic || undefined,
-        phone: editForm.phone || undefined,
-        email: editForm.email || undefined,
-        source: editForm.source || undefined,
-        agentId: editForm.agentId || undefined,
-        budget: editForm.budget ? Number(editForm.budget) : undefined,
-        propertyTypeInterest: editForm.propertyTypeInterest || undefined,
+        name: values.name,
+        nameArabic: values.nameArabic || undefined,
+        phone: values.phone || undefined,
+        email: values.email || undefined,
+        source: values.source || undefined,
+        agentId: values.agentId || undefined,
+        budget: values.budget != null ? Number(values.budget) : undefined,
+        propertyTypeInterest: values.propertyTypeInterest || undefined,
       });
-      // Only merge non-PII fields from server response to avoid showing encrypted ciphertext.
-      // PII fields (phone, email, nationalId) stay from the current decrypted customer state.
+      // Only merge non-PII fields from the server response to avoid showing encrypted
+      // ciphertext. PII fields (phone, email, nationalId) stay from the current
+      // decrypted customer state.
       onCustomerUpdated({
         ...customer,
         name: updated.name,
@@ -293,7 +339,7 @@ export function CustomerDrawer({
     } finally {
       setSavingEdit(false);
     }
-  }
+  });
 
   // ── Feature B: Link property ──
   async function openLinkModal() {
@@ -460,16 +506,7 @@ export function CustomerDrawer({
               style={{ display: "inline-flex" }}
               className="gap-1.5 text-xs"
               onClick={() => {
-                setEditForm({
-                  name: customer.name ?? "",
-                  nameArabic: customer.nameArabic ?? "",
-                  phone: customer.phone ?? "",
-                  email: customer.email ?? "",
-                  source: customer.source ?? "",
-                  agentId: customer.agentId ?? customer.agent?.id ?? "",
-                  budget: customer.budget ? String(customer.budget) : "",
-                  propertyTypeInterest: customer.propertyTypeInterest ?? "",
-                });
+                resetEditForm(editDefaults());
                 setEditError(null);
                 setEditSuccess(false);
                 setShowEditModal(true);
@@ -1035,104 +1072,168 @@ export function CustomerDrawer({
         <form
           id="crm-edit-profile-form"
           dir={lang === "ar" ? "rtl" : "ltr"}
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleEditSubmit();
-          }}
+          onSubmit={onEditSubmit}
         >
           <div className="grid grid-cols-2 gap-4 py-2">
-            <div className="col-span-2 space-y-1">
-              <label htmlFor="cust-edit-name" className="text-xs font-bold text-muted-foreground">
-                {lang === "ar" ? "الاسم الكامل *" : "Full Name *"}
-              </label>
-              <Input
-                id="cust-edit-name"
-                value={editForm.name}
-                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                placeholder={lang === "ar" ? "الاسم بالكامل" : "Full name"}
-              />
-            </div>
-            <div className="space-y-1">
-              <label htmlFor="cust-edit-name-ar" className="text-xs font-bold text-muted-foreground">
-                {lang === "ar" ? "الاسم بالعربية" : "Arabic Name"}
-              </label>
-              <Input
-                id="cust-edit-name-ar"
-                value={editForm.nameArabic}
-                onChange={(e) => setEditForm({ ...editForm, nameArabic: e.target.value })}
-                placeholder="الاسم بالعربية"
-              />
-            </div>
-            <div className="space-y-1">
-              <label htmlFor="cust-edit-phone" className="text-xs font-bold text-muted-foreground">
-                {lang === "ar" ? "رقم الجوال" : "Phone"}
-              </label>
-              <SaudiPhoneInput
-                id="cust-edit-phone"
-                value={editForm.phone}
-                onChange={(e164) => setEditForm({ ...editForm, phone: e164 })}
-                placeholder="+966 5x xxx xxxx"
-              />
-            </div>
-            <div className="col-span-2 space-y-1">
-              <label htmlFor="cust-edit-email" className="text-xs font-bold text-muted-foreground">
-                {lang === "ar" ? "البريد الإلكتروني" : "Email"}
-              </label>
-              <Input
-                id="cust-edit-email"
-                type="email"
-                value={editForm.email}
-                onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                placeholder="email@example.com"
-                dir="ltr"
-              />
-            </div>
-            <SelectField
-              label={lang === "ar" ? "المصدر" : "Source"}
-              value={editForm.source}
-              onChange={(e) => setEditForm({ ...editForm, source: e.target.value })}
-            >
-              <option value="">{lang === "ar" ? "اختر المصدر" : "Select source"}</option>
-              {Object.entries(SOURCE_LABELS).map(([key, label]) => (
-                <option key={key} value={key}>{label[lang]}</option>
-              ))}
-            </SelectField>
-            <div className="space-y-1">
-              <label htmlFor="cust-edit-budget" className="text-xs font-bold text-muted-foreground">
-                {lang === "ar" ? "الميزانية (ريال)" : "Budget (SAR)"}
-              </label>
-              <Input
-                id="cust-edit-budget"
-                type="number"
-                value={editForm.budget}
-                onChange={(e) => setEditForm({ ...editForm, budget: e.target.value })}
-                placeholder={lang === "ar" ? "مثال: 500000" : "e.g. 500000"}
-                dir="ltr"
-                min="0"
-              />
-            </div>
-            <SelectField
-              label={lang === "ar" ? "نوع العقار المطلوب" : "Property Interest"}
-              value={editForm.propertyTypeInterest}
-              onChange={(e) => setEditForm({ ...editForm, propertyTypeInterest: e.target.value })}
-            >
-              <option value="">{lang === "ar" ? "اختر النوع" : "Select type"}</option>
-              {PROPERTY_TYPES.map((pt) => (
-                <option key={pt.key} value={pt.key}>{pt.label[lang]}</option>
-              ))}
-            </SelectField>
+            <Controller
+              name="name"
+              control={editControl}
+              render={({ field, fieldState }) => (
+                <Field
+                  label={lang === "ar" ? "الاسم الكامل" : "Full Name"}
+                  required
+                  error={fieldState.error?.message}
+                  className="col-span-2"
+                >
+                  {(f) => (
+                    <Input
+                      {...f}
+                      value={field.value ?? ""}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      placeholder={lang === "ar" ? "الاسم بالكامل" : "Full name"}
+                    />
+                  )}
+                </Field>
+              )}
+            />
+            <Controller
+              name="nameArabic"
+              control={editControl}
+              render={({ field, fieldState }) => (
+                <Field
+                  label={lang === "ar" ? "الاسم بالعربية" : "Arabic Name"}
+                  error={fieldState.error?.message}
+                >
+                  {(f) => (
+                    <Input
+                      {...f}
+                      value={field.value ?? ""}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      placeholder="الاسم بالعربية"
+                    />
+                  )}
+                </Field>
+              )}
+            />
+            <Controller
+              name="phone"
+              control={editControl}
+              render={({ field, fieldState }) => (
+                <Field
+                  label={lang === "ar" ? "رقم الجوال" : "Phone"}
+                  error={fieldState.error?.message}
+                >
+                  {(f) => (
+                    <SaudiPhoneInput
+                      {...f}
+                      value={field.value ?? ""}
+                      onChange={(e164) => field.onChange(e164)}
+                      onBlur={field.onBlur}
+                      placeholder="+966 5x xxx xxxx"
+                    />
+                  )}
+                </Field>
+              )}
+            />
+            <Controller
+              name="email"
+              control={editControl}
+              render={({ field, fieldState }) => (
+                <Field
+                  label={lang === "ar" ? "البريد الإلكتروني" : "Email"}
+                  error={fieldState.error?.message}
+                  className="col-span-2"
+                >
+                  {(f) => (
+                    <Input
+                      {...f}
+                      type="email"
+                      value={field.value ?? ""}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      placeholder="email@example.com"
+                      dir="ltr"
+                    />
+                  )}
+                </Field>
+              )}
+            />
+            <Controller
+              name="source"
+              control={editControl}
+              render={({ field }) => (
+                <SelectField
+                  label={lang === "ar" ? "المصدر" : "Source"}
+                  value={field.value ?? ""}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                >
+                  <option value="">{lang === "ar" ? "اختر المصدر" : "Select source"}</option>
+                  {Object.entries(SOURCE_LABELS).map(([key, label]) => (
+                    <option key={key} value={key}>{label[lang]}</option>
+                  ))}
+                </SelectField>
+              )}
+            />
+            <Controller
+              name="budget"
+              control={editControl}
+              render={({ field, fieldState }) => (
+                <Field
+                  label={lang === "ar" ? "الميزانية (ريال)" : "Budget (SAR)"}
+                  error={fieldState.error?.message}
+                >
+                  {(f) => (
+                    <SARAmountInput
+                      {...f}
+                      value={field.value ?? null}
+                      onChange={(n) => field.onChange(n)}
+                      onBlur={field.onBlur}
+                      placeholder={lang === "ar" ? "مثال: 500000" : "e.g. 500000"}
+                      locale={lang}
+                    />
+                  )}
+                </Field>
+              )}
+            />
+            <Controller
+              name="propertyTypeInterest"
+              control={editControl}
+              render={({ field }) => (
+                <SelectField
+                  label={lang === "ar" ? "نوع العقار المطلوب" : "Property Interest"}
+                  value={field.value ?? ""}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                >
+                  <option value="">{lang === "ar" ? "اختر النوع" : "Select type"}</option>
+                  {PROPERTY_TYPES.map((pt) => (
+                    <option key={pt.key} value={pt.key}>{pt.label[lang]}</option>
+                  ))}
+                </SelectField>
+              )}
+            />
             {teamMembers.length > 0 && (
-              <SelectField
-                label={lang === "ar" ? "المسؤول" : "Agent"}
-                value={editForm.agentId}
-                onChange={(e) => setEditForm({ ...editForm, agentId: e.target.value })}
-                wrapperClassName="col-span-2"
-              >
-                <option value="">{lang === "ar" ? "غير معين" : "Unassigned"}</option>
-                {teamMembers.map((m) => (
-                  <option key={m.id} value={m.id}>{m.name ?? m.email}</option>
-                ))}
-              </SelectField>
+              <Controller
+                name="agentId"
+                control={editControl}
+                render={({ field }) => (
+                  <SelectField
+                    label={lang === "ar" ? "المسؤول" : "Agent"}
+                    value={field.value ?? ""}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    wrapperClassName="col-span-2"
+                  >
+                    <option value="">{lang === "ar" ? "غير معين" : "Unassigned"}</option>
+                    {teamMembers.map((m) => (
+                      <option key={m.id} value={m.id}>{m.name ?? m.email}</option>
+                    ))}
+                  </SelectField>
+                )}
+              />
             )}
           </div>
 

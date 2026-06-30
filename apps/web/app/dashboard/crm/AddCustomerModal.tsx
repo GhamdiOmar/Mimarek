@@ -391,8 +391,9 @@ export function AddCustomerModal({
                     required
                     error={fieldState.error?.message}
                   >
-                    {() => (
+                    {(f) => (
                       <SaudiPhoneInput
+                        {...f}
                         value={field.value ?? ""}
                         onChange={(e164) => field.onChange(e164)}
                         onBlur={field.onBlur}
@@ -474,8 +475,9 @@ export function AddCustomerModal({
                     label={lang === "ar" ? "الميزانية (ريال)" : "Budget (SAR)"}
                     error={fieldState.error?.message}
                   >
-                    {() => (
+                    {(f) => (
                       <SARAmountInput
+                        {...f}
                         value={field.value ?? null}
                         onChange={(n) => field.onChange(n)}
                         onBlur={field.onBlur}
@@ -722,8 +724,9 @@ export function AddCustomerModal({
                       label={lang === "ar" ? "رقم الهوية" : "National ID"}
                       error={fieldState.error?.message}
                     >
-                      {() => (
+                      {(f) => (
                         <NationalIdInput
+                          {...f}
                           value={field.value ?? ""}
                           onChange={(raw) => field.onChange(raw)}
                           placeholder="10x xxx xxxx"
