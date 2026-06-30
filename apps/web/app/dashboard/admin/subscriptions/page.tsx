@@ -35,6 +35,7 @@ import {
 import { PageHeader } from "@repo/ui/components/PageHeader";
 import Link from "next/link";
 import { adminGetAllSubscriptions } from "../../../actions/billing";
+import { SubscriptionDetailDrawer } from "../../../../components/admin/SubscriptionDetailDrawer";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -47,6 +48,7 @@ type Subscription = {
   trialEndsAt: string | null;
   priceAtRenewal: number | string | null;
   plan: {
+    id: string;
     nameEn: string;
     nameAr: string;
     slug: string;
@@ -181,6 +183,9 @@ export default function AdminSubscriptionsPage() {
   const [loading, setLoading] = React.useState(true);
   const [page, setPage] = React.useState(1);
   const [mobileSearch, setMobileSearch] = React.useState("");
+  const [refreshTick, setRefreshTick] = React.useState(0);
+  const [selectedSub, setSelectedSub] = React.useState<Subscription | null>(null);
+  const [detailOpen, setDetailOpen] = React.useState(false);
   const pageSize = 20;
 
   React.useEffect(() => {
@@ -189,7 +194,14 @@ export default function AdminSubscriptionsPage() {
       setLoading(true);
       try {
         const result = await adminGetAllSubscriptions(page, pageSize);
-        if (active) setData(result);
+        if (active) {
+          setData(result);
+          // Keep an open detail drawer in sync with the freshly-loaded row so its
+          // status/price/plan + available actions reflect the change just applied.
+          setSelectedSub((prev) =>
+            prev ? result.subscriptions.find((s: Subscription) => s.id === prev.id) ?? prev : prev,
+          );
+        }
       } catch (error) {
         if (active) console.error("Failed to load subscriptions:", error);
       } finally {
@@ -198,7 +210,12 @@ export default function AdminSubscriptionsPage() {
     }
     load();
     return () => { active = false; };
-  }, [page]);
+  }, [page, refreshTick]);
+
+  const openDetail = React.useCallback((sub: Subscription) => {
+    setSelectedSub(sub);
+    setDetailOpen(true);
+  }, []);
 
   const t = translations[lang];
 
@@ -479,6 +496,7 @@ export default function AdminSubscriptionsPage() {
                       key={sub.id}
                       icon={Building2}
                       iconTone="primary"
+                      onClick={() => openDetail(sub)}
                       title={orgName}
                       subtitle={
                         <span className="inline-flex items-center gap-2">
@@ -597,6 +615,7 @@ export default function AdminSubscriptionsPage() {
         pagination
         pageSize={10}
         getRowId={(r) => r.id}
+        onRowClick={openDetail}
         emptyTitle={t.noSubscriptions}
         emptyDescription={t.noSubscriptionsDesc}
         mobileCard={(sub) => {
@@ -628,6 +647,14 @@ export default function AdminSubscriptionsPage() {
       />
     </div>
     </div>
+      {selectedSub && (
+        <SubscriptionDetailDrawer
+          open={detailOpen}
+          onOpenChange={setDetailOpen}
+          subscription={selectedSub}
+          onChanged={() => setRefreshTick((x) => x + 1)}
+        />
+      )}
     </>
   );
 }

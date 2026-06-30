@@ -14,6 +14,8 @@ import { db } from "@repo/db";
 import type { Prisma, SubscriptionStatus } from "@prisma/client";
 import { invalidateEntitlements } from "../entitlements";
 import { isValidSubscriptionTransition } from "./subscription-transitions";
+import { mrrForCycle } from "./mrr";
+import { boundaryMrrEvent, subscriptionMrr } from "./arr-events";
 
 // ─── State Machine ──────────────────────────────────────────────────────────
 
@@ -77,6 +79,13 @@ export async function transitionSubscription(
       break;
   }
 
+  // ARR-waterfall categorisation for ACTIVE-boundary crossings (see boundaryMrrEvent).
+  const { eventCategory, mrrDeltaSar } = boundaryMrrEvent(
+    fromStatus,
+    toStatus,
+    subscriptionMrr(subscription),
+  );
+
   // Perform transition + event log atomically
   await db.$transaction([
     db.subscription.update({
@@ -90,6 +99,8 @@ export async function transitionSubscription(
         toStatus,
         triggeredBy,
         reason,
+        eventCategory,
+        mrrDeltaSar,
         metadata: metadata as Prisma.InputJsonValue | undefined,
       },
     }),
@@ -252,6 +263,9 @@ export async function createSubscription(params: {
   // Calculate period end based on billing cycle
   const periodEnd = trialEnd ?? calculatePeriodEnd(now, billingCycle);
 
+  const priceAtRenewal = billingCycle === "ANNUAL" ? plan.priceAnnual : plan.priceMonthly;
+  const mrr = mrrForCycle(Number(priceAtRenewal), billingCycle);
+
   const subscription = await db.subscription.create({
     data: {
       organizationId,
@@ -262,11 +276,14 @@ export async function createSubscription(params: {
       currentPeriodEnd: periodEnd,
       trialEndsAt: trialEnd,
       nextBillingDate: trialEnd ?? periodEnd,
-      priceAtRenewal: billingCycle === "ANNUAL" ? plan.priceAnnual : plan.priceMonthly,
+      priceAtRenewal,
+      mrrSar: mrr,
     },
   });
 
-  // Log the creation event
+  // Log the creation event. A subscription that starts ACTIVE (no trial) enters
+  // the ARR base immediately → book it as NEW (+mrr); a trial books NEW on
+  // conversion (TRIALING→ACTIVE) via transitionSubscription instead.
   await db.subscriptionEvent.create({
     data: {
       subscriptionId: subscription.id,
@@ -276,6 +293,8 @@ export async function createSubscription(params: {
       reason: startTrial
         ? `New ${trialDays}-day trial started for plan: ${plan.slug}`
         : `Subscription created for plan: ${plan.slug}`,
+      eventCategory: startTrial ? undefined : "NEW",
+      mrrDeltaSar: startTrial ? undefined : mrr,
     },
   });
 

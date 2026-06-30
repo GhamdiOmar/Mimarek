@@ -7,7 +7,9 @@ import { logAuditEvent, logAuditEventAwait } from "../../lib/audit";
 import { ROUTES } from "../../lib/routes";
 import { serialize } from "../../lib/serialize";
 import { createSubscription, transitionSubscription } from "../../lib/payment/subscription-machine";
-import { invalidateEntitlements, checkEntitlement, FEATURE_KEYS } from "../../lib/entitlements";
+import { invalidateEntitlements } from "../../lib/entitlements";
+import { orgUsageSnapshot } from "../../lib/server/org-usage";
+import { mrrForCycle } from "../../lib/payment/mrr";
 import { getNextSequenceValue, GLOBAL_SEQUENCE_SCOPE } from "../../lib/sequence";
 import { getPublicPlans } from "../../lib/server/plans";
 import { clearSubscriptionInvoiceInternal } from "../../lib/zatca-clearance";
@@ -71,37 +73,9 @@ export async function getCurrentSubscription() {
  * unlimited. Resolved through the entitlement engine so plan + add-on (P4)
  * limits are reflected automatically.
  */
-export async function getOrgUsageSnapshot(): Promise<
-  { key: string; labelAr: string; labelEn: string; current: number; limit: number | null }[]
-> {
+export async function getOrgUsageSnapshot() {
   const session = await requirePermission("billing:read");
-  const orgId = session.organizationId;
-  const [users, units, customers, listings] = await Promise.all([
-    db.user.count({ where: { organizationId: orgId } }),
-    db.unit.count({ where: { organizationId: orgId } }),
-    db.customer.count({ where: { organizationId: orgId } }),
-    db.marketplaceListing.count({
-      where: { sellerOrgId: orgId, status: { in: ["PENDING_REVIEW", "PUBLISHED"] } },
-    }),
-  ]);
-  const metrics = [
-    { key: FEATURE_KEYS.USERS_MAX, labelAr: "المستخدمون", labelEn: "Users", current: users },
-    { key: FEATURE_KEYS.UNITS_MAX, labelAr: "الوحدات", labelEn: "Units", current: units },
-    { key: FEATURE_KEYS.CUSTOMERS_MAX, labelAr: "العملاء", labelEn: "Customers", current: customers },
-    {
-      key: FEATURE_KEYS.MARKETPLACE_LISTINGS_MAX,
-      labelAr: "إعلانات السوق",
-      labelEn: "Marketplace listings",
-      current: listings,
-    },
-  ];
-  return Promise.all(
-    metrics.map(async (m) => {
-      const ent = await checkEntitlement(orgId, m.key, m.current);
-      const limit = ent.limit === undefined || ent.limit === Infinity ? null : ent.limit;
-      return { key: m.key, labelAr: m.labelAr, labelEn: m.labelEn, current: m.current, limit };
-    }),
-  );
+  return orgUsageSnapshot(session.organizationId);
 }
 
 /**
@@ -179,14 +153,21 @@ export async function changePlan(data: {
   if (!newPlan) throw new Error("The selected plan was not found. Please refresh and try again.");
 
   const billingCycle = data.billingCycle ?? current.billingCycle;
+  const newPrice = Number(billingCycle === "ANNUAL" ? newPlan.priceAnnual : newPlan.priceMonthly);
+  const oldMrr =
+    current.mrrSar != null ? Number(current.mrrSar) : mrrForCycle(Number(current.priceAtRenewal ?? 0), current.billingCycle);
+  const newMrr = mrrForCycle(newPrice, billingCycle);
+  const mrrDeltaSar = Math.round((newMrr - oldMrr) * 100) / 100;
+  const eventCategory = mrrDeltaSar > 0 ? "EXPANSION" : mrrDeltaSar < 0 ? "CONTRACTION" : undefined;
 
-  // Update subscription to new plan
+  // Update subscription to new plan (+ denormalized MRR for analytics — was omitted before P3)
   await db.subscription.update({
     where: { id: current.id },
     data: {
       planId: data.newPlanId,
       billingCycle,
-      priceAtRenewal: billingCycle === "ANNUAL" ? newPlan.priceAnnual : newPlan.priceMonthly,
+      priceAtRenewal: newPrice,
+      mrrSar: newMrr,
     },
   });
 
@@ -198,6 +179,8 @@ export async function changePlan(data: {
       toStatus: current.status,
       triggeredBy: `user:${session.userId}`,
       reason: `Plan changed to ${newPlan.slug}`,
+      eventCategory,
+      mrrDeltaSar,
       metadata: {
         previousPlanId: current.planId,
         newPlanId: data.newPlanId,
