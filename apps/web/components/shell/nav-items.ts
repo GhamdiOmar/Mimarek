@@ -104,6 +104,7 @@ export const breadcrumbLabels: Record<string, { ar: string; en: string }> = {
   "seo": { ar: "إعدادات SEO", en: "SEO Settings" },
   "email": { ar: "إعدادات البريد", en: "Email Settings" },
   "coupons": { ar: "الكوبونات", en: "Coupons" },
+  "add-ons": { ar: "الإضافات", en: "Add-ons" },
   "subscriptions": { ar: "الاشتراكات", en: "Subscriptions" },
   "data-retention": { ar: "الاحتفاظ بالبيانات", en: "Data Retention" },
   "zatca": { ar: "زاتكا", en: "ZATCA" },

@@ -19,6 +19,7 @@ verification-v*/
 # Local verification/capture scripts (contain the local seed login password —
 # one-off tooling, kept out of the repo; the password-free precheck-*.mjs stays tracked)
 scripts/capture-v*.mjs
+scripts/verify-v*.mjs
 scripts/axe-scan-*.mjs
 axe-scope-*.json
 

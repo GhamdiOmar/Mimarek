@@ -19,6 +19,7 @@ export const ROUTES = {
   finance: "/dashboard/finance",
   help: "/dashboard/help",
   billing: "/dashboard/billing",
+  billingAddOns: "/dashboard/billing/add-ons",
   settings: "/dashboard/settings",
   settingsTeam: "/dashboard/settings/team",
   settingsZatca: "/dashboard/settings/zatca",
@@ -33,6 +34,7 @@ export const ROUTES = {
 
   // Admin / platform
   adminCoupons: "/dashboard/admin/coupons",
+  adminAddOns: "/dashboard/admin/add-ons",
   adminPlans: "/dashboard/admin/plans",
   adminEmail: "/dashboard/admin/email",
   adminMarketplace: "/dashboard/admin/marketplace",

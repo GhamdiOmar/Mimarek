@@ -1,53 +1,17 @@
 import { db } from "@repo/db";
 import { unstable_cache, revalidateTag } from "next/cache";
-import { resolveEntitlement } from "./entitlements/evaluator";
+import { resolveEntitlement, buildAddOnGrants } from "./entitlements/evaluator";
 import type { EntitlementResult, OrgEntitlementData } from "./entitlements/evaluator";
 
 // Re-export the pure evaluator types so existing importers keep working.
 export type { EntitlementResult, OrgEntitlementData } from "./entitlements/evaluator";
 
 // ─── Feature Keys ────────────────────────────────────────────────────────────
-
-/**
- * All feature keys used in the entitlement system.
- * Matches PlanEntitlement.featureKey values in the database.
- */
-export const FEATURE_KEYS = {
-  // ─── Numeric limits (absolute counts) ───
-  USERS_MAX: "users.max",
-  UNITS_MAX: "units.max",
-  CUSTOMERS_MAX: "customers.max",
-  MARKETPLACE_LISTINGS_MAX: "marketplace.listings.max",
-  STORAGE_GB_MAX: "storage.gb.max",
-
-  // ─── Module access flags ───
-  CRM_ACCESS: "crm.access",
-  RESERVATIONS_ACCESS: "reservations.access",
-  CONTRACTS_ACCESS: "contracts.access",
-  PAYMENTS_ACCESS: "payments.access",
-  FINANCE_ACCESS: "finance.access",
-  CMMS_ACCESS: "cmms.access",
-  PLANNING_ACCESS: "planning.access",
-  GIS_ACCESS: "gis.access",
-  REPORTS_ACCESS: "reports.access",
-  AUDIT_ACCESS: "audit.access",
-  MARKETPLACE_READ_ACCESS: "marketplace.read.access",
-  MARKETPLACE_PUBLISH_ACCESS: "marketplace.publish.access",
-
-  // ─── Capability flags ───
-  REPORTS_EXPORT: "reports.export",
-  PII_ENCRYPTION: "pii.encryption",
-  API_ACCESS: "api.access",
-  CUSTOM_BRANDING: "custom.branding",
-  CUSTOM_TEMPLATES_ACCESS: "custom.templates.access",
-  ZATCA_SANDBOX_ACCESS: "zatca.sandbox.access",
-  ZATCA_PRODUCTION_ACCESS: "zatca.production.access",
-
-  // ─── Tier-based ───
-  SLA_PRIORITY: "sla.priority",
-} as const;
-
-export type FeatureKey = (typeof FEATURE_KEYS)[keyof typeof FEATURE_KEYS];
+// FEATURE_KEYS now lives in the pure `./entitlements/keys` module (no db/next
+// imports) so client components + tests can import it. Re-exported here so the
+// many existing `from "lib/entitlements"` importers keep working unchanged.
+export { FEATURE_KEYS, GRANTABLE_FEATURE_KEYS } from "./entitlements/keys";
+export type { FeatureKey } from "./entitlements/keys";
 
 // ─── Internal: Fetch org entitlements (cached) ──────────────────────────────
 
@@ -79,6 +43,14 @@ async function _fetchOrgEntitlements(orgId: string): Promise<OrgEntitlementData>
     },
   });
 
+  // Get active add-ons for the subscription (add-on > plan; additive limits)
+  const addOnRows = subscription
+    ? await db.subscriptionAddOn.findMany({
+        where: { subscriptionId: subscription.id, status: "ACTIVE" },
+        include: { addOn: true },
+      })
+    : [];
+
   const planEntitlements: Record<string, { type: string; value: string }> = {};
   if (subscription?.plan.entitlements) {
     for (const ent of subscription.plan.entitlements) {
@@ -102,6 +74,7 @@ async function _fetchOrgEntitlements(orgId: string): Promise<OrgEntitlementData>
     planSlug: subscription?.plan.slug ?? null,
     planEntitlements,
     overrides: overrideMap,
+    addOns: buildAddOnGrants(addOnRows),
     subscriptionStatus: subscription?.status ?? null,
   };
 }

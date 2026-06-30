@@ -1,5 +1,31 @@
 # Changelog — Mimarek PropTech
 
+## [5.17.0] — 2026-06-30 — Add-ons engine (Pricing P4)
+
+**Phase 4 of the pricing & packaging program** — sellable add-ons that raise an org's entitlement limits (additively) or unlock features, layered on top of its plan. Admins curate a catalogue; tenants self-purchase. Because every grant flows through the entitlement evaluator's new add-on tier, all existing P1 gates honour add-ons with **zero call-site changes**.
+
+### What's new
+- **Schema:** `AddOn` (slug, bilingual name/desc, `pricingModel`, monthly/annual price, the entitlement it grants — `grantsFeatureKey`/`grantsType`/`grantsValue` + `limitMode` ADDITIVE|OVERRIDE, `isPublic`/`isActive`/`billingDeferred`, M2M `plans`) and `SubscriptionAddOn` (the org's purchase — quantity, `unitPriceAtPurchase` snapshot, status) + enums `AddOnPricing`/`AddOnLimitMode`/`AddOnStatus`. RLS extended for the implicit `_AddOnPlans` M2M.
+- **Entitlement merge** (`lib/entitlements/evaluator.ts`): precedence is now **override > add-on > plan > deny**. New pure, unit-tested `mergePlanAndAddOns` — BOOLEAN: a `true` add-on flips a plan `false`; LIMIT/ADDITIVE: effective = `planLimit + Σ(value × quantity)` (`unlimited` either side wins); LIMIT/OVERRIDE: replaces. `buildAddOnGrants` feeds both the cached (`entitlements.ts`) and uncached (`org-usage.ts`) entitlement fetchers, so the engine, every server-action gate, and the usage meters all reflect add-ons identically. Add-ons only ever **grant** — a `false` add-on never revokes a plan grant.
+- **Admin catalogue** (`/dashboard/admin/add-ons`, `billing:admin` SYSTEM-only): create / edit / activate add-ons, restrict to specific plans. Discoverable from the admin dashboard.
+- **Tenant self-service** (`/dashboard/billing/add-ons`, linked from the billing usage section): purchasable cards with a confirm-guarded cancel; `purchaseAddOn` rejects coming-soon (USAGE/CUSTOM `billingDeferred`), inactive, or plan-inapplicable add-ons; `invalidateEntitlements` makes the new limit take effect immediately.
+- **Seed:** a 3-add-on catalogue (Extra Units +50, Extra Users +5, Marketplace Publishing — all backing an enforced gate) + a demo purchase (Dummy/Starter buys +50 units → effective units.max 100). The marketplace-publish override is left intact (the cross-org E2E seller relies on it).
+
+### QA-gate fixes folded in
+- **Grant-config validation** (`adminCreateAddOn`/`adminUpdateAddOn`): rejects a LIMIT grant whose value isn't a whole number or `unlimited`, a BOOLEAN grant that isn't `true`/`false`, and a feature-key with no grant — so an admin can't ship an add-on that charges for nothing.
+- **Dropped the "Extra Storage" demo add-on** — `storage.gb.max` has no enforcement gate or usage meter yet, so selling it would charge for a no-op. The remaining three back real, gated limits.
+- **`FEATURE_KEYS` extracted to a pure `lib/entitlements/keys.ts`** so the admin grant-key dropdown imports the real registry (via `GRANTABLE_FEATURE_KEYS`, built from `FEATURE_KEYS.*` references — drift is now a compile error) instead of a hand-maintained string copy; a unit test guards the subset.
+
+### Deferred (to the metering phase / P6)
+- **Add-on revenue does not yet flow into MRR/ARR or invoices.** `unitPriceAtPurchase` is snapshotted but no billing aggregation reads it, so the ARR waterfall tracks plan revenue only (no regression — it stays internally consistent). Add-on MRR recompute + invoice line-items land with the billing/metering work, per the program plan.
+
+### Verify
+- `npm run build` green · `check-types` green · `lint` 0 errors · **354 web unit tests** (+23 `addon-entitlements` cases: additive/override/boolean merge + no-double-count + `buildAddOnGrants` + the `GRANTABLE_FEATURE_KEYS` drift guard).
+- `prisma db push` (additive) + RLS applied & verified (`relrowsecurity=t`) on `AddOn`/`SubscriptionAddOn`/`_AddOnPlans`; `rls:check` green.
+- **§3.9 walk** (local `next start`): admin catalogue + tenant billing add-ons, light/dark × LTR/RTL + mobile 375×812 — **0 console errors**. **End-to-end proof:** the admin drawer shows Dummy's Units as **8/100** (Starter 50 + the +50 add-on) — the additive merge resolved through `orgUsageSnapshot`. **Functional:** tenant purchase → "Active" → cancel → reverts, live.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimarek/compare/v5.16.0...v5.17.0
+
 ## [5.16.0] — 2026-06-30 — Admin subscription management (Pricing P3)
 
 **Phase 3 of the pricing & packaging program** — platform staff can now operate any tenant org's subscription from `/dashboard/admin/subscriptions`: change plan, set a custom negotiated price, pause / resume / cancel, and read a live usage-vs-plan snapshot. No new model, no new route (extends the existing `billing:admin` SYSTEM-only surface). `/mimaric-qa` GATE = PASS (0 P0/P1; all flagged P2/P3 findings fixed below).
