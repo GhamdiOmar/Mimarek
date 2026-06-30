@@ -212,7 +212,7 @@ export const FAQ_ITEMS: FAQItem[] = [
   {
     id: "fi-6",
     question: { ar: "ماذا يحدث عند تأخر سداد الاشتراك؟", en: "What happens when my subscription payment is overdue?" },
-    answer: { ar: "عند تأخر السداد، تتحول حالة اشتراكك إلى 'متأخر' ويظهر شريط تنبيه مع زر 'تحديث الدفع'. ولديك فترة سماح لتحديث طريقة الدفع قبل تعليق الخدمة. وتجد فواتيرك ومبالغها في صفحة الفواتير.", en: "When a payment is overdue, your subscription status changes to 'Past Due' and a warning banner appears with an 'Update Payment' button. You get a grace period to fix your payment method before the service is suspended. You can check your invoices and their amounts on the Invoices page." },
+    answer: { ar: "عند تأخر السداد، تتحول حالة اشتراكك إلى 'متأخر' ويظهر شريط تنبيه في صفحة الفوترة. ولديك فترة سماح لتسوية الدفع قبل تعليق الخدمة — تواصل مع الدعم لتسوية دفعتك. وتجد فواتيرك ومبالغها في صفحة الفواتير.", en: "When a payment is overdue, your subscription status changes to 'Past Due' and a warning banner appears on the Billing page. You get a grace period to resolve it before the service is suspended — contact support to settle your payment. You can check your invoices and their amounts on the Invoices page." },
     category: "subscription",
   },
   {

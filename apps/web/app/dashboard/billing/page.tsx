@@ -78,7 +78,6 @@ export default function BillingDashboardPage() {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [changingPlan] = React.useState(false);
-  const [updatingPayment] = React.useState(false);
 
   React.useEffect(() => {
     async function load() {
@@ -248,16 +247,9 @@ export default function BillingDashboardPage() {
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-warning-strong">{t.pastDueBanner}</p>
                 <p className="text-xs text-muted-foreground mt-1">{t.pastDueDescription}</p>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  style={{ display: "inline-flex" }}
-                  className="gap-1.5 mt-3"
-                  disabled={updatingPayment}
-                >
-                  {updatingPayment && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                  {t.updatePayment}
-                </Button>
+                <ActionLink href="/dashboard/help" className="mt-3 inline-flex text-sm">
+                  {t.contactSupport}
+                </ActionLink>
               </div>
             </div>
           )}
@@ -483,10 +475,9 @@ export default function BillingDashboardPage() {
                 <p className="text-sm font-medium text-warning-strong">{t.pastDueBanner}</p>
                 <p className="text-xs text-warning-strong mt-1">{t.pastDueDescription}</p>
               </div>
-              <Button variant="secondary" size="sm" style={{ display: "inline-flex" }} className="gap-1.5" disabled={updatingPayment}>
-                {updatingPayment && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                {t.updatePayment}
-              </Button>
+              <ActionLink href="/dashboard/help" className="inline-flex shrink-0 text-sm">
+                {t.contactSupport}
+              </ActionLink>
             </div>
           )}
 
@@ -703,8 +694,8 @@ const translations = {
     viewAllInvoices: "عرض جميع الفواتير",
     noInvoices: "لا توجد فواتير",
     pastDueBanner: "الدفع متأخر",
-    pastDueDescription: "يرجى تحديث طريقة الدفع لتجنب انقطاع الخدمة.",
-    updatePayment: "تحديث الدفع",
+    pastDueDescription: "تواصل مع الدعم لتسوية الدفع قبل تعليق الخدمة.",
+    contactSupport: "تواصل مع الدعم",
     statuses: {
       TRIALING: "تجربة مجانية",
       ACTIVE: "نشط",
@@ -744,8 +735,8 @@ const translations = {
     viewAllInvoices: "View all invoices",
     noInvoices: "No invoices yet",
     pastDueBanner: "Payment past due",
-    pastDueDescription: "Please update your payment method to avoid service interruption.",
-    updatePayment: "Update Payment",
+    pastDueDescription: "Contact support to resolve your payment before service is suspended.",
+    contactSupport: "Contact support",
     statuses: {
       TRIALING: "Free Trial",
       ACTIVE: "Active",
