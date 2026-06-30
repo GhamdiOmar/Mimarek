@@ -92,6 +92,7 @@ export function AddCustomerModal({
   teamMembers,
   lang,
   initialStatus = "NEW",
+  initialName,
   onCreated,
 }: {
   open: boolean;
@@ -101,6 +102,9 @@ export function AddCustomerModal({
   lang: "ar" | "en";
   /** Preselects the pipeline stage (Kanban per-column "Add" passes the column key). */
   initialStatus?: string;
+  /** Seeds the name field — used when adding a customer inline from another flow
+   *  (e.g. the reservation modal passes the unmatched search text). */
+  initialName?: string;
   onCreated: (created: CrmCustomer) => void;
 }) {
   // budget → bilingual budget-comparison tag (depends on `lang`)
@@ -214,7 +218,7 @@ export function AddCustomerModal({
   React.useEffect(() => {
     if (open) {
       reset({
-        name: "",
+        name: initialName ?? "",
         phone: "",
         nameArabic: "",
         email: "",
