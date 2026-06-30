@@ -15,7 +15,7 @@ describe("subscriptionMrrWithAddOns", () => {
     expect(subscriptionMrrWithAddOns(499, "MONTHLY", [{ unitPriceAtPurchase: 99, quantity: 1 }])).toBe(598);
   });
 
-  it("ANNUAL plan + annual-priced add-on annualises both", () => {
+  it("ANNUAL plan + annual-priced add-on — both divided by 12", () => {
     // plan 5988/yr → 499/mo; add-on 990/yr → 82.5/mo; total 581.5
     expect(subscriptionMrrWithAddOns(5988, "ANNUAL", [{ unitPriceAtPurchase: 990, quantity: 1 }])).toBe(581.5);
   });
