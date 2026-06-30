@@ -1,5 +1,19 @@
 # Changelog — Mimarek PropTech
 
+## [5.22.0] — 2026-06-30 — Keyboard-operable table rows (CX-007)
+
+CX-audit fix. Clickable `DataTable` rows were **mouse-only** — the desktop `<tr>` and the mobile card attached `onClick` + `cursor-pointer` with no `role`/`tabIndex`/`onKeyDown`, so keyboard and screen-reader users couldn't open a record (WCAG 2.2 § 2.1.1 / AGENTS.md § 6.6.0). It's the shared primitive behind every clickable list, so one change fixes them all.
+
+### What's new
+- **`packages/ui/src/components/DataTable.tsx`** — when `onRowClick` is set, both the desktop `<TableRow>` and the mobile card now expose `role="button"`, `tabIndex={0}`, and an Enter/Space `onKeyDown` that calls `onRowClick`. The keydown is **guarded with `e.target === e.currentTarget`** so an Enter/Space on an inner control (row checkbox, delete icon) never bubbles up to also open the detail (no double-action).
+- **Visible focus** — a real `focus-visible:outline` (`outline-ring`, teal) rather than a `box-shadow` ring, because box-shadow renders unreliably on `<tr>`. (§ 6.17 / WCAG 2.4.7.)
+
+### Verify
+- `npm run build` green · `check-types` green · `lint` 0 errors.
+- **Functional E2E** (local prod build, `/dashboard/units` Table view, admin@mimarek.sa): the row is reachable by real keyboard **Tab** (`:focus-visible` → visible teal outline, screenshotted **light + dark**), and **Enter** on the focused row opens the unit detail (`onKeyDown → onRowClick`). **6/6 checks pass, 0 console errors.**
+
+**Full diff:** https://github.com/GhamdiOmar/Mimarek/compare/v5.21.0...v5.22.0
+
 ## [5.21.0] — 2026-06-30 — First-run unblock + bilingual entitlement errors (CX-001, CX-003)
 
 Fixes from the v5.20.0 CX audit. The headline is **CX-001 (Critical):** a brand-new org registered, verified email, and finished onboarding with **no subscription** — so the entitlement engine denied every feature and the owner couldn't create a single customer/unit/contract until they manually subscribed. The free `Plan.isDefault` (Starter) was read nowhere. Now it's load-bearing.
