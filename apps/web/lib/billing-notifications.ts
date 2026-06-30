@@ -16,6 +16,9 @@
  */
 
 import { notifyAdmins } from "./create-notification";
+import { db } from "@repo/db";
+import { sendTransactionalEmail } from "./email";
+import { scheduledPlanChangeEmail } from "./email-templates";
 
 export async function notifyTrialEnding(orgId: string, daysLeft: number) {
   await notifyAdmins({
@@ -157,4 +160,64 @@ export async function notifyPlanChanged(orgId: string, newPlanName: string, isUp
     link: "/dashboard/billing",
     organizationId: orgId,
   });
+}
+
+/**
+ * Announce a scheduled plan/price change to an org's admins — in-app (bilingual)
+ * + best-effort email (Arabic, Saudi-first). The email never blocks the
+ * announcement: a send failure is logged, not thrown.
+ */
+export async function notifyScheduledPlanChange(
+  orgId: string,
+  info: {
+    sourcePlanNameEn: string;
+    sourcePlanNameAr: string;
+    targetPlanNameEn: string | null;
+    targetPlanNameAr: string | null;
+    effectiveAt: Date;
+    isMigration: boolean;
+  },
+) {
+  const dateAr = info.effectiveAt.toLocaleDateString("ar-SA-u-nu-latn", { year: "numeric", month: "long", day: "numeric" });
+  const dateEn = info.effectiveAt.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+  const msgAr =
+    info.isMigration && info.targetPlanNameAr
+      ? `سيتم نقل اشتراكك من «${info.sourcePlanNameAr}» إلى «${info.targetPlanNameAr}» اعتباراً من ${dateAr}.`
+      : `سيتم تحديث سعر خطة «${info.sourcePlanNameAr}» اعتباراً من ${dateAr}.`;
+  const msgEn =
+    info.isMigration && info.targetPlanNameEn
+      ? `Your subscription will move from "${info.sourcePlanNameEn}" to "${info.targetPlanNameEn}" effective ${dateEn}.`
+      : `The price of your "${info.sourcePlanNameEn}" plan will be updated effective ${dateEn}.`;
+
+  await notifyAdmins({
+    type: "SCHEDULED_PLAN_CHANGE",
+    title: info.isMigration ? "تغيير قادم في خطتك" : "تحديث قادم على سعر خطتك",
+    titleEn: info.isMigration ? "An upcoming plan change" : "An upcoming price update",
+    message: msgAr,
+    messageEn: msgEn,
+    link: "/dashboard/billing",
+    organizationId: orgId,
+  });
+
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://mimarek.sa";
+    const admins = await db.user.findMany({
+      where: { organizationId: orgId, role: "ADMIN", emailVerified: { not: null } },
+      select: { email: true, name: true },
+    });
+    for (const a of admins) {
+      const tpl = scheduledPlanChangeEmail({
+        name: a.name,
+        sourcePlanName: info.sourcePlanNameAr,
+        targetPlanName: info.targetPlanNameAr,
+        effectiveAt: info.effectiveAt,
+        isMigration: info.isMigration,
+        billingUrl: `${baseUrl}/dashboard/billing`,
+        lang: "ar",
+      });
+      await sendTransactionalEmail({ to: a.email, subject: tpl.subject, html: tpl.html, text: tpl.text });
+    }
+  } catch (err) {
+    console.error("[notifyScheduledPlanChange] email failed:", err);
+  }
 }

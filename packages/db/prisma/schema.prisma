@@ -1133,6 +1133,19 @@ enum AddOnStatus {
   CANCELED
 }
 
+enum ScheduledChangeType {
+  PRICE_ONLY // re-price the cohort's subscriptions
+  PLAN_MIGRATION // move the cohort to a different plan (+ its price)
+}
+
+enum ScheduledChangeStatus {
+  SCHEDULED
+  ANNOUNCED
+  APPLYING
+  APPLIED
+  CANCELED
+}
+
 enum InvoiceStatus {
   DRAFT
   ISSUED
@@ -1244,6 +1257,9 @@ model Plan {
   coupons       Coupon[]          @relation("CouponPlans")
   addOns        AddOn[]           @relation("AddOnPlans")
 
+  scheduledAsSource ScheduledPlanChange[] @relation("ScheduledSourcePlan")
+  scheduledAsTarget ScheduledPlanChange[] @relation("ScheduledTargetPlan")
+
   @@index([isPublic, sortOrder])
 }
 
@@ -1354,6 +1370,33 @@ model SubscriptionAddOn {
   @@unique([subscriptionId, addOnId])
   @@index([subscriptionId, status])
   @@index([addOnId])
+}
+
+// ─── Scheduled Plan Change (future cutoff re-price / migration of a cohort) ──
+
+model ScheduledPlanChange {
+  id               String                @id @default(cuid())
+  sourcePlanId     String // cohort selector: subscriptions currently on this plan
+  sourcePlan       Plan                  @relation("ScheduledSourcePlan", fields: [sourcePlanId], references: [id])
+  targetPlanId     String? // null = PRICE_ONLY (stay on source plan, new price)
+  targetPlan       Plan?                 @relation("ScheduledTargetPlan", fields: [targetPlanId], references: [id])
+  changeType       ScheduledChangeType
+  newPriceMonthly  Decimal?              @db.Decimal(14, 2) // PRICE_ONLY: the new monthly price
+  newPriceAnnual   Decimal?              @db.Decimal(14, 2) // PRICE_ONLY: the new annual price
+  effectiveAt      DateTime // cutoff — when the change applies to the cohort
+  announceAt       DateTime? // when to notify org admins (null = announce at creation)
+  grandfatherUntil DateTime? // optional: postpone application to this date (≥ effectiveAt)
+  status           ScheduledChangeStatus @default(SCHEDULED)
+  appliedAt        DateTime?
+  affectedCount    Int?
+  createdBy        String // "admin:<userId>"
+  reason           String?
+  notes            String?
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @default(now()) @updatedAt
+
+  @@index([status, effectiveAt])
+  @@index([sourcePlanId])
 }
 
 // ─── Subscription Event (audit trail for status transitions) ────────────────

@@ -77,6 +77,7 @@ ALTER TABLE IF EXISTS public."PlanEntitlement"           ENABLE ROW LEVEL SECURI
 ALTER TABLE IF EXISTS public."Subscription"              ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public."AddOn"                     ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public."SubscriptionAddOn"         ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public."ScheduledPlanChange"       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public."SubscriptionEvent"         ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public."SubscriptionMrrSnapshot"   ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public."EntitlementOverride"       ENABLE ROW LEVEL SECURITY;

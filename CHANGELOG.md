@@ -1,5 +1,24 @@
 # Changelog — Mimarek PropTech
 
+## [5.18.0] — 2026-06-30 — Scheduled plan-change engine (Pricing P5)
+
+**Phase 5 of the pricing & packaging program** — a platform admin schedules a future price change or plan migration for a whole cohort of subscriptions, with a cutoff date; a daily cron applies it, grandfathers existing subscribers, and announces it.
+
+### What's new
+- **Schema:** `ScheduledPlanChange` (source-plan cohort, `changeType` PRICE_ONLY | PLAN_MIGRATION, new monthly/annual price or target plan, `effectiveAt` cutoff, optional `announceAt`/`grandfatherUntil`, lifecycle `status`) + enums. RLS auto-covered (no M2M) + verified.
+- **Engine** (`lib/payment/scheduled-plan-changes.ts`): `applyScheduledPlanChanges(now)` runs an **announce pass** then an **apply pass**. Apply writes the new cycle-aware `priceAtRenewal` (and `planId` for a migration) into each affected sub — **grandfathering is automatic** (the current period was already paid at the old price; the new price only bites at renewal). Each reprice emits a categorized `SubscriptionEvent` (EXPANSION/CONTRACTION by MRR-delta sign) so the ARR waterfall reconciles. **Idempotent:** the parent `status` gates re-entry and each per-sub `idempotencyKey = "<subId>:<changeId>"` (unique) makes a re-run after a partial failure a no-op. Pure, unit-tested `newPriceFor` holds the price math.
+- **Cron** `apply-scheduled-plan-changes` (daily 01:00 UTC, registered in `vercel.json`) — `isAuthorizedCronRequest` Bearer auth, fail-closed.
+- **Announcement** (`notifyScheduledPlanChange`): in-app to each affected org's admins (bilingual) + best-effort email (Arabic, `scheduledPlanChangeEmail` template) — the email never blocks the price application.
+- **Admin UI** `/dashboard/admin/scheduled-plan-changes` (`billing:admin`, discoverable from the admin dashboard): schedule (with a live blast-radius count), list by status, confirm-guarded cancel of a not-yet-applied change.
+
+### Verify
+- `npm run build` green · `check-types` green · `lint` 0 errors · **359 web unit tests** (+5 `scheduled-plan-change-price` cases: PRICE_ONLY cycle-aware, PLAN_MIGRATION target price, unchanged-when-absent).
+- `prisma db push` (additive) + RLS applied & verified (`relrowsecurity=t`) on `ScheduledPlanChange`; `rls:check` green.
+- **§3.9 walk** (local `next start`): the scheduled-changes page + schedule dialog, light/dark × LTR/RTL + mobile — **0 console errors**.
+- **Integration proof** (real cron over HTTP): a past-dated PRICE_ONLY change applied → the cohort sub's `priceAtRenewal` 0 → 290, an `EXPANSION` event (mrrΔ 24.17), status `APPLIED`, an announcement created — and a **second cron run was a no-op** (no duplicate event), proving idempotency.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimarek/compare/v5.17.0...v5.18.0
+
 ## [5.17.0] — 2026-06-30 — Add-ons engine (Pricing P4)
 
 **Phase 4 of the pricing & packaging program** — sellable add-ons that raise an org's entitlement limits (additively) or unlock features, layered on top of its plan. Admins curate a catalogue; tenants self-purchase. Because every grant flows through the entitlement evaluator's new add-on tier, all existing P1 gates honour add-ons with **zero call-site changes**.
