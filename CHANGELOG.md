@@ -1,5 +1,23 @@
 # Changelog — Mimarek PropTech
 
+## [5.29.0] — 2026-07-01 — Security re-validation: close 3 audit-coverage gaps
+
+Re-validated the 2026-06-25 architecture + security audit (remediated across v5.7.0–v5.12.0) against the current v5.28.0 code via 7 adversarial verifiers — **34 of 37 fixes confirmed still present and intact**. Found **3 gaps the original remediation never covered** (coverage gaps, not regressions) and closed them.
+
+### What's new
+- **SEC-003 revocation — portal surface (the one that mattered).** `lib/server/portal-access.ts` `resolvePortalIdentity` authorized a tenant portal user (role `USER`) off the stale JWT — it never checked `isActive`/`tokenVersion`, so a **deactivated or token-revoked tenant kept portal access** (summary read + create-maintenance-request) until the ≤7-day token expired, while the dashboard (`getSessionOrThrow`) bounced them immediately. The helper now re-reads `isActive`+`tokenVersion` and rejects a deleted/deactivated/revoked user — mirroring `getSessionOrThrow`. New `__tests__/sec-portal-revocation.test.ts` (4 cases).
+- **Pagination clamp — billing + notifications.** `getInvoices`, `adminGetAllSubscriptions`, `adminGetAllInvoices` (`billing.ts`) and `getMyNotifications` (`notifications.ts`) passed the caller's `pageSize`/`limit` straight into Prisma `take` (memory-pressure / DoS via a huge page). Now clamped `Math.min(100, Math.max(1, …))` — matching the pattern the audit already applied to contracts/customers/audit/etc. **This closes the last unclamped list actions in the repo.** Test added to `sec-audience-pagination.test.ts`.
+- **effectivePaid single-homing — last file.** `trends/getRevenueTrend.ts` inlined the money rule instead of importing the canonical `effectivePaid` (`lib/money.ts`); the Wave-B single-homing missed this one file. Now imports it — no behavior change, removes the latent-drift risk.
+
+### Verify
+- `npm run build` green · `check-types` green · `lint` 0 errors · `/mimaric-qa` gate = **GO** (0 P0/P1/P2).
+- **Unit/integration:** full suite **376 passing** (7 new locks): `resolvePortalIdentity` rejects a deactivated + a token-revoked user and forbids a non-USER role; `getInvoices` clamps 9999→100 / 0→1 / 25-passthrough. Auth-gate + API-shape fixes are integration-tested (the rendered UI can't reproduce a cross-session revocation), so no §3.9 UI walk — consistent with the v5.7–v5.9 hardening waves.
+
+### Note
+These were **coverage gaps in the original 2026-06-25 remediation, not regressions** — the highest-severity fixes (SEC-001 team zod allowlist, SEC-003 dashboard revocation via `getSessionOrThrow`, the 3 cron-wired money sweeps, SEC-002 dependency `npm audit` gate) were all re-confirmed present and intact in current code.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimarek/compare/v5.28.0...v5.29.0
+
 ## [5.28.0] — 2026-06-30 — CRM customer Edit form → RHF + zod + Field (CX-009)
 
 CX-audit fix. The CRM customer **Edit Profile** form (`CustomerDrawer`) was the last raw-`useState` form in the app: submit-only validation, a plain number `<Input>` for budget, no unsaved-changes guard — diverging from the governed RHF + zod + `Field` pattern the create modal (`AddCustomerModal`) already uses. Ported it to that pattern.
