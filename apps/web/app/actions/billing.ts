@@ -418,6 +418,60 @@ export async function generateSubscriptionInvoice(params: {
   return serialize(refreshed ?? invoice);
 }
 
+/**
+ * UI entry point: generate an invoice for the CALLER's own active subscription.
+ *
+ * `generateSubscriptionInvoice` needs a `subscriptionId` the tenant UI doesn't
+ * carry, so this resolves the caller's current billable subscription
+ * server-side (never trusting a client-supplied id) and delegates to it.
+ *
+ * Returns a discriminated RESULT object rather than throwing for the expected
+ * "no subscription" case — Next.js redacts thrown server-action messages in
+ * production, so a friendly message must cross the boundary as data (the
+ * CX-001/CX-002 lesson).
+ */
+export async function generateInvoiceForCurrentSubscription(): Promise<
+  | { ok: true; invoiceNumber: string }
+  | { ok: false; reason: "NO_SUBSCRIPTION" | "ALREADY_EXISTS" | "FAILED"; invoiceNumber?: string }
+> {
+  const session = await requirePermission("billing:write");
+
+  const subscription = await db.subscription.findFirst({
+    where: {
+      organizationId: session.organizationId,
+      status: { in: ["ACTIVE", "TRIALING", "PAST_DUE"] },
+    },
+    orderBy: { createdAt: "desc" },
+    select: { id: true, currentPeriodStart: true },
+  });
+  if (!subscription) return { ok: false, reason: "NO_SUBSCRIPTION" };
+
+  // Idempotency guard (adversarial H-2): one OPEN invoice per current billing
+  // period. Without this a one-click button (or a direct RPC / double-fire) mints
+  // unlimited duplicate invoices, each consuming a global sequence number AND firing
+  // a ZATCA clearance — duplicate tax documents in production. The client `disabled`
+  // state is not a control; this is.
+  const existingOpen = await db.invoice.findFirst({
+    where: {
+      subscriptionId: subscription.id,
+      status: "ISSUED",
+      issuedAt: { gte: subscription.currentPeriodStart },
+    },
+    select: { invoiceNumber: true },
+  });
+  if (existingOpen) {
+    return { ok: false, reason: "ALREADY_EXISTS", invoiceNumber: existingOpen.invoiceNumber };
+  }
+
+  try {
+    const invoice = await generateSubscriptionInvoice({ subscriptionId: subscription.id });
+    return { ok: true, invoiceNumber: (invoice as { invoiceNumber: string }).invoiceNumber };
+  } catch (err) {
+    console.error("[billing] generateInvoiceForCurrentSubscription failed:", err instanceof Error ? err.message : err);
+    return { ok: false, reason: "FAILED" };
+  }
+}
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // Payment Methods
 // ═══════════════════════════════════════════════════════════════════════════════

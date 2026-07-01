@@ -48,7 +48,7 @@ import { getSessionOrThrow } from "../lib/auth-helpers";
 import { updateTeamMember } from "../app/actions/team";
 import { updateCustomer, createCustomer, getCustomer, getCustomers } from "../app/actions/customers";
 import { getPlanBySlug, changePlan } from "../app/actions/billing";
-import { applyCoupon } from "../app/actions/coupons";
+import { applyCoupon, applyCouponByCode } from "../app/actions/coupons";
 import { signOutEverywhere } from "../app/actions/sessions";
 import { updateOrganization } from "../app/actions/organization";
 import { updateContractTemplate } from "../app/actions/contract-templates";
@@ -83,8 +83,10 @@ function freshSeed(): Record<string, Row[]> {
       { id: "c_inactive", code: "OFF", isActive: false, type: "PERCENTAGE", value: 10, currentUses: 0, maxRedemptions: null, validFrom: new Date(0), validUntil: null, minPurchaseAmount: null, plans: [] },
       { id: "c_expired", code: "OLD", isActive: true, type: "PERCENTAGE", value: 10, currentUses: 0, maxRedemptions: null, validFrom: new Date(0), validUntil: new Date(1), minPurchaseAmount: null, plans: [] },
       { id: "c_wrongplan", code: "X", isActive: true, type: "PERCENTAGE", value: 10, currentUses: 0, maxRedemptions: null, validFrom: new Date(0), validUntil: null, minPurchaseAmount: null, plans: [{ id: "plan_other" }] },
+      { id: "c_valid", code: "SAVE", isActive: true, type: "PERCENTAGE", value: 10, currentUses: 0, maxRedemptions: null, validFrom: new Date(0), validUntil: null, minPurchaseAmount: null, plans: [] },
+      { id: "c_frac", code: "FLAT", isActive: true, type: "FIXED_AMOUNT", value: 333.33, currentUses: 0, maxRedemptions: null, validFrom: new Date(0), validUntil: null, minPurchaseAmount: null, plans: [] },
     ],
-    invoice: [{ id: "inv_1", organizationId: ORG, subtotal: 1000, vatRate: 0.15, billingCycle: "MONTHLY", subscription: { planId: "plan_pub", billingCycle: "MONTHLY" } }],
+    invoice: [{ id: "inv_1", organizationId: ORG, status: "ISSUED", couponId: null, subtotal: 1000, vatRate: 0.15, billingCycle: "MONTHLY", subscription: { planId: "plan_pub", billingCycle: "MONTHLY" } }],
     couponRedemption: [],
   };
 }
@@ -162,6 +164,58 @@ describe("SEC-008 — applyCoupon re-validates at apply time", () => {
   });
   it("rejects a coupon restricted to a different plan", async () => {
     await expect(applyCoupon("c_wrongplan", "inv_1")).rejects.toThrow(/not valid for the selected plan/i);
+  });
+});
+
+// ─── Billing-UI wiring — server-side guards behind the new tenant controls ────
+// The invoices page gates these in the UI; these lock the SERVER enforcement that
+// a direct RPC can't bypass (adversarial H-1/M-1/M-2 + the applyCouponByCode codes).
+describe("Billing UI — applyCoupon server guards", () => {
+  it("H-1: rejects a SECOND/different coupon on an already-couponed invoice", async () => {
+    seed.invoice!.find((i) => i.id === "inv_1")!.couponId = "c_other";
+    await expect(applyCoupon("c_valid", "inv_1")).rejects.toThrow(/already been applied to this invoice/i);
+  });
+  it("M-1: rejects applying a coupon to a settled (PAID) invoice", async () => {
+    seed.invoice!.find((i) => i.id === "inv_1")!.status = "PAID";
+    await expect(applyCoupon("c_valid", "inv_1")).rejects.toThrow(/can no longer be discounted/i);
+  });
+  it("M-1: rejects a PARTIALLY_PAID invoice too (allowlist, not blocklist)", async () => {
+    seed.invoice!.find((i) => i.id === "inv_1")!.status = "PARTIALLY_PAID";
+    await expect(applyCoupon("c_valid", "inv_1")).rejects.toThrow(/can no longer be discounted/i);
+  });
+  it("M-2: writes round-2 vatAmount + total after a fractional discount", async () => {
+    // subtotal 1000, FIXED 333.33 → newSubtotal 666.67, vat 100.0005 → 100.00, total 766.67
+    const res = await applyCoupon("c_frac", "inv_1");
+    const inv = seed.invoice!.find((i) => i.id === "inv_1")!;
+    expect(inv.discountAmount).toBe(333.33);
+    expect(inv.vatAmount).toBe(100); // round2(100.0005) — NOT 100.0005
+    expect(inv.total).toBe(766.67);
+    expect(res.newTotal).toBe(766.67);
+  });
+  it("positive control: a valid coupon applies to an open, uncouponed invoice", async () => {
+    const res = await applyCoupon("c_valid", "inv_1");
+    expect(res.discountAmount).toBe(100); // 10% of 1000
+    expect(seed.invoice!.find((i) => i.id === "inv_1")!.couponId).toBe("c_valid");
+  });
+});
+
+describe("Billing UI — applyCouponByCode returns stable reason codes (no thrown message)", () => {
+  it("INVALID for an unknown code", async () => {
+    expect(await applyCouponByCode("NOPE", "inv_1")).toEqual({ ok: false, reason: "INVALID" });
+  });
+  it("INVALID for an empty/whitespace code", async () => {
+    expect(await applyCouponByCode("   ", "inv_1")).toEqual({ ok: false, reason: "INVALID" });
+  });
+  it("ALREADY_COUPONED maps through from the typed CouponError", async () => {
+    seed.invoice!.find((i) => i.id === "inv_1")!.couponId = "c_other";
+    expect(await applyCouponByCode("SAVE", "inv_1")).toEqual({ ok: false, reason: "ALREADY_COUPONED" });
+  });
+  it("INACTIVE maps through (code path, not message regex)", async () => {
+    expect(await applyCouponByCode("OFF", "inv_1")).toEqual({ ok: false, reason: "INACTIVE" });
+  });
+  it("ok:true on a valid apply-by-code", async () => {
+    const res = await applyCouponByCode("SAVE", "inv_1");
+    expect(res).toMatchObject({ ok: true, discountAmount: 100 });
   });
 });
 

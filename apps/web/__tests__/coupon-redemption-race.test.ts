@@ -77,6 +77,8 @@ function freshSeed(maxRedemptions: number | null) {
       invoice: orgs.map((org, i) => ({
         id: `inv_${i}`,
         organizationId: org,
+        status: "ISSUED",
+        couponId: null,
         subtotal: 1000,
         vatRate: 0.15,
       })) as Row[],

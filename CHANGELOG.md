@@ -1,5 +1,27 @@
 # Changelog — Mimarek PropTech
 
+## [5.32.0] — 2026-07-02 — Invoice generation + coupon redemption are now UI-reachable
+
+Closes a **UI-First (§3.1) gap**: the subscription-invoice + discount-coupon subsystem was backend-complete but had **no UI path** — `generateSubscriptionInvoice` had zero callers and `applyCoupon` had zero non-test callers (the only preview UI was removed in CX-006 as premature). A tenant could never create an invoice or apply a discount through the app; the discount line fixed in v5.30.0 was unreachable. Both are now wired into the tenant billing surface, with server-side enforcement that a direct RPC can't bypass.
+
+### What's new (tenant `/dashboard/billing/invoices`, `billing:write` — tenant ADMIN)
+- **Generate invoice** — a primary header action (desktop) + top-of-list action (mobile) that mints an invoice for the caller's current subscription period via the new `generateInvoiceForCurrentSubscription()` (resolves the subscription server-side; never trusts a client id).
+- **Apply a discount coupon** — an affordance in the invoice detail (desktop modal + mobile sheet): enter a code → the **Discount line renders** (the v5.30.0 fix, now reachable) and VAT/total recompute. New `applyCouponByCode(code, invoiceId)`. Shown only for an **open, un-couponed** invoice; hides once applied.
+- Both actions return **discriminated RESULT objects** (not thrown messages Next.js would redact in prod — CX-001/CX-002), rendered as bilingual banners / inline errors.
+
+### Server-side hardening (adversarial review — enforced in the action, not just the UI)
+- **One coupon per invoice** — `applyCoupon` now rejects a second/different coupon (`invoice.couponId` set) instead of silently stacking + orphaning a redemption (H-1).
+- **Open-invoice only** — a coupon can no longer be applied to a PAID/PARTIALLY_PAID/CANCELED/REFUNDED invoice server-side (H-1/M-1); allowlist `DRAFT/ISSUED/OVERDUE` shared by the UI gate.
+- **Idempotent generation** — one OPEN invoice per billing period; a repeat click (or direct RPC) returns `ALREADY_EXISTS` instead of minting duplicate invoices + duplicate ZATCA clearances (H-2).
+- **Rounded VAT/total** — post-discount `vatAmount`/`total` are `round2`'d so a ZATCA-reported figure reconciles to the halalah (M-2).
+- **Typed `CouponError`** carrying a stable reason code (`lib/coupon-errors.ts`) — `applyCouponByCode` reads the code, not a brittle message regex (/mimaric-qa M1); the client maps it to bilingual copy.
+
+### Verify
+- `npm run build` green · `check-types` green · `lint` 0 errors · **398 unit tests** (11 new locks: H-1 already-couponed, M-1 settled-invoice + PARTIALLY_PAID, M-2 rounding, and the `applyCouponByCode` reason-code mapping) · `/mimaric-qa` = **GO** + a 2-agent adversarial pass whose 4 findings (H-1/H-2/M-1/M-2) were all fixed and re-tested.
+- **§3.9 preview walk** (local prod build, `/dashboard/billing/invoices`, light/dark × AR/EN + mobile 375×812): **0 console errors**. Golden path proven live end-to-end — Generate created **INV-2026** (subtotal 4,790), applying **WELCOME20 (20%)** rendered **Discount −958 SAR** with VAT recomputed to 574.8 and total 4,406.8; the coupon affordance disappeared; a second Generate showed **"An unpaid invoice for this period already exists"** (no duplicate created); discount line verified in **AR-RTL/dark** too. Tenant isolation, guard coverage, and `billing:write`-gating re-confirmed.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimarek/compare/v5.31.0...v5.32.0
+
 ## [5.31.0] — 2026-07-01 — Session inactivity timeout (Phase 1)
 
 Adds an authenticated-session **idle guard**: after a role-based period of no interaction, a bilingual warning dialog counts down and then signs the user out of the current browser and redirects to login. Closes the `SEC-IDLE-001` gap (Mimarek previously expired sessions only by 7-day JWT lifetime, never by inactivity — a real exposure for a product showing PII, payments, contracts, ZATCA docs, and platform admin surfaces). Implements Phase 1 of `future-plans/session-inactivity-timeout-gap-action-plan.md` (IDLE-001…009, 013).
