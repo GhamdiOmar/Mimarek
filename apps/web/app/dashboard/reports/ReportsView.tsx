@@ -334,12 +334,9 @@ export default function ReportsView({ loadedAt }: { loadedAt: string }) {
             },
             {
               title: "حسب المبنى",
-              // `costPerSqm` is not present on the report row shape; the read
-              // resolves to `undefined` at runtime today — typed optional to
-              // preserve that exact rendering without a behavior change.
-              rows: data.byBuilding.map((b: { name: string; actual: number; costPerSqm?: number | string }) => ({
+              rows: data.byBuilding.map((b: { name: string; actual: number }) => ({
                 label: b.name,
-                value: `${fmt(b.actual)} ر.س (${b.costPerSqm} ر.س/م²)`,
+                value: `${fmt(b.actual)} ر.س`,
               })),
             },
           ],

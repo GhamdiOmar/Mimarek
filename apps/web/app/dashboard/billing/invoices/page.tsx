@@ -48,9 +48,9 @@ import { ZATCA_STATUS_LABEL, ZATCA_STATUS_VARIANT } from "../../../../lib/domain
 // `serialize()` (JSON round-trip) → Prisma `Decimal` becomes `string` and `Date`
 // becomes `string`. Numeric money fields are read via `Number(...)` everywhere,
 // so they are typed `string | number` to match the serialized value without
-// changing runtime behavior. `discount` / `paymentMethod` are read by the JSX but
-// are not on the `Invoice` model, so at runtime they are always `undefined` (the
-// discount/payment-method blocks never render) — see the per-field notes below.
+// changing runtime behavior. `paymentMethod` is read by the JSX but is not on
+// the `Invoice` model, so at runtime it is always `undefined` (the
+// payment-method block never renders) — see the per-field note below.
 
 interface InvoiceLineItemRow {
   id?: string;
@@ -72,14 +72,8 @@ interface InvoiceRow {
   subtotal: string | number;
   vatAmount: string | number;
   total: string | number;
-  /**
-   * Not on the `Invoice` model — `undefined` at runtime, so the `discount > 0`
-   * guard is always false and the discount block never renders. Typed `number`
-   * (not `number | undefined`) only so the existing `viewInvoice.discount > 0`
-   * relational comparison type-checks without altering the expression; the
-   * runtime value and behavior are unchanged.
-   */
-  discount: number;
+  /** Prisma `Decimal(14,2)` serialized to `string` via `JSON.parse(JSON.stringify())`. */
+  discountAmount: string | number;
   /** Not on the Invoice model — `undefined` at runtime; the payment-method block never renders. */
   paymentMethod?: string | null;
   lineItems?: InvoiceLineItemRow[];
@@ -665,13 +659,13 @@ export default function InvoicesPage() {
                   className="font-medium text-foreground tabular-nums"
                 />
               </div>
-              {viewInvoice.discount > 0 && (
+              {viewInvoice.discountAmount && Number(viewInvoice.discountAmount) > 0 && (
                 <div className="flex justify-between text-success">
                   <span>{lang === "ar" ? "الخصم" : "Discount"}</span>
                   <span className="tabular-nums">
                     -
                     <SARAmount
-                      value={Number(viewInvoice.discount)}
+                      value={Number(viewInvoice.discountAmount)}
                       size={11}
                       className="tabular-nums"
                     />
@@ -871,10 +865,10 @@ export default function InvoicesPage() {
                   <span className="text-muted-foreground">{t.vat}</span>
                   <span className="font-medium">{Number(viewInvoice.vatAmount).toLocaleString()} {t.sar}</span>
                 </div>
-                {viewInvoice.discount > 0 && (
+                {viewInvoice.discountAmount && Number(viewInvoice.discountAmount) > 0 && (
                   <div className="flex justify-between text-success">
                     <span>{lang === "ar" ? "الخصم" : "Discount"}</span>
-                    <span>-{Number(viewInvoice.discount).toLocaleString()} {t.sar}</span>
+                    <span>-{Number(viewInvoice.discountAmount).toLocaleString()} {t.sar}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-base font-bold border-t border-border pt-2">

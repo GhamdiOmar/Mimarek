@@ -1,5 +1,22 @@
 # Changelog — Mimarek PropTech
 
+## [5.30.0] — 2026-07-01 — Close two P3 display bugs (billing discount + report cost-per-sqm)
+
+Closes the two known pre-existing P3 display bugs tracked in `future-plans/REMAINING-WORK.md` § B.1 (both surfaced by the v4.33 lint sweep, deliberately deferred then). Data-binding fixes only — no schema, no server-action, no new UI.
+
+### What's fixed
+- **billing-discount** — `dashboard/billing/invoices/page.tsx` read `viewInvoice.discount`, but the Prisma `Invoice` field is `discountAmount` (`Decimal(14,2)`, serialized to a string) — so `discount` was always `undefined`, `discount > 0` was always false, and a genuinely-discounted invoice **never rendered its discount line** (desktop detail *or* mobile/print summary). The `InvoiceRow` interface now types `discountAmount: string | number`, and both render sites guard on `viewInvoice.discountAmount && Number(viewInvoice.discountAmount) > 0` and read `Number(viewInvoice.discountAmount)`. `billing.ts` already returned `discountAmount` — no server change. (No discounted invoice exists in seed data, so the visual branch is verified by the corrected field-binding + typecheck + a clean 4-theme render walk rather than a discounted-invoice screenshot.)
+- **reports-costPerSqm** — the maintenance-cost "by building" rows interpolated a `costPerSqm` field that `getMaintenanceCostReport` never returns (`byBuilding` rows are `{ name, estimated, actual, count }`), so the **generated report printed a literal `undefined ر.س/م²`**. Dropped the per-sqm segment (a correct area-weighted cost-per-sqm is a separate feature, not a display fix) — rows now render `${fmt(b.actual)} ر.س`. The unused `costPerSqm` type field is removed too.
+
+### Verify
+- `npm run build` green · `check-types` green · `lint` 0 errors.
+- **§3.9 preview walk** (local prod build, `/dashboard/billing/invoices` + `/dashboard/reports` × light/dark × AR/EN): both render clean, **0 console errors**. The maintenance-costs **PDF** was regenerated and confirmed to contain **no `undefined`** (37 KB, 0 console errors). `costPerSqm` is gone from the entire source tree.
+
+### Housekeeping
+- Pruned two completed `future-plans/` docs: **ZATCA-HANDOVER.md** (R3–R5 all shipped v5.3.0→v5.6.0; superseded by `zatca-production-cutover-runbook.md`) and **mimarek-rebrand-plan.md** (shipped in full at v5.0.0). Updated `REMAINING-WORK.md` (§ B.1 closed; ZATCA row re-scoped to external-only cutover).
+
+**Full diff:** https://github.com/GhamdiOmar/Mimarek/compare/v5.29.0...v5.30.0
+
 ## [5.29.0] — 2026-07-01 — Security re-validation: close 3 audit-coverage gaps
 
 Re-validated the 2026-06-25 architecture + security audit (remediated across v5.7.0–v5.12.0) against the current v5.28.0 code via 7 adversarial verifiers — **34 of 37 fixes confirmed still present and intact**. Found **3 gaps the original remediation never covered** (coverage gaps, not regressions) and closed them.
