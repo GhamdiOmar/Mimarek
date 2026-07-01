@@ -86,6 +86,8 @@ const GUARD_EXEMPT: Record<string, string> = {
   // ── Best-effort audit write (fail-open by contract) ────────────────────────
   "consent.ts#recordConsent":
     "PDPL cookie-consent audit write. Append-only, fire-and-forget, fail-open by design; attaches session?.user?.id when present but must work for anonymous banner clicks. Writes only consent metadata.",
+  "session-audit.ts#recordIdleTimeout":
+    "Best-effort audit write for the caller's OWN already-authenticated idle sign-out (IDLE-011). Identity is read server-side via auth(), never trusted from the client; no-ops if there's no session. No elevated data access — fire-and-forget, fail-open, mirrors the recordConsent exemption.",
 
   // ── Guarded INDIRECTLY (this scan only inspects the fn's own body) ─────────
   "journey.ts#getJourneySummary":

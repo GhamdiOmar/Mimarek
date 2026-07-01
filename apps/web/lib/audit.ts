@@ -10,6 +10,7 @@ export type AuditAction =
   | "EXPORT"
   | "LOGIN"
   | "LOGOUT"
+  | "SESSION_IDLE_TIMEOUT"
   | "PASSWORD_CHANGE"
   | "PASSWORD_RESET_REQUEST"
   | "PASSWORD_RESET"

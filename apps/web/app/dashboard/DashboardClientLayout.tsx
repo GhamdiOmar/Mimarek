@@ -8,6 +8,7 @@ import { AppTopbar } from "../../components/shell/AppTopbar";
 import { MobileTopbar } from "../../components/shell/MobileTopbar";
 import { CircleMenu } from "../../components/shell/CircleMenu";
 import { CommandPalette } from "../../components/CommandPalette";
+import IdleTimeoutGuard from "../../components/session/IdleTimeoutGuard";
 import { isSystemRole } from "../../lib/permissions";
 import { navItems } from "../../components/shell/nav-items";
 import { identify } from "../../lib/analytics";
@@ -93,6 +94,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         {t("تخطّي إلى المحتوى", "Skip to content")}
       </a>
       <CommandPalette />
+      <IdleTimeoutGuard />
       <CircleMenu open={navOpen} onOpenChange={setNavOpen} userRole={userRole} />
       <main className="flex flex-1 flex-col min-w-0">
         <div className="hidden md:block">

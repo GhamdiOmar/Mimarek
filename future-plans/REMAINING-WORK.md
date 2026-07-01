@@ -29,6 +29,7 @@
 | **DB region migration & release / DB-evolution governance** | The "going-public" infra program: adopt Prisma-Migrate-of-record (retire prod `db push`) via a PII-sanitized-clone-rehearsed baseline; Vercel+Supabase deploy pipeline w/ atomic rollback + PR previews; observability (Sentry + `/api/health` + uptime); PDPL/NDMO release gates; per-change T0–T3 playbook; and the **Sydney→Bahrain `me-south-1` region move** (the ~223ms-RTT latency lever). Full runbook in git history (`FUTURE_PLANS.md`). |
 | **ZATCA Phase-2 e-invoicing — production cutover** | All codeable scope (R1–R5) shipped v5.1.0→v5.6.0, live-CLEARED against the ZATCA sandbox. What remains is **external-only**: real `PLATFORM_SELLER` CR/address, a production CSID, tax-advisor signoff, and a deployed scheduler. Full procedure in `future-plans/zatca-production-cutover-runbook.md`. |
 | **Ejar auto-registration + national e-sign (Nafath/IAM) SSO** | External-integration roadmap (G1). Each needs the external API + credentials. Greenfield. |
+| **Session idle-timeout — Phase 2/3** | Phase 1 (client-side idle guard: role-based timeouts, warning modal, cross-tab sign-out) shipped v5.31.0. Deferred: **Phase 2** server-enforced idle TTL for stolen-but-valid JWTs (needs a session-activity table or DB session strategy) and **Phase 3** admin-configurable timeout policy. Neither is a browser-side control; both are an auth-architecture change. |
 
 ---
 

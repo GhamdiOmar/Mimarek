@@ -21,6 +21,7 @@ export default function LoginClient({ falLicense }: { falLicense?: string | null
   const [needsVerification, setNeedsVerification] = React.useState(false);
   const [resending, setResending] = React.useState(false);
   const [resent, setResent] = React.useState(false);
+  const [idleSignedOut, setIdleSignedOut] = React.useState(false);
   const router = useRouter();
 
   const handleResendVerification = async () => {
@@ -38,6 +39,7 @@ export default function LoginClient({ falLicense }: { falLicense?: string | null
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("mode") === "tenant") setMode("tenant");
+    if (params.get("reason") === "idle") setIdleSignedOut(true);
   }, []);
 
   React.useEffect(() => {
@@ -254,6 +256,14 @@ export default function LoginClient({ falLicense }: { falLicense?: string | null
                   {lang === "ar" ? "بوابة المستأجر" : "Tenant portal"}
                 </Button>
               </div>
+
+              {idleSignedOut && !error && (
+                <div role="status" className="p-3 bg-muted border border-border text-foreground text-sm rounded-lg">
+                  {lang === "ar"
+                    ? "تم تسجيل خروجك بسبب عدم النشاط لفترة."
+                    : "You were signed out after a period of inactivity."}
+                </div>
+              )}
 
               {error && (
                 <div role="alert" className="p-3 bg-destructive/10 border border-destructive/20 text-destructive text-sm rounded-lg">
