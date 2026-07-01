@@ -14,9 +14,12 @@ import {
   Loader2,
   FileCode2,
   QrCode,
+  Plus,
+  Tag,
 } from "lucide-react";
 import {
   Button,
+  Input,
   Table,
   TableHeader,
   TableBody,
@@ -38,7 +41,9 @@ import {
 } from "@repo/ui";
 import Link from "next/link";
 import { PageHeader } from "@repo/ui/components/PageHeader";
-import { getInvoices, getInvoiceById } from "../../../actions/billing";
+import { getInvoices, getInvoiceById, generateInvoiceForCurrentSubscription } from "../../../actions/billing";
+import { applyCouponByCode } from "../../../actions/coupons";
+import { usePermissions } from "../../../../hooks/usePermissions";
 import { exportToPDF } from "../../../../lib/export";
 import { ZATCA_STATUS_LABEL, ZATCA_STATUS_VARIANT } from "../../../../lib/domain-labels";
 
@@ -74,6 +79,8 @@ interface InvoiceRow {
   total: string | number;
   /** Prisma `Decimal(14,2)` serialized to `string` via `JSON.parse(JSON.stringify())`. */
   discountAmount: string | number;
+  /** Set once a coupon is applied — gates the "apply coupon" affordance (one coupon per invoice). */
+  couponId?: string | null;
   /** Not on the Invoice model — `undefined` at runtime; the payment-method block never renders. */
   paymentMethod?: string | null;
   lineItems?: InvoiceLineItemRow[];
@@ -97,6 +104,8 @@ interface InvoicesResult {
 
 export default function InvoicesPage() {
   const { lang } = useLanguage();
+  const { can } = usePermissions();
+  const canBill = can("billing:write");
   const router = useRouter();
   const [data, setData] = React.useState<InvoicesResult>({ invoices: [], total: 0, page: 1, totalPages: 0 });
   const [loading, setLoading] = React.useState(true);
@@ -105,6 +114,13 @@ export default function InvoicesPage() {
   const [loadingInvoice, setLoadingInvoice] = React.useState(false);
   const [downloadingId, setDownloadingId] = React.useState<string | null>(null);
   const [mobileFilter, setMobileFilter] = React.useState<"ALL" | "PAID" | "ISSUED" | "OVERDUE">("ALL");
+  // Generate-invoice + apply-coupon (billing:write only) — see the two RESULT-returning
+  // server actions (redaction-safe; the discount line renders once a coupon is applied).
+  const [generating, setGenerating] = React.useState(false);
+  const [feedback, setFeedback] = React.useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [couponCode, setCouponCode] = React.useState("");
+  const [couponBusy, setCouponBusy] = React.useState(false);
+  const [couponError, setCouponError] = React.useState<string | null>(null);
 
   const handleViewInvoice = async (invoiceId: string) => {
     setLoadingInvoice(true);
@@ -170,20 +186,176 @@ export default function InvoicesPage() {
     URL.revokeObjectURL(url);
   }
 
-  React.useEffect(() => {
-    async function load() {
-      setLoading(true);
-      try {
-        const result = await getInvoices(page, 20);
-        setData(result);
-      } catch (error) {
-        console.error("Failed to load invoices:", error);
-      } finally {
-        setLoading(false);
-      }
+  const loadInvoices = React.useCallback(async () => {
+    setLoading(true);
+    try {
+      const result = await getInvoices(page, 20);
+      setData(result);
+    } catch (error) {
+      console.error("Failed to load invoices:", error);
+    } finally {
+      setLoading(false);
     }
-    load();
   }, [page]);
+
+  React.useEffect(() => {
+    loadInvoices();
+  }, [loadInvoices]);
+
+  // ─── Generate invoice (for the caller's active subscription) ────────────────
+  const handleGenerateInvoice = async () => {
+    setGenerating(true);
+    setFeedback(null);
+    try {
+      const res = await generateInvoiceForCurrentSubscription();
+      if (res.ok) {
+        setFeedback({
+          type: "success",
+          text: lang === "ar" ? `تم إنشاء الفاتورة ${res.invoiceNumber}` : `Invoice ${res.invoiceNumber} created`,
+        });
+        // Newest invoice lands on page 1; jump there (or reload if already there).
+        if (page !== 1) setPage(1);
+        else await loadInvoices();
+      } else {
+        const gm: Record<string, { ar: string; en: string }> = {
+          NO_SUBSCRIPTION: {
+            ar: "لا يوجد اشتراك نشط لإصدار فاتورة له. ابدأ اشتراكًا أولًا.",
+            en: "No active subscription to invoice. Start a subscription first.",
+          },
+          ALREADY_EXISTS: {
+            ar: `توجد فاتورة غير مدفوعة لهذه الفترة بالفعل${res.invoiceNumber ? ` (${res.invoiceNumber})` : ""}.`,
+            en: `An unpaid invoice for this period already exists${res.invoiceNumber ? ` (${res.invoiceNumber})` : ""}.`,
+          },
+          FAILED: { ar: "تعذّر إنشاء الفاتورة. حاول مرة أخرى.", en: "Couldn't create the invoice. Please try again." },
+        };
+        const entry = gm[res.reason] ?? gm.FAILED!;
+        setFeedback({ type: "error", text: lang === "ar" ? entry.ar : entry.en });
+      }
+    } catch {
+      setFeedback({
+        type: "error",
+        text: lang === "ar" ? "تعذّر إنشاء الفاتورة. حاول مرة أخرى." : "Couldn't create the invoice. Please try again.",
+      });
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  // ─── Apply a coupon to the open invoice ─────────────────────────────────────
+  const couponReasonText = (reason: string): string => {
+    const map: Record<string, { ar: string; en: string }> = {
+      INVALID: { ar: "رمز القسيمة غير صحيح.", en: "Invalid coupon code." },
+      ALREADY_USED: { ar: "تم استخدام هذه القسيمة من قبل مؤسستك.", en: "This coupon has already been used by your organization." },
+      ALREADY_COUPONED: { ar: "تم تطبيق قسيمة على هذه الفاتورة بالفعل.", en: "A coupon has already been applied to this invoice." },
+      INVOICE_NOT_OPEN: { ar: "لا يمكن تطبيق خصم على هذه الفاتورة.", en: "This invoice can no longer be discounted." },
+      INACTIVE: { ar: "هذه القسيمة لم تعد فعّالة.", en: "This coupon is no longer active." },
+      NOT_YET_VALID: { ar: "هذه القسيمة غير سارية بعد.", en: "This coupon isn't valid yet." },
+      EXPIRED: { ar: "انتهت صلاحية هذه القسيمة.", en: "This coupon has expired." },
+      MAX_REDEEMED: { ar: "وصلت هذه القسيمة إلى الحد الأقصى للاستخدام.", en: "This coupon has reached its redemption limit." },
+      WRONG_PLAN: { ar: "هذه القسيمة غير صالحة لباقتك.", en: "This coupon isn't valid for your plan." },
+      WRONG_CYCLE: { ar: "هذه القسيمة غير صالحة لدورة الفوترة هذه.", en: "This coupon isn't valid for this billing cycle." },
+      MIN_PURCHASE: { ar: "لا تستوفي هذه الفاتورة الحد الأدنى لاستخدام القسيمة.", en: "This invoice doesn't meet the coupon's minimum amount." },
+      NO_INVOICE: { ar: "تعذّر الوصول إلى الفاتورة.", en: "Couldn't access this invoice." },
+      FAILED: { ar: "تعذّر تطبيق القسيمة. حاول مرة أخرى.", en: "Couldn't apply the coupon. Please try again." },
+    };
+    const entry = map[reason] ?? map.FAILED!;
+    return lang === "ar" ? entry.ar : entry.en;
+  };
+
+  const handleApplyCoupon = async () => {
+    if (!viewInvoice || !couponCode.trim()) return;
+    setCouponBusy(true);
+    setCouponError(null);
+    try {
+      const res = await applyCouponByCode(couponCode, viewInvoice.id);
+      if (res.ok) {
+        // Re-fetch so the freshly-applied discount line renders in the open detail.
+        const updated = await getInvoiceById(viewInvoice.id);
+        setViewInvoice(updated);
+        setCouponCode("");
+        setFeedback({ type: "success", text: lang === "ar" ? "تم تطبيق القسيمة." : "Coupon applied." });
+        await loadInvoices();
+      } else {
+        setCouponError(couponReasonText(res.reason));
+      }
+    } catch {
+      setCouponError(couponReasonText("FAILED"));
+    } finally {
+      setCouponBusy(false);
+    }
+  };
+
+  // Mirrors the server allowlist (coupons.ts COUPON_APPLICABLE_STATUSES) — only an
+  // OPEN invoice may be discounted (excludes PAID/PARTIALLY_PAID/CANCELED/REFUNDED).
+  const canApplyCoupon = (inv: InvoiceRow) =>
+    canBill && !inv.couponId && ["DRAFT", "ISSUED", "OVERDUE"].includes(inv.status);
+
+  // Shared coupon-apply block (rendered in both the mobile sheet + desktop modal;
+  // the id suffix keeps the label↔input association unique across both DOM copies).
+  const renderCouponApply = (inv: InvoiceRow, idSuffix: string) => {
+    if (!canApplyCoupon(inv)) return null;
+    const inputId = `coupon-code-${idSuffix}`;
+    const errId = `coupon-error-${idSuffix}`;
+    return (
+      <div className="border-t border-border pt-3 space-y-2">
+        <label htmlFor={inputId} className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+          <Tag className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+          {lang === "ar" ? "تطبيق قسيمة خصم" : "Apply a discount coupon"}
+        </label>
+        <div className="flex items-center gap-2">
+          <Input
+            id={inputId}
+            value={couponCode}
+            onChange={(e) => {
+              setCouponCode(e.target.value.toUpperCase());
+              setCouponError(null);
+            }}
+            placeholder={lang === "ar" ? "رمز القسيمة" : "Coupon code"}
+            className="flex-1 uppercase"
+            aria-invalid={!!couponError}
+            aria-describedby={couponError ? errId : undefined}
+          />
+          <Button
+            variant="secondary"
+            size="sm"
+            style={{ display: "inline-flex" }}
+            className="gap-1.5"
+            disabled={couponBusy || !couponCode.trim()}
+            onClick={handleApplyCoupon}
+          >
+            {couponBusy && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
+            {lang === "ar" ? "تطبيق" : "Apply"}
+          </Button>
+        </div>
+        {couponError && (
+          <p id={errId} className="text-xs text-destructive" role="alert">
+            {couponError}
+          </p>
+        )}
+      </div>
+    );
+  };
+
+  // Dismissible inline status/error banner for generate + coupon feedback (§6.11.2).
+  const renderFeedback = () =>
+    feedback ? (
+      <div
+        role="status"
+        className={`flex items-center justify-between gap-3 rounded-lg border p-3 text-sm ${
+          feedback.type === "success"
+            ? "bg-success/10 border-success/20 text-success-strong"
+            : "bg-destructive/10 border-destructive/20 text-destructive"
+        }`}
+      >
+        <span>{feedback.text}</span>
+        <IconButton
+          icon={X}
+          aria-label={lang === "ar" ? "إغلاق" : "Close"}
+          variant="ghost"
+          onClick={() => setFeedback(null)}
+        />
+      </div>
+    ) : null;
 
   const t = translations[lang];
 
@@ -423,6 +595,23 @@ export default function InvoicesPage() {
       />
 
       <div className="flex-1 px-4 pt-4 pb-8 space-y-4">
+        {renderFeedback()}
+        {canBill && (
+          <Button
+            variant="primary"
+            onClick={handleGenerateInvoice}
+            disabled={generating}
+            style={{ display: "inline-flex" }}
+            className="w-full gap-2"
+          >
+            {generating ? (
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+            ) : (
+              <Plus className="h-4 w-4" aria-hidden="true" />
+            )}
+            {lang === "ar" ? "إنشاء فاتورة" : "Generate invoice"}
+          </Button>
+        )}
         {/* Filter chips */}
         <div className="flex gap-2 overflow-x-auto -mx-4 px-4 pb-1">
           {filterChips.map((chip) => {
@@ -682,6 +871,9 @@ export default function InvoicesPage() {
               </div>
             </div>
 
+            {/* Apply coupon */}
+            {renderCouponApply(viewInvoice, "m")}
+
             {/* Payment method */}
             {viewInvoice.paymentMethod && (
               <div className="text-xs">
@@ -753,8 +945,28 @@ export default function InvoicesPage() {
           title={t.title}
           description={t.subtitle}
           badge={<Receipt className="w-6 h-6 text-primary" aria-hidden="true" />}
+          actions={
+            canBill ? (
+              <Button
+                variant="primary"
+                onClick={handleGenerateInvoice}
+                disabled={generating}
+                style={{ display: "inline-flex" }}
+                className="gap-2"
+              >
+                {generating ? (
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                ) : (
+                  <Plus className="h-4 w-4" aria-hidden="true" />
+                )}
+                {lang === "ar" ? "إنشاء فاتورة" : "Generate invoice"}
+              </Button>
+            ) : undefined
+          }
         />
       </div>
+
+      {renderFeedback()}
 
       {/* Invoices Table */}
       <DataTable
@@ -876,6 +1088,9 @@ export default function InvoicesPage() {
                   <span>{Number(viewInvoice.total).toLocaleString()} {t.sar}</span>
                 </div>
               </div>
+
+              {/* Apply coupon */}
+              {renderCouponApply(viewInvoice, "d")}
 
               {/* ZATCA e-invoicing */}
               {hasZatca(viewInvoice) && (
