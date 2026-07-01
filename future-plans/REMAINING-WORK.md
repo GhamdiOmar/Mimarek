@@ -27,7 +27,7 @@
 | Item | Why / scope |
 |---|---|
 | **DB region migration & release / DB-evolution governance** | The "going-public" infra program: adopt Prisma-Migrate-of-record (retire prod `db push`) via a PII-sanitized-clone-rehearsed baseline; Vercel+Supabase deploy pipeline w/ atomic rollback + PR previews; observability (Sentry + `/api/health` + uptime); PDPL/NDMO release gates; per-change T0–T3 playbook; and the **Sydney→Bahrain `me-south-1` region move** (the ~223ms-RTT latency lever). Full runbook in git history (`FUTURE_PLANS.md`). |
-| **ZATCA Phase-2 e-invoicing** | Large compliance integration blocked on the external clearance pipeline. Schema ready (`ZatcaStatus` enum, default `NOT_APPLICABLE`). `billing.ts`. |
+| **ZATCA Phase-2 e-invoicing — production cutover** | All codeable scope (R1–R5) shipped v5.1.0→v5.6.0, live-CLEARED against the ZATCA sandbox. What remains is **external-only**: real `PLATFORM_SELLER` CR/address, a production CSID, tax-advisor signoff, and a deployed scheduler. Full procedure in `future-plans/zatca-production-cutover-runbook.md`. |
 | **Ejar auto-registration + national e-sign (Nafath/IAM) SSO** | External-integration roadmap (G1). Each needs the external API + credentials. Greenfield. |
 
 ---
@@ -37,12 +37,13 @@
 |---|---|---|---|
 | **F1-tail** | ~649 inline `lang==="ar"?` display-copy ternaries remain (across ~67 files) — the harder tail the v4.32.0 F1 codemod skipped (control-values `dir`/`locale`/`className`, non-literal branches, no-facade files, and the reversed `t(en,ar)` marketplace facade). | **Promoted to a dedicated sweep (Omar, 2026-06-19) but deferred to a future session.** Full scope + the per-file facade-order swap-safety in **`future-plans/f1-tail-i18n-sweep.md`**. | L (multi-PR) |
 
-## B.1 Known pre-existing display bugs (P3 — fix on touch; both surfaced by the v4.33 lint sweep, deliberately not fixed there)
-| ID | Bug | Fix |
-|---|---|---|
-| **billing-discount** | `app/dashboard/billing/invoices/page.tsx` reads `viewInvoice.discount` (~lines 596/602/752) to render the discount line, but the Prisma `Invoice` model has no `discount` field — it's `discountAmount` (`Decimal(14,2)`), and `billing.ts` (`getInvoiceById`/`getInvoices`) returns `discountAmount`. So `discount` is always `undefined` → `undefined > 0` is false → the discount line **never renders** even for a genuinely-discounted invoice. | Change the JSX to read `discountAmount`; update the `InvoiceRow` interface `discount: number` → `discountAmount: string \| number`. Verify with a seeded non-zero-discount invoice (desktop detail + mobile/print summary); §3.9 (light/dark × AR/EN) on `/dashboard/billing/invoices`, 0 console errors. |
-| **reports-costPerSqm** | `app/dashboard/reports/ReportsView.tsx` (~lines 337-342) renders the maintenance-cost "by building" rows using a `costPerSqm` field that `getMaintenanceCostReport` (`app/actions/reports.ts`) never returns (its `byBuilding` rows are `{ name, estimated, actual, count }`). Users see a literal **"undefined ر.س/م²"** in the maintenance cost report. | Either compute `costPerSqm` (`actual / building-area`) in the action + add it to the `byBuilding` return type, OR drop the "(… ر.س/م²)" segment from the rendered string. Add the field to the action's return type so it's type-checked; §3.9 verify (AR/EN × light/dark). |
+## B.1 Known pre-existing display bugs (P3)
+Both prior P3 display bugs are **CLOSED in v5.30.0**:
+- **billing-discount** — `invoices/page.tsx` now reads the real `discountAmount` (was the nonexistent `discount`), so a discounted invoice renders its discount line in both the desktop detail and the mobile/print summary.
+- **reports-costPerSqm** — the maintenance-cost "by building" rows dropped the broken `costPerSqm` segment (the report action never returned it), so the generated report no longer prints literal `undefined ر.س/م²`.
+
+No open P3 display bugs remain in this section.
 
 ---
 
-*Last updated 2026-06-19 post-v4.33.6. The detailed pre-closure A–I backlog is preserved in git history (`git show HEAD~:future-plans/REMAINING-WORK.md`).*
+*Last updated 2026-07-01 (v5.30.0 closed the two B.1 display bugs). The detailed pre-closure A–I backlog is preserved in git history (`git show HEAD~:future-plans/REMAINING-WORK.md`).*
