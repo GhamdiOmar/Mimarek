@@ -1,5 +1,24 @@
 # Changelog — Mimarek PropTech
 
+## [5.31.0] — 2026-07-01 — Session inactivity timeout (Phase 1)
+
+Adds an authenticated-session **idle guard**: after a role-based period of no interaction, a bilingual warning dialog counts down and then signs the user out of the current browser and redirects to login. Closes the `SEC-IDLE-001` gap (Mimarek previously expired sessions only by 7-day JWT lifetime, never by inactivity — a real exposure for a product showing PII, payments, contracts, ZATCA docs, and platform admin surfaces). Implements Phase 1 of `future-plans/session-inactivity-timeout-gap-action-plan.md` (IDLE-001…009, 013).
+
+### What's new
+- **Role-based idle windows** (`lib/idle-timeout-config.ts`): SYSTEM_ADMIN/SUPPORT 15 min · ADMIN/MANAGER/FINANCE 30 · AGENT/LEASING/TECHNICIAN 45 · USER 60; 2-minute warning. An **unknown/unmapped role fails secure** to the strictest (15-min) tier — never the longest.
+- **`useIdleTimeout` hook** (`hooks/useIdleTimeout.ts`): throttled `pointerdown`/`keydown`/`wheel`/`touchstart` tracking; **wall-clock** re-derivation on a 1s interval + `visibilitychange` (on `document`) + `focus`, so a slept laptop or throttled background tab is handled correctly (not a naive `setTimeout`); **cross-tab** `BroadcastChannel` — activity in any tab resets every tab, a timeout in any tab signs out every tab. Once the warning is showing, passive activity no longer silently resets it (you'd otherwise dismiss the dialog under your finger reaching for its buttons on mobile) — only the explicit buttons or genuine cross-tab activity reset it. The pure timing decision is extracted to `evaluateIdleState()` and unit-tested.
+- **`IdleTimeoutGuard`** (`components/session/`): mounted in the dashboard shell (tenant + platform) and the portal shell. Renders the warning via `ResponsiveDialog` (desktop modal / mobile bottom sheet) with a live countdown, **Stay signed in** (primary) / **Sign out now** (secondary). On timeout it fires a best-effort audit write then NextAuth `signOut` → `/auth/login?reason=idle`, which shows a bilingual "signed out after inactivity" banner.
+- **Audit**: new `SESSION_IDLE_TIMEOUT` action + a guarded `recordIdleTimeout` server action that reads identity server-side via `auth()` (never trusts the client), fire-and-forget so it never blocks sign-out.
+
+### Explicitly NOT in scope (deferred — see REMAINING-WORK § A)
+Server-enforced idle TTL for stolen-but-valid JWTs (Phase 2, needs a session table / DB session strategy) and admin-configurable policy (Phase 3). This release **never mutates `tokenVersion`** (that would revoke every device, not just the idle browser) and does not change the 7-day JWT `maxAge`.
+
+### Verify
+- `npm run build` green · `check-types` green · `lint` 0 errors · **388 unit tests pass** (12 new: `getIdleTimeoutMinutes` incl. the fail-secure default + prototype-key guard, and `evaluateIdleState` boundaries/sleeping-tab catch-up) · `/mimaric-qa` gate = **GO** (0 P0/P1) + a 2-agent adversarial pass whose real findings (mobile dismiss-under-finger, aria-live countdown spam, fail-open role default, `visibilitychange` target) were all fixed.
+- **§3.9 preview walk** — local prod build, 6 routes (`/dashboard`, `/dashboard/admin`, `/portal`, `/dashboard/billing/invoices`, `/dashboard/reports`, `/auth/login`) × light/dark × AR/EN: **44/44 checks, 0 console errors**. Warning modal verified rendering in all 4 theme/lang combos (desktop modal + mobile 375×812 bottom sheet), the countdown ticking, **Stay signed in** resetting, full timeout redirecting to `/auth/login?reason=idle` with the banner, cross-tab sign-out, and keyboard Tab reaching the modal buttons. `tokenVersion` grep = 0 functional refs.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimarek/compare/v5.30.0...v5.31.0
+
 ## [5.30.0] — 2026-07-01 — Close two P3 display bugs (billing discount + report cost-per-sqm)
 
 Closes the two known pre-existing P3 display bugs tracked in `future-plans/REMAINING-WORK.md` § B.1 (both surfaced by the v4.33 lint sweep, deliberately deferred then). Data-binding fixes only — no schema, no server-action, no new UI.

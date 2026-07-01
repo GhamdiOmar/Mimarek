@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { auth } from "../../auth";
 import { LanguageProvider } from "../../components/LanguageProvider";
 import { SimpleSessionProvider } from "../../components/SimpleSessionProvider";
+import IdleTimeoutGuard from "../../components/session/IdleTimeoutGuard";
 
 export default async function PortalLayout({ children }: { children: ReactNode }) {
   const session = await auth();
@@ -11,7 +12,10 @@ export default async function PortalLayout({ children }: { children: ReactNode }
 
   return (
     <SimpleSessionProvider session={session}>
-      <LanguageProvider>{children}</LanguageProvider>
+      <LanguageProvider>
+        <IdleTimeoutGuard />
+        {children}
+      </LanguageProvider>
     </SimpleSessionProvider>
   );
 }
