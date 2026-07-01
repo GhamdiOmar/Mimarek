@@ -267,6 +267,10 @@ export async function cancelSubscription(reason?: string) {
  */
 export async function getInvoices(page = 1, pageSize = 20) {
   const session = await requirePermission("billing:read");
+  // Clamp caller-supplied pagination so a huge pageSize can't become an unbounded
+  // Prisma `take` (memory-pressure / DoS) — matches contracts.ts / customers.ts.
+  page = Math.max(1, page);
+  pageSize = Math.min(100, Math.max(1, pageSize));
 
   const [invoices, total] = await Promise.all([
     db.invoice.findMany({
@@ -499,6 +503,8 @@ export async function adminGetAllPlans() {
  */
 export async function adminGetAllSubscriptions(page = 1, pageSize = 50) {
   await requirePermission("billing:admin");
+  page = Math.max(1, page);
+  pageSize = Math.min(100, Math.max(1, pageSize));
 
   const [subscriptions, total] = await Promise.all([
     db.subscription.findMany({
@@ -646,6 +652,8 @@ export async function adminCreateOverride(data: {
  */
 export async function adminGetAllInvoices(page = 1, pageSize = 50) {
   await requirePermission("billing:admin");
+  page = Math.max(1, page);
+  pageSize = Math.min(100, Math.max(1, pageSize));
 
   const [invoices, total] = await Promise.all([
     db.invoice.findMany({

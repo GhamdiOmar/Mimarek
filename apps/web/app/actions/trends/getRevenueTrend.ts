@@ -2,6 +2,7 @@
 
 import { db } from "@repo/db";
 import { requireTenantPermission } from "../../../lib/auth-helpers";
+import { effectivePaid } from "../../../lib/money";
 import { dayBuckets, dayIndex } from "./shared";
 
 /** Last 30 days of paid rent-installment amounts, bucketed daily by paidAt. */
@@ -26,11 +27,9 @@ export async function getRevenueTrend(): Promise<number[]> {
     if (!r.paidAt) continue;
     const idx = dayIndex(r.paidAt, start);
     if (idx >= 0 && idx < totals.length) {
-      const ep =
-        r.status === "PAID"
-          ? Number(r.paidAmount ?? r.amount)
-          : Number(r.paidAmount ?? 0);
-      totals[idx] += ep;
+      // Single-homed money rule (spec §4) — import the canonical helper rather
+      // than re-inlining it, so this trend can't silently drift from finance/reports.
+      totals[idx] += effectivePaid(r);
     }
   }
   return totals;

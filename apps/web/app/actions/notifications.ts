@@ -5,6 +5,8 @@ import { requirePermission } from "../../lib/auth-helpers";
 
 export async function getMyNotifications(limit = 20) {
   const session = await requirePermission("notifications:read");
+  // Clamp so a caller-supplied limit can't become an unbounded Prisma take.
+  limit = Math.min(100, Math.max(1, limit));
   return db.notification.findMany({
     where: { userId: session.userId },
     orderBy: { createdAt: "desc" },

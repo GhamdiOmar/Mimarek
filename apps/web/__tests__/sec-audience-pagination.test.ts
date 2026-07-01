@@ -44,6 +44,7 @@ vi.mock("next/headers", () => ({ headers: async () => new Map(), cookies: async 
 
 import { getDashboardStats } from "../app/actions/dashboard";
 import { getAuditLogs } from "../app/actions/audit";
+import { getInvoices } from "../app/actions/billing";
 
 function user(id: string, over: Partial<Row> = {}): Row {
   return { id, role: "ADMIN", organizationId: ORG, name: "U", email: `${id}@t.test`, isActive: true, tokenVersion: 0, password: "x", ...over };
@@ -74,6 +75,13 @@ function freshSeed(): Record<string, Row[]> {
       userId: "u_admin",
       createdAt: new Date(2026, 0, 1 + i),
     })),
+    // billing.getInvoices clamp (re-validation gap 2026-07-01): 150 org invoices.
+    invoice: Array.from({ length: 150 }, (_, i) => ({
+      id: `inv_${i}`,
+      organizationId: ORG,
+      total: 100,
+      createdAt: new Date(2026, 0, 1 + i),
+    })),
   };
 }
 
@@ -96,6 +104,17 @@ function makeSeededDb(s: Record<string, Row[]>): StubDb {
   };
   // keep a reference so an unused-var lint doesn't trip
   void auditRows;
+
+  // invoice.findMany honours take/skip too so the billing clamp is observable.
+  if (s.invoice) {
+    const baseInvoiceFind = stub.invoice.findMany;
+    stub.invoice.findMany = async (args: { where?: unknown; skip?: number; take?: number } = {}) => {
+      const all = (await baseInvoiceFind(args as never)) as Row[];
+      const start = args.skip ?? 0;
+      const end = args.take !== undefined ? start + args.take : undefined;
+      return all.slice(start, end);
+    };
+  }
 
   for (const model of ["unit", "lease", "rentInstallment", "customer", "maintenanceRequest"]) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test stub: add missing aggregate ops
@@ -145,5 +164,26 @@ describe("getAuditLogs — clamps an oversized pageSize to 100", () => {
     const res = await getAuditLogs({ pageSize: 25 });
     expect(res.pageSize).toBe(25);
     expect(res.logs.length).toBe(25);
+  });
+});
+
+describe("getInvoices — clamps an oversized pageSize to 100 (re-validation gap)", () => {
+  it("clamps pageSize=9999 → 100 (returned slice ≤ 100, 150 invoices seeded)", async () => {
+    const res = await getInvoices(1, 9999);
+    expect(res.pageSize).toBe(100);
+    expect(res.invoices.length).toBe(100);
+    expect(res.total).toBe(150);
+  });
+
+  it("clamps a non-positive pageSize up to 1", async () => {
+    const res = await getInvoices(1, 0);
+    expect(res.pageSize).toBe(1);
+    expect(res.invoices.length).toBe(1);
+  });
+
+  it("passes a normal pageSize through unchanged (positive control)", async () => {
+    const res = await getInvoices(1, 25);
+    expect(res.pageSize).toBe(25);
+    expect(res.invoices.length).toBe(25);
   });
 });

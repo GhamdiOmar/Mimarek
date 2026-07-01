@@ -28,9 +28,15 @@ export async function resolvePortalIdentity(): Promise<PortalIdentity> {
 
   const user = await db.user.findUnique({
     where: { id: session.user.id },
-    select: { id: true, email: true, organizationId: true },
+    select: { id: true, email: true, organizationId: true, isActive: true, tokenVersion: true },
   });
-  if (!user?.organizationId) throw new Error("Missing organization");
+  // SEC-003 revocation (portal surface — mirror getSessionOrThrow): reject a deleted,
+  // deactivated, or token-revoked portal user instead of trusting the ≤7-day JWT. Without
+  // this the portal keeps serving a deactivated/revoked tenant until the token naturally
+  // expires, while the dashboard (which funnels through getSessionOrThrow) bounces them at once.
+  if (!user || !user.isActive) throw new Error("Unauthorized");
+  if (user.tokenVersion !== (session.user.tokenVersion ?? 0)) throw new Error("Unauthorized");
+  if (!user.organizationId) throw new Error("Missing organization");
 
   const customer = await db.customer.findFirst({
     where: {
