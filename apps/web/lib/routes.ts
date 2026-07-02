@@ -41,6 +41,7 @@ export const ROUTES = {
   adminMarketplace: "/dashboard/admin/marketplace",
   adminDataRetention: "/dashboard/admin/data-retention",
   adminZatca: "/dashboard/admin/zatca",
+  adminIntegrations: "/dashboard/admin/integrations",
   adminPayments: "/dashboard/admin/payments",
   adminSubscriptions: "/dashboard/admin/subscriptions",
 

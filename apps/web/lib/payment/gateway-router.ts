@@ -18,6 +18,21 @@ const GATEWAY_ADAPTERS: Record<GatewayName, PaymentProvider | null> = {
   paytabs: null,  // Placeholder — not yet implemented
 };
 
+/**
+ * Secret-free projection of GatewayConfig — the router must NEVER read the
+ * encrypted secret columns (apiKeyEncrypted / webhookSecretEncrypted /
+ * publishableKeyEncrypted). Those are decrypted only inside the adapter's
+ * credential resolvers. This is the enforced invariant referenced by
+ * moyasar-crypto.ts + schema.prisma (mirrors ZATCA's EGS_PUBLIC_SELECT).
+ */
+const GATEWAY_PUBLIC_SELECT = {
+  gateway: true,
+  displayName: true,
+  isEnabled: true,
+  isPrimary: true,
+  config: true,
+} as const;
+
 // ─── Router ─────────────────────────────────────────────────────────────────
 
 /**
@@ -28,6 +43,7 @@ export async function getPrimaryGateway(): Promise<PaymentProvider> {
   try {
     const config = await db.gatewayConfig.findFirst({
       where: { isEnabled: true, isPrimary: true },
+      select: GATEWAY_PUBLIC_SELECT,
     });
 
     if (config) {
@@ -60,6 +76,7 @@ export async function getEnabledGateways(): Promise<{ name: string; displayName:
   const configs = await db.gatewayConfig.findMany({
     where: { isEnabled: true },
     orderBy: { isPrimary: "desc" },
+    select: GATEWAY_PUBLIC_SELECT,
   });
 
   return configs.map((c) => ({
