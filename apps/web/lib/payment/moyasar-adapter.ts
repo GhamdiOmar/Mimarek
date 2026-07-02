@@ -23,6 +23,8 @@ import type {
   PaymentBrand,
   PaymentCurrency,
 } from "./types";
+import { db } from "@repo/db";
+import { decryptMoyasar } from "./moyasar-crypto";
 
 // ─── Moyasar API Config ─────────────────────────────────────────────────────
 
@@ -50,21 +52,45 @@ interface MoyasarPayment {
   };
 }
 
-function getApiKey(): string {
+/**
+ * Resolve the Moyasar API key: prefer the encrypted DB credential (entered via
+ * /dashboard/admin/integrations), fall back to the MOYASAR_API_KEY env var
+ * (bootstrap / pre-UI). Fail-closed if neither is set.
+ */
+async function resolveApiKey(): Promise<string> {
+  try {
+    const cfg = await db.gatewayConfig.findUnique({
+      where: { gateway: "moyasar" },
+      select: { apiKeyEncrypted: true },
+    });
+    if (cfg?.apiKeyEncrypted) return decryptMoyasar(cfg.apiKeyEncrypted);
+  } catch {
+    // DB unavailable / table not ready → fall through to the env var
+  }
   const key = process.env.MOYASAR_API_KEY;
-  if (!key) throw new Error("MOYASAR_API_KEY environment variable is not set");
+  if (!key) throw new Error("Moyasar API key is not configured (set it in Admin → Integrations, or the MOYASAR_API_KEY env var).");
   return key;
 }
 
-function getWebhookSecret(): string {
+async function resolveWebhookSecret(): Promise<string> {
+  try {
+    const cfg = await db.gatewayConfig.findUnique({
+      where: { gateway: "moyasar" },
+      select: { webhookSecretEncrypted: true },
+    });
+    if (cfg?.webhookSecretEncrypted) return decryptMoyasar(cfg.webhookSecretEncrypted);
+  } catch {
+    // fall through to the env var
+  }
   const secret = process.env.MOYASAR_WEBHOOK_SECRET;
-  if (!secret) throw new Error("MOYASAR_WEBHOOK_SECRET environment variable is not set");
+  if (!secret) throw new Error("Moyasar webhook secret is not configured (set it in Admin → Integrations, or the MOYASAR_WEBHOOK_SECRET env var).");
   return secret;
 }
 
-function authHeaders(): HeadersInit {
+async function authHeaders(): Promise<HeadersInit> {
+  const apiKey = await resolveApiKey();
   return {
-    Authorization: `Basic ${Buffer.from(getApiKey() + ":").toString("base64")}`,
+    Authorization: `Basic ${Buffer.from(apiKey + ":").toString("base64")}`,
     "Content-Type": "application/json",
   };
 }
@@ -113,7 +139,7 @@ async function moyasarFetch<T>(path: string, options?: RequestInit): Promise<T> 
   const res = await fetch(url, {
     ...options,
     headers: {
-      ...authHeaders(),
+      ...(await authHeaders()),
       ...options?.headers,
     },
   });
@@ -223,7 +249,7 @@ export const moyasarAdapter: PaymentProvider = {
   async verifyWebhook(rawBody: string, signature: string): Promise<WebhookVerificationResult> {
     // Moyasar uses HMAC-SHA256 for webhook verification
     const crypto = await import("crypto");
-    const secret = getWebhookSecret();
+    const secret = await resolveWebhookSecret();
     const expectedSignature = crypto
       .createHmac("sha256", secret)
       .update(rawBody, "utf8")

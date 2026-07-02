@@ -1697,7 +1697,14 @@ model GatewayConfig {
   isPrimary       Boolean  @default(false)
   supportedBrands Json? // ["mada", "visa", "mastercard", "applepay"]
   config          Json? // Non-secret config (e.g., mode: "test"/"live")
-  // Secret keys stored in env vars, NOT here
+  // Encrypted gateway secrets — entered via /dashboard/admin/integrations, stored
+  // as `m1:` AES-256-GCM envelopes (lib/payment/moyasar-crypto.ts) keyed off
+  // MOYASAR_MASTER_KEY (env, never in DB). MUST be excluded from every client DTO
+  // via GATEWAY_PUBLIC_SELECT (mirror of EGS_PUBLIC_SELECT). Nullable so the
+  // env-var fallback path still works before credentials are entered.
+  apiKeyEncrypted         String?
+  webhookSecretEncrypted  String?
+  publishableKeyEncrypted String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }
