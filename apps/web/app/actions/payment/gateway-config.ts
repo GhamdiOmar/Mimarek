@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requirePermission } from "../../../lib/auth-helpers";
 import { logAuditEvent } from "../../../lib/audit";
 import { encryptMoyasar } from "../../../lib/payment/moyasar-crypto";
+import { ROUTES } from "../../../lib/routes";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Payment-gateway credentials (platform admin, billing:admin / SYSTEM-only)
@@ -129,6 +130,6 @@ export async function upsertMoyasarCredentials(input: {
     organizationId: session.organizationId,
   });
 
-  revalidatePath("/dashboard/admin/integrations");
+  revalidatePath(ROUTES.adminIntegrations);
   return getGatewayConfigSummary();
 }

@@ -96,6 +96,10 @@ export const ROUTE_GUARDS: Record<string, RouteGuard> = {
   "/dashboard/admin/add-ons": { permission: "billing:admin", audience: "platform" },
   "/dashboard/admin/scheduled-plan-changes": { permission: "billing:admin", audience: "platform" },
   "/dashboard/admin/zatca": { permission: "zatca:admin", audience: "platform" },
+  // Payment-gateway credentials (Moyasar) + ZATCA config status. Gated by the
+  // SYSTEM-only `billing:admin` permission (the same permission the gateway-config
+  // server actions enforce). Platform staff only.
+  "/dashboard/admin/integrations": { permission: "billing:admin", audience: "platform" },
   // /dashboard/admin/coupons + /dashboard/admin/subscriptions are not in nav but
   // are platform surfaces (CLAUDE.md §8.2). The longest-prefix audience match on
   // "/dashboard/admin" covers them for the edge gate; listed here for clarity is

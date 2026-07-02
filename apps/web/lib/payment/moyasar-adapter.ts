@@ -58,30 +58,38 @@ interface MoyasarPayment {
  * (bootstrap / pre-UI). Fail-closed if neither is set.
  */
 async function resolveApiKey(): Promise<string> {
+  // The try/catch guards ONLY the DB read (unavailable / table-not-ready → env
+  // fallback). decryptMoyasar is called OUTSIDE it: a stored-but-tampered
+  // ciphertext must FAIL CLOSED (throw), never be masked by the env fallback
+  // (which could silently misroute live payments to a stale key).
+  let stored: string | null = null;
   try {
     const cfg = await db.gatewayConfig.findUnique({
       where: { gateway: "moyasar" },
       select: { apiKeyEncrypted: true },
     });
-    if (cfg?.apiKeyEncrypted) return decryptMoyasar(cfg.apiKeyEncrypted);
+    stored = cfg?.apiKeyEncrypted ?? null;
   } catch {
     // DB unavailable / table not ready → fall through to the env var
   }
+  if (stored) return decryptMoyasar(stored);
   const key = process.env.MOYASAR_API_KEY;
   if (!key) throw new Error("Moyasar API key is not configured (set it in Admin → Integrations, or the MOYASAR_API_KEY env var).");
   return key;
 }
 
 async function resolveWebhookSecret(): Promise<string> {
+  let stored: string | null = null;
   try {
     const cfg = await db.gatewayConfig.findUnique({
       where: { gateway: "moyasar" },
       select: { webhookSecretEncrypted: true },
     });
-    if (cfg?.webhookSecretEncrypted) return decryptMoyasar(cfg.webhookSecretEncrypted);
+    stored = cfg?.webhookSecretEncrypted ?? null;
   } catch {
-    // fall through to the env var
+    // DB unavailable / table not ready → fall through to the env var
   }
+  if (stored) return decryptMoyasar(stored); // fail-closed on tamper (see resolveApiKey)
   const secret = process.env.MOYASAR_WEBHOOK_SECRET;
   if (!secret) throw new Error("Moyasar webhook secret is not configured (set it in Admin → Integrations, or the MOYASAR_WEBHOOK_SECRET env var).");
   return secret;

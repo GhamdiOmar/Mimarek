@@ -1,5 +1,24 @@
 # Changelog — Mimarek PropTech
 
+## [5.33.0] — 2026-07-02 — Billing go-live Phase A: encrypted payment-gateway credentials + admin Integrations UI
+
+First phase of the billing go-live program (plan: hybrid self-serve + manual/offline, sequenced credentials → manual → self-serve → recurring → copy → security). Moyasar credentials were **env-vars only**; this adds a platform-admin surface to enter + rotate them, **encrypted at rest**, so go-live doesn't require redeploying to change a key.
+
+### What's new
+- **Encrypted gateway secrets.** `GatewayConfig` gains nullable `apiKeyEncrypted` / `webhookSecretEncrypted` / `publishableKeyEncrypted`, stored as `m1:` AES-256-GCM envelopes (`lib/payment/moyasar-crypto.ts`, fail-closed, keyed off a new `MOYASAR_MASTER_KEY` env var — a **separate trust domain** from ZATCA/PII keys, mirroring `zatca-crypto.ts`). The master key stays in env (it decrypts the DB secrets — it can't itself live in the DB).
+- **Admin Integrations page** `/dashboard/admin/integrations` (SYSTEM-only, `billing:admin`): write-only masked inputs for the API key / webhook secret / publishable key (blank = keep stored), test↔live mode, enable + set-primary switches, and a ZATCA-status card linking to the existing ZATCA admin. Three-layer §8 enforcement (ROUTE_GUARDS + `requireSystem()` + `requirePermission`). New server actions `upsertMoyasarCredentials` + `getGatewayConfigSummary` (a **secret-free DTO** — presence booleans only, never a decrypted key); audit records *what* changed, never the value.
+- **Adapter reads DB creds** (`moyasar-adapter.ts`): `resolveApiKey`/`resolveWebhookSecret` prefer the encrypted DB credential and fall back to the env var for bootstrap — **fail-closed on a tampered ciphertext** (decrypt runs outside the DB try/catch, so tampering throws instead of silently masking to a stale env key). The gateway router reads via a `GATEWAY_PUBLIC_SELECT` that never touches the secret columns.
+
+### Verify
+- `npm run build` green · `check-types` green · `lint` **0 errors** · **406 unit tests** (8 new `moyasar-crypto` round-trip + fail-closed-on-tamper/non-`m1`/missing-key/wrong-length locks) · `/mimaric-qa` gate GO + a 2-agent adversarial security pass whose findings were all fixed (HIGH tamper-masking, `no-raw-revalidate-path` lint, missing `GATEWAY_PUBLIC_SELECT`, key-length guard).
+- **§3.9 preview walk** (`/dashboard/admin/integrations`, light/dark × AR/EN + mobile 375×812, as SYSTEM_ADMIN): **0 console errors**; golden save flow verified end-to-end (enter creds → encrypt+store → "Configured ✓" + success banner); tenant ADMIN correctly redirected off the platform route (access control). (The React-#310 deny-path console noise is pre-existing + identical on `/admin/zatca` and `/admin/seo` — an app-shell issue, not introduced here.)
+
+### Notes
+- `MOYASAR_MASTER_KEY` must be set on the deployed host (added to `turbo.json` globalEnv + CI). A credentials UI reduces env vars but cannot eliminate the master key.
+- Charge initiation (checkout, tokenization, renewal, dunning) remains unwired — that is Phases C/D of the program.
+
+**Full diff:** https://github.com/GhamdiOmar/Mimarek/compare/v5.32.0...v5.33.0
+
 ## [5.32.0] — 2026-07-02 — Invoice generation + coupon redemption are now UI-reachable
 
 Closes a **UI-First (§3.1) gap**: the subscription-invoice + discount-coupon subsystem was backend-complete but had **no UI path** — `generateSubscriptionInvoice` had zero callers and `applyCoupon` had zero non-test callers (the only preview UI was removed in CX-006 as premature). A tenant could never create an invoice or apply a discount through the app; the discount line fixed in v5.30.0 was unreachable. Both are now wired into the tenant billing surface, with server-side enforcement that a direct RPC can't bypass.

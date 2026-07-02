@@ -24,7 +24,13 @@ function getMoyasarKey(): Buffer {
   if (!key) {
     throw new Error("MOYASAR_MASTER_KEY environment variable is not set");
   }
-  return Buffer.from(key, "hex");
+  const buf = Buffer.from(key, "hex");
+  // Fail early + clearly on a misconfigured key (wrong length, non-hex, stray
+  // whitespace/base64) instead of an opaque "Invalid key length" at cipher-init.
+  if (buf.length !== 32) {
+    throw new Error("MOYASAR_MASTER_KEY must be 32 bytes (64 hex chars) for AES-256-GCM");
+  }
+  return buf;
 }
 
 /** Encrypt a gateway secret. Returns `m1:iv:authTag:ciphertext` (iv/tag/ct base64). */

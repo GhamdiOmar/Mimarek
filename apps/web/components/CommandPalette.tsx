@@ -38,6 +38,7 @@ import {
   Tags,
   ShieldAlert,
   HelpCircle,
+  Plug,
   Loader2,
   ArrowRight,
 } from "lucide-react";
@@ -71,6 +72,7 @@ const navIconMap: Record<string, React.ComponentType<{ className?: string }>> = 
   Tags,
   ShieldAlert,
   HelpCircle,
+  Plug,
 };
 
 interface QuickAction {
